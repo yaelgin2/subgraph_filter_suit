@@ -128,6 +128,83 @@ The library implements a three-stage filtering pipeline to efficiently answer su
 
 Only candidates that pass all three filters are subjected to exact isomorphism matching. This staged approach dramatically reduces the number of expensive exact-match computations needed for large-scale queries.
 
+### Component Map
+
+**Graph** (`graph/`) — core data structure:
+- `ColoredGraph` — adjacency structure with per-vertex color labels; the central data type used throughout the entire pipeline
+
+**Isomorphism** (`isomorphism/`) — exact matching algorithm (VELCRO):
+- `GraphSubgraphIsomorphism` — runs the VELCRO subgraph isomorphism algorithm between two `ColoredGraph` instances
+
+**I/O** (`io/`) — reading, writing, and caching:
+- `IGraphReader` → `GraphmlGraphReader`, `JsonGraphReader`, `VertexEdgeGraphReader`
+- `IPatternIOManager` → `GraphmlPatternIOManager`, `JsonPatternIOManager`, `VertexEdgePatternIOManager`
+- `ICacheManager` → `CSVCacheManager`, `BinaryCacheManager`
+
+**Managers** (`managers/`) — high-level orchestration:
+- `FlowManager` — top-level pipeline runner; drives enumerate, filter, pattern-preprocess, pattern-filter, and matrix runs
+- `LibraryLoader` — loads a graph library from disk
+- `FilterOutputManager` — collects results and writes the output index/filter file
+- `EnumerationPreprocessManager` — coordinates the full enumeration preprocessing pass over a library
+- `PatternPreprocessManager` — coordinates pattern preprocessing for a query graph
+
+**Preprocessing** (`preprocessing/`) — signature computation before filtering, split into two groups:
+- Enumeration preprocessors: `IGraphPreprocessor` (interface) → `GroupEnumerationPreprocessor` (implements it) ← extended by `MotifPreprocessor` and `FivePathPreprocessor`
+- Pattern preprocessors: `SingleGraphPatternPreprocessor`, `MultiGraphPatternPreprocessor`
+
+**Filtering** (`filtering/`) — candidate elimination:
+- `GroupEnumerationGraphFilter` — filters library candidates using enumeration (motif/path) signatures
+- `PatternGraphFilter` — filters by pattern features
+
+**Pattern finders** (`patterns/`) — used by the pattern finder preprocessor:
+- `SingleGraphPatternFinder` — finds patterns for a single query graph
+- `MultiGraphPatternFinder` — finds patterns across multiple query graphs
+
+**Utils** (`utils/`) — one shared utility file (e.g. `convert_boost_graph_to_colored_graph`)
+
+All components compile into three CLI tools and are also exposed as a C++ API:
+
+### Expected File Structure
+
+```
+subgraph_filter_suit/
+├── include/
+│   ├── graph/
+│   ├── isomorphism/
+│   ├── io/
+│   ├── managers/
+│   ├── preprocessing/
+│   ├── filtering/
+│   ├── patterns/
+│   └── utils/
+├── src/
+│   ├── graph/
+│   ├── isomorphism/
+│   ├── io/
+│   ├── managers/
+│   ├── preprocessing/
+│   ├── filtering/
+│   ├── patterns/
+│   ├── utils/
+│   └── cli/              # main() for sgf-graph-enumerator, sgf-pattern-finder, sgf-matrix
+├── tests/
+│   ├── graph/
+│   ├── isomorphism/
+│   ├── io/
+│   ├── managers/
+│   ├── preprocessing/
+│   ├── filtering/
+│   ├── patterns/
+│   └── utils/
+├── .clang-format
+├── .clang-tidy
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── CMakeLists.txt
+└── CLAUDE.md
+```
+
 ## CI/CD
 
 GitHub Actions (`.github/workflows/ci.yml`, on `develop` branch) runs on Linux and Windows in this order: configure → build → test → format-check → clang-tidy.
