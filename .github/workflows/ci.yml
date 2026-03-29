@@ -30,7 +30,7 @@ jobs:
           choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
 
       - name: Configure
-        run: cmake -S . -B build
+        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Build
         run: cmake --build build --config Release
@@ -43,9 +43,9 @@ jobs:
       - name: Check formatting (Linux)
         if: runner.os == 'Linux'
         run: |
-          find . -name '*.cpp' -o -name '*.h' | xargs clang-format --dry-run --Werror
+          find . \( -name '*.cpp' -o -name '*.h' \) -not -path './build/*' | xargs clang-format --dry-run --Werror
 
       - name: Run clang-tidy (Linux)
         if: runner.os == 'Linux'
         run: |
-          find . -name '*.cpp' | xargs clang-tidy
+          find . -name '*.cpp' -not -path './build/*' | xargs clang-tidy -p build/
