@@ -130,19 +130,10 @@ Only candidates that pass all three filters are subjected to exact isomorphism m
 
 ## CI/CD
 
-GitHub Actions (`.github/workflows/ci.yml`, on `develop` branch) runs on Linux and Windows in this order: configure → build → test → format-check → clang-tidy.
+GitHub Actions (`.github/workflows/ci.yml`) runs on Linux and Windows in this order: configure → build → test → format-check → clang-tidy.
 
-**Required CI update:** the current CI does not export `compile_commands.json` or pass `-p build/` to clang-tidy, which means many checks run without include-path context. Update the CI as follows:
-
-```yaml
-# Configure step — add flag:
-run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-# clang-tidy step — add -p:
-run: find . -name '*.cpp' -not -path './build/*' | xargs clang-tidy -p build/
-```
-
-Both `.clang-format` and `.clang-tidy` are picked up automatically by the tools — no extra flags needed to point at them.
+- Configure exports `compile_commands.json` (`-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`) so clang-tidy has full include-path context.
+- Both `.clang-format` and `.clang-tidy` are picked up automatically by the tools — no extra flags needed to point at them.
 
 ## Git
 
