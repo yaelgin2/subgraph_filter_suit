@@ -12,19 +12,20 @@ Checks: >
   performance-*,
   portability-*,
   readability-*,
-  -cppcoreguidelines-avoid-magic-numbers,
-  -readability-magic-numbers,
   -misc-non-private-member-variables-in-classes,
   -cppcoreguidelines-non-private-member-variables-in-classes,
   -hicpp-named-parameter,
   -readability-named-parameter,
-  -modernize-use-auto
+  -modernize-use-auto,
+  -modernize-use-trailing-return-type,
+  -hicpp-use-auto,
+  -bugprone-easily-swappable-parameters
 
 # Treat every enabled check as an error (CI fails on any warning)
 WarningsAsErrors: "*"
 
-# Also lint headers belonging to this project
-HeaderFilterRegex: ".*"
+# Lint headers belonging to this project only — excludes build/_deps (GTest, etc.)
+HeaderFilterRegex: "^(?!.*build/).*"
 
 CheckOptions:
   # ── Function size limits ──────────────────────────────────────────────────
@@ -54,17 +55,21 @@ CheckOptions:
   - key: readability-identifier-naming.StructCase
     value: CamelCase
   - key: readability-identifier-naming.FunctionCase
-    value: camelCase
+    value: lower_case
   - key: readability-identifier-naming.VariableCase
-    value: camelCase
+    value: lower_case
   - key: readability-identifier-naming.ParameterCase
-    value: camelCase
+    value: lower_case
   - key: readability-identifier-naming.MemberCase
-    value: camelCase
-  - key: readability-identifier-naming.PrivateMemberSuffix
-    value: "_"
+    value: lower_case
+  - key: readability-identifier-naming.MemberPrefix
+    value: m_
   - key: readability-identifier-naming.ConstantCase
     value: UPPER_CASE
+  - key: readability-identifier-naming.LocalConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstantParameterCase
+    value: lower_case
   - key: readability-identifier-naming.NamespaceCase
     value: lower_case
   - key: readability-identifier-naming.EnumCase

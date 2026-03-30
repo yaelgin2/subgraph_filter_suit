@@ -1,0 +1,21 @@
+# Inherits all checks from the root .clang-tidy and adds test-specific overrides.
+#
+# Rationale for each suppression:
+#
+#   cppcoreguidelines-avoid-magic-numbers / readability-magic-numbers
+#     Literal values in tests are intentional: the number IS the assertion.
+#     Requiring a named constant (e.g. EXPECTED_COLOR = 42) adds noise
+#     without any safety or clarity benefit in a test context.
+#
+#   misc-use-internal-linkage
+#     GTest fixture classes must be reachable from TEST_F macro expansions
+#     at file scope. Moving them into an anonymous namespace is technically
+#     valid C++ but triggers linker-visibility issues with some GTest versions;
+#     suppressing the check is the safe default for test fixtures.
+
+InheritParentConfig: true
+
+Checks: >
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers,
+  -misc-use-internal-linkage
