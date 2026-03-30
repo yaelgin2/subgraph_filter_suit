@@ -5,7 +5,8 @@
 #include <exception>
 #include <string>
 
-namespace sgf {
+namespace sgf
+{
 
 /**
  * @brief Abstract base for all subgraph_filter_suite exceptions.
@@ -15,13 +16,15 @@ namespace sgf {
  * to int and pass it to exit(). The C++ API guarantees it never
  * propagates anything that does not derive from SgfException.
  */
-class SgfException : public std::exception {
+class SgfException : public std::exception
+{
 public:
     /**
      * @brief Constructs an SgfException with a message.
      * @param message Human-readable description of the error.
      */
-    explicit SgfException(std::string message) : m_message(std::move(message))
+    explicit SgfException(std::string message)
+        : m_message(std::move(message))
     {
     }
 

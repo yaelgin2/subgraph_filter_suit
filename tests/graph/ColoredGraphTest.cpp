@@ -1,18 +1,18 @@
 #include "graph/ColoredGraph.h"
+
 #include "exceptions/InvalidArgumentException.h"
 
-#include <gtest/gtest.h>
-
 #include <cstdint>
+#include <gtest/gtest.h>
 #include <utility>
 #include <vector>
 
 using namespace sgf;
 
-
 // ── Shared assertion helpers ──────────────────────────────────────────────────
 
-namespace {
+namespace
+{
 
 /**
  * @brief Asserts that the neighbour list of @p vertex equals @p expected.
@@ -25,21 +25,16 @@ namespace {
  * @param expected Sorted list of expected neighbour IDs.
  * @param reversed If true, checks in-neighbours (directed graphs only).
  */
-void assert_neighbours(const ColoredGraph& graph,
-                       const uint32_t vertex,
-                       const std::vector<uint32_t>& expected,
-                       const bool reversed = false)
+void assert_neighbours(const ColoredGraph& graph, const uint32_t vertex,
+                       const std::vector<uint32_t>& expected, const bool reversed = false)
 {
-    const std::pair<std::vector<uint32_t>::const_iterator,
-                    std::vector<uint32_t>::const_iterator>
+    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
         range = graph.get_neighbours(vertex, reversed);
     const std::vector<uint32_t> actual(range.first, range.second);
-    EXPECT_EQ(actual, expected)
-        << "vertex " << vertex << (reversed ? " (reversed)" : "");
+    EXPECT_EQ(actual, expected) << "vertex " << vertex << (reversed ? " (reversed)" : "");
 }
 
 }  // namespace
-
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
 
@@ -49,7 +44,8 @@ void assert_neighbours(const ColoredGraph& graph,
  * Provides factory helpers that build common edge and color vectors so
  * individual tests stay concise and focused on assertions.
  */
-class ColoredGraphTest : public ::testing::Test {
+class ColoredGraphTest : public ::testing::Test
+{
 protected:
     /**
      * @brief Builds a uniform color vector of length @p count, all set to @p color.
@@ -57,8 +53,7 @@ protected:
      * @param color Color value to assign to every vertex.
      * @return Color vector suitable for passing to ColoredGraph.
      */
-    static std::vector<int32_t> uniform_colors(const uint32_t count,
-                                               const int32_t color = 0)
+    static std::vector<int32_t> uniform_colors(const uint32_t count, const int32_t color = 0)
     {
         return std::vector<int32_t>(count, color);
     }
@@ -83,7 +78,6 @@ protected:
     }
 };
 
-
 // ── Exception tests ───────────────────────────────────────────────────────────
 
 /**
@@ -96,7 +90,6 @@ TEST_F(ColoredGraphTest, empty_colors_throws_invalid_argument)
     EXPECT_THROW(ColoredGraph(1, edges, colors), InvalidArgumentException);
 }
 
-
 /**
  * @brief Passing a non-empty color vector when num_vertices is zero must throw.
  */
@@ -106,7 +99,6 @@ TEST_F(ColoredGraphTest, nonzero_colors_with_zero_vertices_throws_invalid_argume
     const std::vector<int32_t> colors = {0};  // 1 color for 0 vertices
     EXPECT_THROW(ColoredGraph(0, edges, colors), InvalidArgumentException);
 }
-
 
 /**
  * @brief Passing more colors than vertices must throw.
@@ -118,7 +110,6 @@ TEST_F(ColoredGraphTest, colors_longer_than_vertex_count_throws_invalid_argument
     EXPECT_THROW(ColoredGraph(2, edges, colors), InvalidArgumentException);
 }
 
-
 /**
  * @brief Passing fewer colors than vertices must throw.
  */
@@ -128,7 +119,6 @@ TEST_F(ColoredGraphTest, colors_shorter_than_vertex_count_throws_invalid_argumen
     const std::vector<int32_t> colors = {0, 0};  // only 2 colors for 3 vertices
     EXPECT_THROW(ColoredGraph(3, edges, colors), InvalidArgumentException);
 }
-
 
 /**
  * @brief An edge whose source vertex ID equals num_vertices must throw.
@@ -140,7 +130,6 @@ TEST_F(ColoredGraphTest, edge_with_out_of_range_source_throws_invalid_argument)
     EXPECT_THROW(ColoredGraph(2, edges, colors), InvalidArgumentException);
 }
 
-
 /**
  * @brief An edge whose destination vertex ID equals num_vertices must throw.
  */
@@ -150,7 +139,6 @@ TEST_F(ColoredGraphTest, edge_with_out_of_range_dest_throws_invalid_argument)
     const std::vector<int32_t> colors = uniform_colors(2);
     EXPECT_THROW(ColoredGraph(2, edges, colors), InvalidArgumentException);
 }
-
 
 // ── Color tests ───────────────────────────────────────────────────────────────
 
@@ -166,7 +154,6 @@ TEST_F(ColoredGraphTest, colors_stored_correctly_per_vertex)
     EXPECT_EQ(graph.get_vertex_color(1), 1U);
     EXPECT_EQ(graph.get_vertex_color(2), 2U);
 }
-
 
 /**
  * @brief set_vertex_color updates the stored color and is reflected by get_vertex_color.
@@ -184,7 +171,6 @@ TEST_F(ColoredGraphTest, set_vertex_color_updates_color)
     EXPECT_EQ(graph.edge_count(), 0U);
     assert_neighbours(graph, 0, {});
 }
-
 
 // ── is_edge tests ─────────────────────────────────────────────────────────────
 
@@ -205,7 +191,6 @@ TEST_F(ColoredGraphTest, is_edge_undirected_path_graph)
     EXPECT_FALSE(graph.is_edge(2, 0));
 }
 
-
 /**
  * @brief Directed graph 0->1<-2: only declared directed edges exist.
  */
@@ -223,7 +208,6 @@ TEST_F(ColoredGraphTest, is_edge_directed_converging_graph)
     EXPECT_FALSE(graph.is_edge(2, 0));  // non-existent
 }
 
-
 // ── Undirected graph tests ────────────────────────────────────────────────────
 
 /**
@@ -239,7 +223,6 @@ TEST_F(ColoredGraphTest, undirected_empty_graph)
     EXPECT_EQ(graph.edge_count(), 0U);
 }
 
-
 /**
  * @brief An undirected graph with one vertex and no edges has an empty neighbour list.
  */
@@ -254,7 +237,6 @@ TEST_F(ColoredGraphTest, undirected_single_vertex_no_edges)
     assert_neighbours(graph, 0, {});
 }
 
-
 /**
  * @brief An undirected graph with two vertices and no edges has two isolated vertices.
  */
@@ -268,7 +250,6 @@ TEST_F(ColoredGraphTest, undirected_two_vertices_no_edges)
     assert_neighbours(graph, 0, {});
     assert_neighbours(graph, 1, {});
 }
-
 
 /**
  * @brief An undirected graph with two vertices and one edge has symmetric neighbours.
@@ -286,7 +267,6 @@ TEST_F(ColoredGraphTest, undirected_two_vertices_one_edge)
     assert_neighbours(graph, 1, {0});
 }
 
-
 /**
  * @brief Three vertices, one edge: the disconnected vertex has an empty neighbour list.
  */
@@ -301,7 +281,6 @@ TEST_F(ColoredGraphTest, undirected_three_vertices_one_edge_disconnected_vertex)
     assert_neighbours(graph, 1, {0});
     assert_neighbours(graph, 2, {});  // vertex 2 is isolated
 }
-
 
 /**
  * @brief An undirected triangle has every vertex connected to both others.
@@ -321,7 +300,6 @@ TEST_F(ColoredGraphTest, undirected_triangle_graph)
     assert_neighbours(graph, 2, {0, 1});
 }
 
-
 /**
  * @brief A duplicate edge in the same direction is silently de-duplicated.
  *
@@ -338,7 +316,6 @@ TEST_F(ColoredGraphTest, undirected_duplicate_edge_same_direction_is_removed)
     assert_neighbours(graph, 0, {1});
     assert_neighbours(graph, 1, {0});
 }
-
 
 /**
  * @brief Providing both (0,1) and (1,0) for an undirected graph is treated as one edge.
@@ -391,7 +368,6 @@ TEST_F(ColoredGraphTest, directed_empty_graph)
     EXPECT_EQ(graph.edge_count(), 0U);
 }
 
-
 /**
  * @brief A directed graph with one vertex has empty forward and reverse neighbour lists.
  */
@@ -405,7 +381,6 @@ TEST_F(ColoredGraphTest, directed_single_vertex_no_edges)
     assert_neighbours(graph, 0, {}, false);  // out-neighbours
     assert_neighbours(graph, 0, {}, true);   // in-neighbours
 }
-
 
 /**
  * @brief A directed graph with two isolated vertices has no neighbours in either direction.
@@ -423,7 +398,6 @@ TEST_F(ColoredGraphTest, directed_two_vertices_no_edges)
     assert_neighbours(graph, 1, {}, true);
 }
 
-
 /**
  * @brief Directed edge 0->1: out-neighbours and in-neighbours are correct.
  */
@@ -440,7 +414,6 @@ TEST_F(ColoredGraphTest, directed_two_vertices_forward_edge)
     assert_neighbours(graph, 1, {0}, true);   // 1 has in-neighbour 0
 }
 
-
 /**
  * @brief Two identical directed edges 0->1 are de-duplicated to one.
  */
@@ -452,11 +425,10 @@ TEST_F(ColoredGraphTest, directed_duplicate_forward_edge_is_removed)
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 1U);  // duplicate removed
     assert_neighbours(graph, 0, {1}, false);
-    assert_neighbours(graph, 1, {}, false);   // 1 has no out-neighbours
-    assert_neighbours(graph, 0, {}, true);    // 0 has no in-neighbours
+    assert_neighbours(graph, 1, {}, false);  // 1 has no out-neighbours
+    assert_neighbours(graph, 0, {}, true);   // 0 has no in-neighbours
     assert_neighbours(graph, 1, {0}, true);
 }
-
 
 /**
  * @brief Directed edge 1->0: out-neighbours and in-neighbours are correct.
@@ -473,7 +445,6 @@ TEST_F(ColoredGraphTest, directed_two_vertices_backward_edge)
     assert_neighbours(graph, 1, {}, true);    // 1 has no in-neighbours
     assert_neighbours(graph, 0, {1}, true);   // 0 has in-neighbour 1
 }
-
 
 /**
  * @brief Two identical directed edges 1->0 are de-duplicated to one.
@@ -497,7 +468,8 @@ TEST_F(ColoredGraphTest, directed_duplicate_backward_edge_is_removed)
  */
 TEST_F(ColoredGraphTest, directed_triangle_graph)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 1}, {1, 0}, {1, 2}, {2, 1}, {0, 2}, {2, 0}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 1}, {1, 0}, {1, 2},
+                                                        {2, 1}, {0, 2}, {2, 0}};
     const ColoredGraph graph(3, edges, indexed_colors(3), true);
 
     EXPECT_EQ(graph.vertex_count(), 3U);
@@ -529,7 +501,6 @@ TEST_F(ColoredGraphTest, directed_two_vertices_bidirectional_edges)
     assert_neighbours(graph, 1, {0}, true);
 }
 
-
 /**
  * @brief Directed out-star: hub 0 points to all spokes; spokes have no out-neighbours.
  *
@@ -547,13 +518,12 @@ TEST_F(ColoredGraphTest, directed_out_star_graph)
     assert_neighbours(graph, 2, {}, false);
     assert_neighbours(graph, 3, {}, false);
     assert_neighbours(graph, 4, {}, false);
-    assert_neighbours(graph, 0, {}, true);              // hub: no in-neighbours
+    assert_neighbours(graph, 0, {}, true);  // hub: no in-neighbours
     assert_neighbours(graph, 1, {0}, true);
     assert_neighbours(graph, 2, {0}, true);
     assert_neighbours(graph, 3, {0}, true);
     assert_neighbours(graph, 4, {0}, true);
 }
-
 
 /**
  * @brief Directed in-star: all spokes point to hub 0; hub has no out-neighbours.
@@ -567,18 +537,17 @@ TEST_F(ColoredGraphTest, directed_in_star_graph)
 
     EXPECT_EQ(graph.vertex_count(), 5U);
     EXPECT_EQ(graph.edge_count(), 4U);
-    assert_neighbours(graph, 0, {}, false);             // hub: no out-neighbours
+    assert_neighbours(graph, 0, {}, false);  // hub: no out-neighbours
     assert_neighbours(graph, 1, {0}, false);
     assert_neighbours(graph, 2, {0}, false);
     assert_neighbours(graph, 3, {0}, false);
     assert_neighbours(graph, 4, {0}, false);
-    assert_neighbours(graph, 0, {1, 2, 3, 4}, true);   // hub: all in-neighbours
+    assert_neighbours(graph, 0, {1, 2, 3, 4}, true);  // hub: all in-neighbours
     assert_neighbours(graph, 1, {}, true);
     assert_neighbours(graph, 2, {}, true);
     assert_neighbours(graph, 3, {}, true);
     assert_neighbours(graph, 4, {}, true);
 }
-
 
 // ── Self-loop tests ───────────────────────────────────────────────────────────
 
@@ -592,7 +561,6 @@ TEST_F(ColoredGraphTest, self_loop_on_undirected_graph_throws)
     EXPECT_THROW(ColoredGraph(1, edges, colors, false), InvalidArgumentException);
 }
 
-
 /**
  * @brief A self-loop on a directed graph must throw InvalidArgumentException.
  */
@@ -602,7 +570,6 @@ TEST_F(ColoredGraphTest, self_loop_on_directed_graph_throws)
     const std::vector<int32_t> colors = uniform_colors(1);
     EXPECT_THROW(ColoredGraph(1, edges, colors, true), InvalidArgumentException);
 }
-
 
 // ── get_neighbours with reversed=true on undirected graphs ────────────────────
 
@@ -632,4 +599,3 @@ TEST_F(ColoredGraphTest, undirected_reversed_neighbours_equal_forward_neighbours
         EXPECT_EQ(forward_list, reversed_list) << "vertex " << vertex;
     }
 }
-

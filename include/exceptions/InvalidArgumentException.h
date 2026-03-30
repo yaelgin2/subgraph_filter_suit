@@ -5,7 +5,8 @@
 
 #include <string>
 
-namespace sgf {
+namespace sgf
+{
 
 /**
  * @brief Thrown when a function receives an invalid argument.
@@ -13,13 +14,15 @@ namespace sgf {
  * Examples: mismatched vector sizes, vertex IDs out of range.
  * CLI exit code: SgfReturnCode::INVALID_ARGUMENT.
  */
-class InvalidArgumentException : public SgfException {
+class InvalidArgumentException : public SgfException
+{
 public:
     /**
      * @brief Constructs an InvalidArgumentException.
      * @param message Description of the invalid argument.
      */
-    explicit InvalidArgumentException(const std::string& message) : SgfException(message)
+    explicit InvalidArgumentException(const std::string& message)
+        : SgfException(message)
     {
     }
 

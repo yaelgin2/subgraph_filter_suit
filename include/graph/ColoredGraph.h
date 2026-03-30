@@ -6,7 +6,8 @@
 #include <cstdint>
 #include <vector>
 
-namespace sgf {
+namespace sgf
+{
 
 /**
  * @brief Adjacency structure with per-vertex color labels.
@@ -21,7 +22,8 @@ namespace sgf {
  * - Duplicate edges are silently removed; both (u,v) and (v,u) supplied to an
  *   undirected graph count as the same edge and are de-duplicated to one.
  */
-class ColoredGraph {
+class ColoredGraph
+{
 public:
     /**
      * @brief Constructs a ColoredGraph.
@@ -32,10 +34,8 @@ public:
      * @param colors Per-vertex color labels; must have exactly @p num_vertices entries.
      * @param is_directed If true, treat edges as directed.
      */
-    ColoredGraph(const uint32_t num_vertices,
-                 std::vector<std::pair<uint32_t, uint32_t>>& edges,
-                 const std::vector<int32_t>& colors,
-                 const bool is_directed = false);
+    ColoredGraph(const uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& edges,
+                 const std::vector<int32_t>& colors, const bool is_directed = false);
 
     /**
      * @brief Default destructor.
@@ -49,8 +49,7 @@ public:
      *                 instead of out-neighbours.
      * @return A pair of const iterators [begin, end) over the neighbour list.
      */
-    std::pair<std::vector<uint32_t>::const_iterator,
-              std::vector<uint32_t>::const_iterator>
+    std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
     get_neighbours(const uint32_t vertex, const bool reversed = false) const;
 
     /**
@@ -114,10 +113,8 @@ private:
      * @param index_of_neighbours Index array mapping each vertex to its start in @p neighbours.
      * @return A pair of const iterators [begin, end) over that vertex's neighbours.
      */
-    static std::pair<std::vector<uint32_t>::const_iterator,
-                     std::vector<uint32_t>::const_iterator>
-    compute_neighbour_range(const uint32_t vertex,
-                            const std::vector<uint32_t>& neighbours,
+    static std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
+    compute_neighbour_range(const uint32_t vertex, const std::vector<uint32_t>& neighbours,
                             const std::vector<uint32_t>& index_of_neighbours);
 
     /**
@@ -132,8 +129,7 @@ private:
      * @param neighbour_count The value to store in each slot.
      * @param index_of_neighbours The index array being built.
      */
-    static void fill_index_range(const uint32_t from_vertex,
-                                 const uint32_t to_vertex,
+    static void fill_index_range(const uint32_t from_vertex, const uint32_t to_vertex,
                                  const uint32_t neighbour_count,
                                  std::vector<uint32_t>& index_of_neighbours);
 

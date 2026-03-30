@@ -5,7 +5,8 @@
 
 #include <string>
 
-namespace sgf {
+namespace sgf
+{
 
 /**
  * @brief Thrown when a graph cannot be constructed from the given data.
@@ -13,13 +14,15 @@ namespace sgf {
  * Examples: structurally inconsistent edge lists that cannot form a valid graph.
  * CLI exit code: SgfReturnCode::GRAPH_CONSTRUCTION_ERROR.
  */
-class GraphConstructionException : public SgfException {
+class GraphConstructionException : public SgfException
+{
 public:
     /**
      * @brief Constructs a GraphConstructionException.
      * @param message Description of the construction failure.
      */
-    explicit GraphConstructionException(const std::string& message) : SgfException(message)
+    explicit GraphConstructionException(const std::string& message)
+        : SgfException(message)
     {
     }
 

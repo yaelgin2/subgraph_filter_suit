@@ -61,7 +61,8 @@ bool findSubgraph(const Graph& graph, const Graph& query);
 ### File structure
 
 - **One newline at end of every file** — enforced by clang-format (`InsertNewlineAtEOF: true`).
-- **Two blank lines between top-level function definitions** — clang-format enforces a minimum of one blank line (`SeparateDefinitionBlocks: Always`) and preserves a second one (`MaxEmptyLinesToKeep: 2`). Always write two blank lines; clang-format will not add the second automatically.
+- **One blank line between top-level function definitions** — clang-format enforces this via `SeparateDefinitionBlocks: Always`.
+- **Curly braces on seperate lines**
 
 ### Function limits (enforced by `readability-function-size`)
 

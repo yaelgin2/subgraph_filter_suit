@@ -2,7 +2,8 @@
 
 #include <cstdint>
 
-namespace sgf {
+namespace sgf
+{
 
 /**
  * @brief CLI process exit codes for each SgfException subclass.
