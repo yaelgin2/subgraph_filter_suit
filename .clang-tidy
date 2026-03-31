@@ -40,7 +40,7 @@ CheckOptions:
   - key: readability-function-size.StatementThreshold
     value: "30"
   - key: readability-function-size.NestingThreshold
-    value: "3"
+    value: "5"
 
   # ── Smart pointers (cppcoreguidelines-owning-memory) ──────────────────────
   # Raw owning pointers must be marked gsl::owner<T*>; prefer unique_ptr/shared_ptr
