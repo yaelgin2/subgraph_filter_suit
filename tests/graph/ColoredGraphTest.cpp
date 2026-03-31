@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <gtest/gtest.h>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -32,6 +33,28 @@ void assert_neighbours(const ColoredGraph& graph, const uint32_t vertex,
         range = graph.get_neighbours(vertex, reversed);
     const std::vector<uint32_t> actual(range.first, range.second);
     EXPECT_EQ(actual, expected) << "vertex " << vertex << (reversed ? " (reversed)" : "");
+}
+
+/**
+ * @brief Asserts that the edge-color list parallel to the neighbour list of @p vertex
+ *        equals @p expected.
+ *
+ * The order of colors matches the order returned by get_neighbours(), which is sorted
+ * ascending by neighbour ID.
+ *
+ * @param graph The graph under test.
+ * @param vertex Vertex whose edge colors are checked.
+ * @param expected Edge colors in the same order as get_neighbours() output.
+ * @param reversed If true, checks in-edge colors (directed graphs only).
+ */
+void assert_edge_colors(const ColoredGraph& graph, const uint32_t vertex,
+                        const std::vector<uint32_t>& expected, const bool reversed = false)
+{
+    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
+        range = graph.get_neighbour_edge_colors(vertex, reversed);
+    const std::vector<uint32_t> actual(range.first, range.second);
+    EXPECT_EQ(actual, expected) << "edge colors for vertex " << vertex
+                                << (reversed ? " (reversed)" : "");
 }
 
 }  // namespace
@@ -598,4 +621,319 @@ TEST_F(ColoredGraphTest, undirected_reversed_neighbours_equal_forward_neighbours
         const std::vector<uint32_t> reversed_list(reversed.first, reversed.second);
         EXPECT_EQ(forward_list, reversed_list) << "vertex " << vertex;
     }
+}
+
+// ── Colored edge — is_edges_colored flag ─────────────────────────────────────
+
+/**
+ * @brief is_edges_colored() returns false for a graph built from pair edges.
+ */
+TEST_F(ColoredGraphTest, uncolored_graph_is_not_edges_colored)
+{
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 1}};
+    const ColoredGraph graph(2, edges, uniform_colors(2));
+    EXPECT_FALSE(graph.is_edges_colored());
+}
+
+/**
+ * @brief is_edges_colored() returns true for a graph built from tuple edges.
+ */
+TEST_F(ColoredGraphTest, colored_graph_is_edges_colored)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 7}};
+    const ColoredGraph graph(2, edges, uniform_colors(2));
+    EXPECT_TRUE(graph.is_edges_colored());
+}
+
+/**
+ * @brief get_edge_color() throws on a graph built from pair edges.
+ */
+TEST_F(ColoredGraphTest, get_edge_color_on_uncolored_graph_throws)
+{
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 1}};
+    const ColoredGraph graph(2, edges, uniform_colors(2));
+    EXPECT_THROW(graph.get_edge_color(0, 1), InvalidArgumentException);
+}
+
+/**
+ * @brief get_neighbour_edge_colors() throws on a graph built from pair edges.
+ */
+TEST_F(ColoredGraphTest, get_neighbour_edge_colors_on_uncolored_graph_throws)
+{
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 1}};
+    const ColoredGraph graph(2, edges, uniform_colors(2));
+    EXPECT_THROW(graph.get_neighbour_edge_colors(0), InvalidArgumentException);
+}
+
+// ── Colored edge — undirected ─────────────────────────────────────────────────
+
+/**
+ * @brief An edge-colored undirected graph with zero vertices and zero edges is valid.
+ */
+TEST_F(ColoredGraphTest, edge_colored_undirected_empty_graph)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges;
+    const ColoredGraph graph(0, edges, {});
+
+    EXPECT_TRUE(graph.is_edges_colored());
+    EXPECT_EQ(graph.vertex_count(), 0U);
+    EXPECT_EQ(graph.edge_count(), 0U);
+}
+
+/**
+ * @brief Edge-colored undirected graph: one vertex, no edges.
+ */
+TEST_F(ColoredGraphTest, edge_colored_undirected_one_vertex_no_edges)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges;
+    const ColoredGraph graph(1, edges, uniform_colors(1));
+
+    EXPECT_TRUE(graph.is_edges_colored());
+    EXPECT_EQ(graph.vertex_count(), 1U);
+    EXPECT_EQ(graph.edge_count(), 0U);
+    assert_neighbours(graph, 0, {});
+}
+
+/**
+ * @brief Edge-colored undirected graph: two vertices, no edges.
+ */
+TEST_F(ColoredGraphTest, edge_colored_undirected_two_vertices_no_edges)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges;
+    const ColoredGraph graph(2, edges, uniform_colors(2));
+
+    EXPECT_TRUE(graph.is_edges_colored());
+    EXPECT_EQ(graph.vertex_count(), 2U);
+    EXPECT_EQ(graph.edge_count(), 0U);
+    assert_neighbours(graph, 0, {});
+    assert_neighbours(graph, 1, {});
+}
+
+/**
+ * @brief Edge-colored undirected graph: two vertices, one edge with color 5.
+ *
+ * Both endpoints must report the edge color; the reverse direction inherits the
+ * same color.
+ */
+TEST_F(ColoredGraphTest, edge_colored_undirected_two_vertices_one_edge)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 5}};
+    const ColoredGraph graph(2, edges, uniform_colors(2));
+
+    EXPECT_EQ(graph.vertex_count(), 2U);
+    EXPECT_EQ(graph.edge_count(), 1U);
+    EXPECT_EQ(graph.get_edge_color(0, 1), 5U);
+    EXPECT_EQ(graph.get_edge_color(1, 0), 5U);
+    assert_neighbours(graph, 0, {1});
+    assert_neighbours(graph, 1, {0});
+    assert_edge_colors(graph, 0, {5});
+    assert_edge_colors(graph, 1, {5});
+}
+
+/**
+ * @brief Edge-colored undirected triangle: all three edges share the same color.
+ */
+TEST_F(ColoredGraphTest, edge_colored_undirected_triangle_same_color)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 7}, {1, 2, 7}, {0, 2, 7}};
+    const ColoredGraph graph(3, edges, uniform_colors(3));
+
+    EXPECT_EQ(graph.edge_count(), 3U);
+    assert_neighbours(graph, 0, {1, 2});
+    assert_neighbours(graph, 1, {0, 2});
+    assert_neighbours(graph, 2, {0, 1});
+    assert_edge_colors(graph, 0, {7, 7});
+    assert_edge_colors(graph, 1, {7, 7});
+    assert_edge_colors(graph, 2, {7, 7});
+}
+
+/**
+ * @brief Edge-colored undirected triangle: each edge has a distinct color.
+ *
+ * Edge (0,1) has color 1, (0,2) has color 2, (1,2) has color 3.
+ * Neighbors are sorted ascending, so edge-color order follows neighbor order.
+ */
+TEST_F(ColoredGraphTest, edge_colored_undirected_triangle_different_colors)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 1}, {1, 2, 3}, {0, 2, 2}};
+    const ColoredGraph graph(3, edges, uniform_colors(3));
+
+    EXPECT_EQ(graph.edge_count(), 3U);
+    // vertex 0: neighbors [1, 2], colors [1, 2]
+    assert_neighbours(graph, 0, {1, 2});
+    assert_edge_colors(graph, 0, {1, 2});
+    // vertex 1: neighbors [0, 2], colors [1, 3]
+    assert_neighbours(graph, 1, {0, 2});
+    assert_edge_colors(graph, 1, {1, 3});
+    // vertex 2: neighbors [0, 1], colors [2, 3]
+    assert_neighbours(graph, 2, {0, 1});
+    assert_edge_colors(graph, 2, {2, 3});
+}
+
+/**
+ * @brief Exact duplicate edge-colored undirected edge is silently de-duplicated.
+ */
+TEST_F(ColoredGraphTest, edge_colored_undirected_duplicate_edge_same_color)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 5}, {0, 1, 5}};
+    const ColoredGraph graph(2, edges, uniform_colors(2));
+
+    EXPECT_EQ(graph.edge_count(), 1U);
+    assert_neighbours(graph, 0, {1});
+    assert_edge_colors(graph, 0, {5});
+}
+
+/**
+ * @brief Duplicate undirected edge with conflicting colors must throw.
+ */
+TEST_F(ColoredGraphTest, edge_colored_undirected_duplicate_edge_different_color_throws)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 5}, {0, 1, 6}};
+    EXPECT_THROW(ColoredGraph(2, edges, uniform_colors(2)), InvalidArgumentException);
+}
+
+// ── Colored edge — directed ───────────────────────────────────────────────────
+
+/**
+ * @brief Edge-colored directed graph: one vertex, no edges.
+ */
+TEST_F(ColoredGraphTest, edge_colored_directed_one_vertex_no_edges)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges;
+    const ColoredGraph graph(1, edges, uniform_colors(1), true);
+
+    EXPECT_TRUE(graph.is_edges_colored());
+    EXPECT_EQ(graph.vertex_count(), 1U);
+    EXPECT_EQ(graph.edge_count(), 0U);
+    assert_neighbours(graph, 0, {}, false);
+    assert_neighbours(graph, 0, {}, true);
+}
+
+/**
+ * @brief Edge-colored directed graph: two vertices, no edges.
+ */
+TEST_F(ColoredGraphTest, edge_colored_directed_two_vertices_no_edges)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges;
+    const ColoredGraph graph(2, edges, uniform_colors(2), true);
+
+    EXPECT_EQ(graph.edge_count(), 0U);
+    assert_neighbours(graph, 0, {}, false);
+    assert_neighbours(graph, 1, {}, false);
+    assert_neighbours(graph, 0, {}, true);
+    assert_neighbours(graph, 1, {}, true);
+}
+
+/**
+ * @brief Edge-colored directed graph: one edge 0->1 with color 3.
+ *
+ * The in-edge color at vertex 1 must also be 3 (same physical edge).
+ */
+TEST_F(ColoredGraphTest, edge_colored_directed_two_vertices_one_edge)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 3}};
+    const ColoredGraph graph(2, edges, uniform_colors(2), true);
+
+    EXPECT_EQ(graph.edge_count(), 1U);
+    EXPECT_EQ(graph.get_edge_color(0, 1), 3U);
+    assert_neighbours(graph, 0, {1}, false);
+    assert_neighbours(graph, 1, {}, false);
+    assert_neighbours(graph, 0, {}, true);
+    assert_neighbours(graph, 1, {0}, true);
+    assert_edge_colors(graph, 0, {3}, false);
+    assert_edge_colors(graph, 1, {3}, true);
+}
+
+/**
+ * @brief Edge-colored directed triangle: all edges share the same color.
+ */
+TEST_F(ColoredGraphTest, edge_colored_directed_triangle_same_color)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 4}, {1, 2, 4}, {2, 0, 4}};
+    const ColoredGraph graph(3, edges, uniform_colors(3), true);
+
+    EXPECT_EQ(graph.edge_count(), 3U);
+    assert_neighbours(graph, 0, {1}, false);
+    assert_neighbours(graph, 1, {2}, false);
+    assert_neighbours(graph, 2, {0}, false);
+    assert_edge_colors(graph, 0, {4}, false);
+    assert_edge_colors(graph, 1, {4}, false);
+    assert_edge_colors(graph, 2, {4}, false);
+    assert_neighbours(graph, 0, {2}, true);
+    assert_neighbours(graph, 1, {0}, true);
+    assert_neighbours(graph, 2, {1}, true);
+    assert_edge_colors(graph, 0, {4}, true);
+    assert_edge_colors(graph, 1, {4}, true);
+    assert_edge_colors(graph, 2, {4}, true);
+}
+
+/**
+ * @brief Edge-colored directed triangle: each edge has a distinct color.
+ *
+ * Edges: 0->1 color 1, 1->2 color 2, 2->0 color 3.
+ */
+TEST_F(ColoredGraphTest, edge_colored_directed_triangle_different_colors)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 1}, {1, 2, 2}, {2, 0, 3}};
+    const ColoredGraph graph(3, edges, uniform_colors(3), true);
+
+    EXPECT_EQ(graph.edge_count(), 3U);
+    assert_edge_colors(graph, 0, {1}, false);
+    assert_edge_colors(graph, 1, {2}, false);
+    assert_edge_colors(graph, 2, {3}, false);
+    assert_edge_colors(graph, 0, {3}, true);
+    assert_edge_colors(graph, 1, {1}, true);
+    assert_edge_colors(graph, 2, {2}, true);
+}
+
+/**
+ * @brief Duplicate directed edge in same direction with same color is de-duplicated.
+ */
+TEST_F(ColoredGraphTest, edge_colored_directed_duplicate_same_direction_same_color)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 9}, {0, 1, 9}};
+    const ColoredGraph graph(2, edges, uniform_colors(2), true);
+
+    EXPECT_EQ(graph.edge_count(), 1U);
+    assert_neighbours(graph, 0, {1}, false);
+    assert_edge_colors(graph, 0, {9}, false);
+}
+
+/**
+ * @brief Duplicate directed edge in same direction with different colors must throw.
+ */
+TEST_F(ColoredGraphTest, edge_colored_directed_duplicate_same_direction_different_color_throws)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 9}, {0, 1, 8}};
+    EXPECT_THROW(ColoredGraph(2, edges, uniform_colors(2), true), InvalidArgumentException);
+}
+
+/**
+ * @brief 0->1 and 1->0 with the same color are two distinct directed edges, both kept.
+ */
+TEST_F(ColoredGraphTest, edge_colored_directed_duplicate_different_directions_same_color)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 5}, {1, 0, 5}};
+    const ColoredGraph graph(2, edges, uniform_colors(2), true);
+
+    EXPECT_EQ(graph.edge_count(), 2U);
+    assert_edge_colors(graph, 0, {5}, false);
+    assert_edge_colors(graph, 1, {5}, false);
+    assert_edge_colors(graph, 0, {5}, true);
+    assert_edge_colors(graph, 1, {5}, true);
+}
+
+/**
+ * @brief 0->1 and 1->0 with different colors are two distinct directed edges, both kept.
+ */
+TEST_F(ColoredGraphTest, edge_colored_directed_duplicate_different_directions_different_color)
+{
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges = {{0, 1, 5}, {1, 0, 6}};
+    const ColoredGraph graph(2, edges, uniform_colors(2), true);
+
+    EXPECT_EQ(graph.edge_count(), 2U);
+    assert_edge_colors(graph, 0, {5}, false);  // 0->1 color 5
+    assert_edge_colors(graph, 1, {6}, false);  // 1->0 color 6
+    assert_edge_colors(graph, 0, {6}, true);   // in-edge 1->0 at vertex 0
+    assert_edge_colors(graph, 1, {5}, true);   // in-edge 0->1 at vertex 1
 }
