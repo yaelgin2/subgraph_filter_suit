@@ -1,0 +1,78 @@
+# Auto-detected by clang-tidy when running from any subdirectory.
+# Requires compile_commands.json for accurate analysis — see CLAUDE.md for build steps.
+
+Checks: >
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  hicpp-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -misc-non-private-member-variables-in-classes,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -hicpp-named-parameter,
+  -readability-named-parameter,
+  -modernize-use-auto,
+  -modernize-use-trailing-return-type,
+  -hicpp-use-auto,
+  -bugprone-easily-swappable-parameters
+
+# Treat every enabled check as an error (CI fails on any warning)
+WarningsAsErrors: "*"
+
+# Lint headers belonging to this project only — excludes build/_deps (GTest, etc.)
+HeaderFilterRegex: "^(?!.*build/).*"
+
+CheckOptions:
+  # ── Function size limits ──────────────────────────────────────────────────
+  - key: readability-function-size.LineThreshold
+    value: "50"
+  - key: readability-function-size.BranchThreshold
+    value: "5"
+  - key: readability-function-size.ParameterThreshold
+    value: "5"
+  - key: readability-function-size.VariableThreshold
+    value: "10"
+  - key: readability-function-size.StatementThreshold
+    value: "30"
+  - key: readability-function-size.NestingThreshold
+    value: "5"
+
+  # ── Smart pointers (cppcoreguidelines-owning-memory) ──────────────────────
+  # Raw owning pointers must be marked gsl::owner<T*>; prefer unique_ptr/shared_ptr
+  - key: cppcoreguidelines-owning-memory.LegacyResourceProducers
+    value: ""
+  - key: cppcoreguidelines-owning-memory.LegacyResourceConsumers
+    value: ""
+
+  # ── Naming (adjust to match your chosen convention) ───────────────────────
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberPrefix
+    value: m_
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.LocalConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstantParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: UPPER_CASE

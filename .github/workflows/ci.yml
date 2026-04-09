@@ -1,0 +1,58 @@
+name: C++ CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake clang-tidy clang-format
+
+      - name: Check CMake (Windows)
+        if: runner.os == 'Windows'
+        id: check_cmake
+        run: cmake --version
+        continue-on-error: true
+
+      - name: Install CMake (Windows, if not pre-installed)
+        if: runner.os == 'Windows' && steps.check_cmake.outcome == 'failure'
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.x'
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure -C Release
+
+      - name: Check formatting (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          find . \( -name '*.cpp' -o -name '*.h' \) -not -path './build/*' | xargs clang-format --dry-run --Werror
+
+      - name: Run clang-tidy (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          find . -name '*.cpp' -not -path './build/*' | xargs clang-tidy -p build/
