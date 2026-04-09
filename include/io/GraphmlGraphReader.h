@@ -25,8 +25,11 @@ public:
      *
      * @param path Path to the .graphml file.
      * @return The parsed ColoredGraph.
-     * @throws GraphConstructionException if the file cannot be opened, is
-     *         malformed, or contains invalid property values.
+     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws GraphConstructionException if the file is malformed or contains
+     *         invalid property values.
+     * @throws InvalidArgumentException if the graph structure is invalid
+     *         (e.g. conflicting edge colors for the same endpoint pair).
      */
     ColoredGraph read(const std::string& path) const override;
 
@@ -35,7 +38,7 @@ private:
      * @brief Opens a file for reading.
      * @param path Path to the file.
      * @return An open input stream.
-     * @throws GraphConstructionException if the file cannot be opened.
+     * @throws SgfPathDoesntExistException if the file cannot be opened.
      */
     static std::ifstream open_file(const std::string& path);
 
