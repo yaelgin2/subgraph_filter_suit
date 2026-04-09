@@ -1,9 +1,10 @@
 #include "GraphmlGraphReader.h"
 
-#include "ColoredGraph.h"
 #include "BoostGraph.h"
+#include "ColoredGraph.h"
 #include "GraphConstructionException.h"
 #include "GraphUtils.h"
+#include "SgfPathDoesntExistException.h"
 
 #include <boost/graph/graphml.hpp>
 #include <boost/property_map/dynamic_property_map.hpp>
@@ -20,7 +21,7 @@ std::ifstream GraphmlGraphReader::open_file(const std::string& path)
     std::ifstream file(path);
     if (!file.is_open())
     {
-        throw GraphConstructionException("cannot open file: " + path);
+        throw SgfPathDoesntExistException("cannot open file: " + path);
     }
     return file;
 }
