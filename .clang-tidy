@@ -76,3 +76,11 @@ CheckOptions:
     value: CamelCase
   - key: readability-identifier-naming.EnumConstantCase
     value: UPPER_CASE
+
+  # ── Include cleaner ───────────────────────────────────────────────────────────
+  # Suppress "no header providing X" for symbols defined in Boost internal detail
+  # headers (e.g. boost::num_vertices, boost::vertices, boost::get for bundled
+  # properties). The public API header <boost/graph/adjacency_list.hpp> is the
+  # correct include; the detail header is an implementation artifact.
+  - key: misc-include-cleaner.IgnoreHeaders
+    value: "boost/graph/detail/adjacency_list\\.hpp"
