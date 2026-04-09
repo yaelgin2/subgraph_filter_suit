@@ -35,6 +35,7 @@ target_include_directories(subgraph_filter_suite PUBLIC
 target_link_libraries(subgraph_filter_suite PUBLIC
     Boost::log
     Boost::log_setup
+    Boost::graph
 )
 
 
