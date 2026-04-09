@@ -193,7 +193,9 @@ All identifiers must be fully descriptive — no single-letter or cryptic abbrev
 
 ### Exception handling
 
-All exceptions thrown by this package must inherit from `SgfException` (`include/exceptions/SgfException.h`). The C++ API must **never** let a non-`SgfException` propagate to the caller — catch `std::exception` at API boundaries and re-wrap if needed.
+All exceptions thrown by this package must inherit from `SgfException` (`include/exceptions/SgfException.h`). The C++ API must **never** let a non-`SgfException` propagate to the caller.
+
+**Catch only what you know can be thrown.** Never use `catch (const std::exception&)` as a blanket handler — it masks unexpected errors and hides bugs. Identify the exact exception types each called function can throw and catch those specifically. If a called function can only throw `FooException` and `BarException`, only those two should appear in the catch list. Re-wrap each caught exception as the appropriate `SgfException` subclass.
 
 Each concrete exception class defines a **unique** `return_code()` used by CLI tools as the process exit status:
 
