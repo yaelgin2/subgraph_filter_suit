@@ -8,6 +8,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Export compile_commands.json for clang-tidy and IDE tooling
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ── Dependencies ──────────────────────────────────────────────────────────────
+find_package(Boost REQUIRED COMPONENTS graph)
+
 # ── Sources ───────────────────────────────────────────────────────────────────
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/**/*.cpp)
 
@@ -28,6 +31,9 @@ target_include_directories(subgraph_filter_suite PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/utils"
 )
+
+# ── External linkage ──────────────────────────────────────────────────────────
+target_link_libraries(subgraph_filter_suite PUBLIC Boost::graph)
 
 # ── Compiler warnings ─────────────────────────────────────────────────────────
 target_compile_options(subgraph_filter_suite PRIVATE
