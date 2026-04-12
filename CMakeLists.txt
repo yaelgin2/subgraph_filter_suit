@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Boost ─────────────────────────────────────────────────────────────────────
-find_package(Boost 1.76 REQUIRED COMPONENTS log log_setup)
+find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup)
 
 # ── Sources ───────────────────────────────────────────────────────────────────
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/**/*.cpp)
@@ -35,8 +35,8 @@ target_include_directories(subgraph_filter_suite PUBLIC
 target_link_libraries(subgraph_filter_suite PUBLIC
     Boost::log
     Boost::log_setup
+    Boost::graph
 )
-
 
 # ── Compiler warnings ─────────────────────────────────────────────────────────
 target_compile_options(subgraph_filter_suite PRIVATE

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/graphml">
+  <key id="vcolor" for="node" attr.name="color" attr.type="int"><default>0</default></key>
+  <key id="ecolor" for="edge" attr.name="color" attr.type="int"><default>0</default></key>
+  <graph id="G" edgedefault="directed">
+    <node id="n0"><data key="vcolor">0</data></node>
+    <node id="n1"><data key="vcolor">0</data></node>
+    <edge source="n0" target="n1"><data key="ecolor">1</data></edge>
+    <edge source="n1" target="n0"><data key="ecolor">2</data></edge>
+  </graph>
+</graphml>
