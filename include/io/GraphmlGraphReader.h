@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <fstream>
+#include <memory>
 #include <string>
 
 namespace sgf
@@ -12,10 +13,9 @@ namespace sgf
 /**
  * @brief Reads a ColoredGraph from a GraphML file using Boost.Graph.
  *
- * Supports directed and undirected GraphML files. Directedness is inferred
- * from the @c edgedefault attribute. Vertex and edge "color" properties are
- * mapped to ColoredGraph labels. All Boost and I/O exceptions are re-wrapped
- * as GraphConstructionException.
+ * Supports directed and undirected GraphML files. Vertex and edge "color"
+ * properties are mapped to ColoredGraph labels. All Boost and I/O exceptions
+ * are re-wrapped as GraphConstructionException.
  */
 class GraphmlGraphReader : public IColoredGraphReader
 {
@@ -23,7 +23,13 @@ public:
     /**
      * @brief Reads a ColoredGraph from a GraphML file.
      *
+     * The graph is built using @p is_directed. If the @c edgedefault attribute
+     * in the file disagrees with @p is_directed and @p logger is non-null, a
+     * warning is logged. The parameter always takes precedence over the file.
+     *
      * @param path Path to the .graphml file.
+     * @param is_directed Whether to build a directed ColoredGraph.
+     * @param logger Optional logger for mismatch warnings. May be nullptr.
      * @return The parsed ColoredGraph.
      * @throws SgfPathDoesntExistException if the file cannot be opened.
      * @throws GraphConstructionException if the file is malformed or contains
@@ -31,7 +37,8 @@ public:
      * @throws InvalidArgumentException if the graph structure is invalid
      *         (e.g. conflicting edge colors for the same endpoint pair).
      */
-    ColoredGraph read(const std::string& path) const override;
+    ColoredGraph read(const std::string& path, bool is_directed,
+                      std::weak_ptr<ILogger> logger) const override;
 
 private:
     /**
