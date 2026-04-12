@@ -8,9 +8,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Export compile_commands.json for clang-tidy and IDE tooling
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ── Boost ─────────────────────────────────────────────────────────────────────
+find_package(Boost 1.76 REQUIRED COMPONENTS log log_setup)
+
 # ── Sources ───────────────────────────────────────────────────────────────────
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/**/*.cpp)
-
 add_library(subgraph_filter_suite ${SOURCES})
 
 # ── Include paths ─────────────────────────────────────────────────────────────
@@ -22,12 +24,19 @@ target_include_directories(subgraph_filter_suite PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/exceptions"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/isomorphism"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/io"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/logging"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/managers"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/preprocessing"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/filtering"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/utils"
 )
+
+target_link_libraries(subgraph_filter_suite PUBLIC
+    Boost::log
+    Boost::log_setup
+)
+
 
 # ── Compiler warnings ─────────────────────────────────────────────────────────
 target_compile_options(subgraph_filter_suite PRIVATE
