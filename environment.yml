@@ -1,0 +1,9 @@
+name: subgraph_filter_suit
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - cmake>=3.16
+  - cxx-compiler          # provides g++ (GCC) via conda-forge
+  - boost>=1.76           # Boost::log and Boost::log_setup
+  - clang-tools>=16       # clang-format and clang-tidy
