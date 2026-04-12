@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Communication Style
+
+- Talk in short 3-6 word sentences.
+- No filler, preamble, or pleasantries.
+- Run tools, show result, then stop. Do not narrate.
+- Drop articles.
+- If multiple changes in one file, do them at once.
+- Avoid excessive grep on known library files.
+
 ## Project Overview
 
 `subgraph_filter_suit` is a C++ library for efficient subgraph matching. It preprocesses a library of graphs and uses multi-stage filtering (motifs, paths, and patterns) to eliminate unlikely candidates before exact isomorphism, reducing computation time for large-scale graph queries.
