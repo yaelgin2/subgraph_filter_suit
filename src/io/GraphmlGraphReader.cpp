@@ -4,6 +4,10 @@
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
 #include "GraphUtils.h"
+#include "ILogger.h"
+#include "LogLevel.h"
+
+#include <memory>
 #include "SgfPathDoesntExistException.h"
 
 #include <boost/graph/graphml.hpp>
@@ -58,11 +62,22 @@ ColoredGraph GraphmlGraphReader::read_graphml_from_file(const std::string& path,
     return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed);
 }
 
-ColoredGraph GraphmlGraphReader::read(const std::string& path) const
+ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_directed,
+                                      const std::weak_ptr<ILogger> logger) const
 {
     try
     {
-        const bool is_directed = detect_is_directed(path);
+        const bool file_is_directed = detect_is_directed(path);
+        const std::shared_ptr<ILogger> locked_logger = logger.lock();
+        if (locked_logger != nullptr && file_is_directed != is_directed)
+        {
+            const std::string file_type = file_is_directed ? "directed" : "undirected";
+            const std::string param_type = is_directed ? "directed" : "undirected";
+            locked_logger->log(LogLevel::WARNING,
+                               "graphml file '" + path + "' declares " + file_type +
+                                   " but caller requested " + param_type +
+                                   "; using caller parameter");
+        }
         return read_graphml_from_file(path, is_directed);
     }
     catch (const boost::parse_error& exc)
