@@ -6,15 +6,15 @@
 #include "GraphUtils.h"
 #include "ILogger.h"
 #include "LogLevel.h"
-
-#include <memory>
 #include "SgfPathDoesntExistException.h"
 
+#include <boost/any.hpp>
 #include <boost/graph/graphml.hpp>
 #include <boost/property_map/dynamic_property_map.hpp>
 #include <boost/property_tree/detail/xml_parser_error.hpp>
 #include <exception>
 #include <fstream>
+#include <memory>
 #include <string>
 
 namespace sgf
@@ -73,12 +73,15 @@ ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_dir
         {
             const std::string file_type = file_is_directed ? "directed" : "undirected";
             const std::string param_type = is_directed ? "directed" : "undirected";
-            locked_logger->log(LogLevel::WARNING,
-                               "graphml file '" + path + "' declares " + file_type +
-                                   " but caller requested " + param_type +
-                                   "; using caller parameter");
+            locked_logger->log(LogLevel::WARNING, "graphml file '" + path + "' declares " +
+                                                      file_type + " but caller requested " +
+                                                      param_type + "; using caller parameter");
         }
         return read_graphml_from_file(path, is_directed);
+    }
+    catch (const boost::bad_any_cast& exc)
+    {
+        rethrow_as_construction_error(path, exc);
     }
     catch (const boost::parse_error& exc)
     {

@@ -13,13 +13,13 @@
 #include <boost/log/support/date_time.hpp>  // NOLINT(misc-include-cleaner) — effect include: registers ptime formatter generator traits
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/phoenix/operator.hpp> // NOLINT(misc-include-cleaner)
+#include <boost/phoenix/operator.hpp>  // NOLINT(misc-include-cleaner)
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <fstream>
+#include <ios>
 #include <stdexcept>
 #include <string>
-#include <ios>
 
 namespace sgf
 {
@@ -110,4 +110,3 @@ void FileLogger::log(const LogLevel level, const std::string& message)
 }
 
 }  // namespace sgf
-

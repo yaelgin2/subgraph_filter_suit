@@ -5,12 +5,11 @@
 #include "ColoredGraphTestHelpers.h"
 #include "Constants.h"
 #include "GraphConstructionException.h"
+#include "InvalidArgumentException.h"
 
-#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graph_traits.hpp>
 #include <cstdint>
 #include <gtest/gtest.h>
-#include <tuple>
-#include <utility>
 #include <vector>
 
 using namespace sgf;
@@ -559,7 +558,8 @@ TEST(GraphUtilsTest, two_nodes_parallel_same_edge_color_undirected)
     assert_neighbours(graph, 0, {1});
     assert_neighbours(graph, 1, {0});
     EXPECT_EQ(graph.get_edge_color(0, 1), 1U);
-    EXPECT_EQ(graph.get_edge_color(1, 0), 1U);}
+    EXPECT_EQ(graph.get_edge_color(1, 0), 1U);
+}
 
 /**
  * @brief Parallel 0→1 edges with the same color, directed: one colored edge after dedup.
