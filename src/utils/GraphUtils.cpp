@@ -1,6 +1,7 @@
 #include "GraphUtils.h"
 
 #include "GraphConstructionException.h"
+#include "Constants.h"
 
 #include <cstdint>
 #include <map>
@@ -12,10 +13,10 @@ namespace sgf
 uint32_t GraphUtils::map_color_string(const std::string& color_str,
                                       std::map<std::string, uint32_t>& color_map)
 {
-    const std::map<std::string, uint32_t>::iterator it = color_map.find(color_str);
-    if (it != color_map.end())
+    const std::map<std::string, uint32_t>::iterator color_map_iterator = color_map.find(color_str);
+    if (color_map_iterator != color_map.end())
     {
-        return it->second;
+        return color_map_iterator->second;
     }
     const uint32_t new_id = static_cast<uint32_t>(color_map.size());
     if (new_id > SgfConstants::MAX_VERTEX_COLOR)
