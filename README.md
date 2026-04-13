@@ -6,6 +6,7 @@ A C++ library for efficient subgraph matching. It preprocesses a library of grap
 
 - CMake 3.16+
 - A C++17-capable compiler (GCC, Clang, or MSVC)
+- Boost 1.76+ (`graph`, `log`, `log_setup` components)
 - Internet access on first build (GTest is fetched automatically via CMake FetchContent)
 
 ## Build
@@ -17,6 +18,20 @@ cmake -S . -B build
 # Build (Release)
 cmake --build build --config Release
 ```
+
+### Compiler/Boost ABI mismatch
+
+If you see linker errors like `undefined reference to GLIBCXX_*`, your default compiler and your Boost installation were built against different C++ standard library ABIs. Fix by pointing CMake at the compiler that built your Boost:
+
+```bash
+# Example: Boost installed via conda
+cmake -S . -B build -DCMAKE_CXX_COMPILER=$CONDA_PREFIX/bin/g++
+
+# Example: explicit path
+cmake -S . -B build -DCMAKE_CXX_COMPILER=/usr/bin/g++-13
+```
+
+Users with system Boost and system GCC typically do not need this flag.
 
 ## Run tests
 

@@ -19,10 +19,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Configure (export compile_commands.json for clang-tidy)
-cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER=$CONDA_PREFIX/bin/g++
 # Build
 cmake --build build --config Release
+
+# If linker errors like "undefined reference to GLIBCXX_*" appear, the default
+# compiler ABI does not match the Boost installation. Point CMake at the compiler
+# that built Boost (e.g. conda: -DCMAKE_CXX_COMPILER=$CONDA_PREFIX/bin/g++)
 
 # Run all tests
 cd build && ctest --output-on-failure -C Release
