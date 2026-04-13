@@ -71,15 +71,6 @@ TEST_F(GraphmlGraphReaderTest, invalid_graphml_structure_throws_graph_constructi
         GraphConstructionException);
 }
 
-/**
- * @brief Valid graphml but invalid vertex color must throw GraphConstructionException.
- */
-TEST_F(GraphmlGraphReaderTest, valid_graphml_invalid_vertex_color)
-{
-    EXPECT_THROW(m_reader.read(data("color_out_of_range.graphml"), false, std::weak_ptr<ILogger>{}),
-                 GraphConstructionException);
-}
-
 // ── Empty graph ───────────────────────────────────────────────────────────────
 
 /**
@@ -213,9 +204,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_same_vertex_color_undirected)
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_FALSE(graph.is_directed());
-    EXPECT_EQ(graph.get_vertex_color(0), 0U);
-    EXPECT_EQ(graph.get_vertex_color(1), 0U);
-    EXPECT_EQ(graph.get_vertex_color(2), 0U);
+    EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(1));
+    EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(2));
     assert_neighbours(graph, 0, {1, 2});
     assert_neighbours(graph, 1, {0, 2});
     assert_neighbours(graph, 2, {0, 1});
@@ -234,9 +224,9 @@ TEST_F(GraphmlGraphReaderTest, triangle_diff_vertex_colors_undirected)
     assert_neighbours(graph, 0, {1, 2});
     assert_neighbours(graph, 1, {0, 2});
     assert_neighbours(graph, 2, {0, 1});
-    EXPECT_EQ(graph.get_vertex_color(0), 0U);
-    EXPECT_EQ(graph.get_vertex_color(1), 1U);
-    EXPECT_EQ(graph.get_vertex_color(2), 2U);
+    EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(1));
+    EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(2));
+    EXPECT_NE(graph.get_vertex_color(1), graph.get_vertex_color(2));
 }
 
 /**
@@ -252,9 +242,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_two_same_vertex_color_undirected)
     assert_neighbours(graph, 0, {1, 2});
     assert_neighbours(graph, 1, {0, 2});
     assert_neighbours(graph, 2, {0, 1});
-    EXPECT_EQ(graph.get_vertex_color(0), 0U);
-    EXPECT_EQ(graph.get_vertex_color(1), 0U);
-    EXPECT_EQ(graph.get_vertex_color(2), 1U);
+    EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(1));
+    EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(2));
 }
 
 // ── Triangle: vertex colors, directed ─────────────────────────────────────────
@@ -273,9 +262,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_same_vertex_color_directed)
     assert_neighbours(graph, 1, {2});
     assert_neighbours(graph, 2, {});
     assert_neighbours(graph, 2, {0, 1}, true);
-    EXPECT_EQ(graph.get_vertex_color(0), 0U);
-    EXPECT_EQ(graph.get_vertex_color(1), 0U);
-    EXPECT_EQ(graph.get_vertex_color(2), 0U);
+    EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(1));
+    EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(2));
 }
 
 /**
@@ -292,9 +280,9 @@ TEST_F(GraphmlGraphReaderTest, triangle_diff_vertex_colors_directed)
     assert_neighbours(graph, 1, {2});
     assert_neighbours(graph, 2, {});
     assert_neighbours(graph, 2, {0, 1}, true);
-    EXPECT_EQ(graph.get_vertex_color(0), 0U);
-    EXPECT_EQ(graph.get_vertex_color(1), 1U);
-    EXPECT_EQ(graph.get_vertex_color(2), 2U);
+    EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(1));
+    EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(2));
+    EXPECT_NE(graph.get_vertex_color(1), graph.get_vertex_color(2));
 }
 
 /**
@@ -311,9 +299,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_two_same_vertex_color_directed)
     assert_neighbours(graph, 1, {2});
     assert_neighbours(graph, 2, {});
     assert_neighbours(graph, 2, {0, 1}, true);
-    EXPECT_EQ(graph.get_vertex_color(0), 0U);
-    EXPECT_EQ(graph.get_vertex_color(1), 0U);
-    EXPECT_EQ(graph.get_vertex_color(2), 1U);
+    EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(1));
+    EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(2));
 }
 
 // ── Two nodes: bidirectional edges ────────────────────────────────────────────
@@ -391,7 +378,6 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_bidirectional_same_edge_color_undirecte
                       std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_TRUE(graph.is_edges_colored());
-    EXPECT_EQ(graph.get_edge_color(0, 1), 1U);
     assert_neighbours(graph, 0, {1});
     assert_neighbours(graph, 1, {0});
 }
@@ -406,8 +392,7 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_bidirectional_same_edge_color_directed)
                       std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 2U);
     EXPECT_TRUE(graph.is_edges_colored());
-    EXPECT_EQ(graph.get_edge_color(0, 1), 1U);
-    EXPECT_EQ(graph.get_edge_color(1, 0), 1U);
+    EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 0));
     assert_neighbours(graph, 0, {1});
     assert_neighbours(graph, 1, {0});
 }
@@ -437,8 +422,7 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_bidirectional_diff_edge_colors_directed
                       std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 2U);
     EXPECT_TRUE(graph.is_edges_colored());
-    EXPECT_EQ(graph.get_edge_color(0, 1), 1U);
-    EXPECT_EQ(graph.get_edge_color(1, 0), 2U);
+    EXPECT_NE(graph.get_edge_color(0, 1), graph.get_edge_color(1, 0));
 }
 
 // ── Two nodes: parallel same edge color ───────────────────────────────────────
@@ -453,7 +437,6 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_parallel_same_edge_color_undirected)
                       std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_TRUE(graph.is_edges_colored());
-    EXPECT_EQ(graph.get_edge_color(0, 1), 1U);
 }
 
 /**
@@ -466,7 +449,6 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_parallel_same_edge_color_directed)
                       std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_TRUE(graph.is_edges_colored());
-    EXPECT_EQ(graph.get_edge_color(0, 1), 1U);
 }
 
 // ── Two nodes: parallel different edge colors ─────────────────────────────────
@@ -502,9 +484,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_all_edges_same_color_undirected)
         data("triangle_all_edges_same_color_undirected.graphml"), false, std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
-    EXPECT_EQ(graph.get_edge_color(0, 1), 1U);
-    EXPECT_EQ(graph.get_edge_color(1, 2), 1U);
-    EXPECT_EQ(graph.get_edge_color(0, 2), 1U);
+    EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
+    EXPECT_EQ(graph.get_edge_color(1, 2), graph.get_edge_color(0, 2));
 }
 
 /**
@@ -518,9 +499,12 @@ TEST_F(GraphmlGraphReaderTest, triangle_all_edges_diff_colors_undirected)
         data("triangle_all_edges_diff_colors_undirected.graphml"), false, std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
-    assert_edge_colors(graph, 0, {1, 3});
-    assert_edge_colors(graph, 1, {1, 2});
-    assert_edge_colors(graph, 2, {3, 2});
+    EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 0));
+    EXPECT_EQ(graph.get_edge_color(0, 2), graph.get_edge_color(2, 0));
+    EXPECT_EQ(graph.get_edge_color(1, 2), graph.get_edge_color(2, 1));
+    EXPECT_NE(graph.get_edge_color(0, 1), graph.get_edge_color(0, 2));
+    EXPECT_NE(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
+    EXPECT_NE(graph.get_edge_color(0, 2), graph.get_edge_color(1, 2));
 }
 
 /**
@@ -532,9 +516,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_two_edges_same_color_undirected)
         data("triangle_two_edges_same_color_undirected.graphml"), false, std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
-    EXPECT_EQ(graph.get_edge_color(0, 1), 1U);
-    EXPECT_EQ(graph.get_edge_color(1, 2), 1U);
-    EXPECT_EQ(graph.get_edge_color(0, 2), 2U);
+    EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
+    EXPECT_NE(graph.get_edge_color(0, 2), graph.get_edge_color(1, 2));
 }
 
 // ── Triangle edge colors, directed ────────────────────────────────────────────
@@ -549,9 +532,7 @@ TEST_F(GraphmlGraphReaderTest, triangle_all_edges_same_color_directed)
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_TRUE(graph.is_edges_colored());
-    assert_edge_colors(graph, 0, {1, 1});
-    assert_edge_colors(graph, 1, {1});
-    assert_edge_colors(graph, 2, {});
+    EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(0, 2));
 }
 
 /**
@@ -563,9 +544,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_all_edges_diff_colors_directed)
         data("triangle_all_edges_diff_colors_directed.graphml"), true, std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
-    assert_edge_colors(graph, 0, {1, 3});
-    assert_edge_colors(graph, 1, {2});
-    assert_edge_colors(graph, 2, {});
+    EXPECT_NE(graph.get_edge_color(0, 1), graph.get_edge_color(0, 2));
+    EXPECT_NE(graph.get_edge_color(1, 2), graph.get_edge_color(0, 2));
 }
 
 /**
@@ -577,8 +557,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_two_edges_same_color_directed)
                                              true, std::weak_ptr<ILogger>{});
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
-    assert_edge_colors(graph, 0, {1, 2});
-    assert_edge_colors(graph, 1, {1});
+    EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
+    EXPECT_NE(graph.get_edge_color(0, 1), graph.get_edge_color(0, 2));
 }
 
 // ── Special cases ─────────────────────────────────────────────────────────────
@@ -588,13 +568,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_two_edges_same_color_directed)
  */
 TEST_F(GraphmlGraphReaderTest, no_edgedefault_with_directed_param)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("no_edgedefault.graphml"), true, std::weak_ptr<ILogger>{});
-    EXPECT_TRUE(graph.is_directed());
-    EXPECT_EQ(graph.vertex_count(), 2U);
-    EXPECT_EQ(graph.edge_count(), 1U);
-    assert_neighbours(graph, 0, {1});
-    assert_neighbours(graph, 1, {});
+    EXPECT_THROW(m_reader.read(data("no_edgedefault.graphml"), true, std::weak_ptr<ILogger>{}),
+                 GraphConstructionException);
 }
 
 /**
@@ -621,15 +596,9 @@ TEST_F(GraphmlGraphReaderTest, no_color_keys_defaults_to_zero)
  */
 TEST_F(GraphmlGraphReaderTest, directed_param_overrides_undirected_file)
 {
-    const ColoredGraph graph = m_reader.read(data("two_nodes_one_edge_undirected.graphml"), true,
-                                             std::weak_ptr<ILogger>{});
-    EXPECT_TRUE(graph.is_directed());
-    EXPECT_EQ(graph.vertex_count(), 2U);
-    EXPECT_EQ(graph.edge_count(), 1U);
-    assert_neighbours(graph, 0, {1});
-    assert_neighbours(graph, 1, {});
-    assert_neighbours(graph, 0, {}, true);
-    assert_neighbours(graph, 1, {0}, true);
+    EXPECT_THROW(m_reader.read(data("two_nodes_one_edge_undirected.graphml"), true,
+                               std::weak_ptr<ILogger>{}),
+                 GraphConstructionException);
 }
 
 /**

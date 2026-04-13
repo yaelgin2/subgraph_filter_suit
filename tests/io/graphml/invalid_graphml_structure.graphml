@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <graphml xmlns="http://graphml.graphdrawing.org/graphml">
-  <key id="vcolor" for="node" attr.name="color" attr.type="int"><default>0</default></key>
+  <key id="vcolor" for="node" attr.name="color" attr.type="string"><default>0</default></key>
   <graph id="G" edgedefault="undirected">
     <node id="n0"/>
-    <edge source="n0" target="n_nonexistent"/>
+    <node id="n1"/>
+    <edge source="n0"/>
   </graph>
 </graphml>
