@@ -24,10 +24,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential cmake clang-tidy clang-format
 
-      - name: Install dependencies (Windows)
+      - name: Check CMake (Windows)
         if: runner.os == 'Windows'
-        run: |
-          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+        id: check_cmake
+        run: cmake --version
+        continue-on-error: true
+
+      - name: Install CMake (Windows, if not pre-installed)
+        if: runner.os == 'Windows' && steps.check_cmake.outcome == 'failure'
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.x'
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
