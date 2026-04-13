@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Boost ─────────────────────────────────────────────────────────────────────
-find_package(Boost 1.76 REQUIRED COMPONENTS log log_setup)
+find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup)
 
 # ── Sources ───────────────────────────────────────────────────────────────────
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/**/*.cpp)
