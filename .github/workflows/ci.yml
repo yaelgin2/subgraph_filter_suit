@@ -22,7 +22,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake clang-tidy clang-format
+          sudo apt-get install -y build-essential cmake clang-tidy clang-format \
+            libboost-graph-dev libboost-log-dev
 
       - name: Check CMake (Windows)
         if: runner.os == 'Windows'
@@ -36,8 +37,17 @@ jobs:
         with:
           cmake-version: '3.x'
 
+      - name: Install Boost via vcpkg (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          vcpkg install boost-graph boost-log boost-log-setup
+          echo "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        run: >
+          cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          ${{ runner.os == 'Windows' && format('-DCMAKE_TOOLCHAIN_FILE={0}', env.CMAKE_TOOLCHAIN_FILE) || '' }}
 
       - name: Build
         run: cmake --build build --config Release
