@@ -1,7 +1,7 @@
 #include "GraphUtils.h"
 
-#include "GraphConstructionException.h"
 #include "Constants.h"
+#include "GraphConstructionException.h"
 
 #include <cstdint>
 #include <map>
