@@ -14,19 +14,21 @@ private:
     std::weak_ptr<ILogger> logger;
 
 public:
-    explicit LoggerRef(std::weak_ptr<ILogger> log)
+    explicit LoggerHandler(std::weak_ptr<ILogger> log)
         : logger(std::move(log))
     {}
 
     void log(LogLevel level, const std::string& msg) const
     {
-        if (m_logger != nullptr)
+        if (auto ptr = logger.lock())
         {
-            if (auto ptr = logger.lock())
-            {
-                ptr->log(level, msg);
-            }
+            ptr->log(level, msg);
         }
+    }
+
+    bool is_null() const
+    {
+        return logger.lock() == nullptr;
     }
 };
 
