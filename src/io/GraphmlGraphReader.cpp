@@ -80,12 +80,12 @@ ColoredGraph GraphmlGraphReader::read_graphml_from_file(const std::string& path,
     return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed, color_map);
 }
 
-void GraphmlGraphReader::log_read_result(const std::shared_ptr<ILogger>& logger,
+void GraphmlGraphReader::log_read_result(const LoggerHandler& logger,
                                          const std::string& path, const bool file_is_directed,
                                          const bool is_directed,
                                          const std::map<std::string, uint32_t>& color_map)
 {
-    if (logger == nullptr)
+    if (logger.is_null())
     {
         return;
     }
@@ -93,7 +93,7 @@ void GraphmlGraphReader::log_read_result(const std::shared_ptr<ILogger>& logger,
     {
         const std::string file_type = file_is_directed ? "directed" : "undirected";
         const std::string param_type = is_directed ? "directed" : "undirected";
-        logger->log(LogLevel::WARNING, "graphml file '" + path + "' declares " + file_type +
+        logger.log(LogLevel::WARNING, "graphml file '" + path + "' declares " + file_type +
                                            " but caller requested " + param_type +
                                            "; using caller parameter");
     }
@@ -102,11 +102,11 @@ void GraphmlGraphReader::log_read_result(const std::shared_ptr<ILogger>& logger,
     {
         color_log += " '" + color_str + "'=" + std::to_string(color_id);
     }
-    logger->log(LogLevel::INFO, color_log);
+    logger.log(LogLevel::INFO, color_log);
 }
 
 ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_directed,
-                                      const std::weak_ptr<ILogger> logger) const
+                                      const LoggerHandler& logger) const
 {
     try
     {
@@ -120,7 +120,7 @@ ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_dir
         std::map<std::string, uint32_t> color_map;
         const ColoredGraph graph =
             read_graphml_from_file(path, file_is_directed, is_directed, color_map);
-        log_read_result(logger.lock(), path, file_is_directed, is_directed, color_map);
+        log_read_result(logger, path, file_is_directed, is_directed, color_map);
         return graph;
     }
     catch (const boost::bad_any_cast& exc)
