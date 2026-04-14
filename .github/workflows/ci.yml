@@ -40,7 +40,7 @@ jobs:
       - name: Install Boost via vcpkg (Windows)
         if: runner.os == 'Windows'
         run: |
-          vcpkg install boost-graph boost-log boost-log-setup
+          vcpkg install boost-graph boost-log
           echo "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
         shell: pwsh
 
