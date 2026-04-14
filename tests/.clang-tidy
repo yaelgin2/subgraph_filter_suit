@@ -18,4 +18,5 @@ InheritParentConfig: true
 Checks: >
   -cppcoreguidelines-avoid-magic-numbers,
   -readability-magic-numbers,
-  -misc-use-internal-linkage
+  -misc-use-internal-linkage,
+  -readability-identifier-length

@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Communication Style
+
+- Talk in short 3-6 word sentences.
+- No filler, preamble, or pleasantries.
+- Run tools, show result, then stop. Do not narrate.
+- Drop articles.
+- If multiple changes in one file, do them at once.
+- Avoid excessive grep on known library files.
+
 ## Project Overview
 
 `subgraph_filter_suit` is a C++ library for efficient subgraph matching. It preprocesses a library of graphs and uses multi-stage filtering (motifs, paths, and patterns) to eliminate unlikely candidates before exact isomorphism, reducing computation time for large-scale graph queries.
@@ -10,10 +19,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Configure (export compile_commands.json for clang-tidy)
-cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER=$CONDA_PREFIX/bin/g++
 # Build
 cmake --build build --config Release
+
+# If linker errors like "undefined reference to GLIBCXX_*" appear, the default
+# compiler ABI does not match the Boost installation. Point CMake at the compiler
+# that built Boost (e.g. conda: -DCMAKE_CXX_COMPILER=$CONDA_PREFIX/bin/g++)
 
 # Run all tests
 cd build && ctest --output-on-failure -C Release
@@ -193,7 +205,9 @@ All identifiers must be fully descriptive — no single-letter or cryptic abbrev
 
 ### Exception handling
 
-All exceptions thrown by this package must inherit from `SgfException` (`include/exceptions/SgfException.h`). The C++ API must **never** let a non-`SgfException` propagate to the caller — catch `std::exception` at API boundaries and re-wrap if needed.
+All exceptions thrown by this package must inherit from `SgfException` (`include/exceptions/SgfException.h`). The C++ API must **never** let a non-`SgfException` propagate to the caller.
+
+**Catch only what you know can be thrown.** Never use `catch (const std::exception&)` as a blanket handler — it masks unexpected errors and hides bugs. Identify the exact exception types each called function can throw and catch those specifically. If a called function can only throw `FooException` and `BarException`, only those two should appear in the catch list. Re-wrap each caught exception as the appropriate `SgfException` subclass.
 
 Each concrete exception class defines a **unique** `return_code()` used by CLI tools as the process exit status:
 
@@ -321,3 +335,12 @@ Both `.clang-format` and `.clang-tidy` are picked up automatically by the tools 
 ## Git
 
 Never commit together two different changes. A commit message should be short and explain the change, if it has two changes to explain this should be two different commits.
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- After modifying code files in this session, run `python3 -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"` to keep the graph current
