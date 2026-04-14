@@ -20,9 +20,12 @@ public:
 
     void log(LogLevel level, const std::string& msg) const
     {
-        if (auto ptr = logger.lock())
+        if (m_logger != nullptr)
         {
-            ptr->log(level, msg);
+            if (auto ptr = logger.lock())
+            {
+                ptr->log(level, msg);
+            }
         }
     }
 };
