@@ -49,8 +49,8 @@ public:
      *         lacks a "color" field, edge colors are mixed, or a link
      *         references an unknown node ID.
      */
-    ColoredGraph read(const std::string& path, bool is_directed,
-                      std::weak_ptr<ILogger> logger) const override;
+    ColoredGraph read(const std::string& path, const bool is_directed,
+                      const std::weak_ptr<ILogger> logger) const override;
 
 private:
     /**
@@ -62,12 +62,23 @@ private:
     static std::ifstream open_file(const std::string& path);
 
     /**
-     * @brief Wraps @p exc in a GraphConstructionException and throws it.
+     * @brief Wraps @p caught_exception in a GraphConstructionException and throws it.
      * @param path The file path associated with the failure.
-     * @param exc The original exception.
+     * @param caught_exception The original exception.
      */
     [[noreturn]] static void rethrow_as_construction_error(const std::string& path,
-                                                           const std::exception& exc);
+                                                           const std::exception& caught_exception);
+
+    /**
+     * @brief Reads entire file contents into a single string buffer.
+     *
+     * Uses seekg/tellg to pre-allocate the exact buffer size, avoiding
+     * repeated reallocations from line-by-line reading.
+     *
+     * @param file An open input stream positioned at the beginning.
+     * @return The full file contents as a string.
+     */
+    static std::string read_file_contents(std::ifstream& file);
 
     /**
      * @brief Reads and parses the JSON file, returning its root object.
@@ -88,8 +99,8 @@ private:
      * @param nodes_array The JSON "nodes" array.
      * @return An unordered map from original node ID to vertex color.
      */
-    static std::unordered_map<uint32_t, int32_t> collect_node_colors(
-        const boost::json::array& nodes_array);
+    static std::unordered_map<uint32_t, int32_t>
+    collect_node_colors(const boost::json::array& nodes_array);
 
     /**
      * @brief Builds a remapping from original node IDs to consecutive indices.
@@ -100,8 +111,8 @@ private:
      * @param color_by_id Unordered map of original ID to color.
      * @return An unordered map from original ID to consecutive index.
      */
-    static std::unordered_map<uint32_t, uint32_t> build_id_map(
-        const std::unordered_map<uint32_t, int32_t>& color_by_id);
+    static std::unordered_map<uint32_t, uint32_t>
+    build_id_map(const std::unordered_map<uint32_t, int32_t>& color_by_id);
 
     /**
      * @brief Extracts per-vertex colors in consecutive-index order.
@@ -110,9 +121,9 @@ private:
      * @param id_map Mapping from original ID to consecutive index.
      * @return Vector of colors indexed by consecutive vertex index.
      */
-    static std::vector<int32_t> build_vertex_colors(
-        const std::unordered_map<uint32_t, int32_t>& color_by_id,
-        const std::unordered_map<uint32_t, uint32_t>& id_map);
+    static std::vector<int32_t>
+    build_vertex_colors(const std::unordered_map<uint32_t, int32_t>& color_by_id,
+                        const std::unordered_map<uint32_t, uint32_t>& id_map);
 
     /**
      * @brief Determines whether links carry edge colors, enforcing all-or-nothing.
@@ -129,14 +140,14 @@ private:
     /**
      * @brief Translates a single link's "source" and "target" to consecutive indices.
      *
-     * @param link A JSON link object with integer "source" and "target" fields.
+     * @param link_object A JSON link object with integer "source" and "target" fields.
      * @param id_map Mapping from original node ID to consecutive index.
      * @return Pair of (consecutive source index, consecutive target index).
      * @throws std::out_of_range if a source or target ID is absent from @p id_map.
      */
-    static std::pair<uint32_t, uint32_t> extract_link_endpoints(
-        const boost::json::object& link,
-        const std::unordered_map<uint32_t, uint32_t>& id_map);
+    static std::pair<uint32_t, uint32_t>
+    extract_link_endpoints(const boost::json::object& link_object,
+                           const std::unordered_map<uint32_t, uint32_t>& id_map);
 
     /**
      * @brief Extracts edge-colored edges from @p links_array.
@@ -147,9 +158,9 @@ private:
      * @param id_map Mapping from original node ID to consecutive index.
      * @return Vector of (source, target, color) tuples using consecutive indices.
      */
-    static std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> extract_colored_edges(
-        const boost::json::array& links_array,
-        const std::unordered_map<uint32_t, uint32_t>& id_map);
+    static std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>
+    extract_colored_edges(const boost::json::array& links_array,
+                          const std::unordered_map<uint32_t, uint32_t>& id_map);
 
     /**
      * @brief Extracts uncolored edges from @p links_array.
@@ -160,9 +171,9 @@ private:
      * @param id_map Mapping from original node ID to consecutive index.
      * @return Vector of (source, target) pairs using consecutive indices.
      */
-    static std::vector<std::pair<uint32_t, uint32_t>> extract_uncolored_edges(
-        const boost::json::array& links_array,
-        const std::unordered_map<uint32_t, uint32_t>& id_map);
+    static std::vector<std::pair<uint32_t, uint32_t>>
+    extract_uncolored_edges(const boost::json::array& links_array,
+                            const std::unordered_map<uint32_t, uint32_t>& id_map);
 
     /**
      * @brief Constructs the ColoredGraph from parsed node and link data.
@@ -179,17 +190,16 @@ private:
      */
     static ColoredGraph build_graph(const boost::json::array& links,
                                     const std::unordered_map<uint32_t, uint32_t>& id_map,
-                                    uint32_t vertex_count,
+                                    const uint32_t vertex_count,
                                     const std::vector<int32_t>& vertex_colors,
-                                    bool is_directed);
+                                    const bool is_directed);
 
     /**
      * @brief Logs a successful read at INFO level.
      * @param logger The logger to write to. No-op if null.
      * @param path Path used in the log message.
      */
-    static void log_read_result(const std::shared_ptr<ILogger>& logger,
-                                const std::string& path);
+    static void log_read_result(const std::shared_ptr<ILogger>& logger, const std::string& path);
 };
 
 }  // namespace sgf
