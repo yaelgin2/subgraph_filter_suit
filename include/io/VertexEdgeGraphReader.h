@@ -60,7 +60,7 @@ public:
      *         unknown vertex ID.
      */
     ColoredGraph read(const std::string& path, const bool is_directed,
-                      const std::weak_ptr<ILogger> logger) const override;
+                      const LoggerHandler& logger) const override;
 
 private:
     /**
@@ -154,13 +154,6 @@ private:
         std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges,
         std::vector<std::pair<uint32_t, uint32_t>>& uncolored_edges);
 
-    /**
-     * @brief Logs a successful read at INFO level.
-     * @param logger The logger to write to. No-op if null.
-     * @param path The base path used in the log message.
-     */
-    static void log_read_result(const std::shared_ptr<ILogger>& logger,
-                                const std::string& path);
 };
 
 }  // namespace sgf
