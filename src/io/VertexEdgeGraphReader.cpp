@@ -2,14 +2,13 @@
 
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
-#include "ILogger.h"
 #include "LogLevel.h"
+#include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <fstream>
-#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -198,18 +197,8 @@ void VertexEdgeGraphReader::parse_edge_file(
     }
 }
 
-void VertexEdgeGraphReader::log_read_result(const std::shared_ptr<ILogger>& logger,
-                                             const std::string& path)
-{
-    if (logger == nullptr)
-    {
-        return;
-    }
-    logger->log(LogLevel::INFO, "read vertex-edge graph from '" + path + "'");
-}
-
 ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_directed,
-                                          const std::weak_ptr<ILogger> logger) const
+                                          const LoggerHandler& logger) const
 {
     try
     {
@@ -225,7 +214,7 @@ ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_
         std::vector<std::pair<uint32_t, uint32_t>> uncolored_edges;
         parse_edge_file(edges_path, consecutive_index_by_original_id, colored_edges,
                         uncolored_edges);
-        log_read_result(logger.lock(), path);
+        logger.log(LogLevel::INFO, "read vertex-edge graph from '" + path + "'");
         const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
         if (colored_edges.empty())
         {
