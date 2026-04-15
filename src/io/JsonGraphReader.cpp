@@ -2,8 +2,8 @@
 
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
-#include "ILogger.h"
 #include "LogLevel.h"
+#include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
 #include <algorithm>
@@ -15,7 +15,6 @@
 #include <boost/system/system_error.hpp>
 #include <cstdint>
 #include <fstream>
-#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -216,18 +215,8 @@ ColoredGraph JsonGraphReader::build_graph(
     return {vertex_count, uncolored_edges, vertex_colors, is_directed};
 }
 
-void JsonGraphReader::log_read_result(const std::shared_ptr<ILogger>& logger,
-                                      const std::string& path)
-{
-    if (logger == nullptr)
-    {
-        return;
-    }
-    logger->log(LogLevel::INFO, "read JSON graph from '" + path + "'");
-}
-
 ColoredGraph JsonGraphReader::read(const std::string& path, const bool is_directed,
-                                   const std::weak_ptr<ILogger> logger) const
+                                   const LoggerHandler& logger) const
 {
     try
     {
@@ -243,7 +232,7 @@ ColoredGraph JsonGraphReader::read(const std::string& path, const bool is_direct
         const ColoredGraph graph =
             build_graph(links, consecutive_index_by_original_id, vertex_count, vertex_colors,
                         is_directed);
-        log_read_result(logger.lock(), path);
+        logger.log(LogLevel::INFO, "read JSON graph from '" + path + "'");
         return graph;
     }
     catch (const boost::system::system_error& caught_exception)
