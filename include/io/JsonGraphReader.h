@@ -2,7 +2,8 @@
 
 #include "IColoredGraphReader.h"
 
-#include <boost/json.hpp>
+#include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
 #include <cstdint>
 #include <fstream>
 #include <memory>
@@ -64,10 +65,10 @@ private:
     /**
      * @brief Wraps @p caught_exception in a GraphConstructionException and throws it.
      * @param path The file path associated with the failure.
-     * @param caught_exception The original exception.
+     * @param what_message The what() string of the caught exception.
      */
     [[noreturn]] static void rethrow_as_construction_error(const std::string& path,
-                                                           const std::exception& caught_exception);
+                                                           const std::string& what_message);
 
     /**
      * @brief Reads entire file contents into a single string buffer.
@@ -112,18 +113,18 @@ private:
      * @return An unordered map from original ID to consecutive index.
      */
     static std::unordered_map<uint32_t, uint32_t>
-    build_id_map(const std::unordered_map<uint32_t, int32_t>& color_by_id);
+    build_consecutive_index_map(const std::unordered_map<uint32_t, int32_t>& color_by_id);
 
     /**
      * @brief Extracts per-vertex colors in consecutive-index order.
      *
      * @param color_by_id Unordered map of original ID to color.
-     * @param id_map Mapping from original ID to consecutive index.
+     * @param consecutive_index_by_original_id Mapping from original ID to consecutive index.
      * @return Vector of colors indexed by consecutive vertex index.
      */
     static std::vector<int32_t>
     build_vertex_colors(const std::unordered_map<uint32_t, int32_t>& color_by_id,
-                        const std::unordered_map<uint32_t, uint32_t>& id_map);
+                        const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
      * @brief Determines whether links carry edge colors, enforcing all-or-nothing.
@@ -141,13 +142,14 @@ private:
      * @brief Translates a single link's "source" and "target" to consecutive indices.
      *
      * @param link_object A JSON link object with integer "source" and "target" fields.
-     * @param id_map Mapping from original node ID to consecutive index.
+     * @param consecutive_index_by_original_id Mapping from original node ID to consecutive index.
      * @return Pair of (consecutive source index, consecutive target index).
-     * @throws std::out_of_range if a source or target ID is absent from @p id_map.
+     * @throws GraphConstructionException (re-wrapped by the caller) if a source or target ID
+     *         is absent from @p consecutive_index_by_original_id.
      */
     static std::pair<uint32_t, uint32_t>
     extract_link_endpoints(const boost::json::object& link_object,
-                           const std::unordered_map<uint32_t, uint32_t>& id_map);
+                           const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
      * @brief Extracts edge-colored edges from @p links_array.
@@ -155,12 +157,12 @@ private:
      * Each link must have integer "source", "target", and "color" fields.
      *
      * @param links_array The JSON "links" array.
-     * @param id_map Mapping from original node ID to consecutive index.
+     * @param consecutive_index_by_original_id Mapping from original node ID to consecutive index.
      * @return Vector of (source, target, color) tuples using consecutive indices.
      */
     static std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>
     extract_colored_edges(const boost::json::array& links_array,
-                          const std::unordered_map<uint32_t, uint32_t>& id_map);
+                          const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
      * @brief Extracts uncolored edges from @p links_array.
@@ -168,12 +170,12 @@ private:
      * Each link must have integer "source" and "target" fields.
      *
      * @param links_array The JSON "links" array.
-     * @param id_map Mapping from original node ID to consecutive index.
+     * @param consecutive_index_by_original_id Mapping from original node ID to consecutive index.
      * @return Vector of (source, target) pairs using consecutive indices.
      */
     static std::vector<std::pair<uint32_t, uint32_t>>
     extract_uncolored_edges(const boost::json::array& links_array,
-                            const std::unordered_map<uint32_t, uint32_t>& id_map);
+                            const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
      * @brief Constructs the ColoredGraph from parsed node and link data.
@@ -182,14 +184,14 @@ private:
      * uncolored ColoredGraph constructors.
      *
      * @param links The JSON "links" array.
-     * @param id_map Mapping from original node ID to consecutive index.
+     * @param consecutive_index_by_original_id Mapping from original node ID to consecutive index.
      * @param vertex_count Number of vertices.
      * @param vertex_colors Per-vertex color labels.
      * @param is_directed Whether to build a directed graph.
      * @return The constructed ColoredGraph.
      */
     static ColoredGraph build_graph(const boost::json::array& links,
-                                    const std::unordered_map<uint32_t, uint32_t>& id_map,
+                                    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
                                     const uint32_t vertex_count,
                                     const std::vector<int32_t>& vertex_colors,
                                     const bool is_directed);

@@ -7,7 +7,11 @@
 #include "SgfPathDoesntExistException.h"
 
 #include <algorithm>
-#include <boost/json.hpp>
+#include <boost/json/array.hpp>
+#include <cstddef>
+#include <boost/json/object.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/json/value.hpp>
 #include <boost/system/system_error.hpp>
 #include <cstdint>
 #include <fstream>
@@ -23,6 +27,22 @@
 namespace sgf
 {
 
+namespace
+{
+
+constexpr const char* NODES_KEY = "nodes";
+constexpr const char* LINKS_KEY = "links";
+constexpr const char* NODE_ID_KEY = "id";
+constexpr const char* COLOR_KEY = "color";
+constexpr const char* SOURCE_KEY = "source";
+constexpr const char* TARGET_KEY = "target";
+constexpr const char* ERR_FAILED_TO_READ = "Failed to read JSON '";
+constexpr const char* ERR_NOT_AN_OBJECT = "JSON root is not an object in '";
+constexpr const char* ERR_MIXED_COLORS =
+    "Mixed edge colors: some links have 'color' and some do not";
+
+}  // namespace
+
 std::ifstream JsonGraphReader::open_file(const std::string& path)
 {
     std::ifstream file(path);
@@ -33,12 +53,11 @@ std::ifstream JsonGraphReader::open_file(const std::string& path)
     return file;
 }
 
-[[noreturn]] void
-JsonGraphReader::rethrow_as_construction_error(const std::string& path,
-                                               const std::exception& caught_exception)
+[[noreturn]] void JsonGraphReader::rethrow_as_construction_error(const std::string& path,
+                                                                  const std::string& what_message)
 {
-    throw GraphConstructionException("Failed to read JSON '" + path +
-                                     "': " + caught_exception.what());
+    throw GraphConstructionException(std::string(ERR_FAILED_TO_READ) + path + "': " +
+                                     what_message);
 }
 
 std::string JsonGraphReader::read_file_contents(std::ifstream& file)
@@ -56,7 +75,7 @@ boost::json::object JsonGraphReader::parse_json_object(const std::string& path)
     const boost::json::value root_value = boost::json::parse(file_contents);
     if (!root_value.is_object())
     {
-        throw GraphConstructionException("JSON root is not an object in '" + path + "'");
+        throw GraphConstructionException(std::string(ERR_NOT_AN_OBJECT) + path + "'");
     }
     return root_value.as_object();
 }
@@ -69,14 +88,17 @@ JsonGraphReader::collect_node_colors(const boost::json::array& nodes_array)
     for (const auto& node_value : nodes_array)
     {
         const boost::json::object& node_object = node_value.as_object();
-        const uint32_t node_id = static_cast<uint32_t>(node_object.at("id").as_int64());
-        color_by_id.emplace(node_id, static_cast<int32_t>(node_object.at("color").as_int64()));
+        const uint32_t node_id =
+            static_cast<uint32_t>(node_object.at(NODE_ID_KEY).as_int64());
+        color_by_id.emplace(node_id,
+                            static_cast<int32_t>(node_object.at(COLOR_KEY).as_int64()));
     }
     return color_by_id;
 }
 
 std::unordered_map<uint32_t, uint32_t>
-JsonGraphReader::build_id_map(const std::unordered_map<uint32_t, int32_t>& color_by_id)
+JsonGraphReader::build_consecutive_index_map(
+    const std::unordered_map<uint32_t, int32_t>& color_by_id)
 {
     std::vector<uint32_t> sorted_ids;
     sorted_ids.reserve(color_by_id.size());
@@ -88,104 +110,110 @@ JsonGraphReader::build_id_map(const std::unordered_map<uint32_t, int32_t>& color
     // hash-table iteration order.
     std::sort(sorted_ids.begin(), sorted_ids.end());
 
-    std::unordered_map<uint32_t, uint32_t> id_map;
-    id_map.reserve(sorted_ids.size());
+    std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id;
+    consecutive_index_by_original_id.reserve(sorted_ids.size());
     uint32_t consecutive_index = 0;
-    for (const auto& original_id : sorted_ids)
+    for (const uint32_t original_id : sorted_ids)
     {
-        id_map.emplace(original_id, consecutive_index);
+        consecutive_index_by_original_id.emplace(original_id, consecutive_index);
         ++consecutive_index;
     }
-    return id_map;
+    return consecutive_index_by_original_id;
 }
 
 std::vector<int32_t>
-JsonGraphReader::build_vertex_colors(const std::unordered_map<uint32_t, int32_t>& color_by_id,
-                                     const std::unordered_map<uint32_t, uint32_t>& id_map)
+JsonGraphReader::build_vertex_colors(
+    const std::unordered_map<uint32_t, int32_t>& color_by_id,
+    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id)
 {
-    std::vector<int32_t> colors(id_map.size());
-    for (const auto& entry : id_map)
+    std::vector<int32_t> colors(consecutive_index_by_original_id.size());
+    for (const auto& entry : consecutive_index_by_original_id)
     {
-        colors[entry.second] = color_by_id.at(entry.first);
+        colors.at(entry.second) = color_by_id.at(entry.first);
     }
     return colors;
 }
 
 bool JsonGraphReader::detect_edge_colors(const boost::json::array& links_array)
 {
-    uint32_t colored_count = 0;
+    size_t colored_count = 0;
     for (const auto& link_value : links_array)
     {
-        if (link_value.as_object().contains("color"))
+        if (link_value.as_object().contains(COLOR_KEY))
         {
             ++colored_count;
         }
     }
-    const uint32_t total_links = static_cast<uint32_t>(links_array.size());
+    const size_t total_links = links_array.size();
     if (colored_count != 0 && colored_count != total_links)
     {
-        throw GraphConstructionException(
-            "Mixed edge colors: some links have 'color' and some do not");
+        throw GraphConstructionException(ERR_MIXED_COLORS);
     }
     return colored_count > 0;
 }
 
 std::pair<uint32_t, uint32_t>
-JsonGraphReader::extract_link_endpoints(const boost::json::object& link_object,
-                                        const std::unordered_map<uint32_t, uint32_t>& id_map)
+JsonGraphReader::extract_link_endpoints(
+    const boost::json::object& link_object,
+    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id)
 {
-    const uint32_t source_index =
-        id_map.at(static_cast<uint32_t>(link_object.at("source").as_int64()));
-    const uint32_t target_index =
-        id_map.at(static_cast<uint32_t>(link_object.at("target").as_int64()));
+    const uint32_t source_index = consecutive_index_by_original_id.at(
+        static_cast<uint32_t>(link_object.at(SOURCE_KEY).as_int64()));
+    const uint32_t target_index = consecutive_index_by_original_id.at(
+        static_cast<uint32_t>(link_object.at(TARGET_KEY).as_int64()));
     return {source_index, target_index};
 }
 
 std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>
-JsonGraphReader::extract_colored_edges(const boost::json::array& links_array,
-                                       const std::unordered_map<uint32_t, uint32_t>& id_map)
+JsonGraphReader::extract_colored_edges(
+    const boost::json::array& links_array,
+    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id)
 {
     std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edges;
     edges.reserve(links_array.size());
     for (const auto& link_value : links_array)
     {
         const boost::json::object& link_object = link_value.as_object();
-        const std::pair<uint32_t, uint32_t> endpoints = extract_link_endpoints(link_object, id_map);
-        const uint32_t edge_color = static_cast<uint32_t>(link_object.at("color").as_int64());
+        const std::pair<uint32_t, uint32_t> endpoints =
+            extract_link_endpoints(link_object, consecutive_index_by_original_id);
+        const uint32_t edge_color =
+            static_cast<uint32_t>(link_object.at(COLOR_KEY).as_int64());
         edges.emplace_back(endpoints.first, endpoints.second, edge_color);
     }
     return edges;
 }
 
 std::vector<std::pair<uint32_t, uint32_t>>
-JsonGraphReader::extract_uncolored_edges(const boost::json::array& links_array,
-                                         const std::unordered_map<uint32_t, uint32_t>& id_map)
+JsonGraphReader::extract_uncolored_edges(
+    const boost::json::array& links_array,
+    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
     edges.reserve(links_array.size());
     for (const auto& link_value : links_array)
     {
         const boost::json::object& link_object = link_value.as_object();
-        edges.emplace_back(extract_link_endpoints(link_object, id_map));
+        edges.emplace_back(extract_link_endpoints(link_object, consecutive_index_by_original_id));
     }
     return edges;
 }
 
-ColoredGraph JsonGraphReader::build_graph(const boost::json::array& links,
-                                          const std::unordered_map<uint32_t, uint32_t>& id_map,
-                                          const uint32_t vertex_count,
-                                          const std::vector<int32_t>& vertex_colors,
-                                          const bool is_directed)
+ColoredGraph JsonGraphReader::build_graph(
+    const boost::json::array& links,
+    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
+    const uint32_t vertex_count,
+    const std::vector<int32_t>& vertex_colors,
+    const bool is_directed)
 {
     if (detect_edge_colors(links))
     {
         std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> colored_edges =
-            extract_colored_edges(links, id_map);
-        return ColoredGraph(vertex_count, colored_edges, vertex_colors, is_directed);
+            extract_colored_edges(links, consecutive_index_by_original_id);
+        return {vertex_count, colored_edges, vertex_colors, is_directed};
     }
     std::vector<std::pair<uint32_t, uint32_t>> uncolored_edges =
-        extract_uncolored_edges(links, id_map);
-    return ColoredGraph(vertex_count, uncolored_edges, vertex_colors, is_directed);
+        extract_uncolored_edges(links, consecutive_index_by_original_id);
+    return {vertex_count, uncolored_edges, vertex_colors, is_directed};
 }
 
 void JsonGraphReader::log_read_result(const std::shared_ptr<ILogger>& logger,
@@ -204,27 +232,31 @@ ColoredGraph JsonGraphReader::read(const std::string& path, const bool is_direct
     try
     {
         const boost::json::object root_object = parse_json_object(path);
-        const boost::json::array& links = root_object.at("links").as_array();
+        const boost::json::array& links = root_object.at(LINKS_KEY).as_array();
         const std::unordered_map<uint32_t, int32_t> color_by_id =
-            collect_node_colors(root_object.at("nodes").as_array());
-        const std::unordered_map<uint32_t, uint32_t> id_map = build_id_map(color_by_id);
-        const std::vector<int32_t> vertex_colors = build_vertex_colors(color_by_id, id_map);
+            collect_node_colors(root_object.at(NODES_KEY).as_array());
+        const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
+            build_consecutive_index_map(color_by_id);
+        const std::vector<int32_t> vertex_colors =
+            build_vertex_colors(color_by_id, consecutive_index_by_original_id);
         const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
-        ColoredGraph graph = build_graph(links, id_map, vertex_count, vertex_colors, is_directed);
+        const ColoredGraph graph =
+            build_graph(links, consecutive_index_by_original_id, vertex_count, vertex_colors,
+                        is_directed);
         log_read_result(logger.lock(), path);
         return graph;
     }
     catch (const boost::system::system_error& caught_exception)
     {
-        rethrow_as_construction_error(path, caught_exception);
+        rethrow_as_construction_error(path, caught_exception.what());
     }
     catch (const std::invalid_argument& caught_exception)
     {
-        rethrow_as_construction_error(path, caught_exception);
+        rethrow_as_construction_error(path, caught_exception.what());
     }
     catch (const std::out_of_range& caught_exception)
     {
-        rethrow_as_construction_error(path, caught_exception);
+        rethrow_as_construction_error(path, caught_exception.what());
     }
 }
 
