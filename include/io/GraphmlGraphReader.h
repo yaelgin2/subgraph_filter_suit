@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IColoredGraphReader.h"
+#include "LoggerHandler.h"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <exception>
@@ -73,7 +74,7 @@ public:
      *         (e.g. conflicting edge colors for the same endpoint pair).
      */
     ColoredGraph read(const std::string& path, bool is_directed,
-                      std::weak_ptr<ILogger> logger) const override;
+                      const LoggerHandler& logger) const override;
 
 private:
     /**
@@ -139,7 +140,7 @@ private:
      * @param is_directed Whether the caller requested a directed graph.
      * @param color_map The string→uint registry to log.
      */
-    static void log_read_result(const std::shared_ptr<ILogger>& logger, const std::string& path,
+    static void log_read_result(const LoggerHandler& logger, const std::string& path,
                                 bool file_is_directed, bool is_directed,
                                 const std::map<std::string, uint32_t>& color_map);
 };

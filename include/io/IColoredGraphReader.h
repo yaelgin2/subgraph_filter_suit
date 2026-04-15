@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "LoggerHandler.h"
 
 #include <memory>
 #include <string>
@@ -30,7 +31,7 @@ public:
      *         or if the graph structure is invalid.
      */
     virtual ColoredGraph read(const std::string& path, const bool is_directed,
-                              const std::weak_ptr<ILogger> logger) const = 0;
+                              const LoggerHandler& logger) const = 0;
 
     /**
      * @brief Default virtual destructor.
