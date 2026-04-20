@@ -52,6 +52,9 @@ subgraph_filter_suite/
 │   ├── exceptions/
 │   ├── isomorphism/
 │   ├── io/
+|   |   ├──graph
+|   |   ├──pattern
+|   |   └──cache
 │   ├── managers/
 │   ├── preprocessing/
 │   ├── filtering/

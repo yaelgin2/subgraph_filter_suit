@@ -283,6 +283,9 @@ subgraph_filter_suit/
 │   ├── graph/
 │   ├── isomorphism/
 │   ├── io/
+|   |   ├──graph
+|   |   ├──pattern
+|   |   └──cache
 │   ├── managers/
 │   ├── preprocessing/
 │   ├── filtering/
@@ -292,6 +295,9 @@ subgraph_filter_suit/
 │   ├── graph/
 │   ├── isomorphism/
 │   ├── io/
+|   |   ├──graph
+|   |   ├──pattern
+|   |   └──cache
 │   ├── managers/
 │   ├── preprocessing/
 │   ├── filtering/
@@ -302,6 +308,9 @@ subgraph_filter_suit/
 │   ├── graph/
 │   ├── isomorphism/
 │   ├── io/
+|   |   ├──graph
+|   |   ├──pattern
+|   |   └──cache
 │   ├── managers/
 │   ├── preprocessing/
 │   ├── filtering/
