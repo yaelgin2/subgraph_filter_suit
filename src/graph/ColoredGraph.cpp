@@ -15,7 +15,7 @@ namespace sgf
 
 ColoredGraph::ColoredGraph(const uint32_t num_vertices,
                            std::vector<std::pair<uint32_t, uint32_t>>& edges,
-                           const std::vector<int32_t>& vertex_colors, const bool is_directed)
+                           const std::vector<uint32_t>& vertex_colors, const bool is_directed)
     : m_colors(vertex_colors)
     , m_directed(is_directed)
 {
@@ -31,7 +31,7 @@ ColoredGraph::ColoredGraph(const uint32_t num_vertices,
 
 ColoredGraph::ColoredGraph(const uint32_t num_vertices,
                            std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges,
-                           const std::vector<int32_t>& vertex_colors, const bool is_directed)
+                           const std::vector<uint32_t>& vertex_colors, const bool is_directed)
     : m_colors(vertex_colors)
     , m_directed(is_directed)
     , m_edges_colored(true)
@@ -44,7 +44,7 @@ ColoredGraph::ColoredGraph(const uint32_t num_vertices,
     build_structures(num_vertices, edges);
 }
 
-void ColoredGraph::validate_vertex_colors_size(const std::vector<int32_t>& vertex_colors,
+void ColoredGraph::validate_vertex_colors_size(const std::vector<uint32_t>& vertex_colors,
                                                const uint32_t num_vertices)
 {
     if (vertex_colors.size() != static_cast<size_t>(num_vertices))
@@ -273,10 +273,10 @@ uint32_t ColoredGraph::edge_count() const
 
 uint32_t ColoredGraph::get_vertex_color(const uint32_t vertex) const
 {
-    return static_cast<uint32_t>(m_colors.at(vertex));
+    return m_colors.at(vertex);
 }
 
-void ColoredGraph::set_vertex_color(const uint32_t vertex, const int32_t new_color)
+void ColoredGraph::set_vertex_color(const uint32_t vertex, const uint32_t new_color)
 {
     m_colors.at(vertex) = new_color;
 }
