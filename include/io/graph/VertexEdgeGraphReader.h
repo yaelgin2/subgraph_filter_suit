@@ -24,7 +24,6 @@ namespace sgf
  * @code
  * <index> <vertex_id> <color>
  * @endcode
- * - @c index      : zero-based line index (ignored; only @c vertex_id matters).
  * - @c vertex_id  : original node identifier (may be non-consecutive).
  * - @c color      : signed integer color label for the vertex.
  *

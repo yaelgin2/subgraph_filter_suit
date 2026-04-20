@@ -59,10 +59,9 @@ VertexEdgeGraphReader::parse_vertex_file(const std::string& vertices_path)
             continue;
         }
         std::istringstream stream(line);
-        uint32_t line_index = 0;
         uint32_t vertex_id = 0;
         uint32_t color = 0;
-        if (!(stream >> line_index >> vertex_id >> color))
+        if (!(stream >> vertex_id >> color))
         {
             std::string msg = "Malformed vertex line in '";
             msg += vertices_path;
