@@ -45,7 +45,7 @@ public:
      * @param is_directed If true, treat edges as directed.
      */
     ColoredGraph(const uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& edges,
-                 const std::vector<int32_t>& vertex_colors, const bool is_directed = false);
+                 const std::vector<uint32_t>& vertex_colors, const bool is_directed = false);
 
     /**
      * @brief Constructs an edge-colored ColoredGraph.
@@ -66,7 +66,7 @@ public:
      */
     ColoredGraph(const uint32_t num_vertices,
                  std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges,
-                 const std::vector<int32_t>& vertex_colors, const bool is_directed = false);
+                 const std::vector<uint32_t>& vertex_colors, const bool is_directed = false);
 
     /**
      * @brief Default destructor.
@@ -130,7 +130,7 @@ public:
      * @param vertex The vertex to update.
      * @param new_color The new color label.
      */
-    void set_vertex_color(const uint32_t vertex, const int32_t new_color);
+    void set_vertex_color(const uint32_t vertex, const uint32_t new_color);
 
     /**
      * @brief Returns whether this graph carries per-edge color labels.
@@ -179,7 +179,7 @@ private:
      * @param num_vertices Expected number of vertices.
      * @throws InvalidArgumentException if the sizes do not match.
      */
-    static void validate_vertex_colors_size(const std::vector<int32_t>& vertex_colors,
+    static void validate_vertex_colors_size(const std::vector<uint32_t>& vertex_colors,
                                             const uint32_t num_vertices);
 
     /**
@@ -331,7 +331,7 @@ private:
     std::vector<uint32_t> m_reversed_index_of_neighbours;
     std::vector<uint32_t> m_reversed_edge_colors;
 
-    std::vector<int32_t> m_colors;
+    std::vector<uint32_t> m_colors;
 
     uint32_t m_edge_count = 0;
     bool m_directed = false;
