@@ -4,8 +4,8 @@
 #include "ColoredGraphTestHelpers.h"
 #include "GraphConstructionException.h"
 #include "ILogger.h"
-#include "LoggerHandler.h"
 #include "InvalidArgumentException.h"
+#include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
 #include <gtest/gtest.h>
@@ -46,7 +46,8 @@ protected:
  */
 TEST_F(GraphmlGraphReaderTest, nonexistent_path_throws_path_doesnt_exist)
 {
-    EXPECT_THROW(m_reader.read(data("does_not_exist.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("does_not_exist.graphml"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  SgfPathDoesntExistException);
 }
 
@@ -57,7 +58,8 @@ TEST_F(GraphmlGraphReaderTest, nonexistent_path_throws_path_doesnt_exist)
  */
 TEST_F(GraphmlGraphReaderTest, malformed_xml_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("malformed_xml.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("malformed_xml.graphml"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  GraphConstructionException);
 }
 
@@ -67,9 +69,9 @@ TEST_F(GraphmlGraphReaderTest, malformed_xml_throws_graph_construction)
  */
 TEST_F(GraphmlGraphReaderTest, invalid_graphml_structure_throws_graph_construction)
 {
-    EXPECT_THROW(
-        m_reader.read(data("invalid_graphml_structure.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        GraphConstructionException);
+    EXPECT_THROW(m_reader.read(data("invalid_graphml_structure.graphml"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
 }
 
 // ── Empty graph ───────────────────────────────────────────────────────────────
@@ -79,8 +81,8 @@ TEST_F(GraphmlGraphReaderTest, invalid_graphml_structure_throws_graph_constructi
  */
 TEST_F(GraphmlGraphReaderTest, empty_graph_undirected)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("empty_undirected.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("empty_undirected.graphml"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 0U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_FALSE(graph.is_directed());
@@ -91,8 +93,8 @@ TEST_F(GraphmlGraphReaderTest, empty_graph_undirected)
  */
 TEST_F(GraphmlGraphReaderTest, empty_graph_directed)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("empty_directed.graphml"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("empty_directed.graphml"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 0U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_TRUE(graph.is_directed());
@@ -105,8 +107,8 @@ TEST_F(GraphmlGraphReaderTest, empty_graph_directed)
  */
 TEST_F(GraphmlGraphReaderTest, single_node_undirected)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("single_node_undirected.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("single_node_undirected.graphml"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 1U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_FALSE(graph.is_directed());
@@ -119,8 +121,8 @@ TEST_F(GraphmlGraphReaderTest, single_node_undirected)
  */
 TEST_F(GraphmlGraphReaderTest, single_node_directed)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("single_node_directed.graphml"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("single_node_directed.graphml"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 1U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_TRUE(graph.is_directed());
@@ -149,8 +151,8 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_no_edges_undirected)
  */
 TEST_F(GraphmlGraphReaderTest, two_nodes_no_edges_directed)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("two_nodes_no_edges_directed.graphml"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("two_nodes_no_edges_directed.graphml"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_TRUE(graph.is_directed());
@@ -182,8 +184,8 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_one_edge_undirected)
  */
 TEST_F(GraphmlGraphReaderTest, two_nodes_one_edge_directed)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("two_nodes_one_edge_directed.graphml"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("two_nodes_one_edge_directed.graphml"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_TRUE(graph.is_directed());
@@ -235,8 +237,9 @@ TEST_F(GraphmlGraphReaderTest, triangle_diff_vertex_colors_undirected)
  */
 TEST_F(GraphmlGraphReaderTest, triangle_two_same_vertex_color_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_two_same_vertex_color_undirected.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph =
+        m_reader.read(data("triangle_two_same_vertex_color_undirected.graphml"), false,
+                      LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_FALSE(graph.is_directed());
@@ -291,8 +294,9 @@ TEST_F(GraphmlGraphReaderTest, triangle_diff_vertex_colors_directed)
  */
 TEST_F(GraphmlGraphReaderTest, triangle_two_same_vertex_color_directed)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_two_same_vertex_color_directed.graphml"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph =
+        m_reader.read(data("triangle_two_same_vertex_color_directed.graphml"), true,
+                      LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
@@ -326,8 +330,9 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_bidirectional_uncolored_undirected)
  */
 TEST_F(GraphmlGraphReaderTest, two_nodes_bidirectional_uncolored_directed)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("two_nodes_bidirectional_uncolored_directed.graphml"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph =
+        m_reader.read(data("two_nodes_bidirectional_uncolored_directed.graphml"), true,
+                      LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 2U);
     EXPECT_FALSE(graph.is_edges_colored());
     EXPECT_TRUE(graph.is_directed());
@@ -344,8 +349,9 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_bidirectional_uncolored_directed)
  */
 TEST_F(GraphmlGraphReaderTest, two_nodes_parallel_uncolored_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("two_nodes_parallel_uncolored_undirected.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph =
+        m_reader.read(data("two_nodes_parallel_uncolored_undirected.graphml"), false,
+                      LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_FALSE(graph.is_edges_colored());
     assert_neighbours(graph, 0, {1});
@@ -481,8 +487,9 @@ TEST_F(GraphmlGraphReaderTest, two_nodes_parallel_diff_edge_colors_directed_thro
  */
 TEST_F(GraphmlGraphReaderTest, triangle_all_edges_same_color_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_all_edges_same_color_undirected.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph =
+        m_reader.read(data("triangle_all_edges_same_color_undirected.graphml"), false,
+                      LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
     EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
@@ -496,8 +503,9 @@ TEST_F(GraphmlGraphReaderTest, triangle_all_edges_same_color_undirected)
  */
 TEST_F(GraphmlGraphReaderTest, triangle_all_edges_diff_colors_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_all_edges_diff_colors_undirected.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph =
+        m_reader.read(data("triangle_all_edges_diff_colors_undirected.graphml"), false,
+                      LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
     EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 0));
@@ -513,8 +521,9 @@ TEST_F(GraphmlGraphReaderTest, triangle_all_edges_diff_colors_undirected)
  */
 TEST_F(GraphmlGraphReaderTest, triangle_two_edges_same_color_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_two_edges_same_color_undirected.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph =
+        m_reader.read(data("triangle_two_edges_same_color_undirected.graphml"), false,
+                      LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
     EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
@@ -541,8 +550,9 @@ TEST_F(GraphmlGraphReaderTest, triangle_all_edges_same_color_directed)
  */
 TEST_F(GraphmlGraphReaderTest, triangle_all_edges_diff_colors_directed)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_all_edges_diff_colors_directed.graphml"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph =
+        m_reader.read(data("triangle_all_edges_diff_colors_directed.graphml"), true,
+                      LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
     EXPECT_NE(graph.get_edge_color(0, 1), graph.get_edge_color(0, 2));
@@ -569,7 +579,8 @@ TEST_F(GraphmlGraphReaderTest, triangle_two_edges_same_color_directed)
  */
 TEST_F(GraphmlGraphReaderTest, no_edgedefault_with_directed_param)
 {
-    EXPECT_THROW(m_reader.read(data("no_edgedefault.graphml"), true, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("no_edgedefault.graphml"), true,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  GraphConstructionException);
 }
 
@@ -578,8 +589,8 @@ TEST_F(GraphmlGraphReaderTest, no_edgedefault_with_directed_param)
  */
 TEST_F(GraphmlGraphReaderTest, no_color_keys_defaults_to_zero)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("no_color_keys.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("no_color_keys.graphml"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_EQ(graph.get_vertex_color(0), 0U);
@@ -610,8 +621,8 @@ TEST_F(GraphmlGraphReaderTest, directed_param_overrides_undirected_file)
  */
 TEST_F(GraphmlGraphReaderTest, undirected_param_overrides_directed_file)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("two_nodes_one_edge_directed.graphml"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("two_nodes_one_edge_directed.graphml"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_FALSE(graph.is_directed());
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 1U);

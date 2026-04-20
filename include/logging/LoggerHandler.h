@@ -16,7 +16,8 @@ private:
 public:
     explicit LoggerHandler(std::weak_ptr<ILogger> log)
         : logger(std::move(log))
-    {}
+    {
+    }
 
     void log(LogLevel level, const std::string& msg) const
     {
