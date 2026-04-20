@@ -76,9 +76,9 @@ protected:
      * @param color Color value to assign to every vertex.
      * @return Color vector suitable for passing to ColoredGraph.
      */
-    static std::vector<int32_t> uniform_colors(const uint32_t count, const int32_t color = 0)
+    static std::vector<uint32_t> uniform_colors(const uint32_t count, const uint32_t color = 0)
     {
-        return std::vector<int32_t>(count, color);
+        return std::vector<uint32_t>(count, color);
     }
 
     /**
@@ -89,13 +89,13 @@ protected:
      * @param count Number of vertices.
      * @return Color vector {0, 1, 2, ..., count-1}.
      */
-    static std::vector<int32_t> indexed_colors(const uint32_t count)
+    static std::vector<uint32_t> indexed_colors(const uint32_t count)
     {
-        std::vector<int32_t> colors;
+        std::vector<uint32_t> colors;
         colors.reserve(count);
         for (uint32_t idx = 0; idx < count; ++idx)
         {
-            colors.push_back(static_cast<int32_t>(idx));
+            colors.push_back(idx);
         }
         return colors;
     }
@@ -109,7 +109,7 @@ protected:
 TEST_F(ColoredGraphTest, empty_colors_throws_invalid_argument)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
-    const std::vector<int32_t> colors;
+    const std::vector<uint32_t> colors;
     EXPECT_THROW(ColoredGraph(1, edges, colors), InvalidArgumentException);
 }
 
@@ -119,7 +119,7 @@ TEST_F(ColoredGraphTest, empty_colors_throws_invalid_argument)
 TEST_F(ColoredGraphTest, nonzero_colors_with_zero_vertices_throws_invalid_argument)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
-    const std::vector<int32_t> colors = {0};  // 1 color for 0 vertices
+    const std::vector<uint32_t> colors = {0};  // 1 color for 0 vertices
     EXPECT_THROW(ColoredGraph(0, edges, colors), InvalidArgumentException);
 }
 
@@ -129,7 +129,7 @@ TEST_F(ColoredGraphTest, nonzero_colors_with_zero_vertices_throws_invalid_argume
 TEST_F(ColoredGraphTest, colors_longer_than_vertex_count_throws_invalid_argument)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
-    const std::vector<int32_t> colors = {0, 0, 0};  // 3 colors for 2 vertices
+    const std::vector<uint32_t> colors = {0, 0, 0};  // 3 colors for 2 vertices
     EXPECT_THROW(ColoredGraph(2, edges, colors), InvalidArgumentException);
 }
 
@@ -139,7 +139,7 @@ TEST_F(ColoredGraphTest, colors_longer_than_vertex_count_throws_invalid_argument
 TEST_F(ColoredGraphTest, colors_shorter_than_vertex_count_throws_invalid_argument)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
-    const std::vector<int32_t> colors = {0, 0};  // only 2 colors for 3 vertices
+    const std::vector<uint32_t> colors = {0, 0};  // only 2 colors for 3 vertices
     EXPECT_THROW(ColoredGraph(3, edges, colors), InvalidArgumentException);
 }
 
@@ -149,7 +149,7 @@ TEST_F(ColoredGraphTest, colors_shorter_than_vertex_count_throws_invalid_argumen
 TEST_F(ColoredGraphTest, edge_with_out_of_range_source_throws_invalid_argument)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{2, 0}};  // vertex 2 invalid for size 2
-    const std::vector<int32_t> colors = uniform_colors(2);
+    const std::vector<uint32_t> colors = uniform_colors(2);
     EXPECT_THROW(ColoredGraph(2, edges, colors), InvalidArgumentException);
 }
 
@@ -159,7 +159,7 @@ TEST_F(ColoredGraphTest, edge_with_out_of_range_source_throws_invalid_argument)
 TEST_F(ColoredGraphTest, edge_with_out_of_range_dest_throws_invalid_argument)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 2}};  // vertex 2 invalid for size 2
-    const std::vector<int32_t> colors = uniform_colors(2);
+    const std::vector<uint32_t> colors = uniform_colors(2);
     EXPECT_THROW(ColoredGraph(2, edges, colors), InvalidArgumentException);
 }
 
@@ -184,7 +184,7 @@ TEST_F(ColoredGraphTest, colors_stored_correctly_per_vertex)
 TEST_F(ColoredGraphTest, set_vertex_color_updates_color)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
-    const std::vector<int32_t> colors = uniform_colors(1, 0);
+    const std::vector<uint32_t> colors = uniform_colors(1, 0);
     ColoredGraph graph(1, edges, colors);
 
     EXPECT_EQ(graph.get_vertex_color(0), 0U);
@@ -203,7 +203,7 @@ TEST_F(ColoredGraphTest, set_vertex_color_updates_color)
 TEST_F(ColoredGraphTest, is_edge_undirected_path_graph)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 1}, {1, 2}};
-    const std::vector<int32_t> colors = uniform_colors(3);
+    const std::vector<uint32_t> colors = uniform_colors(3);
     const ColoredGraph graph(3, edges, colors, false);
 
     EXPECT_TRUE(graph.is_edge(0, 1));
@@ -220,7 +220,7 @@ TEST_F(ColoredGraphTest, is_edge_undirected_path_graph)
 TEST_F(ColoredGraphTest, is_edge_directed_converging_graph)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 1}, {2, 1}};
-    const std::vector<int32_t> colors = uniform_colors(3);
+    const std::vector<uint32_t> colors = uniform_colors(3);
     const ColoredGraph graph(3, edges, colors, true);
 
     EXPECT_TRUE(graph.is_edge(0, 1));
@@ -239,7 +239,7 @@ TEST_F(ColoredGraphTest, is_edge_directed_converging_graph)
 TEST_F(ColoredGraphTest, undirected_empty_graph)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
-    const std::vector<int32_t> colors;
+    const std::vector<uint32_t> colors;
     const ColoredGraph graph(0, edges, colors, false);
 
     EXPECT_EQ(graph.vertex_count(), 0U);
@@ -384,7 +384,7 @@ TEST_F(ColoredGraphTest, undirected_star_graph)
 TEST_F(ColoredGraphTest, directed_empty_graph)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
-    const std::vector<int32_t> colors;
+    const std::vector<uint32_t> colors;
     const ColoredGraph graph(0, edges, colors, true);
 
     EXPECT_EQ(graph.vertex_count(), 0U);
@@ -580,7 +580,7 @@ TEST_F(ColoredGraphTest, directed_in_star_graph)
 TEST_F(ColoredGraphTest, self_loop_on_undirected_graph_throws)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 0}};
-    const std::vector<int32_t> colors = uniform_colors(1);
+    const std::vector<uint32_t> colors = uniform_colors(1);
     EXPECT_THROW(ColoredGraph(1, edges, colors, false), InvalidArgumentException);
 }
 
@@ -590,7 +590,7 @@ TEST_F(ColoredGraphTest, self_loop_on_undirected_graph_throws)
 TEST_F(ColoredGraphTest, self_loop_on_directed_graph_throws)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 0}};
-    const std::vector<int32_t> colors = uniform_colors(1);
+    const std::vector<uint32_t> colors = uniform_colors(1);
     EXPECT_THROW(ColoredGraph(1, edges, colors, true), InvalidArgumentException);
 }
 
