@@ -125,7 +125,7 @@ private:
      */
     template <typename GraphType, typename GetColor>
     static std::vector<uint32_t> extract_vertex_colors(const GraphType& boost_graph,
-                                                      const GetColor& get_color);
+                                                       const GetColor& get_color);
 
     /**
      * @brief Extracts colored edges using a caller-supplied color accessor.
@@ -207,7 +207,7 @@ GraphUtils::extract_uncolored_edges(const GraphType& boost_graph)
 
 template <typename GraphType, typename GetColor>
 std::vector<uint32_t> GraphUtils::extract_vertex_colors(const GraphType& boost_graph,
-                                                       const GetColor& get_color)
+                                                        const GetColor& get_color)
 {
     std::vector<uint32_t> vertex_colors;
     vertex_colors.reserve(boost::num_vertices(boost_graph));
