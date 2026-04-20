@@ -100,7 +100,7 @@ private:
      * @param nodes_array The JSON "nodes" array.
      * @return An unordered map from original node ID to vertex color.
      */
-    static std::unordered_map<uint32_t, int32_t>
+    static std::unordered_map<uint32_t, uint32_t>
     collect_node_colors(const boost::json::array& nodes_array);
 
     /**
@@ -113,7 +113,7 @@ private:
      * @return An unordered map from original ID to consecutive index.
      */
     static std::unordered_map<uint32_t, uint32_t>
-    build_consecutive_index_map(const std::unordered_map<uint32_t, int32_t>& color_by_id);
+    build_consecutive_index_map(const std::unordered_map<uint32_t, uint32_t>& color_by_id);
 
     /**
      * @brief Extracts per-vertex colors in consecutive-index order.
@@ -122,8 +122,8 @@ private:
      * @param consecutive_index_by_original_id Mapping from original ID to consecutive index.
      * @return Vector of colors indexed by consecutive vertex index.
      */
-    static std::vector<int32_t>
-    build_vertex_colors(const std::unordered_map<uint32_t, int32_t>& color_by_id,
+    static std::vector<uint32_t>
+    build_vertex_colors(const std::unordered_map<uint32_t, uint32_t>& color_by_id,
                         const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
@@ -193,7 +193,7 @@ private:
     static ColoredGraph build_graph(const boost::json::array& links,
                                     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
                                     const uint32_t vertex_count,
-                                    const std::vector<int32_t>& vertex_colors,
+                                    const std::vector<uint32_t>& vertex_colors,
                                     const bool is_directed);
 };
 

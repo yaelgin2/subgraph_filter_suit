@@ -4,6 +4,7 @@
 #include "GraphConstructionException.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
+#include "Constants.h"
 #include "SgfPathDoesntExistException.h"
 
 #include <algorithm>
@@ -79,16 +80,21 @@ boost::json::object JsonGraphReader::parse_json_object(const std::string& path)
     return root_value.as_object();
 }
 
-std::unordered_map<uint32_t, int32_t>
+std::unordered_map<uint32_t, uint32_t>
 JsonGraphReader::collect_node_colors(const boost::json::array& nodes_array)
 {
-    std::unordered_map<uint32_t, int32_t> color_by_id;
+    std::unordered_map<uint32_t, uint32_t> color_by_id;
     color_by_id.reserve(nodes_array.size());
     for (const auto& node_value : nodes_array)
     {
         const boost::json::object& node_object = node_value.as_object();
-        const uint32_t node_id =
-            static_cast<uint32_t>(node_object.at(NODE_ID_KEY).as_int64());
+        const uint64_t node_id_signed =  node_object.at(NODE_ID_KEY).as_uint64();
+        if (node_id_signed > SgfConstants::MAX_VERTEX_COLOR)
+        {
+            throw GraphConstructionException("too many distinct colors: exceeds maximum of " +
+                 std::to_string(SgfConstants::MAX_VERTEX_COLOR));
+        }
+        const uint32_t node_id = static_cast<uint32_t>(node_id_signed);
         color_by_id.emplace(node_id,
                             static_cast<int32_t>(node_object.at(COLOR_KEY).as_int64()));
     }
@@ -97,35 +103,40 @@ JsonGraphReader::collect_node_colors(const boost::json::array& nodes_array)
 
 std::unordered_map<uint32_t, uint32_t>
 JsonGraphReader::build_consecutive_index_map(
-    const std::unordered_map<uint32_t, int32_t>& color_by_id)
+    const std::unordered_map<uint32_t, uint32_t>& color_by_id)
 {
-    std::vector<uint32_t> sorted_ids;
-    sorted_ids.reserve(color_by_id.size());
+    std::vector<uint32_t> all_ids;
+    all_ids.reserve(color_by_id.size());
     for (const auto& entry : color_by_id)
     {
-        sorted_ids.push_back(entry.first);
+        all_ids.push_back(entry.first);
     }
-    // Sort to produce a deterministic consecutive mapping regardless of
-    // hash-table iteration order.
-    std::sort(sorted_ids.begin(), sorted_ids.end());
 
     std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id;
-    consecutive_index_by_original_id.reserve(sorted_ids.size());
+    consecutive_index_by_original_id.reserve(all_ids.size());
     uint32_t consecutive_index = 0;
-    for (const uint32_t original_id : sorted_ids)
+    for (const uint32_t original_id : all_ids)
     {
+        if (consecutive_index == INT32_MAX)
+        {
+            throw GraphConstructionException("vertex number exeeded maximum of " + std::to_string(INT32_MAX));
+
+        }
+        if (consecutive_index != 0)
+        {
+            ++consecutive_index;
+        }
         consecutive_index_by_original_id.emplace(original_id, consecutive_index);
-        ++consecutive_index;
     }
     return consecutive_index_by_original_id;
 }
 
-std::vector<int32_t>
+std::vector<uint32_t>
 JsonGraphReader::build_vertex_colors(
-    const std::unordered_map<uint32_t, int32_t>& color_by_id,
+    const std::unordered_map<uint32_t, uint32_t>& color_by_id,
     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id)
 {
-    std::vector<int32_t> colors(consecutive_index_by_original_id.size());
+    std::vector<uint32_t> colors(consecutive_index_by_original_id.size());
     for (const auto& entry : consecutive_index_by_original_id)
     {
         colors.at(entry.second) = color_by_id.at(entry.first);
@@ -201,7 +212,7 @@ ColoredGraph JsonGraphReader::build_graph(
     const boost::json::array& links,
     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
     const uint32_t vertex_count,
-    const std::vector<int32_t>& vertex_colors,
+    const std::vector<uint32_t>& vertex_colors,
     const bool is_directed)
 {
     if (detect_edge_colors(links))
@@ -222,11 +233,11 @@ ColoredGraph JsonGraphReader::read(const std::string& path, const bool is_direct
     {
         const boost::json::object root_object = parse_json_object(path);
         const boost::json::array& links = root_object.at(LINKS_KEY).as_array();
-        const std::unordered_map<uint32_t, int32_t> color_by_id =
+        const std::unordered_map<uint32_t, uint32_t> color_by_id =
             collect_node_colors(root_object.at(NODES_KEY).as_array());
         const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
             build_consecutive_index_map(color_by_id);
-        const std::vector<int32_t> vertex_colors =
+        const std::vector<uint32_t> vertex_colors =
             build_vertex_colors(color_by_id, consecutive_index_by_original_id);
         const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
         const ColoredGraph graph =
