@@ -47,11 +47,11 @@ std::ifstream VertexEdgeGraphReader::open_file(const std::string& file_path)
     throw GraphConstructionException("Failed to read '" + file_path + "': " + exc.what());
 }
 
-std::unordered_map<uint32_t, int32_t> VertexEdgeGraphReader::parse_vertex_file(
+std::unordered_map<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_file(
     const std::string& vertices_path)
 {
     std::ifstream file = open_file(vertices_path);
-    std::unordered_map<uint32_t, int32_t> vertex_color_by_original_id;
+    std::unordered_map<uint32_t, uint32_t> vertex_color_by_original_id;
     std::string line;
     while (std::getline(file, line))
     {
@@ -62,7 +62,7 @@ std::unordered_map<uint32_t, int32_t> VertexEdgeGraphReader::parse_vertex_file(
         std::istringstream stream(line);
         uint32_t line_index = 0;
         uint32_t vertex_id = 0;
-        int32_t color = 0;
+        uint32_t color = 0;
         if (!(stream >> line_index >> vertex_id >> color))
         {
             std::string msg = "Malformed vertex line in '";
@@ -85,7 +85,7 @@ std::unordered_map<uint32_t, int32_t> VertexEdgeGraphReader::parse_vertex_file(
 }
 
 std::unordered_map<uint32_t, uint32_t> VertexEdgeGraphReader::build_consecutive_index_map(
-    const std::unordered_map<uint32_t, int32_t>& vertex_color_by_original_id)
+    const std::unordered_map<uint32_t, uint32_t>& vertex_color_by_original_id)
 {
     // Sort original IDs so the mapping is deterministic regardless of hash-map
     // iteration order — callers rely on ascending original-ID → ascending index.
@@ -95,7 +95,6 @@ std::unordered_map<uint32_t, uint32_t> VertexEdgeGraphReader::build_consecutive_
     {
         sorted_ids.push_back(entry.first);
     }
-    std::sort(sorted_ids.begin(), sorted_ids.end());
     std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id;
     consecutive_index_by_original_id.reserve(sorted_ids.size());
     uint32_t consecutive_index = 0;
@@ -107,11 +106,11 @@ std::unordered_map<uint32_t, uint32_t> VertexEdgeGraphReader::build_consecutive_
     return consecutive_index_by_original_id;
 }
 
-std::vector<int32_t> VertexEdgeGraphReader::build_vertex_colors(
-    const std::unordered_map<uint32_t, int32_t>& vertex_color_by_original_id,
+std::vector<uint32_t> VertexEdgeGraphReader::build_vertex_colors(
+    const std::unordered_map<uint32_t, uint32_t>& vertex_color_by_original_id,
     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id)
 {
-    std::vector<int32_t> vertex_colors(consecutive_index_by_original_id.size(), 0);
+    std::vector<uint32_t> vertex_colors(consecutive_index_by_original_id.size(), 0);
     for (const auto& entry : consecutive_index_by_original_id)
     {
         vertex_colors.at(entry.second) = vertex_color_by_original_id.at(entry.first);
@@ -204,11 +203,11 @@ ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_
     {
         const std::string vertices_path = path + VERTEX_INDICES_SUFFIX;
         const std::string edges_path = path + EDGES_SUFFIX;
-        const std::unordered_map<uint32_t, int32_t> color_by_id =
+        const std::unordered_map<uint32_t, uint32_t> color_by_id =
             parse_vertex_file(vertices_path);
         const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
             build_consecutive_index_map(color_by_id);
-        const std::vector<int32_t> vertex_colors =
+        const std::vector<uint32_t> vertex_colors =
             build_vertex_colors(color_by_id, consecutive_index_by_original_id);
         std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> colored_edges;
         std::vector<std::pair<uint32_t, uint32_t>> uncolored_edges;

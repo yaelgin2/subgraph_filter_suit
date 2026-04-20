@@ -36,7 +36,7 @@ namespace sgf
  * - @c color (optional)                 : unsigned integer edge color label.
  *
  * Node IDs may be non-consecutive; they are remapped to dense consecutive
- * indices sorted by original ID. Edge colors follow an all-or-nothing rule:
+ * Edge colors follow an all-or-nothing rule:
  * every edge must carry a color or none may — a mix throws
  * GraphConstructionException. Duplicate vertex IDs and unknown edge endpoint
  * IDs also throw GraphConstructionException.
@@ -91,7 +91,7 @@ private:
      * @throws GraphConstructionException if any line is malformed or a vertex
      *         ID appears more than once.
      */
-    static std::unordered_map<uint32_t, int32_t> parse_vertex_file(
+    static std::unordered_map<uint32_t, uint32_t> parse_vertex_file(
         const std::string& vertices_path);
 
     /**
@@ -104,7 +104,7 @@ private:
      * @return Map from original ID to consecutive zero-based index.
      */
     static std::unordered_map<uint32_t, uint32_t> build_consecutive_index_map(
-        const std::unordered_map<uint32_t, int32_t>& vertex_color_by_original_id);
+        const std::unordered_map<uint32_t, uint32_t>& vertex_color_by_original_id);
 
     /**
      * @brief Extracts per-vertex colors in consecutive-index order.
@@ -113,8 +113,8 @@ private:
      * @param consecutive_index_by_original_id Map from original ID to consecutive index.
      * @return Vector of color labels indexed by consecutive vertex index.
      */
-    static std::vector<int32_t> build_vertex_colors(
-        const std::unordered_map<uint32_t, int32_t>& vertex_color_by_original_id,
+    static std::vector<uint32_t> build_vertex_colors(
+        const std::unordered_map<uint32_t, uint32_t>& vertex_color_by_original_id,
         const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
