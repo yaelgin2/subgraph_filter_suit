@@ -91,8 +91,8 @@ private:
      * @throws GraphConstructionException if any line is malformed or a vertex
      *         ID appears more than once.
      */
-    static std::unordered_map<uint32_t, uint32_t> parse_vertex_file(
-        const std::string& vertices_path);
+    static std::unordered_map<uint32_t, uint32_t>
+    parse_vertex_file(const std::string& vertices_path);
 
     /**
      * @brief Builds a remapping from original vertex IDs to consecutive indices.
@@ -129,10 +129,10 @@ private:
      * @throws GraphConstructionException if the line is malformed or references
      *         an unknown vertex ID.
      */
-    static bool parse_edge_line(
-        const std::string& line,
-        const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-        uint32_t& out_src, uint32_t& out_dst, uint32_t& out_color);
+    static bool
+    parse_edge_line(const std::string& line,
+                    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
+                    uint32_t& out_src, uint32_t& out_dst, uint32_t& out_color);
 
     /**
      * @brief Parses the .edges file, enforcing the all-or-nothing color rule.
@@ -148,12 +148,11 @@ private:
      * @throws GraphConstructionException if any line is malformed, references
      *         an unknown vertex ID, or edge colors are mixed.
      */
-    static void parse_edge_file(
-        const std::string& edges_path,
-        const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-        std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges,
-        std::vector<std::pair<uint32_t, uint32_t>>& uncolored_edges);
-
+    static void
+    parse_edge_file(const std::string& edges_path,
+                    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
+                    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges,
+                    std::vector<std::pair<uint32_t, uint32_t>>& uncolored_edges);
 };
 
 }  // namespace sgf

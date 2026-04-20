@@ -6,7 +6,6 @@
 #include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
-#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <sstream>
@@ -41,14 +40,14 @@ std::ifstream VertexEdgeGraphReader::open_file(const std::string& file_path)
     return file;
 }
 
-[[noreturn]] void VertexEdgeGraphReader::rethrow_as_construction_error(
-    const std::string& file_path, const std::out_of_range& exc)
+[[noreturn]] void VertexEdgeGraphReader::rethrow_as_construction_error(const std::string& file_path,
+                                                                       const std::out_of_range& exc)
 {
     throw GraphConstructionException("Failed to read '" + file_path + "': " + exc.what());
 }
 
-std::unordered_map<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_file(
-    const std::string& vertices_path)
+std::unordered_map<uint32_t, uint32_t>
+VertexEdgeGraphReader::parse_vertex_file(const std::string& vertices_path)
 {
     std::ifstream file = open_file(vertices_path);
     std::unordered_map<uint32_t, uint32_t> vertex_color_by_original_id;
@@ -76,9 +75,8 @@ std::unordered_map<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_file(
         }
         if (!vertex_color_by_original_id.emplace(vertex_id, color).second)
         {
-            throw GraphConstructionException("Duplicate vertex ID " +
-                                             std::to_string(vertex_id) + " in '" +
-                                             vertices_path + "'");
+            throw GraphConstructionException("Duplicate vertex ID " + std::to_string(vertex_id) +
+                                             " in '" + vertices_path + "'");
         }
     }
     return vertex_color_by_original_id;
@@ -129,22 +127,22 @@ bool VertexEdgeGraphReader::parse_edge_line(
     if (!(stream >> raw_src >> raw_dst))
     {
         throw GraphConstructionException("Malformed edge line (expected at least " +
-                                        std::to_string(TOKENS_PER_UNCOLORED_EDGE_LINE) +
-                                        " tokens): '" + line + "'");
+                                         std::to_string(TOKENS_PER_UNCOLORED_EDGE_LINE) +
+                                         " tokens): '" + line + "'");
     }
     const std::unordered_map<uint32_t, uint32_t>::const_iterator src_it =
         consecutive_index_by_original_id.find(raw_src);
     if (src_it == consecutive_index_by_original_id.end())
     {
         throw GraphConstructionException("Unknown source vertex ID " + std::to_string(raw_src) +
-                                        " in edge line: '" + line + "'");
+                                         " in edge line: '" + line + "'");
     }
     const std::unordered_map<uint32_t, uint32_t>::const_iterator dst_it =
         consecutive_index_by_original_id.find(raw_dst);
     if (dst_it == consecutive_index_by_original_id.end())
     {
         throw GraphConstructionException("Unknown destination vertex ID " +
-                                        std::to_string(raw_dst) + " in edge line: '" + line + "'");
+                                         std::to_string(raw_dst) + " in edge line: '" + line + "'");
     }
     out_src = src_it->second;
     out_dst = dst_it->second;
@@ -173,7 +171,8 @@ void VertexEdgeGraphReader::parse_edge_file(
         uint32_t src = 0;
         uint32_t dst = 0;
         uint32_t color = 0;
-        const bool has_color = parse_edge_line(line, consecutive_index_by_original_id, src, dst, color);
+        const bool has_color =
+            parse_edge_line(line, consecutive_index_by_original_id, src, dst, color);
         if (!color_mode_set)
         {
             edges_have_colors = has_color;
@@ -181,9 +180,8 @@ void VertexEdgeGraphReader::parse_edge_file(
         }
         else if (has_color != edges_have_colors)
         {
-            throw GraphConstructionException(
-                "Mixed edge colors in '" + edges_path +
-                "': some lines have a color token and some do not");
+            throw GraphConstructionException("Mixed edge colors in '" + edges_path +
+                                             "': some lines have a color token and some do not");
         }
         if (edges_have_colors)
         {
@@ -197,14 +195,13 @@ void VertexEdgeGraphReader::parse_edge_file(
 }
 
 ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_directed,
-                                          const LoggerHandler& logger) const
+                                         const LoggerHandler& logger) const
 {
     try
     {
         const std::string vertices_path = path + VERTEX_INDICES_SUFFIX;
         const std::string edges_path = path + EDGES_SUFFIX;
-        const std::unordered_map<uint32_t, uint32_t> color_by_id =
-            parse_vertex_file(vertices_path);
+        const std::unordered_map<uint32_t, uint32_t> color_by_id = parse_vertex_file(vertices_path);
         const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
             build_consecutive_index_map(color_by_id);
         const std::vector<uint32_t> vertex_colors =
