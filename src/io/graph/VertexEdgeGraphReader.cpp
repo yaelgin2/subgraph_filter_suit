@@ -41,12 +41,6 @@ std::ifstream VertexEdgeGraphReader::open_file(const std::string& file_path)
     return file;
 }
 
-[[noreturn]] void VertexEdgeGraphReader::rethrow_as_construction_error(const std::string& file_path,
-                                                                       const std::out_of_range& exc)
-{
-    throw GraphConstructionException("Failed to read '" + file_path + "': " + exc.what());
-}
-
 std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(
     const std::string& line, const std::string& file_path)
 {
@@ -118,9 +112,17 @@ std::vector<uint32_t> VertexEdgeGraphReader::build_vertex_colors(
     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id)
 {
     std::vector<uint32_t> vertex_colors(consecutive_index_by_original_id.size(), 0);
-    for (const auto& entry : consecutive_index_by_original_id)
+    try
     {
-        vertex_colors.at(entry.second) = vertex_color_by_original_id.at(entry.first);
+        for (const auto& entry : consecutive_index_by_original_id)
+        {
+            vertex_colors.at(entry.second) = vertex_color_by_original_id.at(entry.first);
+        }
+    }
+    catch (const std::out_of_range& exc)
+    {
+        throw GraphConstructionException(
+            std::string("Internal error building vertex color map: ") + exc.what());
     }
     return vertex_colors;
 }
@@ -217,31 +219,24 @@ void VertexEdgeGraphReader::parse_edge_file(
 ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_directed,
                                          const LoggerHandler& logger) const
 {
-    try
-    {
-        const std::string vertices_path = path + VERTEX_INDICES_SUFFIX;
-        const std::string edges_path = path + EDGES_SUFFIX;
-        const std::unordered_map<uint32_t, uint32_t> color_by_id = parse_vertex_file(vertices_path);
-        const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
-            build_consecutive_index_map(color_by_id);
-        const std::vector<uint32_t> vertex_colors =
-            build_vertex_colors(color_by_id, consecutive_index_by_original_id);
-        std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> colored_edges;
-        std::vector<std::pair<uint32_t, uint32_t>> uncolored_edges;
-        parse_edge_file(edges_path, consecutive_index_by_original_id, colored_edges,
-                        uncolored_edges);
-        logger.log(LogLevel::INFO, "read vertex-edge graph from '" + path + "'");
-        const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
-        if (colored_edges.empty())
-        {
-            return {vertex_count, uncolored_edges, vertex_colors, is_directed};
-        }
-        return {vertex_count, colored_edges, vertex_colors, is_directed};
-    }
-    catch (const std::out_of_range& exc)
-    {
-        rethrow_as_construction_error(path, exc);
-    }
+    const std::string vertices_path = path + VERTEX_INDICES_SUFFIX;
+    const std::string edges_path = path + EDGES_SUFFIX;
+    const std::unordered_map<uint32_t, uint32_t> color_by_id = parse_vertex_file(vertices_path);
+    const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
+        build_consecutive_index_map(color_by_id);
+    const std::vector<uint32_t> vertex_colors =
+        build_vertex_colors(color_by_id, consecutive_index_by_original_id);
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> colored_edges;
+    std::vector<std::pair<uint32_t, uint32_t>> uncolored_edges;
+    parse_edge_file(edges_path, consecutive_index_by_original_id, colored_edges, uncolored_edges);
+    const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
+    const ColoredGraph result = colored_edges.empty()
+                                    ? ColoredGraph{vertex_count, uncolored_edges, vertex_colors,
+                                                   is_directed}
+                                    : ColoredGraph{vertex_count, colored_edges, vertex_colors,
+                                                   is_directed};
+    logger.log(LogLevel::INFO, "read vertex-edge graph from '" + path + "'");
+    return result;
 }
 
 }  // namespace sgf
