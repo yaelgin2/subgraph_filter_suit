@@ -6,6 +6,7 @@
 #include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <sstream>
@@ -22,7 +23,7 @@ namespace sgf
 namespace
 {
 
-constexpr uint32_t TOKENS_PER_VERTEX_LINE = 3;
+constexpr uint32_t TOKENS_PER_VERTEX_LINE = 2;
 constexpr uint32_t TOKENS_PER_UNCOLORED_EDGE_LINE = 2;
 constexpr uint32_t TOKENS_PER_COLORED_EDGE_LINE = 3;
 constexpr const char* VERTEX_INDICES_SUFFIX = ".vertex_indices";
@@ -46,6 +47,28 @@ std::ifstream VertexEdgeGraphReader::open_file(const std::string& file_path)
     throw GraphConstructionException("Failed to read '" + file_path + "': " + exc.what());
 }
 
+std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(
+    const std::string& line, const std::string& file_path)
+{
+    std::istringstream stream(line);
+    uint32_t vertex_id = 0;
+    uint32_t color = 0;
+    if (!(stream >> vertex_id >> color))
+    {
+        throw GraphConstructionException("Malformed vertex line in '" + file_path + "': '" + line +
+                                         "' (expected " +
+                                         std::to_string(TOKENS_PER_VERTEX_LINE) + " tokens)");
+    }
+    uint32_t extra = 0;
+    if (stream >> extra)
+    {
+        throw GraphConstructionException("Malformed vertex line in '" + file_path + "': '" + line +
+                                         "' (too many tokens, expected " +
+                                         std::to_string(TOKENS_PER_VERTEX_LINE) + ")");
+    }
+    return {vertex_id, color};
+}
+
 std::unordered_map<uint32_t, uint32_t>
 VertexEdgeGraphReader::parse_vertex_file(const std::string& vertices_path)
 {
@@ -58,24 +81,12 @@ VertexEdgeGraphReader::parse_vertex_file(const std::string& vertices_path)
         {
             continue;
         }
-        std::istringstream stream(line);
-        uint32_t vertex_id = 0;
-        uint32_t color = 0;
-        if (!(stream >> vertex_id >> color))
+        const std::pair<uint32_t, uint32_t> parsed = parse_vertex_line(line, vertices_path);
+        if (!vertex_color_by_original_id.emplace(parsed.first, parsed.second).second)
         {
-            std::string msg = "Malformed vertex line in '";
-            msg += vertices_path;
-            msg += "': '";
-            msg += line;
-            msg += "' (expected ";
-            msg += std::to_string(TOKENS_PER_VERTEX_LINE);
-            msg += " tokens)";
-            throw GraphConstructionException(msg);
-        }
-        if (!vertex_color_by_original_id.emplace(vertex_id, color).second)
-        {
-            throw GraphConstructionException("Duplicate vertex ID " + std::to_string(vertex_id) +
-                                             " in '" + vertices_path + "'");
+            throw GraphConstructionException("Duplicate vertex ID " +
+                                             std::to_string(parsed.first) + " in '" +
+                                             vertices_path + "'");
         }
     }
     return vertex_color_by_original_id;
@@ -84,14 +95,13 @@ VertexEdgeGraphReader::parse_vertex_file(const std::string& vertices_path)
 std::unordered_map<uint32_t, uint32_t> VertexEdgeGraphReader::build_consecutive_index_map(
     const std::unordered_map<uint32_t, uint32_t>& vertex_color_by_original_id)
 {
-    // Sort original IDs so the mapping is deterministic regardless of hash-map
-    // iteration order — callers rely on ascending original-ID → ascending index.
     std::vector<uint32_t> sorted_ids;
     sorted_ids.reserve(vertex_color_by_original_id.size());
     for (const auto& entry : vertex_color_by_original_id)
     {
         sorted_ids.push_back(entry.first);
     }
+    std::sort(sorted_ids.begin(), sorted_ids.end());
     std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id;
     consecutive_index_by_original_id.reserve(sorted_ids.size());
     uint32_t consecutive_index = 0;
@@ -115,6 +125,21 @@ std::vector<uint32_t> VertexEdgeGraphReader::build_vertex_colors(
     return vertex_colors;
 }
 
+uint32_t VertexEdgeGraphReader::resolve_vertex_id(
+    const uint32_t raw_id,
+    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
+    const std::string& role, const std::string& line)
+{
+    const std::unordered_map<uint32_t, uint32_t>::const_iterator it =
+        consecutive_index_by_original_id.find(raw_id);
+    if (it == consecutive_index_by_original_id.end())
+    {
+        throw GraphConstructionException("Unknown " + role + " vertex ID " +
+                                         std::to_string(raw_id) + " in edge line: '" + line + "'");
+    }
+    return it->second;
+}
+
 bool VertexEdgeGraphReader::parse_edge_line(
     const std::string& line,
     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
@@ -129,25 +154,21 @@ bool VertexEdgeGraphReader::parse_edge_line(
                                          std::to_string(TOKENS_PER_UNCOLORED_EDGE_LINE) +
                                          " tokens): '" + line + "'");
     }
-    const std::unordered_map<uint32_t, uint32_t>::const_iterator src_it =
-        consecutive_index_by_original_id.find(raw_src);
-    if (src_it == consecutive_index_by_original_id.end())
-    {
-        throw GraphConstructionException("Unknown source vertex ID " + std::to_string(raw_src) +
-                                         " in edge line: '" + line + "'");
-    }
-    const std::unordered_map<uint32_t, uint32_t>::const_iterator dst_it =
-        consecutive_index_by_original_id.find(raw_dst);
-    if (dst_it == consecutive_index_by_original_id.end())
-    {
-        throw GraphConstructionException("Unknown destination vertex ID " +
-                                         std::to_string(raw_dst) + " in edge line: '" + line + "'");
-    }
-    out_src = src_it->second;
-    out_dst = dst_it->second;
+    out_src = resolve_vertex_id(raw_src, consecutive_index_by_original_id, "source", line);
+    out_dst = resolve_vertex_id(raw_dst, consecutive_index_by_original_id, "destination", line);
     uint32_t color = 0;
     const bool has_color = static_cast<bool>(stream >> color);
     out_color = color;
+    if (has_color)
+    {
+        uint32_t extra = 0;
+        if (stream >> extra)
+        {
+            throw GraphConstructionException(
+                "Malformed edge line (too many tokens, expected at most " +
+                std::to_string(TOKENS_PER_COLORED_EDGE_LINE) + "): '" + line + "'");
+        }
+    }
     return has_color;
 }
 

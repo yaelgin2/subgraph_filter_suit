@@ -22,10 +22,10 @@ namespace sgf
  *
  * **@p path.vertex_indices** — one vertex per line:
  * @code
- * <index> <vertex_id> <color>
+ * <vertex_id> <color>
  * @endcode
- * - @c vertex_id  : original node identifier (may be non-consecutive).
- * - @c color      : signed integer color label for the vertex.
+ * - @c vertex_id : original node identifier (may be non-consecutive).
+ * - @c color     : unsigned integer color label for the vertex.
  *
  * **@p path.edges** — one edge per line:
  * @code
@@ -79,13 +79,28 @@ private:
                                                            const std::out_of_range& exc);
 
     /**
+     * @brief Parses one line from a .vertex_indices file.
+     *
+     * Expects exactly two whitespace-separated tokens: vertex_id and color.
+     * Throws on too-few or too-many tokens.
+     *
+     * @param line Raw line text.
+     * @param file_path Path of the file (used in error messages).
+     * @return Pair of (vertex_id, color).
+     * @throws GraphConstructionException if the line is malformed.
+     */
+    static std::pair<uint32_t, uint32_t> parse_vertex_line(const std::string& line,
+                                                            const std::string& file_path);
+
+    /**
      * @brief Parses the .vertex_indices file into a color-by-original-ID map.
      *
-     * Each line must contain three whitespace-separated tokens: index, vertex_id,
-     * color. Duplicate vertex IDs throw GraphConstructionException.
+     * Each line must contain exactly two whitespace-separated tokens: vertex_id,
+     * color. Extra or missing tokens throw GraphConstructionException.
+     * Duplicate vertex IDs throw GraphConstructionException.
      *
      * @param vertices_path Path to the .vertex_indices file.
-     * @return Map from original vertex ID to its signed color label.
+     * @return Map from original vertex ID to its color label.
      * @throws SgfPathDoesntExistException if the file cannot be opened.
      * @throws GraphConstructionException if any line is malformed or a vertex
      *         ID appears more than once.
@@ -96,8 +111,6 @@ private:
     /**
      * @brief Builds a remapping from original vertex IDs to consecutive indices.
      *
-     * IDs are sorted ascending before assigning consecutive indices so the
-     * mapping is deterministic regardless of insertion order.
      *
      * @param vertex_color_by_original_id Map from original ID to color.
      * @return Map from original ID to consecutive zero-based index.
@@ -115,6 +128,21 @@ private:
     static std::vector<uint32_t> build_vertex_colors(
         const std::unordered_map<uint32_t, uint32_t>& vertex_color_by_original_id,
         const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
+
+    /**
+     * @brief Resolves a raw vertex ID to its consecutive index, throwing if unknown.
+     *
+     * @param raw_id Original vertex ID from the file.
+     * @param consecutive_index_by_original_id Map from original ID to consecutive index.
+     * @param role Human-readable role label ("source" or "destination") for error messages.
+     * @param line Raw edge line text (used in error messages).
+     * @return Consecutive index for @p raw_id.
+     * @throws GraphConstructionException if @p raw_id is not in the map.
+     */
+    static uint32_t resolve_vertex_id(
+        const uint32_t raw_id,
+        const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
+        const std::string& role, const std::string& line);
 
     /**
      * @brief Parses one edge line into an (src, dst) pair and optional color.
