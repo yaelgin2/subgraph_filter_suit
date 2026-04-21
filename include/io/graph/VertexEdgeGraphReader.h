@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <fstream>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -71,14 +70,6 @@ private:
     static std::ifstream open_file(const std::string& file_path);
 
     /**
-     * @brief Wraps @p exc in a GraphConstructionException and throws it.
-     * @param file_path The file path associated with the failure.
-     * @param exc The original exception.
-     */
-    [[noreturn]] static void rethrow_as_construction_error(const std::string& file_path,
-                                                           const std::out_of_range& exc);
-
-    /**
      * @brief Parses one line from a .vertex_indices file.
      *
      * Expects exactly two whitespace-separated tokens: vertex_id and color.
@@ -124,6 +115,7 @@ private:
      * @param vertex_color_by_original_id Map from original ID to color.
      * @param consecutive_index_by_original_id Map from original ID to consecutive index.
      * @return Vector of color labels indexed by consecutive vertex index.
+     * @throws GraphConstructionException if an index lookup fails unexpectedly.
      */
     static std::vector<uint32_t> build_vertex_colors(
         const std::unordered_map<uint32_t, uint32_t>& vertex_color_by_original_id,
