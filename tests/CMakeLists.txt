@@ -39,3 +39,10 @@ add_sgf_test(graphml_reader_tests io/graph/GraphmlGraphReaderTest.cpp)
 target_compile_definitions(graphml_reader_tests PRIVATE
     GRAPHML_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/io/graphml"
 )
+
+add_sgf_test(vertex_edge_reader_tests io/graph/VertexEdgeGraphReaderTest.cpp)
+
+# The vertex-edge reader tests need to locate the test-data directory at compile time.
+target_compile_definitions(vertex_edge_reader_tests PRIVATE
+    VERTEX_EDGE_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/io/vertex_edge"
+)
