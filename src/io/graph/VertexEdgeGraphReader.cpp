@@ -163,12 +163,12 @@ bool VertexEdgeGraphReader::parse_edge_line(
                                          std::to_string(TOKENS_PER_UNCOLORED_EDGE_LINE) +
                                          " tokens): '" + line + "'");
     }
+    out_src = resolve_vertex_id(raw_src, consecutive_index_by_original_id, "source", line);
+    out_dst = resolve_vertex_id(raw_dst, consecutive_index_by_original_id, "destination", line);
     if (!(stream >> color))
     {
         return false;
     }
-    out_src = resolve_vertex_id(raw_src, consecutive_index_by_original_id, "source", line);
-    out_dst = resolve_vertex_id(raw_dst, consecutive_index_by_original_id, "destination", line);
     out_color = color;
     throw_if_extra_tokens(stream, "Malformed edge line", line, TOKENS_PER_COLORED_EDGE_LINE);
     return true;
@@ -226,7 +226,7 @@ ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_
         build_consecutive_index_map(color_by_id);
     const std::vector<uint32_t> vertex_colors =
         build_vertex_colors(color_by_id, consecutive_index_by_original_id);
-    const EdgeData edge_data = parse_edge_file(edges_path, consecutive_index_by_original_id);
+    EdgeData edge_data = parse_edge_file(edges_path, consecutive_index_by_original_id);
     const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
     const ColoredGraph result =
         edge_data.colored.empty()
