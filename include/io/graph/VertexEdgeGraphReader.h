@@ -96,7 +96,7 @@ private:
      * @throws GraphConstructionException if the line is malformed.
      */
     static std::pair<uint32_t, uint32_t> parse_vertex_line(const std::string& line,
-                                                            const std::string& file_path);
+                                                           const std::string& file_path);
 
     /**
      * @brief Parses the .vertex_indices file into a color-by-original-ID map.

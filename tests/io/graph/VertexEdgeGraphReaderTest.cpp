@@ -8,8 +8,8 @@
 #include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
-#include <gtest/gtest.h>
 #include <algorithm>
+#include <gtest/gtest.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -101,9 +101,9 @@ TEST_F(VertexEdgeGraphReaderTest, malformed_vertex_line_too_long_throws_graph_co
  */
 TEST_F(VertexEdgeGraphReaderTest, duplicate_vertex_id_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("duplicate_vertex_id"), false,
-                               LoggerHandler(std::weak_ptr<ILogger>{})),
-                 GraphConstructionException);
+    EXPECT_THROW(
+        m_reader.read(data("duplicate_vertex_id"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+        GraphConstructionException);
 }
 
 // ── Malformed edge file ───────────────────────────────────────────────────────
@@ -143,9 +143,9 @@ TEST_F(VertexEdgeGraphReaderTest, unknown_source_vertex_throws_graph_constructio
  */
 TEST_F(VertexEdgeGraphReaderTest, unknown_dest_vertex_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("unknown_dest_vertex"), false,
-                               LoggerHandler(std::weak_ptr<ILogger>{})),
-                 GraphConstructionException);
+    EXPECT_THROW(
+        m_reader.read(data("unknown_dest_vertex"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+        GraphConstructionException);
 }
 
 /**
@@ -222,8 +222,8 @@ TEST_F(VertexEdgeGraphReaderTest, single_vertex_directed)
  */
 TEST_F(VertexEdgeGraphReaderTest, two_vertices_no_edges_undirected)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("two_vertices_no_edges"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("two_vertices_no_edges"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_FALSE(graph.is_directed());
@@ -254,8 +254,8 @@ TEST_F(VertexEdgeGraphReaderTest, two_vertices_no_edges_directed)
  */
 TEST_F(VertexEdgeGraphReaderTest, two_vertices_one_edge_undirected)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("two_vertices_one_edge"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("two_vertices_one_edge"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_FALSE(graph.is_directed());
@@ -383,8 +383,7 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_same_vertex_color_directed)
         const std::pair<std::vector<uint32_t>::const_iterator,
                         std::vector<uint32_t>::const_iterator>
             nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg =
-            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
         if (out_deg == 2U)
         {
             source = v;
@@ -430,8 +429,7 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_diff_vertex_colors_directed)
         const std::pair<std::vector<uint32_t>::const_iterator,
                         std::vector<uint32_t>::const_iterator>
             nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg =
-            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
         if (out_deg == 2U)
         {
             source = v;
@@ -482,8 +480,7 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_two_same_vertex_color_directed)
         const std::pair<std::vector<uint32_t>::const_iterator,
                         std::vector<uint32_t>::const_iterator>
             nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg =
-            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
         if (out_deg == 2U)
         {
             source = v;
@@ -750,8 +747,8 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_all_edges_diff_colors_undirected)
     EXPECT_FALSE(graph.is_directed());
     EXPECT_TRUE(graph.is_edges_colored());
     EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 0));
-    EXPECT_NE(graph.get_edge_color(1, 0),graph.get_edge_color(2, 1));
-    EXPECT_NE(graph.get_edge_color(1, 0),graph.get_edge_color(2, 0));
+    EXPECT_NE(graph.get_edge_color(1, 0), graph.get_edge_color(2, 1));
+    EXPECT_NE(graph.get_edge_color(1, 0), graph.get_edge_color(2, 0));
     EXPECT_EQ(graph.get_edge_color(1, 2), graph.get_edge_color(2, 1));
     EXPECT_NE(graph.get_edge_color(1, 2), graph.get_edge_color(2, 0));
 }
@@ -795,8 +792,7 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_all_edges_same_color_directed)
         const std::pair<std::vector<uint32_t>::const_iterator,
                         std::vector<uint32_t>::const_iterator>
             nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg =
-            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
         if (out_deg == 2U)
         {
             source = v;
@@ -840,8 +836,7 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_all_edges_diff_colors_directed)
         const std::pair<std::vector<uint32_t>::const_iterator,
                         std::vector<uint32_t>::const_iterator>
             nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg =
-            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
         if (out_deg == 2U)
         {
             source = v;
@@ -885,8 +880,7 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_two_edges_same_color_directed)
         const std::pair<std::vector<uint32_t>::const_iterator,
                         std::vector<uint32_t>::const_iterator>
             nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg =
-            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
         if (out_deg == 2U)
         {
             source = v;
@@ -1030,9 +1024,8 @@ TEST_F(VertexEdgeGraphReaderTest, non_numeric_token_edge_file_throws_graph_const
  */
 TEST_F(VertexEdgeGraphReaderTest, self_loop_throws_invalid_argument)
 {
-    EXPECT_THROW(
-        m_reader.read(data("self_loop"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        InvalidArgumentException);
+    EXPECT_THROW(m_reader.read(data("self_loop"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+                 InvalidArgumentException);
 }
 
 // ── Non-consecutive IDs: color preservation ───────────────────────────────────

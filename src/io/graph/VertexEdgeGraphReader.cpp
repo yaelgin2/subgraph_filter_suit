@@ -30,14 +30,13 @@ constexpr const char* VERTEX_INDICES_SUFFIX = ".vertex_indices";
 constexpr const char* EDGES_SUFFIX = ".edges";
 
 void throw_if_extra_tokens(std::istringstream& stream, const std::string& context,
-                            const std::string& line, const uint32_t expected_count)
+                           const std::string& line, const uint32_t expected_count)
 {
     uint32_t extra = 0;
     if (stream >> extra)
     {
-        throw GraphConstructionException(context + ": '" + line +
-                                              "' (too many tokens, expected " +
-                                              std::to_string(expected_count) + ")");
+        throw GraphConstructionException(context + ": '" + line + "' (too many tokens, expected " +
+                                         std::to_string(expected_count) + ")");
     }
 }
 
@@ -53,8 +52,8 @@ std::ifstream VertexEdgeGraphReader::open_file(const std::string& file_path)
     return file;
 }
 
-std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(
-    const std::string& line, const std::string& file_path)
+std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(const std::string& line,
+                                                                       const std::string& file_path)
 {
     std::istringstream stream(line);
     uint32_t vertex_id = 0;
@@ -62,8 +61,8 @@ std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(
     if (!(stream >> vertex_id >> color))
     {
         throw GraphConstructionException("Malformed vertex line in '" + file_path + "': '" + line +
-                                         "' (expected " +
-                                         std::to_string(TOKENS_PER_VERTEX_LINE) + " tokens)");
+                                         "' (expected " + std::to_string(TOKENS_PER_VERTEX_LINE) +
+                                         " tokens)");
     }
     throw_if_extra_tokens(stream, "Malformed vertex line in '" + file_path + "'", line,
                           TOKENS_PER_VERTEX_LINE);
@@ -85,9 +84,8 @@ VertexEdgeGraphReader::parse_vertex_file(const std::string& vertices_path)
         const std::pair<uint32_t, uint32_t> parsed = parse_vertex_line(line, vertices_path);
         if (!vertex_color_by_original_id.emplace(parsed.first, parsed.second).second)
         {
-            throw GraphConstructionException("Duplicate vertex ID " +
-                                             std::to_string(parsed.first) + " in '" +
-                                             vertices_path + "'");
+            throw GraphConstructionException("Duplicate vertex ID " + std::to_string(parsed.first) +
+                                             " in '" + vertices_path + "'");
         }
     }
     return vertex_color_by_original_id;
@@ -127,8 +125,8 @@ std::vector<uint32_t> VertexEdgeGraphReader::build_vertex_colors(
     }
     catch (const std::out_of_range& exc)
     {
-        throw GraphConstructionException(
-            std::string("Internal error building vertex color map: ") + exc.what());
+        throw GraphConstructionException(std::string("Internal error building vertex color map: ") +
+                                         exc.what());
     }
     return vertex_colors;
 }
