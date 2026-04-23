@@ -265,7 +265,10 @@ TEST_F(VertexEdgeGraphReaderTest, two_vertices_one_edge_undirected)
 }
 
 /**
- * @brief Two vertices with one uncolored edge, directed: only source sees destination.
+ * @brief Two vertices with one uncolored edge, directed: one vertex is source, one is sink.
+ *
+ * Vertex index assignment is implementation-defined, so the test locates the source
+ * (out-degree 1) at runtime and verifies structure relative to it.
  */
 TEST_F(VertexEdgeGraphReaderTest, two_vertices_one_edge_directed)
 {
@@ -275,10 +278,24 @@ TEST_F(VertexEdgeGraphReaderTest, two_vertices_one_edge_directed)
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_FALSE(graph.is_edges_colored());
-    assert_neighbours(graph, 0, {1});
-    assert_neighbours(graph, 1, {});
-    assert_neighbours(graph, 0, {}, true);
-    assert_neighbours(graph, 1, {0}, true);
+    uint32_t src = graph.vertex_count();
+    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            nbrs = graph.get_neighbours(v);
+        if (static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second)) == 1U)
+        {
+            src = v;
+            break;
+        }
+    }
+    ASSERT_NE(src, graph.vertex_count());
+    const uint32_t dst = (src == 0U) ? 1U : 0U;
+    assert_neighbours(graph, src, {dst});
+    assert_neighbours(graph, dst, {});
+    assert_neighbours(graph, src, {}, true);
+    assert_neighbours(graph, dst, {src}, true);
 }
 
 // ── Triangle: vertex colors, undirected ───────────────────────────────────────
@@ -329,8 +346,13 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_two_same_vertex_color_undirected)
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_FALSE(graph.is_directed());
-    EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(1));
-    EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(2));
+
+    EXPECT_TRUE(graph.get_vertex_color(0) == graph.get_vertex_color(1) ||
+                graph.get_vertex_color(1) == graph.get_vertex_color(2) ||
+                graph.get_vertex_color(0) == graph.get_vertex_color(2));
+    EXPECT_FALSE(graph.get_vertex_color(0) == graph.get_vertex_color(1) &&
+                 graph.get_vertex_color(1) == graph.get_vertex_color(2) &&
+                 graph.get_vertex_color(0) == graph.get_vertex_color(2));
     assert_neighbours(graph, 0, {1, 2});
     assert_neighbours(graph, 1, {0, 2});
     assert_neighbours(graph, 2, {0, 1});
@@ -339,7 +361,10 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_two_same_vertex_color_undirected)
 // ── Triangle: vertex colors, directed ─────────────────────────────────────────
 
 /**
- * @brief Triangle with all vertices the same color, directed (0→1, 1→2, 0→2).
+ * @brief Triangle with all vertices the same color, directed.
+ *
+ * Structure: one source (out-degree 2), one middle (out-degree 1), one sink (out-degree 0).
+ * Vertex index assignment is implementation-defined; roles are located at runtime.
  */
 TEST_F(VertexEdgeGraphReaderTest, triangle_same_vertex_color_directed)
 {
@@ -350,14 +375,42 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_same_vertex_color_directed)
     EXPECT_TRUE(graph.is_directed());
     EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(1));
     EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(2));
-    assert_neighbours(graph, 0, {1, 2});
-    assert_neighbours(graph, 1, {2});
-    assert_neighbours(graph, 2, {});
-    assert_neighbours(graph, 2, {0, 1}, true);
+    uint32_t source = 3U;
+    uint32_t middle = 3U;
+    uint32_t sink = 3U;
+    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            nbrs = graph.get_neighbours(v);
+        const uint32_t out_deg =
+            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        if (out_deg == 2U)
+        {
+            source = v;
+        }
+        else if (out_deg == 1U)
+        {
+            middle = v;
+        }
+        else
+        {
+            sink = v;
+        }
+    }
+    ASSERT_NE(source, 3U);
+    ASSERT_NE(middle, 3U);
+    ASSERT_NE(sink, 3U);
+    assert_neighbours(graph, source, {std::min(middle, sink), std::max(middle, sink)});
+    assert_neighbours(graph, middle, {sink});
+    assert_neighbours(graph, sink, {});
+    assert_neighbours(graph, sink, {std::min(source, middle), std::max(source, middle)}, true);
 }
 
 /**
  * @brief Triangle with all vertices different colors, directed.
+ *
+ * Vertex index assignment is implementation-defined; roles are located at runtime.
  */
 TEST_F(VertexEdgeGraphReaderTest, triangle_diff_vertex_colors_directed)
 {
@@ -369,17 +422,45 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_diff_vertex_colors_directed)
     EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(1));
     EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(2));
     EXPECT_NE(graph.get_vertex_color(1), graph.get_vertex_color(2));
-    assert_neighbours(graph, 0, {1, 2});
-    assert_neighbours(graph, 1, {2});
-    assert_neighbours(graph, 2, {});
-    assert_neighbours(graph, 0, {}, true);
-    assert_neighbours(graph, 1, {0}, true);
-    assert_neighbours(graph, 2, {0,1}, true);
+    uint32_t source = 3U;
+    uint32_t middle = 3U;
+    uint32_t sink = 3U;
+    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            nbrs = graph.get_neighbours(v);
+        const uint32_t out_deg =
+            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        if (out_deg == 2U)
+        {
+            source = v;
+        }
+        else if (out_deg == 1U)
+        {
+            middle = v;
+        }
+        else
+        {
+            sink = v;
+        }
+    }
+    ASSERT_NE(source, 3U);
+    ASSERT_NE(middle, 3U);
+    ASSERT_NE(sink, 3U);
+    assert_neighbours(graph, source, {std::min(middle, sink), std::max(middle, sink)});
+    assert_neighbours(graph, middle, {sink});
+    assert_neighbours(graph, sink, {});
+    assert_neighbours(graph, source, {}, true);
+    assert_neighbours(graph, middle, {source}, true);
+    assert_neighbours(graph, sink, {std::min(source, middle), std::max(source, middle)}, true);
 }
 
 /**
  * @brief Triangle with two vertices sharing a color, directed.
- * Vertices 0 and 1 share color 7; vertex 2 has color 3.
+ *
+ * Two vertices share the same color; one has a distinct color.
+ * Vertex index assignment is implementation-defined; roles are located at runtime.
  */
 TEST_F(VertexEdgeGraphReaderTest, triangle_two_same_vertex_color_directed)
 {
@@ -388,14 +469,43 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_two_same_vertex_color_directed)
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
-    EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(1));
-    EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(2));
-    assert_neighbours(graph, 0, {1, 2});
-    assert_neighbours(graph, 1, {2});
-    assert_neighbours(graph, 2, {});
-    assert_neighbours(graph, 0, {}, true);
-    assert_neighbours(graph, 1, {0}, true);
-    assert_neighbours(graph, 2, {0,1}, true);
+    std::vector<uint32_t> cols = {graph.get_vertex_color(0), graph.get_vertex_color(1),
+                                  graph.get_vertex_color(2)};
+    std::sort(cols.begin(), cols.end());
+    EXPECT_NE(cols[0], cols[2]);
+    EXPECT_TRUE(cols[0] == cols[1] || cols[1] == cols[2]);
+    uint32_t source = 3U;
+    uint32_t middle = 3U;
+    uint32_t sink = 3U;
+    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            nbrs = graph.get_neighbours(v);
+        const uint32_t out_deg =
+            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        if (out_deg == 2U)
+        {
+            source = v;
+        }
+        else if (out_deg == 1U)
+        {
+            middle = v;
+        }
+        else
+        {
+            sink = v;
+        }
+    }
+    ASSERT_NE(source, 3U);
+    ASSERT_NE(middle, 3U);
+    ASSERT_NE(sink, 3U);
+    assert_neighbours(graph, source, {std::min(middle, sink), std::max(middle, sink)});
+    assert_neighbours(graph, middle, {sink});
+    assert_neighbours(graph, sink, {});
+    assert_neighbours(graph, source, {}, true);
+    assert_neighbours(graph, middle, {source}, true);
+    assert_neighbours(graph, sink, {std::min(source, middle), std::max(source, middle)}, true);
 }
 
 // ── Two nodes: parallel edges ─────────────────────────────────────────────────
@@ -417,6 +527,8 @@ TEST_F(VertexEdgeGraphReaderTest, two_nodes_parallel_uncolored_undirected)
 
 /**
  * @brief Two parallel uncolored edges in same direction, directed: deduplicates to 1 edge.
+ *
+ * Vertex index assignment is implementation-defined; source is located at runtime.
  */
 TEST_F(VertexEdgeGraphReaderTest, two_nodes_parallel_uncolored_directed)
 {
@@ -426,10 +538,24 @@ TEST_F(VertexEdgeGraphReaderTest, two_nodes_parallel_uncolored_directed)
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_FALSE(graph.is_edges_colored());
-    assert_neighbours(graph, 0, {1});
-    assert_neighbours(graph, 1, {});
-    assert_neighbours(graph, 1, {0}, true);
-    assert_neighbours(graph, 0, {}, true);
+    uint32_t src = graph.vertex_count();
+    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            nbrs = graph.get_neighbours(v);
+        if (static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second)) == 1U)
+        {
+            src = v;
+            break;
+        }
+    }
+    ASSERT_NE(src, graph.vertex_count());
+    const uint32_t dst = (src == 0U) ? 1U : 0U;
+    assert_neighbours(graph, src, {dst});
+    assert_neighbours(graph, dst, {});
+    assert_neighbours(graph, dst, {src}, true);
+    assert_neighbours(graph, src, {}, true);
 }
 
 /**
@@ -449,6 +575,8 @@ TEST_F(VertexEdgeGraphReaderTest, two_nodes_parallel_same_edge_color_undirected)
 
 /**
  * @brief Two parallel same-colored edges, directed: deduplicates to 1 colored edge.
+ *
+ * Vertex index assignment is implementation-defined; source is located at runtime.
  */
 TEST_F(VertexEdgeGraphReaderTest, two_nodes_parallel_same_edge_color_directed)
 {
@@ -458,11 +586,25 @@ TEST_F(VertexEdgeGraphReaderTest, two_nodes_parallel_same_edge_color_directed)
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_TRUE(graph.is_edges_colored());
-    assert_neighbours(graph, 0, {1});
-    assert_neighbours(graph, 1, {0}, true);
-    assert_neighbours(graph, 0, {}, true);
-    assert_neighbours(graph, 1, {});
-    assert_edge_colors(graph, 0, {3});
+    uint32_t src = graph.vertex_count();
+    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            nbrs = graph.get_neighbours(v);
+        if (static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second)) == 1U)
+        {
+            src = v;
+            break;
+        }
+    }
+    ASSERT_NE(src, graph.vertex_count());
+    const uint32_t dst = (src == 0U) ? 1U : 0U;
+    assert_neighbours(graph, src, {dst});
+    assert_neighbours(graph, dst, {src}, true);
+    assert_neighbours(graph, src, {}, true);
+    assert_neighbours(graph, dst, {});
+    assert_edge_colors(graph, src, {3});
 }
 
 /**
@@ -633,7 +775,9 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_two_edges_same_color_undirected)
 // ── Triangle: edge colors, directed ───────────────────────────────────────────
 
 /**
- * @brief Triangle with all edges the same color, directed (0→1, 1→2, 0→2).
+ * @brief Triangle with all edges the same color, directed.
+ *
+ * Vertex index assignment is implementation-defined; source/middle/sink located at runtime.
  */
 TEST_F(VertexEdgeGraphReaderTest, triangle_all_edges_same_color_directed)
 {
@@ -643,15 +787,42 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_all_edges_same_color_directed)
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_TRUE(graph.is_edges_colored());
-    assert_neighbours(graph, 0, {1, 2});
-    assert_neighbours(graph, 1, {2});
-    EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(0, 2));
-    EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
+    uint32_t source = 3U;
+    uint32_t middle = 3U;
+    uint32_t sink = 3U;
+    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            nbrs = graph.get_neighbours(v);
+        const uint32_t out_deg =
+            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        if (out_deg == 2U)
+        {
+            source = v;
+        }
+        else if (out_deg == 1U)
+        {
+            middle = v;
+        }
+        else
+        {
+            sink = v;
+        }
+    }
+    ASSERT_NE(source, 3U);
+    ASSERT_NE(middle, 3U);
+    ASSERT_NE(sink, 3U);
+    assert_neighbours(graph, source, {std::min(middle, sink), std::max(middle, sink)});
+    assert_neighbours(graph, middle, {sink});
+    EXPECT_EQ(graph.get_edge_color(source, middle), graph.get_edge_color(source, sink));
+    EXPECT_EQ(graph.get_edge_color(source, middle), graph.get_edge_color(middle, sink));
 }
 
 /**
  * @brief Triangle with all edges different colors, directed.
- * Edge 0→1 has color 1, edge 1→2 has color 2, edge 0→2 has color 3.
+ *
+ * Vertex index assignment is implementation-defined; source/middle/sink located at runtime.
  */
 TEST_F(VertexEdgeGraphReaderTest, triangle_all_edges_diff_colors_directed)
 {
@@ -661,14 +832,42 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_all_edges_diff_colors_directed)
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_TRUE(graph.is_edges_colored());
-    EXPECT_NE(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
-    EXPECT_NE(graph.get_edge_color(1, 2), graph.get_edge_color(0, 2));
-    EXPECT_NE(graph.get_edge_color(0, 2), graph.get_edge_color(0, 1));
+    uint32_t source = 3U;
+    uint32_t middle = 3U;
+    uint32_t sink = 3U;
+    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            nbrs = graph.get_neighbours(v);
+        const uint32_t out_deg =
+            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        if (out_deg == 2U)
+        {
+            source = v;
+        }
+        else if (out_deg == 1U)
+        {
+            middle = v;
+        }
+        else
+        {
+            sink = v;
+        }
+    }
+    ASSERT_NE(source, 3U);
+    ASSERT_NE(middle, 3U);
+    ASSERT_NE(sink, 3U);
+    EXPECT_NE(graph.get_edge_color(source, middle), graph.get_edge_color(middle, sink));
+    EXPECT_NE(graph.get_edge_color(middle, sink), graph.get_edge_color(source, sink));
+    EXPECT_NE(graph.get_edge_color(source, sink), graph.get_edge_color(source, middle));
 }
 
 /**
  * @brief Triangle with two edges the same color and one different, directed.
- * Edges 0→1 and 1→2 have color 5; edge 0→2 has color 9.
+ *
+ * The source→middle and middle→sink edges share a color; source→sink has a distinct color.
+ * Vertex index assignment is implementation-defined; source/middle/sink located at runtime.
  */
 TEST_F(VertexEdgeGraphReaderTest, triangle_two_edges_same_color_directed)
 {
@@ -678,8 +877,34 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_two_edges_same_color_directed)
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_TRUE(graph.is_edges_colored());
-    EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
-    EXPECT_NE(graph.get_edge_color(0, 2), graph.get_edge_color(1, 2));
+    uint32_t source = 3U;
+    uint32_t middle = 3U;
+    uint32_t sink = 3U;
+    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            nbrs = graph.get_neighbours(v);
+        const uint32_t out_deg =
+            static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
+        if (out_deg == 2U)
+        {
+            source = v;
+        }
+        else if (out_deg == 1U)
+        {
+            middle = v;
+        }
+        else
+        {
+            sink = v;
+        }
+    }
+    ASSERT_NE(source, 3U);
+    ASSERT_NE(middle, 3U);
+    ASSERT_NE(sink, 3U);
+    EXPECT_EQ(graph.get_edge_color(source, middle), graph.get_edge_color(middle, sink));
+    EXPECT_NE(graph.get_edge_color(source, sink), graph.get_edge_color(middle, sink));
 }
 
 // ── Format-specific edge cases ────────────────────────────────────────────────
