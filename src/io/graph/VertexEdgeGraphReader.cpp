@@ -29,6 +29,18 @@ constexpr uint32_t TOKENS_PER_COLORED_EDGE_LINE = 3;
 constexpr const char* VERTEX_INDICES_SUFFIX = ".vertex_indices";
 constexpr const char* EDGES_SUFFIX = ".edges";
 
+void throw_if_extra_tokens(std::istringstream& stream, const std::string& context,
+                            const std::string& line, const uint32_t expected_count)
+{
+    uint32_t extra = 0;
+    if (stream >> extra)
+    {
+        throw GraphConstructionException(context + ": '" + line +
+                                              "' (too many tokens, expected " +
+                                              std::to_string(expected_count) + ")");
+    }
+}
+
 }  // namespace
 
 std::ifstream VertexEdgeGraphReader::open_file(const std::string& file_path)
@@ -53,13 +65,8 @@ std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(
                                          "' (expected " +
                                          std::to_string(TOKENS_PER_VERTEX_LINE) + " tokens)");
     }
-    uint32_t extra = 0;
-    if (stream >> extra)
-    {
-        throw GraphConstructionException("Malformed vertex line in '" + file_path + "': '" + line +
-                                         "' (too many tokens, expected " +
-                                         std::to_string(TOKENS_PER_VERTEX_LINE) + ")");
-    }
+    throw_if_extra_tokens(stream, "Malformed vertex line in '" + file_path + "'", line,
+                          TOKENS_PER_VERTEX_LINE);
     return {vertex_id, color};
 }
 
@@ -150,40 +157,33 @@ bool VertexEdgeGraphReader::parse_edge_line(
     std::istringstream stream(line);
     uint32_t raw_src = 0;
     uint32_t raw_dst = 0;
+    uint32_t color = 0;
     if (!(stream >> raw_src >> raw_dst))
     {
         throw GraphConstructionException("Malformed edge line (expected at least " +
                                          std::to_string(TOKENS_PER_UNCOLORED_EDGE_LINE) +
                                          " tokens): '" + line + "'");
     }
+    if (!(stream >> color))
+    {
+        return false;
+    }
     out_src = resolve_vertex_id(raw_src, consecutive_index_by_original_id, "source", line);
     out_dst = resolve_vertex_id(raw_dst, consecutive_index_by_original_id, "destination", line);
-    uint32_t color = 0;
-    const bool has_color = static_cast<bool>(stream >> color);
     out_color = color;
-    if (has_color)
-    {
-        uint32_t extra = 0;
-        if (stream >> extra)
-        {
-            throw GraphConstructionException(
-                "Malformed edge line (too many tokens, expected at most " +
-                std::to_string(TOKENS_PER_COLORED_EDGE_LINE) + "): '" + line + "'");
-        }
-    }
-    return has_color;
+    throw_if_extra_tokens(stream, "Malformed edge line", line, TOKENS_PER_COLORED_EDGE_LINE);
+    return true;
 }
 
-void VertexEdgeGraphReader::parse_edge_file(
+VertexEdgeGraphReader::EdgeData VertexEdgeGraphReader::parse_edge_file(
     const std::string& edges_path,
-    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges,
-    std::vector<std::pair<uint32_t, uint32_t>>& uncolored_edges)
+    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id)
 {
     std::ifstream file = open_file(edges_path);
+    EdgeData result;
     std::string line;
     bool edges_have_colors = false;
-    bool color_mode_set = false;
+    bool first_edge_processed = false;
     while (std::getline(file, line))
     {
         if (line.empty())
@@ -195,10 +195,10 @@ void VertexEdgeGraphReader::parse_edge_file(
         uint32_t color = 0;
         const bool has_color =
             parse_edge_line(line, consecutive_index_by_original_id, src, dst, color);
-        if (!color_mode_set)
+        if (!first_edge_processed)
         {
             edges_have_colors = has_color;
-            color_mode_set = true;
+            first_edge_processed = true;
         }
         else if (has_color != edges_have_colors)
         {
@@ -207,13 +207,14 @@ void VertexEdgeGraphReader::parse_edge_file(
         }
         if (edges_have_colors)
         {
-            colored_edges.emplace_back(src, dst, color);
+            result.colored.emplace_back(src, dst, color);
         }
         else
         {
-            uncolored_edges.emplace_back(src, dst);
+            result.uncolored.emplace_back(src, dst);
         }
     }
+    return result;
 }
 
 ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_directed,
@@ -226,15 +227,12 @@ ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_
         build_consecutive_index_map(color_by_id);
     const std::vector<uint32_t> vertex_colors =
         build_vertex_colors(color_by_id, consecutive_index_by_original_id);
-    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> colored_edges;
-    std::vector<std::pair<uint32_t, uint32_t>> uncolored_edges;
-    parse_edge_file(edges_path, consecutive_index_by_original_id, colored_edges, uncolored_edges);
+    const EdgeData edge_data = parse_edge_file(edges_path, consecutive_index_by_original_id);
     const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
-    const ColoredGraph result = colored_edges.empty()
-                                    ? ColoredGraph{vertex_count, uncolored_edges, vertex_colors,
-                                                   is_directed}
-                                    : ColoredGraph{vertex_count, colored_edges, vertex_colors,
-                                                   is_directed};
+    const ColoredGraph result =
+        edge_data.colored.empty()
+            ? ColoredGraph{vertex_count, edge_data.uncolored, vertex_colors, is_directed}
+            : ColoredGraph{vertex_count, edge_data.colored, vertex_colors, is_directed};
     logger.log(LogLevel::INFO, "read vertex-edge graph from '" + path + "'");
     return result;
 }

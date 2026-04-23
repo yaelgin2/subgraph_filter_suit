@@ -33,7 +33,7 @@ namespace sgf
  * - @c src_vertex_id / @c dst_vertex_id : original node identifiers.
  * - @c color (optional)                 : unsigned integer edge color label.
  *
- * Node IDs may be non-consecutive; they are remapped to dense consecutive
+ * Node IDs may be non-consecutive; they are remapped to dense consecutive indices.
  * Edge colors follow an all-or-nothing rule:
  * every edge must carry a color or none may — a mix throws
  * GraphConstructionException. Duplicate vertex IDs and unknown edge endpoint
@@ -56,11 +56,26 @@ public:
      * @throws GraphConstructionException if either file is malformed, a vertex
      *         ID is duplicated, edge colors are mixed, or a link references an
      *         unknown vertex ID.
+     * @throws InvalidArgumentException if parallel edges carry different color labels
+     *         (propagated from the ColoredGraph constructor).
      */
     ColoredGraph read(const std::string& path, const bool is_directed,
                       const LoggerHandler& logger) const override;
 
 private:
+    /**
+     * @brief Holds the parsed edge lists from a .edges file.
+     *
+     * Exactly one of @c colored or @c uncolored will be non-empty on return from
+     * parse_edge_file (the all-or-nothing color rule). Both are empty when the
+     * file contains no edges.
+     */
+    struct EdgeData
+    {
+        std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> colored;
+        std::vector<std::pair<uint32_t, uint32_t>> uncolored;
+    };
+
     /**
      * @brief Opens a file for reading, throwing on failure.
      * @param file_path Path to the file.
@@ -156,22 +171,17 @@ private:
     /**
      * @brief Parses the .edges file, enforcing the all-or-nothing color rule.
      *
-     * Returns either a colored or uncolored edge list via output parameters.
-     * Exactly one of the two output vectors will be populated on return.
-     *
      * @param edges_path Path to the .edges file.
      * @param consecutive_index_by_original_id Map from original vertex ID to consecutive index.
-     * @param[out] colored_edges   Populated when every edge carries a color.
-     * @param[out] uncolored_edges Populated when no edge carries a color.
+     * @return EdgeData with exactly one of colored or uncolored populated (both empty
+     *         if the file has no edges).
      * @throws SgfPathDoesntExistException if the file cannot be opened.
      * @throws GraphConstructionException if any line is malformed, references
      *         an unknown vertex ID, or edge colors are mixed.
      */
-    static void
+    static EdgeData
     parse_edge_file(const std::string& edges_path,
-                    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-                    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges,
-                    std::vector<std::pair<uint32_t, uint32_t>>& uncolored_edges);
+                    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 };
 
 }  // namespace sgf
