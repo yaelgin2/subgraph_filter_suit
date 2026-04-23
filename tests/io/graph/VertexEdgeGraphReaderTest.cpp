@@ -9,8 +9,10 @@
 #include "SgfPathDoesntExistException.h"
 
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace sgf;
 using namespace test_helpers;
@@ -703,8 +705,9 @@ TEST_F(VertexEdgeGraphReaderTest, non_consecutive_vertex_ids_remapped)
         const std::pair<std::vector<uint32_t>::const_iterator,
                         std::vector<uint32_t>::const_iterator>
             range = graph.get_neighbours(vertex);
-        const uint32_t degree =
-            static_cast<uint32_t>(std::distance(range.first, range.second));
+        const std::ptrdiff_t raw_distance = std::distance(range.first, range.second);
+        ASSERT_GE(raw_distance, 0);
+        const uint32_t degree = static_cast<uint32_t>(raw_distance);
         if (degree == 2U)
         {
             ++degree_two_count;
@@ -745,4 +748,89 @@ TEST_F(VertexEdgeGraphReaderTest, empty_lines_in_edge_file_skipped)
     assert_neighbours(graph, 0, {1});
     assert_neighbours(graph, 1, {0, 2});
     assert_neighbours(graph, 2, {1});
+}
+
+// ── Whitespace-only lines ─────────────────────────────────────────────────────
+
+/**
+ * @brief A whitespace-only line in the .vertex_indices file must throw
+ * GraphConstructionException (not silently skipped).
+ */
+TEST_F(VertexEdgeGraphReaderTest, whitespace_only_vertex_line_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("whitespace_only_vertex_line"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+/**
+ * @brief A whitespace-only line in the .edges file must throw
+ * GraphConstructionException (not silently skipped).
+ */
+TEST_F(VertexEdgeGraphReaderTest, whitespace_only_edge_line_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("whitespace_only_edge_line"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+// ── Non-numeric tokens ────────────────────────────────────────────────────────
+
+/**
+ * @brief A non-numeric token in the .vertex_indices file must throw
+ * GraphConstructionException.
+ */
+TEST_F(VertexEdgeGraphReaderTest, non_numeric_token_vertex_file_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("non_numeric_token_vertex_file"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+/**
+ * @brief A non-numeric token in the .edges file must throw GraphConstructionException.
+ */
+TEST_F(VertexEdgeGraphReaderTest, non_numeric_token_edge_file_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("non_numeric_token_edge_file"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+// ── Self-loop ─────────────────────────────────────────────────────────────────
+
+/**
+ * @brief A self-loop edge in the .edges file must throw InvalidArgumentException
+ * (propagated from the ColoredGraph constructor).
+ */
+TEST_F(VertexEdgeGraphReaderTest, self_loop_throws_invalid_argument)
+{
+    EXPECT_THROW(
+        m_reader.read(data("self_loop"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+        InvalidArgumentException);
+}
+
+// ── Non-consecutive IDs: color preservation ───────────────────────────────────
+
+/**
+ * @brief Non-consecutive vertex IDs with non-zero colors must have their colors
+ * preserved correctly after remapping to consecutive indices.
+ *
+ * File uses IDs 5 (color 3), 20 (color 7), 100 (color 1).
+ * The exact index assignment is an implementation detail; only the multiset of
+ * colors {1, 3, 7} is verified.
+ */
+TEST_F(VertexEdgeGraphReaderTest, non_consecutive_vertex_ids_colors_preserved)
+{
+    const ColoredGraph graph = m_reader.read(data("non_consecutive_with_colors"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 3U);
+    std::vector<uint32_t> colors;
+    for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
+    {
+        colors.push_back(graph.get_vertex_color(vertex));
+    }
+    std::sort(colors.begin(), colors.end());
+    const std::vector<uint32_t> expected_colors = {1U, 3U, 7U};
+    EXPECT_EQ(colors, expected_colors);
 }
