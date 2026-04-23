@@ -102,7 +102,6 @@ std::unordered_map<uint32_t, uint32_t> VertexEdgeGraphReader::build_consecutive_
     {
         sorted_ids.push_back(entry.first);
     }
-    std::sort(sorted_ids.begin(), sorted_ids.end());
     std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id;
     consecutive_index_by_original_id.reserve(sorted_ids.size());
     uint32_t consecutive_index = 0;
