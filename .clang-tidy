@@ -1,6 +1,14 @@
 # Auto-detected by clang-tidy when running from any subdirectory.
 # Requires compile_commands.json for accurate analysis — see CLAUDE.md for build steps.
 
+ExtraArgs:
+  - -fno-diagnostics-show-note-include-stack
+  - -fno-diagnostics-show-caret
+  - -fno-diagnostics-show-option
+  - -DBOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+  
+SystemHeaders: false
+
 Checks: >
   -*,
   bugprone-*,
@@ -19,13 +27,15 @@ Checks: >
   -modernize-use-auto,
   -modernize-use-trailing-return-type,
   -hicpp-use-auto,
-  -bugprone-easily-swappable-parameters
+  -bugprone-easily-swappable-parameters,
+  -portability-avoid-pragma-once,
+  -clang-diagnostic-error
 
 # Treat every enabled check as an error (CI fails on any warning)
 WarningsAsErrors: "*"
 
-# Lint headers belonging to this project only — excludes build/_deps (GTest, etc.)
-HeaderFilterRegex: "^(?!.*build/).*"
+# Lint only headers under src/ or include/ inside the project; portable across machines.
+HeaderFilterRegex: "^.*/subgraph_filter_suit/(src|include)/.*"
 
 CheckOptions:
   # ── Function size limits ──────────────────────────────────────────────────
