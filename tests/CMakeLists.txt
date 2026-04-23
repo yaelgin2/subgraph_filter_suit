@@ -31,8 +31,9 @@ endfunction()
 
 # ── Test suites ───────────────────────────────────────────────────────────────
 
-add_sgf_test(colored_graph_tests  graph/ColoredGraphTest.cpp)
-add_sgf_test(graph_utils_tests    utils/GraphUtilsTest.cpp)
+add_sgf_test(colored_graph_tests graph/ColoredGraphTest.cpp)
+add_sgf_test(graph_utils_tests   utils/GraphUtilsTest.cpp)
+
 add_sgf_test(graphml_reader_tests io/graph/GraphmlGraphReaderTest.cpp)
 
 # The graphml reader tests need to locate the test-data directory at compile time.
