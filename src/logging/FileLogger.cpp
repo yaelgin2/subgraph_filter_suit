@@ -10,15 +10,17 @@
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
 #include <boost/log/sources/severity_feature.hpp>
-// NOLINTNEXTLINE(misc-include-cleaner): Required for Boost.Log formatting and Phoenix operator
-// overloads; detected as unused by include-cleaner due to template/macros usage.
+// NOLINTNEXTLINE(misc-include-cleaner):
 #include <boost/log/support/date_time.hpp>
+//  Required for Boost.Log formatting and Phoenix operator
+// overloads; detected as unused by include-cleaner due to template/macros usage.
+#include <array>
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
-// NOLINTNEXTLINE(misc-include-cleaner): Required for Boost.Phoenix operator expressions used
-// internally by Boost.Log sinks/formatters; false positive from include dependency analysis.
-#include <array>
+// NOLINTNEXTLINE(misc-include-cleaner):
 #include <boost/phoenix/operator.hpp>
+// Required for Boost.Phoenix operator expressions used
+// internally by Boost.Log sinks/formatters; false positive from include dependency analysis.
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <cstddef>
