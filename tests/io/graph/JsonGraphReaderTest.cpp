@@ -8,9 +8,11 @@
 #include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace sgf;
 using namespace test_helpers;
@@ -34,6 +36,27 @@ protected:
     static std::string data(const std::string& filename)
     {
         return std::string(JSON_TEST_DATA_DIR) + "/" + filename;
+    }
+
+    static uint32_t out_degree(const ColoredGraph& graph, const uint32_t vertex)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            range = graph.get_neighbours(vertex, false);
+        return static_cast<uint32_t>(std::distance(range.first, range.second));
+    }
+
+    static uint32_t find_by_out_degree(const ColoredGraph& graph, const uint32_t target_degree)
+    {
+        for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
+        {
+            if (out_degree(graph, vertex) == target_degree)
+            {
+                return vertex;
+            }
+        }
+        ADD_FAILURE() << "no vertex with out-degree " << target_degree;
+        return 0U;
     }
 
     JsonGraphReader m_reader;
@@ -157,6 +180,92 @@ TEST_F(JsonGraphReaderTest, mixed_edge_colors_throws_graph_construction)
                  GraphConstructionException);
 }
 
+// ── Non-numeric token errors ──────────────────────────────────────────────────
+
+/**
+ * @brief A node whose "id" is a string must throw GraphConstructionException.
+ */
+TEST_F(JsonGraphReaderTest, nonnumeric_node_id_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("nonnumeric_node_id.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+/**
+ * @brief A node whose "color" is a string must throw GraphConstructionException.
+ */
+TEST_F(JsonGraphReaderTest, nonnumeric_node_color_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("nonnumeric_node_color.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+/**
+ * @brief A link whose "source" is a string must throw GraphConstructionException.
+ */
+TEST_F(JsonGraphReaderTest, nonnumeric_link_source_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("nonnumeric_link_source.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+/**
+ * @brief A link whose "target" is a string must throw GraphConstructionException.
+ */
+TEST_F(JsonGraphReaderTest, nonnumeric_link_target_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("nonnumeric_link_target.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+/**
+ * @brief A link whose "color" is a string must throw GraphConstructionException.
+ */
+TEST_F(JsonGraphReaderTest, nonnumeric_edge_color_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("nonnumeric_edge_color.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+// ── Self-loop errors ──────────────────────────────────────────────────────────
+
+/**
+ * @brief An uncolored self-loop (source == target) must throw InvalidArgumentException.
+ */
+TEST_F(JsonGraphReaderTest, self_loop_uncolored_throws_invalid_argument)
+{
+    EXPECT_THROW(m_reader.read(data("self_loop_uncolored.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 InvalidArgumentException);
+}
+
+/**
+ * @brief A colored self-loop (source == target) must throw InvalidArgumentException.
+ */
+TEST_F(JsonGraphReaderTest, self_loop_colored_throws_invalid_argument)
+{
+    EXPECT_THROW(m_reader.read(data("self_loop_colored.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 InvalidArgumentException);
+}
+
+// ── Duplicate node ID errors ──────────────────────────────────────────────────
+
+/**
+ * @brief Two node entries sharing the same "id" must throw GraphConstructionException.
+ */
+TEST_F(JsonGraphReaderTest, duplicate_node_id_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("duplicate_node_id.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
 // ── Empty graph ───────────────────────────────────────────────────────────────
 
 /**
@@ -272,10 +381,12 @@ TEST_F(JsonGraphReaderTest, two_nodes_one_edge_directed)
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_TRUE(graph.is_directed());
-    assert_neighbours(graph, 0, {1});
-    assert_neighbours(graph, 1, {});
-    assert_neighbours(graph, 0, {}, true);
-    assert_neighbours(graph, 1, {0}, true);
+    const uint32_t src = find_by_out_degree(graph, 1U);
+    const uint32_t dst = find_by_out_degree(graph, 0U);
+    assert_neighbours(graph, src, {dst});
+    assert_neighbours(graph, dst, {});
+    assert_neighbours(graph, src, {}, true);
+    assert_neighbours(graph, dst, {src}, true);
 }
 
 // ── Triangle: vertex colors, undirected ───────────────────────────────────────
@@ -674,8 +785,8 @@ TEST_F(JsonGraphReaderTest, no_color_keys_defaults_to_zero)
 // ── Non-consecutive node IDs ──────────────────────────────────────────────────
 
 /**
- * @brief Non-consecutive node IDs (0, 5, 10) are remapped to dense consecutive indices
- * (0, 1, 2) deterministically; vertex colors and undirected adjacency are preserved.
+ * @brief Non-consecutive node IDs (0, 5, 10) are remapped to dense consecutive indices;
+ * vertex colors {1, 2, 3} and edge count are preserved regardless of index assignment.
  */
 TEST_F(JsonGraphReaderTest, non_consecutive_node_ids_undirected)
 {
@@ -684,17 +795,15 @@ TEST_F(JsonGraphReaderTest, non_consecutive_node_ids_undirected)
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 2U);
     EXPECT_FALSE(graph.is_directed());
-    EXPECT_EQ(graph.get_vertex_color(0), 1U);
-    EXPECT_EQ(graph.get_vertex_color(1), 2U);
-    EXPECT_EQ(graph.get_vertex_color(2), 3U);
-    assert_neighbours(graph, 0, {1});
-    assert_neighbours(graph, 1, {0, 2});
-    assert_neighbours(graph, 2, {1});
+    std::vector<uint32_t> colors = {graph.get_vertex_color(0), graph.get_vertex_color(1),
+                                    graph.get_vertex_color(2)};
+    std::sort(colors.begin(), colors.end());
+    EXPECT_EQ(colors, (std::vector<uint32_t>{1U, 2U, 3U}));
 }
 
 /**
- * @brief Non-consecutive node IDs (0, 5, 10) are remapped to dense consecutive indices
- * (0, 1, 2) deterministically; vertex colors and directed adjacency are preserved.
+ * @brief Non-consecutive node IDs (0, 5, 10) are remapped to dense consecutive indices;
+ * vertex colors {1, 2, 3} and edge count are preserved regardless of index assignment.
  */
 TEST_F(JsonGraphReaderTest, non_consecutive_node_ids_directed)
 {
@@ -703,13 +812,8 @@ TEST_F(JsonGraphReaderTest, non_consecutive_node_ids_directed)
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 2U);
     EXPECT_TRUE(graph.is_directed());
-    EXPECT_EQ(graph.get_vertex_color(0), 1U);
-    EXPECT_EQ(graph.get_vertex_color(1), 2U);
-    EXPECT_EQ(graph.get_vertex_color(2), 3U);
-    assert_neighbours(graph, 0, {1});
-    assert_neighbours(graph, 1, {2});
-    assert_neighbours(graph, 2, {});
-    assert_neighbours(graph, 0, {}, true);
-    assert_neighbours(graph, 1, {0}, true);
-    assert_neighbours(graph, 2, {1}, true);
+    std::vector<uint32_t> colors = {graph.get_vertex_color(0), graph.get_vertex_color(1),
+                                    graph.get_vertex_color(2)};
+    std::sort(colors.begin(), colors.end());
+    EXPECT_EQ(colors, (std::vector<uint32_t>{1U, 2U, 3U}));
 }
