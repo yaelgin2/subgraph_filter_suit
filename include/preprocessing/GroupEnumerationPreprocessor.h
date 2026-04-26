@@ -8,7 +8,7 @@
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 
-using Groups=std::pair<std::vector<uint32_t>, std::vector<std::vector<bool>>>;
+using Groups=std::vector<std::pair<uint32_t, std::vector<int>>>;
 
 namespace sgf
 {
@@ -31,6 +31,9 @@ private:
     std::shared_ptr<ColoredGraph> m_graph;
     std::vector<uint32_t> m_node_order;
     LoggerHandler& m_logger;
+
+    void graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix);
+    std::vector<std::vector<bool>>> group_to_adjacency_matrix(const std::vector<uint32_t>& group);
 };
 
 }
