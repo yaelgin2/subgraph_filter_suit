@@ -45,7 +45,7 @@ find . -name '*.cpp' -o -name '*.h' | grep -v build | xargs clang-format --dry-r
 # HeaderFilterRegex in .clang-tidy ensures project headers are also linted while
 # excluding third-party headers under build/_deps/ (e.g. GTest).
 # --quiet suppresses the "N warnings generated" noise (raw count before header filtering).
-find . -name '*.cpp' -not -path './build/*' | xargs clang-tidy -p build/ --quiet
+find src -name '*.cpp' | xargs clang-tidy -p build/ --quiet
 ```
 
 ## Code Conventions

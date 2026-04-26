@@ -44,8 +44,8 @@ public:
      * @param vertex_colors Per-vertex color labels; must have exactly @p num_vertices entries.
      * @param is_directed If true, treat edges as directed.
      */
-    ColoredGraph(const uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& edges,
-                 const std::vector<uint32_t>& vertex_colors, const bool is_directed = false);
+    ColoredGraph(uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& edges,
+                 const std::vector<uint32_t>& vertex_colors, bool is_directed = false);
 
     /**
      * @brief Constructs an edge-colored ColoredGraph.
@@ -64,9 +64,14 @@ public:
      * @throws InvalidArgumentException if any two tuples share the same (source,
      *         destination) but carry different colors.
      */
-    ColoredGraph(const uint32_t num_vertices,
+    ColoredGraph(uint32_t num_vertices,
                  std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges,
-                 const std::vector<uint32_t>& vertex_colors, const bool is_directed = false);
+                 const std::vector<uint32_t>& vertex_colors, bool is_directed = false);
+
+    ColoredGraph(const ColoredGraph&) = default;
+    ColoredGraph(ColoredGraph&&) = default;
+    ColoredGraph& operator=(const ColoredGraph&) = default;
+    ColoredGraph& operator=(ColoredGraph&&) = default;
 
     /**
      * @brief Default destructor.
@@ -81,7 +86,7 @@ public:
      * @return A pair of const iterators [begin, end) over the neighbour list.
      */
     std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-    get_neighbours(const uint32_t vertex, const bool reversed = false) const;
+    get_neighbours(uint32_t vertex, bool reversed = false) const;
 
     /**
      * @brief Returns iterators over the edge colors parallel to get_neighbours().
@@ -96,7 +101,7 @@ public:
      * @throws InvalidArgumentException if the graph has no edge colors.
      */
     std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-    get_neighbour_edge_colors(const uint32_t vertex, const bool reversed = false) const;
+    get_neighbour_edge_colors(uint32_t vertex, bool reversed = false) const;
 
     /**
      * @brief Checks whether a directed or undirected edge exists.
@@ -104,7 +109,7 @@ public:
      * @param dest_vertex The destination (or second endpoint) of the edge.
      * @return True if the edge exists.
      */
-    bool is_edge(const uint32_t source_vertex, const uint32_t dest_vertex) const;
+    bool is_edge(uint32_t source_vertex, uint32_t dest_vertex) const;
 
     /**
      * @brief Returns the number of vertices.
@@ -123,14 +128,14 @@ public:
      * @param vertex The vertex to query.
      * @return The vertex color label.
      */
-    uint32_t get_vertex_color(const uint32_t vertex) const;
+    uint32_t get_vertex_color(uint32_t vertex) const;
 
     /**
      * @brief Sets the color label of @p vertex.
      * @param vertex The vertex to update.
      * @param new_color The new color label.
      */
-    void set_vertex_color(const uint32_t vertex, const uint32_t new_color);
+    void set_vertex_color(uint32_t vertex, uint32_t new_color);
 
     /**
      * @brief Returns whether this graph carries per-edge color labels.
@@ -149,7 +154,7 @@ public:
      * @throws InvalidArgumentException if the graph has no edge colors or the
      *         edge does not exist.
      */
-    uint32_t get_edge_color(const uint32_t source_vertex, const uint32_t dest_vertex) const;
+    uint32_t get_edge_color(uint32_t source_vertex, uint32_t dest_vertex) const;
 
     /**
      * @brief Returns the edge color for the neighbour pointed to by @p neighbour_it.
@@ -163,8 +168,8 @@ public:
      * @return The edge color at that iterator position.
      * @throws InvalidArgumentException if the graph has no edge colors.
      */
-    uint32_t get_edge_color_at(const std::vector<uint32_t>::const_iterator neighbour_it,
-                               const bool reversed = false) const;
+    uint32_t get_edge_color_at(std::vector<uint32_t>::const_iterator neighbour_it,
+                               bool reversed = false) const;
 
     /**
      * @brief Returns whether the graph is directed.
@@ -180,7 +185,7 @@ private:
      * @throws InvalidArgumentException if the sizes do not match.
      */
     static void validate_vertex_colors_size(const std::vector<uint32_t>& vertex_colors,
-                                            const uint32_t num_vertices);
+                                            uint32_t num_vertices);
 
     /**
      * @brief Validates a single edge, throwing if it is illegal.
@@ -192,8 +197,7 @@ private:
      * @param num_vertices The total number of vertices in the graph.
      * @throws InvalidArgumentException if the edge is a self-loop or out of range.
      */
-    static void validate_edge(const std::pair<uint32_t, uint32_t>& edge,
-                              const uint32_t num_vertices);
+    static void validate_edge(const std::pair<uint32_t, uint32_t>& edge, uint32_t num_vertices);
 
     /**
      * @brief Dispatches to build_undirected_structures or build_directed_structures.
@@ -201,7 +205,7 @@ private:
      * @param num_vertices Number of vertices.
      * @param edges (source, destination, color) tuples; color is 0 for uncolored graphs.
      */
-    void build_structures(const uint32_t num_vertices,
+    void build_structures(uint32_t num_vertices,
                           std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges);
 
     /**
@@ -215,7 +219,7 @@ private:
      * @param colored_edges (source, destination, color) tuples; reverse edges are appended.
      */
     void build_undirected_structures(
-        const uint32_t num_vertices,
+        uint32_t num_vertices,
         std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges);
 
     /**
@@ -228,7 +232,7 @@ private:
      * @param colored_edges (source, destination, color) tuples; color is 0 for uncolored.
      */
     void
-    build_directed_structures(const uint32_t num_vertices,
+    build_directed_structures(uint32_t num_vertices,
                               std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges);
 
     /**
@@ -244,7 +248,7 @@ private:
      * @return A pair of const iterators [begin, end) over that vertex's slice.
      */
     static std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-    compute_range(const uint32_t vertex, const std::vector<uint32_t>& elements,
+    compute_range(uint32_t vertex, const std::vector<uint32_t>& elements,
                   const std::vector<uint32_t>& index_of_neighbours);
 
     /**
@@ -259,8 +263,7 @@ private:
      * @param neighbour_count The value to store in each slot.
      * @param index_of_neighbours The index array being built.
      */
-    static void fill_index_range(const uint32_t from_vertex, const uint32_t to_vertex,
-                                 const uint32_t neighbour_count,
+    static void fill_index_range(uint32_t from_vertex, uint32_t to_vertex, uint32_t neighbour_count,
                                  std::vector<uint32_t>& index_of_neighbours);
 
     /**
@@ -275,7 +278,7 @@ private:
      * @param index_of_neighbours Output index array mapping each vertex to its
      *                            first position in @p neighbours.
      */
-    static void initiate_graph(const uint32_t num_vertices,
+    static void initiate_graph(uint32_t num_vertices,
                                const std::vector<std::pair<uint32_t, uint32_t>>& edges,
                                std::vector<uint32_t>& neighbours,
                                std::vector<uint32_t>& index_of_neighbours);
@@ -305,7 +308,7 @@ private:
      */
     static void extract_edges(const std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& tuples,
                               std::vector<std::pair<uint32_t, uint32_t>>& pairs,
-                              std::vector<uint32_t>& colors, const bool fill_colors);
+                              std::vector<uint32_t>& colors, bool fill_colors);
 
     /**
      * @brief Converts a pair edge list into a tuple edge list.
@@ -321,7 +324,7 @@ private:
      */
     static std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>
     to_edge_tuples(const std::vector<std::pair<uint32_t, uint32_t>>& pairs,
-                   const std::vector<uint32_t>& colors, const bool reversed);
+                   const std::vector<uint32_t>& colors, bool reversed);
 
     std::vector<uint32_t> m_neighbours;
     std::vector<uint32_t> m_index_of_neighbours;

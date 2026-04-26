@@ -28,6 +28,12 @@ public:
     {
     }
 
+    SgfException(const SgfException&) = default;
+    SgfException(SgfException&&) noexcept = default;
+
+    SgfException& operator=(const SgfException&) = default;
+    SgfException& operator=(SgfException&&) noexcept = default;
+
     /**
      * @brief Returns the error message.
      *
@@ -35,7 +41,7 @@ public:
      *
      * @return Null-terminated error description.
      */
-    const char* what() const noexcept override
+    [[nodiscard]] const char* what() const noexcept override
     {
         return m_message.c_str();
     }
@@ -48,7 +54,7 @@ public:
      *
      * @return The SgfReturnCode identifying this exception type.
      */
-    virtual SgfReturnCode return_code() const noexcept = 0;
+    [[nodiscard]] virtual SgfReturnCode return_code() const noexcept = 0;
 
     /**
      * @brief Default destructor.
