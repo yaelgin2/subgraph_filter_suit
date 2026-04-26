@@ -11,17 +11,17 @@ namespace sgf
 class LoggerHandler
 {
 private:
-    std::weak_ptr<ILogger> logger;
+    std::weak_ptr<ILogger> m_logger;
 
 public:
     explicit LoggerHandler(std::weak_ptr<ILogger> log)
-        : logger(std::move(log))
+        : m_logger(std::move(log))
     {
     }
 
     void log(LogLevel level, const std::string& msg) const
     {
-        if (auto ptr = logger.lock())
+        if (auto ptr = m_logger.lock())
         {
             ptr->log(level, msg);
         }
@@ -29,7 +29,7 @@ public:
 
     bool is_null() const
     {
-        return logger.lock() == nullptr;
+        return m_logger.lock() == nullptr;
     }
 };
 
