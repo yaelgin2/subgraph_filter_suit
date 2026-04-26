@@ -1,14 +1,7 @@
 # Auto-detected by clang-tidy when running from any subdirectory.
 # Requires compile_commands.json for accurate analysis — see CLAUDE.md for build steps.
 
-ExtraArgs:
-  - -fno-diagnostics-show-note-include-stack
-  - -fno-diagnostics-show-caret
-  - -fno-diagnostics-show-option
-  - -DBOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
-  
 SystemHeaders: false
-
 Checks: >
   -*,
   bugprone-*,
@@ -26,10 +19,9 @@ Checks: >
   -readability-named-parameter,
   -modernize-use-auto,
   -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
   -hicpp-use-auto,
-  -bugprone-easily-swappable-parameters,
-  -portability-avoid-pragma-once,
-  -clang-diagnostic-error
+  -bugprone-easily-swappable-parameters
 
 # Treat every enabled check as an error (CI fails on any warning)
 WarningsAsErrors: "*"
