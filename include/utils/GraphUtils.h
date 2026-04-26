@@ -124,8 +124,8 @@ private:
      * @throws GraphConstructionException if any color value exceeds MAX_VERTEX_COLOR.
      */
     template <typename GraphType, typename GetColor>
-    static std::vector<int32_t> extract_vertex_colors(const GraphType& boost_graph,
-                                                      const GetColor& get_color);
+    static std::vector<uint32_t> extract_vertex_colors(const GraphType& boost_graph,
+                                                       const GetColor& get_color);
 
     /**
      * @brief Extracts colored edges using a caller-supplied color accessor.
@@ -158,7 +158,7 @@ GraphUtils::convert_boost_graph_to_colored_graph(const GraphType& boost_graph,
                                                  std::map<std::string, uint32_t>& color_map)
 {
     const uint32_t num_vertices = static_cast<uint32_t>(boost::num_vertices(boost_graph));
-    const std::vector<int32_t> vertex_colors = extract_vertex_colors(
+    const std::vector<uint32_t> vertex_colors = extract_vertex_colors(
         boost_graph,
         [&](const typename boost::graph_traits<GraphType>::vertex_descriptor& vertex_desc)
         {
@@ -206,10 +206,10 @@ GraphUtils::extract_uncolored_edges(const GraphType& boost_graph)
 }
 
 template <typename GraphType, typename GetColor>
-std::vector<int32_t> GraphUtils::extract_vertex_colors(const GraphType& boost_graph,
-                                                       const GetColor& get_color)
+std::vector<uint32_t> GraphUtils::extract_vertex_colors(const GraphType& boost_graph,
+                                                        const GetColor& get_color)
 {
-    std::vector<int32_t> vertex_colors;
+    std::vector<uint32_t> vertex_colors;
     vertex_colors.reserve(boost::num_vertices(boost_graph));
     for (const auto& vertex_desc : boost::make_iterator_range(boost::vertices(boost_graph)))
     {
@@ -219,7 +219,7 @@ std::vector<int32_t> GraphUtils::extract_vertex_colors(const GraphType& boost_gr
             throw GraphConstructionException("vertex color " + std::to_string(color) +
                                              " exceeds maximum allowed value");
         }
-        vertex_colors.push_back(static_cast<int32_t>(color));
+        vertex_colors.push_back(color);
     }
     return vertex_colors;
 }

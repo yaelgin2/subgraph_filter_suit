@@ -31,11 +31,19 @@ endfunction()
 
 # ── Test suites ───────────────────────────────────────────────────────────────
 
-add_sgf_test(colored_graph_tests  graph/ColoredGraphTest.cpp)
-add_sgf_test(graph_utils_tests    utils/GraphUtilsTest.cpp)
-add_sgf_test(graphml_reader_tests io/GraphmlGraphReaderTest.cpp)
+add_sgf_test(colored_graph_tests graph/ColoredGraphTest.cpp)
+add_sgf_test(graph_utils_tests   utils/GraphUtilsTest.cpp)
+
+add_sgf_test(graphml_reader_tests io/graph/GraphmlGraphReaderTest.cpp)
 
 # The graphml reader tests need to locate the test-data directory at compile time.
 target_compile_definitions(graphml_reader_tests PRIVATE
     GRAPHML_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/io/graphml"
+)
+
+add_sgf_test(vertex_edge_reader_tests io/graph/VertexEdgeGraphReaderTest.cpp)
+
+# The vertex-edge reader tests need to locate the test-data directory at compile time.
+target_compile_definitions(vertex_edge_reader_tests PRIVATE
+    VERTEX_EDGE_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/io/vertex_edge"
 )
