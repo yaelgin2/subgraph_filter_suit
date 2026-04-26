@@ -46,8 +46,9 @@ protected:
  */
 TEST_F(JsonGraphReaderTest, nonexistent_path_throws_path_doesnt_exist)
 {
-    EXPECT_THROW(m_reader.read(data("does_not_exist.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-                 SgfPathDoesntExistException);
+    EXPECT_THROW(
+        m_reader.read(data("does_not_exist.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+        SgfPathDoesntExistException);
 }
 
 // ── Parse errors ──────────────────────────────────────────────────────────────
@@ -57,8 +58,9 @@ TEST_F(JsonGraphReaderTest, nonexistent_path_throws_path_doesnt_exist)
  */
 TEST_F(JsonGraphReaderTest, malformed_json_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("malformed_json.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-                 GraphConstructionException);
+    EXPECT_THROW(
+        m_reader.read(data("malformed_json.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+        GraphConstructionException);
 }
 
 /**
@@ -67,9 +69,9 @@ TEST_F(JsonGraphReaderTest, malformed_json_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, invalid_graph_structure_throws_graph_construction)
 {
-    EXPECT_THROW(
-        m_reader.read(data("link_unknown_node.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        GraphConstructionException);
+    EXPECT_THROW(m_reader.read(data("link_unknown_node.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
 }
 
 // ── JSON-specific structural errors ──────────────────────────────────────────
@@ -79,8 +81,9 @@ TEST_F(JsonGraphReaderTest, invalid_graph_structure_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, non_object_root_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("array_root.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-                 GraphConstructionException);
+    EXPECT_THROW(
+        m_reader.read(data("array_root.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+        GraphConstructionException);
 }
 
 /**
@@ -88,7 +91,8 @@ TEST_F(JsonGraphReaderTest, non_object_root_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, missing_nodes_key_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("missing_nodes_key.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("missing_nodes_key.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  GraphConstructionException);
 }
 
@@ -97,7 +101,8 @@ TEST_F(JsonGraphReaderTest, missing_nodes_key_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, missing_links_key_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("missing_links_key.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("missing_links_key.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  GraphConstructionException);
 }
 
@@ -106,8 +111,9 @@ TEST_F(JsonGraphReaderTest, missing_links_key_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, missing_node_id_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("missing_node_id.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-                 GraphConstructionException);
+    EXPECT_THROW(
+        m_reader.read(data("missing_node_id.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+        GraphConstructionException);
 }
 
 /**
@@ -115,7 +121,8 @@ TEST_F(JsonGraphReaderTest, missing_node_id_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, missing_node_color_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("missing_node_color.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("missing_node_color.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  GraphConstructionException);
 }
 
@@ -124,7 +131,8 @@ TEST_F(JsonGraphReaderTest, missing_node_color_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, missing_link_source_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("missing_link_source.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("missing_link_source.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  GraphConstructionException);
 }
 
@@ -133,7 +141,8 @@ TEST_F(JsonGraphReaderTest, missing_link_source_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, missing_link_target_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("missing_link_target.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("missing_link_target.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  GraphConstructionException);
 }
 
@@ -143,7 +152,8 @@ TEST_F(JsonGraphReaderTest, missing_link_target_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, mixed_edge_colors_throws_graph_construction)
 {
-    EXPECT_THROW(m_reader.read(data("mixed_edge_colors.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("mixed_edge_colors.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  GraphConstructionException);
 }
 
@@ -154,8 +164,8 @@ TEST_F(JsonGraphReaderTest, mixed_edge_colors_throws_graph_construction)
  */
 TEST_F(JsonGraphReaderTest, empty_graph_undirected)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("empty_undirected.json"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("empty_undirected.json"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 0U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_FALSE(graph.is_directed());
@@ -180,8 +190,8 @@ TEST_F(JsonGraphReaderTest, empty_graph_directed)
  */
 TEST_F(JsonGraphReaderTest, single_node_undirected)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("single_node_undirected.json"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("single_node_undirected.json"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 1U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_FALSE(graph.is_directed());
@@ -194,8 +204,8 @@ TEST_F(JsonGraphReaderTest, single_node_undirected)
  */
 TEST_F(JsonGraphReaderTest, single_node_directed)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("single_node_directed.json"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("single_node_directed.json"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 1U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_TRUE(graph.is_directed());
@@ -224,8 +234,8 @@ TEST_F(JsonGraphReaderTest, two_nodes_no_edges_undirected)
  */
 TEST_F(JsonGraphReaderTest, two_nodes_no_edges_directed)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("two_nodes_no_edges_directed.json"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("two_nodes_no_edges_directed.json"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 0U);
     EXPECT_TRUE(graph.is_directed());
@@ -257,8 +267,8 @@ TEST_F(JsonGraphReaderTest, two_nodes_one_edge_undirected)
  */
 TEST_F(JsonGraphReaderTest, two_nodes_one_edge_directed)
 {
-    const ColoredGraph graph =
-        m_reader.read(data("two_nodes_one_edge_directed.json"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("two_nodes_one_edge_directed.json"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 2U);
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_TRUE(graph.is_directed());
@@ -310,8 +320,8 @@ TEST_F(JsonGraphReaderTest, triangle_diff_vertex_colors_undirected)
  */
 TEST_F(JsonGraphReaderTest, triangle_two_same_vertex_color_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_two_same_vertex_color_undirected.json"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("triangle_two_same_vertex_color_undirected.json"),
+                                             false, LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_FALSE(graph.is_directed());
@@ -329,8 +339,8 @@ TEST_F(JsonGraphReaderTest, triangle_two_same_vertex_color_undirected)
  */
 TEST_F(JsonGraphReaderTest, triangle_same_vertex_color_directed)
 {
-    const ColoredGraph graph = m_reader.read(data("triangle_same_vertex_color_directed.json"),
-                                             true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("triangle_same_vertex_color_directed.json"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
@@ -370,8 +380,8 @@ TEST_F(JsonGraphReaderTest, triangle_diff_vertex_colors_directed)
  */
 TEST_F(JsonGraphReaderTest, triangle_two_same_vertex_color_directed)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_two_same_vertex_color_directed.json"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("triangle_two_same_vertex_color_directed.json"),
+                                             true, LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
@@ -407,8 +417,9 @@ TEST_F(JsonGraphReaderTest, two_nodes_bidirectional_uncolored_undirected)
  */
 TEST_F(JsonGraphReaderTest, two_nodes_bidirectional_uncolored_directed)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("two_nodes_bidirectional_uncolored_directed.json"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph =
+        m_reader.read(data("two_nodes_bidirectional_uncolored_directed.json"), true,
+                      LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 2U);
     EXPECT_FALSE(graph.is_edges_colored());
     EXPECT_TRUE(graph.is_directed());
@@ -425,8 +436,8 @@ TEST_F(JsonGraphReaderTest, two_nodes_bidirectional_uncolored_directed)
  */
 TEST_F(JsonGraphReaderTest, two_nodes_parallel_uncolored_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("two_nodes_parallel_uncolored_undirected.json"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("two_nodes_parallel_uncolored_undirected.json"),
+                                             false, LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_FALSE(graph.is_edges_colored());
     assert_neighbours(graph, 0, {1});
@@ -540,8 +551,8 @@ TEST_F(JsonGraphReaderTest, two_nodes_parallel_same_edge_color_directed)
  */
 TEST_F(JsonGraphReaderTest, two_nodes_parallel_diff_edge_colors_undirected_throws)
 {
-    EXPECT_THROW(m_reader.read(data("two_nodes_parallel_diff_edge_colors_undirected.json"),
-                               false, LoggerHandler(std::weak_ptr<ILogger>{})),
+    EXPECT_THROW(m_reader.read(data("two_nodes_parallel_diff_edge_colors_undirected.json"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
                  InvalidArgumentException);
 }
 
@@ -562,8 +573,8 @@ TEST_F(JsonGraphReaderTest, two_nodes_parallel_diff_edge_colors_directed_throws)
  */
 TEST_F(JsonGraphReaderTest, triangle_all_edges_same_color_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_all_edges_same_color_undirected.json"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("triangle_all_edges_same_color_undirected.json"),
+                                             false, LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
     EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
@@ -577,8 +588,8 @@ TEST_F(JsonGraphReaderTest, triangle_all_edges_same_color_undirected)
  */
 TEST_F(JsonGraphReaderTest, triangle_all_edges_diff_colors_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_all_edges_diff_colors_undirected.json"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("triangle_all_edges_diff_colors_undirected.json"),
+                                             false, LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
     EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 0));
@@ -594,8 +605,8 @@ TEST_F(JsonGraphReaderTest, triangle_all_edges_diff_colors_undirected)
  */
 TEST_F(JsonGraphReaderTest, triangle_two_edges_same_color_undirected)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_two_edges_same_color_undirected.json"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("triangle_two_edges_same_color_undirected.json"),
+                                             false, LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
     EXPECT_EQ(graph.get_edge_color(0, 1), graph.get_edge_color(1, 2));
@@ -622,8 +633,8 @@ TEST_F(JsonGraphReaderTest, triangle_all_edges_same_color_directed)
  */
 TEST_F(JsonGraphReaderTest, triangle_all_edges_diff_colors_directed)
 {
-    const ColoredGraph graph = m_reader.read(
-        data("triangle_all_edges_diff_colors_directed.json"), true, LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("triangle_all_edges_diff_colors_directed.json"),
+                                             true, LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_edges_colored());
     EXPECT_NE(graph.get_edge_color(0, 1), graph.get_edge_color(0, 2));
@@ -668,8 +679,8 @@ TEST_F(JsonGraphReaderTest, no_color_keys_defaults_to_zero)
  */
 TEST_F(JsonGraphReaderTest, non_consecutive_node_ids_undirected)
 {
-    const ColoredGraph graph = m_reader.read(data("non_consecutive_node_ids_undirected.json"), false,
-                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    const ColoredGraph graph = m_reader.read(data("non_consecutive_node_ids_undirected.json"),
+                                             false, LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.vertex_count(), 3U);
     EXPECT_EQ(graph.edge_count(), 2U);
     EXPECT_FALSE(graph.is_directed());

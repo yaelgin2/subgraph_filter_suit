@@ -1,6 +1,7 @@
 #include "FileLogger.h"
 
 #include "LogLevel.h"
+#include "SgfPathDoesntExistException.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/log/core/core.hpp>
@@ -18,8 +19,6 @@
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <fstream>
 #include <ios>
-#include "SgfPathDoesntExistException.h"
-
 #include <string>
 
 namespace sgf

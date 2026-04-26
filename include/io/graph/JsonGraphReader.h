@@ -122,9 +122,9 @@ private:
      * @param consecutive_index_by_original_id Mapping from original ID to consecutive index.
      * @return Vector of colors indexed by consecutive vertex index.
      */
-    static std::vector<uint32_t>
-    build_vertex_colors(const std::unordered_map<uint32_t, uint32_t>& color_by_id,
-                        const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
+    static std::vector<uint32_t> build_vertex_colors(
+        const std::unordered_map<uint32_t, uint32_t>& color_by_id,
+        const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
      * @brief Determines whether links carry edge colors, enforcing all-or-nothing.
@@ -147,9 +147,9 @@ private:
      * @throws GraphConstructionException (re-wrapped by the caller) if a source or target ID
      *         is absent from @p consecutive_index_by_original_id.
      */
-    static std::pair<uint32_t, uint32_t>
-    extract_link_endpoints(const boost::json::object& link_object,
-                           const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
+    static std::pair<uint32_t, uint32_t> extract_link_endpoints(
+        const boost::json::object& link_object,
+        const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
      * @brief Extracts edge-colored edges from @p links_array.
@@ -160,9 +160,9 @@ private:
      * @param consecutive_index_by_original_id Mapping from original node ID to consecutive index.
      * @return Vector of (source, target, color) tuples using consecutive indices.
      */
-    static std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>
-    extract_colored_edges(const boost::json::array& links_array,
-                          const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
+    static std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> extract_colored_edges(
+        const boost::json::array& links_array,
+        const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
      * @brief Extracts uncolored edges from @p links_array.
@@ -173,9 +173,9 @@ private:
      * @param consecutive_index_by_original_id Mapping from original node ID to consecutive index.
      * @return Vector of (source, target) pairs using consecutive indices.
      */
-    static std::vector<std::pair<uint32_t, uint32_t>>
-    extract_uncolored_edges(const boost::json::array& links_array,
-                            const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
+    static std::vector<std::pair<uint32_t, uint32_t>> extract_uncolored_edges(
+        const boost::json::array& links_array,
+        const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id);
 
     /**
      * @brief Constructs the ColoredGraph from parsed node and link data.
@@ -190,11 +190,11 @@ private:
      * @param is_directed Whether to build a directed graph.
      * @return The constructed ColoredGraph.
      */
-    static ColoredGraph build_graph(const boost::json::array& links,
-                                    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-                                    const uint32_t vertex_count,
-                                    const std::vector<uint32_t>& vertex_colors,
-                                    const bool is_directed);
+    static ColoredGraph
+    build_graph(const boost::json::array& links,
+                const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
+                const uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors,
+                const bool is_directed);
 };
 
 }  // namespace sgf

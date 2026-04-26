@@ -28,7 +28,8 @@ public:
      */
     explicit LoggerHandler(std::weak_ptr<ILogger> weak_logger)
         : m_logger(std::move(weak_logger))
-    {}
+    {
+    }
 
     /**
      * @brief Log a message if the underlying logger is still alive.
