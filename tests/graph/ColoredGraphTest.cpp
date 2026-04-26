@@ -78,7 +78,7 @@ protected:
      */
     static std::vector<uint32_t> uniform_colors(const uint32_t count, const uint32_t color = 0)
     {
-        return std::vector<uint32_t>(count, color); // NOLINT(modernize-return-braced-init-list)
+        return std::vector<uint32_t>(count, color);  // NOLINT(modernize-return-braced-init-list)
     }
 
     /**
