@@ -34,7 +34,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Boost ─────────────────────────────────────────────────────────────────────
-find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup)
+find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup json)
 
 # ── Sources ───────────────────────────────────────────────────────────────────
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/**/*.cpp)
@@ -62,6 +62,7 @@ target_link_libraries(subgraph_filter_suite PUBLIC
     Boost::log
     Boost::log_setup
     Boost::graph
+    Boost::json
 )
 
 
