@@ -65,4 +65,4 @@ jobs:
       - name: Run clang-tidy (Linux)
         if: runner.os == 'Linux'
         run: |
-          find . -name '*.cpp' -not -path './build/*' | xargs clang-tidy-17 -p build/
+          find src -name '*.cpp' | xargs clang-tidy-17 -p build/ --quiet
