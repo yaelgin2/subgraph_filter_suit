@@ -10,21 +10,23 @@
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
 #include <boost/log/sources/severity_feature.hpp>
-// NOLINTNEXTLINE(misc-include-cleaner): Required for Boost.Log formatting and Phoenix operator overloads; detected as unused by include-cleaner due to template/macros usage.
+// NOLINTNEXTLINE(misc-include-cleaner): Required for Boost.Log formatting and Phoenix operator
+// overloads; detected as unused by include-cleaner due to template/macros usage.
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
-// NOLINTNEXTLINE(misc-include-cleaner): Required for Boost.Phoenix operator expressions used internally by Boost.Log sinks/formatters; false positive from include dependency analysis.
+// NOLINTNEXTLINE(misc-include-cleaner): Required for Boost.Phoenix operator expressions used
+// internally by Boost.Log sinks/formatters; false positive from include dependency analysis.
+#include <array>
 #include <boost/phoenix/operator.hpp>
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
-#include <array>
-#include <fstream> 
+#include <cstddef>
+#include <fstream>
+#include <ios>
 #include <ostream>
 #include <stdexcept>
 #include <string>
-#include <cstddef>
-#include <ios>
 
 namespace sgf
 {
@@ -42,12 +44,12 @@ constexpr size_t LOG_LEVEL_COUNT = 6U;
  * TRACE=0, DEBUG=1, INFO=2, WARNING=3, ERROR=4, FATAL=5.
  */
 constexpr std::array<boost::log::trivial::severity_level, LOG_LEVEL_COUNT> BOOST_SEVERITY_TABLE = {
-    boost::log::trivial::trace,   // TRACE
-    boost::log::trivial::debug,   // DEBUG
-    boost::log::trivial::info,    // INFO
-    boost::log::trivial::warning, // WARNING
-    boost::log::trivial::error,   // ERROR
-    boost::log::trivial::fatal,   // FATAL
+    boost::log::trivial::trace,    // TRACE
+    boost::log::trivial::debug,    // DEBUG
+    boost::log::trivial::info,     // INFO
+    boost::log::trivial::warning,  // WARNING
+    boost::log::trivial::error,    // ERROR
+    boost::log::trivial::fatal,    // FATAL
 };
 
 /**
@@ -67,12 +69,12 @@ boost::log::trivial::severity_level to_boost_level(const LogLevel level)
  */
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 constexpr std::array<const char*, LOG_LEVEL_COUNT> LEVEL_LABEL_TABLE = {
-    "[TRACE]",   // TRACE
-    "[DEBUG]",   // DEBUG
-    "[INFO]",    // INFO
-    "[WARNING]", // WARNING
-    "[ERROR]",   // ERROR
-    "[FATAL]",   // FATAL
+    "[TRACE]",    // TRACE
+    "[DEBUG]",    // DEBUG
+    "[INFO]",     // INFO
+    "[WARNING]",  // WARNING
+    "[ERROR]",    // ERROR
+    "[FATAL]",    // FATAL
 };
 
 /**
