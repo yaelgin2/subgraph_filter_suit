@@ -1,7 +1,7 @@
 #pragma once
 
-#include "IColoredGraphReader.h"
 #include "LoggerHandler.h"
+#include "IColoredGraphReader.h"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <exception>

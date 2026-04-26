@@ -3,8 +3,8 @@
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
 #include "GraphUtils.h"
-#include "ILogger.h"
 #include "LogLevel.h"
+#include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
 #include <boost/any/bad_any_cast.hpp>
@@ -16,7 +16,6 @@
 #include <exception>
 #include <fstream>
 #include <map>
-#include <memory>
 #include <string>
 
 namespace sgf
