@@ -18,7 +18,8 @@
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <fstream>
 #include <ios>
-#include <stdexcept>
+#include "SgfPathDoesntExistException.h"
+
 #include <string>
 
 namespace sgf
@@ -89,7 +90,7 @@ FileLogger::FileLogger(const std::string& file_name)
         boost::make_shared<std::ofstream>(file_name, std::ios::app);
     if (!file_stream->is_open())
     {
-        throw std::runtime_error("Failed to open log file: " + file_name);
+        throw SgfPathDoesntExistException("Failed to open log file: " + file_name);
     }
 
     using TextSink = sinks::synchronous_sink<sinks::text_ostream_backend>;
