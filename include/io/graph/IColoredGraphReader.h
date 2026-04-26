@@ -30,13 +30,19 @@ public:
      * @throws GraphConstructionException if the file cannot be opened, parsed,
      *         or if the graph structure is invalid.
      */
-    virtual ColoredGraph read(const std::string& path, const bool is_directed,
+    virtual ColoredGraph read(const std::string& path, bool is_directed,
                               const LoggerHandler& logger) const = 0;
 
     /**
      * @brief Default virtual destructor.
      */
     virtual ~IColoredGraphReader() = default;
+
+    IColoredGraphReader() = default;
+    IColoredGraphReader(const IColoredGraphReader&) = delete;
+    IColoredGraphReader& operator=(const IColoredGraphReader&) = delete;
+    IColoredGraphReader(IColoredGraphReader&&) = delete;
+    IColoredGraphReader& operator=(IColoredGraphReader&&) = delete;
 };
 
 }  // namespace sgf

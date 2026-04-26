@@ -6,13 +6,11 @@
 #include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
-#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -30,7 +28,7 @@ constexpr const char* VERTEX_INDICES_SUFFIX = ".vertex_indices";
 constexpr const char* EDGES_SUFFIX = ".edges";
 
 void throw_if_extra_tokens(std::istringstream& stream, const std::string& context,
-                           const std::string& line, const uint32_t expected_count)
+                           const std::string& line, uint32_t expected_count)
 {
     uint32_t extra = 0;
     if (stream >> extra)
@@ -132,18 +130,17 @@ std::vector<uint32_t> VertexEdgeGraphReader::build_vertex_colors(
 }
 
 uint32_t VertexEdgeGraphReader::resolve_vertex_id(
-    const uint32_t raw_id,
-    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
+    uint32_t raw_id, const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
     const std::string& role, const std::string& line)
 {
-    const std::unordered_map<uint32_t, uint32_t>::const_iterator it =
+    const std::unordered_map<uint32_t, uint32_t>::const_iterator consecutive_index_id =
         consecutive_index_by_original_id.find(raw_id);
-    if (it == consecutive_index_by_original_id.end())
+    if (consecutive_index_id == consecutive_index_by_original_id.end())
     {
         throw GraphConstructionException("Unknown " + role + " vertex ID " +
                                          std::to_string(raw_id) + " in edge line: '" + line + "'");
     }
-    return it->second;
+    return consecutive_index_id->second;
 }
 
 bool VertexEdgeGraphReader::parse_edge_line(
@@ -204,11 +201,11 @@ VertexEdgeGraphReader::EdgeData VertexEdgeGraphReader::parse_edge_file(
         }
         if (edges_have_colors)
         {
-            result.colored.emplace_back(src, dst, color);
+            result.m_colored.emplace_back(src, dst, color);
         }
         else
         {
-            result.uncolored.emplace_back(src, dst);
+            result.m_uncolored.emplace_back(src, dst);
         }
     }
     return result;
@@ -227,9 +224,9 @@ ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_
     EdgeData edge_data = parse_edge_file(edges_path, consecutive_index_by_original_id);
     const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
     const ColoredGraph result =
-        edge_data.colored.empty()
-            ? ColoredGraph{vertex_count, edge_data.uncolored, vertex_colors, is_directed}
-            : ColoredGraph{vertex_count, edge_data.colored, vertex_colors, is_directed};
+        edge_data.m_colored.empty()
+            ? ColoredGraph{vertex_count, edge_data.m_uncolored, vertex_colors, is_directed}
+            : ColoredGraph{vertex_count, edge_data.m_colored, vertex_colors, is_directed};
     logger.log(LogLevel::INFO, "read vertex-edge graph from '" + path + "'");
     return result;
 }

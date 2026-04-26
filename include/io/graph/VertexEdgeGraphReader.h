@@ -59,21 +59,21 @@ public:
      * @throws InvalidArgumentException if parallel edges carry different color labels
      *         (propagated from the ColoredGraph constructor).
      */
-    ColoredGraph read(const std::string& path, const bool is_directed,
+    ColoredGraph read(const std::string& path, bool is_directed,
                       const LoggerHandler& logger) const override;
 
 private:
     /**
      * @brief Holds the parsed edge lists from a .edges file.
      *
-     * Exactly one of @c colored or @c uncolored will be non-empty on return from
+     * Exactly one of @c m_colored or @c m_uncolored will be non-empty on return from
      * parse_edge_file (the all-or-nothing color rule). Both are empty when the
      * file contains no edges.
      */
     struct EdgeData
     {
-        std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> colored;
-        std::vector<std::pair<uint32_t, uint32_t>> uncolored;
+        std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> m_colored;
+        std::vector<std::pair<uint32_t, uint32_t>> m_uncolored;
     };
 
     /**
@@ -147,7 +147,7 @@ private:
      * @throws GraphConstructionException if @p raw_id is not in the map.
      */
     static uint32_t resolve_vertex_id(
-        const uint32_t raw_id,
+        uint32_t raw_id,
         const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
         const std::string& role, const std::string& line);
 
