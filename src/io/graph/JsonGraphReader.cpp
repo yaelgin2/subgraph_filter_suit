@@ -7,6 +7,7 @@
 #include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
 
+#include <algorithm>
 #include <boost/json/array.hpp>
 #include <boost/json/object.hpp>
 #include <boost/json/parse.hpp>
@@ -53,14 +54,10 @@ const boost::json::array& extract_array(const boost::json::object& obj, const ch
     {
         return obj.at(key).as_array();
     }
-    catch (const std::out_of_range&)
+    catch (const boost::system::system_error& exc)
     {
-        throw GraphConstructionException("missing required key '" + std::string(key) + "'");
-    }
-    catch (const std::invalid_argument&)
-    {
-        throw GraphConstructionException("value for key '" + std::string(key) +
-                                         "' is not an array");
+        throw GraphConstructionException("missing or invalid key '" + std::string(key) + "': " +
+                                         exc.what());
     }
 }
 
@@ -75,7 +72,7 @@ const boost::json::object& as_link_object(const boost::json::value& link_value)
     {
         return link_value.as_object();
     }
-    catch (const std::invalid_argument& exc)
+    catch (const boost::system::system_error& exc)
     {
         throw GraphConstructionException("link is not a JSON object: " + std::string(exc.what()));
     }
@@ -135,24 +132,26 @@ JsonGraphReader::collect_node_colors(const boost::json::array& nodes_array)
         for (const auto& node_value : nodes_array)
         {
             const boost::json::object& node_object = node_value.as_object();
-            const uint64_t node_id_raw = node_object.at(NODE_ID_KEY).as_uint64();
-            if (node_id_raw > SgfConstants::MAX_VERTEX_COLOR)
+            const int64_t node_id_raw = node_object.at(NODE_ID_KEY).as_int64();
+            if (node_id_raw < 0 ||
+                node_id_raw > static_cast<int64_t>(SgfConstants::MAX_VERTEX_COLOR))
             {
-                throw GraphConstructionException("node id exceeds maximum of " +
-                                                 std::to_string(SgfConstants::MAX_VERTEX_COLOR));
+                throw GraphConstructionException("invalid node id: " +
+                                                 std::to_string(node_id_raw));
             }
             const uint32_t node_id = static_cast<uint32_t>(node_id_raw);
-            color_by_id.emplace(node_id,
-                                static_cast<uint32_t>(node_object.at(COLOR_KEY).as_int64()));
+            const std::pair<std::unordered_map<uint32_t, uint32_t>::iterator, bool> insert_result =
+                color_by_id.emplace(node_id,
+                                    static_cast<uint32_t>(node_object.at(COLOR_KEY).as_int64()));
+            if (!insert_result.second)
+            {
+                throw GraphConstructionException("duplicate node id: " + std::to_string(node_id));
+            }
         }
     }
-    catch (const std::invalid_argument& exc)
+    catch (const boost::system::system_error& exc)
     {
         throw GraphConstructionException("malformed node entry: " + std::string(exc.what()));
-    }
-    catch (const std::out_of_range& exc)
-    {
-        throw GraphConstructionException("missing field in node entry: " + std::string(exc.what()));
     }
     return color_by_id;
 }
@@ -218,7 +217,7 @@ std::pair<uint32_t, uint32_t> JsonGraphReader::extract_link_endpoints(
             static_cast<uint32_t>(link_object.at(TARGET_KEY).as_int64()));
         return {source_index, target_index};
     }
-    catch (const std::invalid_argument& exc)
+    catch (const boost::system::system_error& exc)
     {
         throw GraphConstructionException("malformed link endpoint: " + std::string(exc.what()));
     }
@@ -245,13 +244,9 @@ std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> JsonGraphReader::extract_c
             edges.emplace_back(endpoints.first, endpoints.second, edge_color);
         }
     }
-    catch (const std::invalid_argument& exc)
+    catch (const boost::system::system_error& exc)
     {
         throw GraphConstructionException("malformed edge color: " + std::string(exc.what()));
-    }
-    catch (const std::out_of_range& exc)
-    {
-        throw GraphConstructionException("missing color field in link: " + std::string(exc.what()));
     }
     return edges;
 }
