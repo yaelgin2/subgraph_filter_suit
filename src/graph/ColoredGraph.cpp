@@ -220,7 +220,7 @@ ColoredGraph::compute_range(uint32_t vertex, const std::vector<uint32_t>& elemen
     const std::vector<uint32_t>::const_iterator range_begin =
         elements.begin() + index_of_neighbours.at(vertex);
     const std::vector<uint32_t>::const_iterator range_end =
-        (vertex + 1 < index_of_neighbours.size())
+        (static_cast<size_t>(vertex) + 1UL < index_of_neighbours.size())
             ? elements.begin() + index_of_neighbours.at(vertex + 1)
             : elements.end();
     return {range_begin, range_end};
