@@ -2,6 +2,7 @@
 
 #include "ColoredGraph.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <utility>

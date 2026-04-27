@@ -37,6 +37,12 @@ public:
      * @brief Default virtual destructor.
      */
     virtual ~IColoredGraphReader() = default;
+
+    IColoredGraphReader() = default;
+    IColoredGraphReader(const IColoredGraphReader&) = delete;
+    IColoredGraphReader& operator=(const IColoredGraphReader&) = delete;
+    IColoredGraphReader(IColoredGraphReader&&) = delete;
+    IColoredGraphReader& operator=(IColoredGraphReader&&) = delete;
 };
 
 }  // namespace sgf

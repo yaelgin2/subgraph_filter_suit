@@ -3,10 +3,14 @@
 #include "ColoredGraph.h"
 #include "Constants.h"
 #include "GraphConstructionException.h"
-#include "GraphmlGraphReader.h"
 
 #include <algorithm>
+#include <boost/any/bad_any_cast.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <boost/graph/graphml.hpp>
+#include <boost/property_map/dynamic_property_map.hpp>
+#include <boost/property_tree/detail/xml_parser_error.hpp>
+#include <boost/property_tree/exceptions.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <cstdint>
 #include <map>
@@ -18,6 +22,9 @@
 namespace sgf
 {
 
+/**
+ * @brief Utility functions for converting Boost graphs to ColoredGraph.
+ */
 class GraphUtils
 {
 public:
