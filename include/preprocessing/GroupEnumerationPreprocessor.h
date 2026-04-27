@@ -5,8 +5,36 @@
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 
+#include <cstdint>
+#include <functional>
 #include <unordered_map>
 #include <vector>
+
+namespace std
+{
+
+/**
+ * @brief Hash specialization for __uint128_t (GCC extension, no std::hash by default).
+ */
+template <>
+struct hash<__uint128_t>
+{
+    /**
+     * @brief Hashes a 128-bit unsigned integer.
+     * @param value The value to hash.
+     * @return Combined hash of the high and low 64-bit halves.
+     */
+    size_t operator()(const __uint128_t value) const noexcept
+    {
+        constexpr uint32_t HIGH_BITS_SHIFT = 64U;
+        constexpr size_t HASH_MIX_SHIFT = 1U;
+        const uint64_t high = static_cast<uint64_t>(value >> HIGH_BITS_SHIFT);
+        const uint64_t low = static_cast<uint64_t>(value);
+        return std::hash<uint64_t>{}(high) ^ (std::hash<uint64_t>{}(low) << HASH_MIX_SHIFT);
+    }
+};
+
+}  // namespace std
 
 /**
  * @brief Alias representing the collection of discovered groups.
@@ -17,7 +45,7 @@
  *
  * The exact meaning of the first field depends on the derived implementation.
  */
-using Groups = std::vector<std::pair<uint32_t, std::vector<int>>>;
+using Groups = std::vector<std::pair<uint32_t, std::vector<uint32_t>>>;
 
 namespace sgf
 {
@@ -54,11 +82,11 @@ public:
      * @brief Construct a new GroupEnmerationPreprocessor.
      *
      * @param graph Shared pointer to the graph to process.
-     * @param m_logger Logger handler used for status/debug output.
+     * @param logger Logger handler used for status/debug output.
      *
      * @throws std::invalid_argument Recommended if graph is null.
      */
-    GroupEnmerationPreprocessor(ColoredGraphPtr graph, LoggerHandler& m_logger);
+    GroupEnmerationPreprocessor(ColoredGraphPtr graph, LoggerHandler& logger);
 
     /**
      * @brief Virtual destructor.
@@ -112,13 +140,13 @@ protected:
      * - node colors or labels,
      * - internal edge structure.
      *
-     * @param colors Ordered color/group descriptor.
+     * @param motif_descriptor Numeric motif/color/group descriptor for the group.
      * @param edges Adjacency matrix of the group.
      *
      * @return Unique numeric motif identifier.
      */
-    virtual __uint128_t calculate_motif_number(std::vector<uint32_t> colors,
-                                               std::vector<std::vector<bool>> edges) = 0;
+    virtual __uint128_t calculate_motif_number(const uint32_t motif_descriptor,
+                                               const std::vector<std::vector<bool>>& edges) = 0;
 
 private:
     /**
