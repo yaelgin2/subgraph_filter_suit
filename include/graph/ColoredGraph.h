@@ -44,7 +44,7 @@ public:
      * @param vertex_colors Per-vertex color labels; must have exactly @p num_vertices entries.
      * @param is_directed If true, treat edges as directed.
      */
-ColoredGraph(uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& edges,
+    ColoredGraph(uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& edges,
                  const std::vector<uint32_t>& vertex_colors, bool is_directed = false);
 
     /**
@@ -178,6 +178,8 @@ ColoredGraph(uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& 
     bool is_directed() const;
 
 private:
+    static constexpr uint32_t UNDIRECTED_EDGE_FACTOR = 2U;
+
     /**
      * @brief Validates that the vertex color vector length matches the vertex count.
      * @param vertex_colors The color vector to validate.

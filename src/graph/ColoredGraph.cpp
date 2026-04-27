@@ -93,7 +93,7 @@ void ColoredGraph::build_undirected_structures(
                                    std::get<2>(colored_edges.at(idx)));
     }
     sort_and_deduplicate(colored_edges);
-    m_edge_count = static_cast<uint32_t>(colored_edges.size()) / 2U;
+    m_edge_count = static_cast<uint32_t>(colored_edges.size()) / UNDIRECTED_EDGE_FACTOR;
     std::vector<std::pair<uint32_t, uint32_t>> pairs;
     std::vector<uint32_t> edge_colors;
     extract_edges(colored_edges, pairs, edge_colors, m_edges_colored);
