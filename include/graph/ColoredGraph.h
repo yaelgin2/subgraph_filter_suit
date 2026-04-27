@@ -4,7 +4,6 @@
 #include "exceptions/InvalidArgumentException.h"
 
 #include <cstdint>
-#include <memory>
 #include <tuple>
 #include <vector>
 
@@ -343,7 +342,5 @@ private:
     bool m_directed = false;
     bool m_edges_colored = false;
 };
-
-typedef std::shared_ptr<ColoredGraph> ColoredGraphPtr;
 
 }  // namespace sgf
