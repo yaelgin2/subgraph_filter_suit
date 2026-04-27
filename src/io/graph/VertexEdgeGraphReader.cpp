@@ -2,9 +2,9 @@
 
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
+#include "IoGraphUtils.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
-#include "SgfPathDoesntExistException.h"
 
 #include <cstdint>
 #include <fstream>
@@ -40,16 +40,6 @@ void throw_if_extra_tokens(std::istringstream& stream, const std::string& contex
 
 }  // namespace
 
-std::ifstream VertexEdgeGraphReader::open_file(const std::string& file_path)
-{
-    std::ifstream file(file_path);
-    if (!file.is_open())
-    {
-        throw SgfPathDoesntExistException("cannot open file: " + file_path);
-    }
-    return file;
-}
-
 std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(const std::string& line,
                                                                        const std::string& file_path)
 {
@@ -70,7 +60,7 @@ std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(const std
 std::unordered_map<uint32_t, uint32_t>
 VertexEdgeGraphReader::parse_vertex_file(const std::string& vertices_path)
 {
-    std::ifstream file = open_file(vertices_path);
+    std::ifstream file = IoGraphUtils::open_file(vertices_path);
     std::unordered_map<uint32_t, uint32_t> vertex_color_by_original_id;
     std::string line;
     while (std::getline(file, line))
@@ -87,26 +77,6 @@ VertexEdgeGraphReader::parse_vertex_file(const std::string& vertices_path)
         }
     }
     return vertex_color_by_original_id;
-}
-
-std::unordered_map<uint32_t, uint32_t> VertexEdgeGraphReader::build_consecutive_index_map(
-    const std::unordered_map<uint32_t, uint32_t>& vertex_color_by_original_id)
-{
-    std::vector<uint32_t> sorted_ids;
-    sorted_ids.reserve(vertex_color_by_original_id.size());
-    for (const auto& entry : vertex_color_by_original_id)
-    {
-        sorted_ids.push_back(entry.first);
-    }
-    std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id;
-    consecutive_index_by_original_id.reserve(sorted_ids.size());
-    uint32_t consecutive_index = 0;
-    for (const uint32_t original_id : sorted_ids)
-    {
-        consecutive_index_by_original_id.emplace(original_id, consecutive_index);
-        ++consecutive_index;
-    }
-    return consecutive_index_by_original_id;
 }
 
 std::vector<uint32_t> VertexEdgeGraphReader::build_vertex_colors(
@@ -173,7 +143,7 @@ VertexEdgeGraphReader::EdgeData VertexEdgeGraphReader::parse_edge_file(
     const std::string& edges_path,
     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id)
 {
-    std::ifstream file = open_file(edges_path);
+    std::ifstream file = IoGraphUtils::open_file(edges_path);
     EdgeData result;
     std::string line;
     bool edges_have_colors = false;
@@ -218,7 +188,7 @@ ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_
     const std::string edges_path = path + EDGES_SUFFIX;
     const std::unordered_map<uint32_t, uint32_t> color_by_id = parse_vertex_file(vertices_path);
     const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
-        build_consecutive_index_map(color_by_id);
+        IoGraphUtils::build_consecutive_index_map(color_by_id);
     const std::vector<uint32_t> vertex_colors =
         build_vertex_colors(color_by_id, consecutive_index_by_original_id);
     EdgeData edge_data = parse_edge_file(edges_path, consecutive_index_by_original_id);

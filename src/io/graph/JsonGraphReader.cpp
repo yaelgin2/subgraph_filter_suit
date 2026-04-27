@@ -1,13 +1,11 @@
 #include "JsonGraphReader.h"
 
 #include "ColoredGraph.h"
-#include "Constants.h"
 #include "GraphConstructionException.h"
+#include "IoGraphUtils.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
-#include "SgfPathDoesntExistException.h"
 
-#include <algorithm>
 #include <boost/json/array.hpp>
 #include <boost/json/object.hpp>
 #include <boost/json/parse.hpp>
@@ -56,8 +54,8 @@ const boost::json::array& extract_array(const boost::json::object& obj, const ch
     }
     catch (const boost::system::system_error& exc)
     {
-        throw GraphConstructionException("missing or invalid key '" + std::string(key) + "': " +
-                                         exc.what());
+        throw GraphConstructionException("missing or invalid key '" + std::string(key) +
+                                         "': " + exc.what());
     }
 }
 
@@ -80,16 +78,6 @@ const boost::json::object& as_link_object(const boost::json::value& link_value)
 
 }  // namespace
 
-std::ifstream JsonGraphReader::open_file(const std::string& path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        throw SgfPathDoesntExistException("cannot open file: " + path);
-    }
-    return file;
-}
-
 [[noreturn]] void JsonGraphReader::rethrow_as_construction_error(const std::string& path,
                                                                  const std::string& what_message)
 {
@@ -105,7 +93,7 @@ std::string JsonGraphReader::read_file_contents(std::ifstream& file)
 
 boost::json::object JsonGraphReader::parse_json_object(const std::string& path)
 {
-    std::ifstream file = open_file(path);
+    std::ifstream file = IoGraphUtils::open_file(path);
     const std::string file_contents = read_file_contents(file);
     try
     {
@@ -133,11 +121,9 @@ JsonGraphReader::collect_node_colors(const boost::json::array& nodes_array)
         {
             const boost::json::object& node_object = node_value.as_object();
             const int64_t node_id_raw = node_object.at(NODE_ID_KEY).as_int64();
-            if (node_id_raw < 0 ||
-                node_id_raw > static_cast<int64_t>(SgfConstants::MAX_VERTEX_COLOR))
+            if (node_id_raw < 0 || node_id_raw > std::numeric_limits<uint32_t>::max())
             {
-                throw GraphConstructionException("invalid node id: " +
-                                                 std::to_string(node_id_raw));
+                throw GraphConstructionException("Invalid node id: " + std::to_string(node_id_raw));
             }
             const uint32_t node_id = static_cast<uint32_t>(node_id_raw);
             const std::pair<std::unordered_map<uint32_t, uint32_t>::iterator, bool> insert_result =
@@ -154,25 +140,6 @@ JsonGraphReader::collect_node_colors(const boost::json::array& nodes_array)
         throw GraphConstructionException("malformed node entry: " + std::string(exc.what()));
     }
     return color_by_id;
-}
-
-std::unordered_map<uint32_t, uint32_t> JsonGraphReader::build_consecutive_index_map(
-    const std::unordered_map<uint32_t, uint32_t>& color_by_id)
-{
-    std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id;
-    consecutive_index_by_original_id.reserve(color_by_id.size());
-    uint32_t consecutive_index = 0;
-    for (const auto& entry : color_by_id)
-    {
-        if (consecutive_index == std::numeric_limits<uint32_t>::max())
-        {
-            throw GraphConstructionException("vertex count exceeded maximum of " +
-                                             std::to_string(std::numeric_limits<uint32_t>::max()));
-        }
-        consecutive_index_by_original_id.emplace(entry.first, consecutive_index);
-        ++consecutive_index;
-    }
-    return consecutive_index_by_original_id;
 }
 
 std::vector<uint32_t> JsonGraphReader::build_vertex_colors(
@@ -268,7 +235,7 @@ std::vector<std::pair<uint32_t, uint32_t>> JsonGraphReader::extract_uncolored_ed
 ColoredGraph JsonGraphReader::build_graph(
     const boost::json::array& links,
     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-    uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors, const bool is_directed)
+    uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors, bool is_directed)
 {
     if (detect_edge_colors(links))
     {
@@ -289,7 +256,7 @@ ColoredGraph JsonGraphReader::read(const std::string& path, bool is_directed,
     const boost::json::array& links = extract_array(root_object, LINKS_KEY);
     const std::unordered_map<uint32_t, uint32_t> color_by_id = collect_node_colors(nodes_array);
     const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
-        build_consecutive_index_map(color_by_id);
+        IoGraphUtils::build_consecutive_index_map(color_by_id);
     const std::vector<uint32_t> vertex_colors =
         build_vertex_colors(color_by_id, consecutive_index_by_original_id);
     const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
