@@ -46,6 +46,7 @@ target_compile_definitions(graphml_reader_tests PRIVATE
 # The json reader tests need to locate the test-data directory at compile time.
 target_compile_definitions(json_reader_tests PRIVATE
     JSON_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/io/json"
+)
 
 # The vertex-edge reader tests need to locate the test-data directory at compile time.
 target_compile_definitions(vertex_edge_reader_tests PRIVATE
