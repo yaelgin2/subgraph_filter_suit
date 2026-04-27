@@ -50,7 +50,7 @@ public:
      *         lacks a "color" field, edge colors are mixed, or a link
      *         references an unknown node ID.
      */
-    ColoredGraph read(const std::string& path, const bool is_directed,
+    ColoredGraph read(const std::string& path, bool is_directed,
                       const LoggerHandler& logger) const override;
 
 private:
@@ -193,7 +193,7 @@ private:
     static ColoredGraph
     build_graph(const boost::json::array& links,
                 const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-                const uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors,
+                uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors,
                 const bool is_directed);
 };
 

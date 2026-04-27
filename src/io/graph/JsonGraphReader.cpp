@@ -268,7 +268,7 @@ std::vector<std::pair<uint32_t, uint32_t>> JsonGraphReader::extract_uncolored_ed
 ColoredGraph JsonGraphReader::build_graph(
     const boost::json::array& links,
     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-    const uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors, const bool is_directed)
+    uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors, const bool is_directed)
 {
     if (detect_edge_colors(links))
     {
@@ -281,7 +281,7 @@ ColoredGraph JsonGraphReader::build_graph(
     return {vertex_count, uncolored_edges, vertex_colors, is_directed};
 }
 
-ColoredGraph JsonGraphReader::read(const std::string& path, const bool is_directed,
+ColoredGraph JsonGraphReader::read(const std::string& path, bool is_directed,
                                    const LoggerHandler& logger) const
 {
     const boost::json::object root_object = parse_json_object(path);
