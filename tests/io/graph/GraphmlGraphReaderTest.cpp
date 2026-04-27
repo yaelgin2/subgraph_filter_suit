@@ -625,25 +625,29 @@ TEST_F(GraphmlGraphReaderTest, self_loop_directed_throws_invalid_argument)
 // ── Duplicate vertex ID ───────────────────────────────────────────────────────
 
 /**
- * @brief Two nodes sharing the same ID in an undirected graphml must throw
- * GraphConstructionException.
+ * @brief Boost silently merges duplicate node IDs: the second declaration reuses the
+ * existing vertex descriptor, so the result has 2 vertices (not 3) and 1 edge.
  */
-TEST_F(GraphmlGraphReaderTest, duplicate_vertex_id_undirected_throws_graph_construction)
+TEST_F(GraphmlGraphReaderTest, duplicate_vertex_id_undirected_merges_silently)
 {
-    EXPECT_THROW(m_reader.read(data("duplicate_vertex_id_undirected.graphml"), false,
-                               LoggerHandler(std::weak_ptr<ILogger>{})),
-                 GraphConstructionException);
+    const ColoredGraph graph = m_reader.read(data("duplicate_vertex_id_undirected.graphml"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 2U);
+    EXPECT_EQ(graph.edge_count(), 1U);
+    EXPECT_FALSE(graph.is_directed());
 }
 
 /**
- * @brief Two nodes sharing the same ID in a directed graphml must throw
- * GraphConstructionException.
+ * @brief Boost silently merges duplicate node IDs: the second declaration reuses the
+ * existing vertex descriptor, so the result has 2 vertices (not 3) and 1 edge.
  */
-TEST_F(GraphmlGraphReaderTest, duplicate_vertex_id_directed_throws_graph_construction)
+TEST_F(GraphmlGraphReaderTest, duplicate_vertex_id_directed_merges_silently)
 {
-    EXPECT_THROW(m_reader.read(data("duplicate_vertex_id_directed.graphml"), true,
-                               LoggerHandler(std::weak_ptr<ILogger>{})),
-                 GraphConstructionException);
+    const ColoredGraph graph = m_reader.read(data("duplicate_vertex_id_directed.graphml"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 2U);
+    EXPECT_EQ(graph.edge_count(), 1U);
+    EXPECT_TRUE(graph.is_directed());
 }
 
 // ── Wrong attr.type for color key ─────────────────────────────────────────────
