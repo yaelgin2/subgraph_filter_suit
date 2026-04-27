@@ -28,7 +28,6 @@
 #include <fstream>
 #include <ios>
 #include <ostream>
-#include <stdexcept>
 #include <string>
 
 namespace sgf

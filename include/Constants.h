@@ -1,11 +1,13 @@
 #pragma once
 
 #include <cstdint>
-#include <limits>
 
 namespace sgf
 {
 
+/**
+ * @brief Project-wide compile-time constants.
+ */
 class SgfConstants
 {
 public:

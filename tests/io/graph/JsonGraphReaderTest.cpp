@@ -439,8 +439,8 @@ TEST_F(JsonGraphReaderTest, triangle_two_same_vertex_color_undirected)
     assert_neighbours(graph, 0, {1, 2});
     assert_neighbours(graph, 1, {0, 2});
     assert_neighbours(graph, 2, {0, 1});
-    std::vector<uint32_t> colors = {
-        graph.get_vertex_color(0), graph.get_vertex_color(1), graph.get_vertex_color(2)};
+    std::vector<uint32_t> colors = {graph.get_vertex_color(0), graph.get_vertex_color(1),
+                                    graph.get_vertex_color(2)};
     std::sort(colors.begin(), colors.end());
     EXPECT_EQ(colors.at(0), colors.at(1));
     EXPECT_NE(colors.at(1), colors.at(2));
@@ -585,8 +585,7 @@ TEST_F(JsonGraphReaderTest, two_nodes_parallel_uncolored_directed)
                                              true, LoggerHandler(std::weak_ptr<ILogger>{}));
     EXPECT_EQ(graph.edge_count(), 1U);
     EXPECT_FALSE(graph.is_edges_colored());
-    const std::pair<std::vector<uint32_t>::const_iterator,
-                    std::vector<uint32_t>::const_iterator>
+    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
         range_0 = graph.get_neighbours(0);
     const bool zero_is_src = range_0.first != range_0.second;
     const uint32_t src = zero_is_src ? 0U : 1U;
