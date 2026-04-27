@@ -1,14 +1,19 @@
 #include "GroupEnumerationPreprocessor.h"
 
+#include "ColoredGraph.h"
 #include "ILogger.h"
 #include "LogLevel.h"
+
+#include <vector>
+#include <string>
 
 namespace sgf
 {
 
-GroupEnmerationPreprocessor::GroupEnmerationPreprocessor(std::shared_ptr<ColoredGraph> graph,
-     LoggerHandler logger)
-    : m_graph(graph), m_logger(logger)
+GroupEnmerationPreprocessor::GroupEnmerationPreprocessor(ColoredGraphPtr graph,
+                                                         LoggerHandler logger)
+    : m_graph(graph)
+    , m_logger(logger)
 {
 }
 
@@ -35,24 +40,26 @@ std::unordered_map<__uint128_t, uint32_t> GroupEnmerationPreprocessor::calculate
     return motif_count;
 }
 
-void GroupEnmerationPreprocessor::graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix)
+void GroupEnmerationPreprocessor::graph_to_adjacency_matrix(
+    std::vector<std::vector<bool>>& adjacency_matrix)
 {
-    adjacency_matrix.resize(m_graph->num_vertices());
-    for (size_t i = 0; i < m_graph->num_vertices(); i++)
+    adjacency_matrix.resize(m_graph->vertex_count());
+    for (size_t i = 0; i < m_graph->vertex_count(); i++)
     {
-        adjacency_matrix[i].resize(m_graph->num_vertices(), false);
+        adjacency_matrix[i].resize(m_graph->vertex_count(), false);
     }
-    for (int node = 0; node < m_graph->num_vertices(); node++)
+    for (int node = 0; node < m_graph->vertex_count(); node++)
     {
         auto [neighbour_begin, neighbour_end] = m_graph->get_neighbours(node);
-        for (auto neighbour_iterator = neighbour_begin; neighbour_iterator != neighbour_end; neighbour_iterator++)
+        for (auto neighbour_iterator = neighbour_begin; neighbour_iterator != neighbour_end;
+             neighbour_iterator++)
         {
             adjacency_matrix[node][*neighbour_iterator] = true;
         }
     }
 }
 
-std::vector<std::vector<bool>>> group_to_adjacency_matrix(const std::vector<uint32_t>& group)
+std::vector < std::vector < bool >>> group_to_adjacency_matrix(const std::vector<uint32_t>& group)
 {
     std::vector<std::vector<bool>> group_adjacency_matrix;
     group_adjacency_matrix.resize(group.size());
@@ -62,7 +69,7 @@ std::vector<std::vector<bool>>> group_to_adjacency_matrix(const std::vector<uint
     }
     for (size_t vertex_index = 0; vertex_index < group.size(); vertex_index++)
     {
-        for(size_t neighbour_index = 0; neighbour_index < group.size(); neighbour_index++)
+        for (size_t neighbour_index = 0; neighbour_index < group.size(); neighbour_index++)
         {
             if (m_graph->is_edge(group[vertex_index], group[neighbour_index]))
             {
