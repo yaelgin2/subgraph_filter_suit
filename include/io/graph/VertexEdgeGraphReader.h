@@ -1,10 +1,10 @@
 #pragma once
 
 #include "IColoredGraphReader.h"
+#include "IoGraphUtils.h"
 
 #include <cstdint>
 #include <fstream>
-#include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -77,14 +77,6 @@ private:
     };
 
     /**
-     * @brief Opens a file for reading, throwing on failure.
-     * @param file_path Path to the file.
-     * @return An open input stream.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
-     */
-    static std::ifstream open_file(const std::string& file_path);
-
-    /**
      * @brief Parses one line from a .vertex_indices file.
      *
      * Expects exactly two whitespace-separated tokens: vertex_id and color.
@@ -113,16 +105,6 @@ private:
      */
     static std::unordered_map<uint32_t, uint32_t>
     parse_vertex_file(const std::string& vertices_path);
-
-    /**
-     * @brief Builds a remapping from original vertex IDs to consecutive indices.
-     *
-     *
-     * @param vertex_color_by_original_id Map from original ID to color.
-     * @return Map from original ID to consecutive zero-based index.
-     */
-    static std::unordered_map<uint32_t, uint32_t> build_consecutive_index_map(
-        const std::unordered_map<uint32_t, uint32_t>& vertex_color_by_original_id);
 
     /**
      * @brief Extracts per-vertex colors in consecutive-index order.

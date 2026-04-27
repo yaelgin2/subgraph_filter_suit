@@ -1,12 +1,12 @@
 #pragma once
 
 #include "IColoredGraphReader.h"
+#include "IoGraphUtils.h"
 
 #include <boost/json/array.hpp>
 #include <boost/json/object.hpp>
 #include <cstdint>
 #include <fstream>
-#include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -55,14 +55,6 @@ public:
 
 private:
     /**
-     * @brief Opens a file for reading.
-     * @param path Path to the file.
-     * @return An open input stream.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
-     */
-    static std::ifstream open_file(const std::string& path);
-
-    /**
      * @brief Wraps @p caught_exception in a GraphConstructionException and throws it.
      * @param path The file path associated with the failure.
      * @param what_message The what() string of the caught exception.
@@ -102,18 +94,6 @@ private:
      */
     static std::unordered_map<uint32_t, uint32_t>
     collect_node_colors(const boost::json::array& nodes_array);
-
-    /**
-     * @brief Builds a remapping from original node IDs to consecutive indices.
-     *
-     * Keys are sorted ascending before assigning consecutive indices so that
-     * the mapping is deterministic regardless of insertion order.
-     *
-     * @param color_by_id Unordered map of original ID to color.
-     * @return An unordered map from original ID to consecutive index.
-     */
-    static std::unordered_map<uint32_t, uint32_t>
-    build_consecutive_index_map(const std::unordered_map<uint32_t, uint32_t>& color_by_id);
 
     /**
      * @brief Extracts per-vertex colors in consecutive-index order.
@@ -194,7 +174,7 @@ private:
     build_graph(const boost::json::array& links,
                 const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
                 uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors,
-                const bool is_directed);
+                bool is_directed);
 };
 
 }  // namespace sgf
