@@ -598,6 +598,82 @@ TEST_F(GraphmlGraphReaderTest, no_color_keys_defaults_to_zero)
     EXPECT_FALSE(graph.is_edges_colored());
 }
 
+// ── Self-loop ─────────────────────────────────────────────────────────────────
+
+/**
+ * @brief A self-loop edge in an undirected graphml must throw InvalidArgumentException
+ * (propagated from the ColoredGraph constructor).
+ */
+TEST_F(GraphmlGraphReaderTest, self_loop_undirected_throws_invalid_argument)
+{
+    EXPECT_THROW(m_reader.read(data("self_loop_undirected.graphml"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 InvalidArgumentException);
+}
+
+/**
+ * @brief A self-loop edge in a directed graphml must throw InvalidArgumentException
+ * (propagated from the ColoredGraph constructor).
+ */
+TEST_F(GraphmlGraphReaderTest, self_loop_directed_throws_invalid_argument)
+{
+    EXPECT_THROW(m_reader.read(data("self_loop_directed.graphml"), true,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 InvalidArgumentException);
+}
+
+// ── Duplicate vertex ID ───────────────────────────────────────────────────────
+
+/**
+ * @brief Boost silently merges duplicate node IDs: the second declaration reuses the
+ * existing vertex descriptor, so the result has 2 vertices (not 3) and 1 edge.
+ */
+TEST_F(GraphmlGraphReaderTest, duplicate_vertex_id_undirected_merges_silently)
+{
+    const ColoredGraph graph = m_reader.read(data("duplicate_vertex_id_undirected.graphml"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 2U);
+    EXPECT_EQ(graph.edge_count(), 1U);
+    EXPECT_FALSE(graph.is_directed());
+}
+
+/**
+ * @brief Boost silently merges duplicate node IDs: the second declaration reuses the
+ * existing vertex descriptor, so the result has 2 vertices (not 3) and 1 edge.
+ */
+TEST_F(GraphmlGraphReaderTest, duplicate_vertex_id_directed_merges_silently)
+{
+    const ColoredGraph graph = m_reader.read(data("duplicate_vertex_id_directed.graphml"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 2U);
+    EXPECT_EQ(graph.edge_count(), 1U);
+    EXPECT_TRUE(graph.is_directed());
+}
+
+// ── Wrong attr.type for color key ─────────────────────────────────────────────
+
+/**
+ * @brief A color key declared as attr.type="double" with a non-numeric value must throw
+ * GraphConstructionException (Boost fails to parse the value as the declared type).
+ */
+TEST_F(GraphmlGraphReaderTest, wrong_attr_type_vertex_color_undirected_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("wrong_attr_type_vertex_color_undirected.graphml"), false,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
+/**
+ * @brief A color key declared as attr.type="double" with a non-numeric value in a directed
+ * graphml must throw GraphConstructionException.
+ */
+TEST_F(GraphmlGraphReaderTest, wrong_attr_type_vertex_color_directed_throws_graph_construction)
+{
+    EXPECT_THROW(m_reader.read(data("wrong_attr_type_vertex_color_directed.graphml"), true,
+                               LoggerHandler(std::weak_ptr<ILogger>{})),
+                 GraphConstructionException);
+}
+
 // ── Param / file mismatch (null logger) ───────────────────────────────────────
 
 /**

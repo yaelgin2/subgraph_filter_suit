@@ -1,6 +1,7 @@
 # Auto-detected by clang-tidy when running from any subdirectory.
 # Requires compile_commands.json for accurate analysis — see CLAUDE.md for build steps.
 
+SystemHeaders: false
 Checks: >
   -*,
   bugprone-*,
@@ -18,14 +19,15 @@ Checks: >
   -readability-named-parameter,
   -modernize-use-auto,
   -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
   -hicpp-use-auto,
   -bugprone-easily-swappable-parameters
 
 # Treat every enabled check as an error (CI fails on any warning)
 WarningsAsErrors: "*"
 
-# Lint headers belonging to this project only — excludes build/_deps (GTest, etc.)
-HeaderFilterRegex: "^(?!.*build/).*"
+# Lint only headers under src/ or include/ inside the project; portable across machines.
+HeaderFilterRegex: "^.*/subgraph_filter_suit/(src|include)/.*"
 
 CheckOptions:
   # ── Function size limits ──────────────────────────────────────────────────

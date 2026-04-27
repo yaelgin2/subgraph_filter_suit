@@ -1,16 +1,18 @@
 #pragma once
 
 #include <cstdint>
-#include <limits>
 
 namespace sgf
 {
 
+/**
+ * @brief Project-wide compile-time constants.
+ */
 class SgfConstants
 {
 public:
-    /// Maximum vertex color that can be stored in ColoredGraph's int32_t array.
-    static constexpr uint32_t MAX_VERTEX_COLOR = static_cast<uint32_t>((1 << 24) - 1);
+    /// Maximum vertex color that can be stored in ColoredGraph's uint32_t array.
+    static constexpr uint32_t MAX_VERTEX_COLOR = static_cast<uint32_t>((1U << 24U) - 1);
 };
 
 }  // namespace sgf

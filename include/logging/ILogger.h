@@ -13,10 +13,17 @@ namespace sgf
 class ILogger
 {
 public:
+    ILogger() = default;
+
     /**
      * @brief Virtual destructor.
      */
     virtual ~ILogger() = default;
+
+    ILogger(const ILogger&) = default;
+    ILogger& operator=(const ILogger&) = default;
+    ILogger(ILogger&&) = default;
+    ILogger& operator=(ILogger&&) = default;
 
     /**
      * @brief Log message at given level.

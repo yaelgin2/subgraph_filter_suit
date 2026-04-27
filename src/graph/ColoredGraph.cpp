@@ -13,9 +13,8 @@
 namespace sgf
 {
 
-ColoredGraph::ColoredGraph(const uint32_t num_vertices,
-                           std::vector<std::pair<uint32_t, uint32_t>>& edges,
-                           const std::vector<uint32_t>& vertex_colors, const bool is_directed)
+ColoredGraph::ColoredGraph(uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& edges,
+                           const std::vector<uint32_t>& vertex_colors, bool is_directed)
     : m_colors(vertex_colors)
     , m_directed(is_directed)
 {
@@ -29,9 +28,9 @@ ColoredGraph::ColoredGraph(const uint32_t num_vertices,
     build_structures(num_vertices, edge_tuples);
 }
 
-ColoredGraph::ColoredGraph(const uint32_t num_vertices,
+ColoredGraph::ColoredGraph(uint32_t num_vertices,
                            std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges,
-                           const std::vector<uint32_t>& vertex_colors, const bool is_directed)
+                           const std::vector<uint32_t>& vertex_colors, bool is_directed)
     : m_colors(vertex_colors)
     , m_directed(is_directed)
     , m_edges_colored(true)
@@ -45,7 +44,7 @@ ColoredGraph::ColoredGraph(const uint32_t num_vertices,
 }
 
 void ColoredGraph::validate_vertex_colors_size(const std::vector<uint32_t>& vertex_colors,
-                                               const uint32_t num_vertices)
+                                               uint32_t num_vertices)
 {
     if (vertex_colors.size() != static_cast<size_t>(num_vertices))
     {
@@ -55,8 +54,7 @@ void ColoredGraph::validate_vertex_colors_size(const std::vector<uint32_t>& vert
     }
 }
 
-void ColoredGraph::validate_edge(const std::pair<uint32_t, uint32_t>& edge,
-                                 const uint32_t num_vertices)
+void ColoredGraph::validate_edge(const std::pair<uint32_t, uint32_t>& edge, uint32_t num_vertices)
 {
     if (edge.first == edge.second)
     {
@@ -71,7 +69,7 @@ void ColoredGraph::validate_edge(const std::pair<uint32_t, uint32_t>& edge,
     }
 }
 
-void ColoredGraph::build_structures(const uint32_t num_vertices,
+void ColoredGraph::build_structures(uint32_t num_vertices,
                                     std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges)
 {
     if (m_directed)
@@ -85,8 +83,7 @@ void ColoredGraph::build_structures(const uint32_t num_vertices,
 }
 
 void ColoredGraph::build_undirected_structures(
-    const uint32_t num_vertices,
-    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges)
+    uint32_t num_vertices, std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges)
 {
     const size_t original_edge_count = colored_edges.size();
     for (size_t idx = 0; idx < original_edge_count; ++idx)
@@ -96,7 +93,7 @@ void ColoredGraph::build_undirected_structures(
                                    std::get<2>(colored_edges.at(idx)));
     }
     sort_and_deduplicate(colored_edges);
-    m_edge_count = static_cast<uint32_t>(colored_edges.size()) / 2U;
+    m_edge_count = static_cast<uint32_t>(colored_edges.size()) / UNDIRECTED_EDGE_FACTOR;
     std::vector<std::pair<uint32_t, uint32_t>> pairs;
     std::vector<uint32_t> edge_colors;
     extract_edges(colored_edges, pairs, edge_colors, m_edges_colored);
@@ -147,7 +144,7 @@ void ColoredGraph::sort_and_deduplicate(
 void ColoredGraph::extract_edges(
     const std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& tuples,
     std::vector<std::pair<uint32_t, uint32_t>>& pairs, std::vector<uint32_t>& colors,
-    const bool fill_colors)
+    bool fill_colors)
 {
     pairs.resize(tuples.size());
     if (fill_colors)
@@ -166,7 +163,7 @@ void ColoredGraph::extract_edges(
 
 std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>
 ColoredGraph::to_edge_tuples(const std::vector<std::pair<uint32_t, uint32_t>>& pairs,
-                             const std::vector<uint32_t>& colors, const bool reversed)
+                             const std::vector<uint32_t>& colors, bool reversed)
 {
     std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> tuples;
     tuples.reserve(pairs.size());
@@ -180,8 +177,8 @@ ColoredGraph::to_edge_tuples(const std::vector<std::pair<uint32_t, uint32_t>>& p
     return tuples;
 }
 
-void ColoredGraph::fill_index_range(const uint32_t from_vertex, const uint32_t to_vertex,
-                                    const uint32_t neighbour_count,
+void ColoredGraph::fill_index_range(uint32_t from_vertex, uint32_t to_vertex,
+                                    uint32_t neighbour_count,
                                     std::vector<uint32_t>& index_of_neighbours)
 {
     for (uint32_t fill_vertex = from_vertex + 1; fill_vertex <= to_vertex; ++fill_vertex)
@@ -190,7 +187,7 @@ void ColoredGraph::fill_index_range(const uint32_t from_vertex, const uint32_t t
     }
 }
 
-void ColoredGraph::initiate_graph(const uint32_t num_vertices,
+void ColoredGraph::initiate_graph(uint32_t num_vertices,
                                   const std::vector<std::pair<uint32_t, uint32_t>>& edges,
                                   std::vector<uint32_t>& neighbours,
                                   std::vector<uint32_t>& index_of_neighbours)
@@ -217,20 +214,20 @@ void ColoredGraph::initiate_graph(const uint32_t num_vertices,
 }
 
 std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-ColoredGraph::compute_range(const uint32_t vertex, const std::vector<uint32_t>& elements,
+ColoredGraph::compute_range(uint32_t vertex, const std::vector<uint32_t>& elements,
                             const std::vector<uint32_t>& index_of_neighbours)
 {
     const std::vector<uint32_t>::const_iterator range_begin =
         elements.begin() + index_of_neighbours.at(vertex);
     const std::vector<uint32_t>::const_iterator range_end =
-        (vertex + 1 < index_of_neighbours.size())
+        (static_cast<size_t>(vertex) + 1UL < index_of_neighbours.size())
             ? elements.begin() + index_of_neighbours.at(vertex + 1)
             : elements.end();
     return {range_begin, range_end};
 }
 
 std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-ColoredGraph::get_neighbours(const uint32_t vertex, const bool reversed) const
+ColoredGraph::get_neighbours(uint32_t vertex, bool reversed) const
 {
     if (reversed && m_directed)
     {
@@ -240,7 +237,7 @@ ColoredGraph::get_neighbours(const uint32_t vertex, const bool reversed) const
 }
 
 std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-ColoredGraph::get_neighbour_edge_colors(const uint32_t vertex, const bool reversed) const
+ColoredGraph::get_neighbour_edge_colors(uint32_t vertex, bool reversed) const
 {
     if (!m_edges_colored)
     {
@@ -253,7 +250,7 @@ ColoredGraph::get_neighbour_edge_colors(const uint32_t vertex, const bool revers
     return compute_range(vertex, m_edge_colors, m_index_of_neighbours);
 }
 
-bool ColoredGraph::is_edge(const uint32_t source_vertex, const uint32_t dest_vertex) const
+bool ColoredGraph::is_edge(uint32_t source_vertex, uint32_t dest_vertex) const
 {
     const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
         neighbour_range = get_neighbours(source_vertex, false);
@@ -271,12 +268,12 @@ uint32_t ColoredGraph::edge_count() const
     return m_edge_count;
 }
 
-uint32_t ColoredGraph::get_vertex_color(const uint32_t vertex) const
+uint32_t ColoredGraph::get_vertex_color(uint32_t vertex) const
 {
     return m_colors.at(vertex);
 }
 
-void ColoredGraph::set_vertex_color(const uint32_t vertex, const uint32_t new_color)
+void ColoredGraph::set_vertex_color(uint32_t vertex, uint32_t new_color)
 {
     m_colors.at(vertex) = new_color;
 }
@@ -286,8 +283,7 @@ bool ColoredGraph::is_edges_colored() const
     return m_edges_colored;
 }
 
-uint32_t ColoredGraph::get_edge_color(const uint32_t source_vertex,
-                                      const uint32_t dest_vertex) const
+uint32_t ColoredGraph::get_edge_color(uint32_t source_vertex, uint32_t dest_vertex) const
 {
     if (!m_edges_colored)
     {
@@ -306,7 +302,7 @@ uint32_t ColoredGraph::get_edge_color(const uint32_t source_vertex,
 }
 
 uint32_t ColoredGraph::get_edge_color_at(const std::vector<uint32_t>::const_iterator neighbour_it,
-                                         const bool reversed) const
+                                         bool reversed) const
 {
     if (!m_edges_colored)
     {

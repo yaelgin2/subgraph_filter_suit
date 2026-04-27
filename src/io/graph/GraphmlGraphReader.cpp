@@ -3,9 +3,9 @@
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
 #include "GraphUtils.h"
+#include "IoGraphUtils.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
-#include "SgfPathDoesntExistException.h"
 
 #include <boost/any/bad_any_cast.hpp>
 #include <boost/graph/graphml.hpp>
@@ -21,16 +21,6 @@
 namespace sgf
 {
 
-std::ifstream GraphmlGraphReader::open_file(const std::string& path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        throw SgfPathDoesntExistException("cannot open file: " + path);
-    }
-    return file;
-}
-
 [[noreturn]] void GraphmlGraphReader::rethrow_as_construction_error(const std::string& path,
                                                                     const std::exception& exc)
 {
@@ -39,7 +29,7 @@ std::ifstream GraphmlGraphReader::open_file(const std::string& path)
 
 bool GraphmlGraphReader::detect_is_directed(const std::string& path)
 {
-    std::ifstream file = open_file(path);
+    std::ifstream file = IoGraphUtils::open_file(path);
     std::string line;
     while (std::getline(file, line))
     {
@@ -55,7 +45,7 @@ template <typename GraphType>
 void GraphmlGraphReader::read_graphml_from_file_into_boost_graph(const std::string& path,
                                                                  GraphType& boost_graph)
 {
-    std::ifstream file = open_file(path);
+    std::ifstream file = IoGraphUtils::open_file(path);
     boost::dynamic_properties dynamic_props(boost::ignore_other_properties);
     dynamic_props.property("color", boost::get(&GraphmlVertexProperties::m_color, boost_graph));
     dynamic_props.property("color", boost::get(&GraphmlEdgeProperties::m_color, boost_graph));

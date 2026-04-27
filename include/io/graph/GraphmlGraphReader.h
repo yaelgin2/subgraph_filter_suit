@@ -1,13 +1,13 @@
 #pragma once
 
 #include "IColoredGraphReader.h"
+#include "IoGraphUtils.h"
 #include "LoggerHandler.h"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <exception>
 #include <fstream>
 #include <map>
-#include <memory>
 #include <string>
 
 namespace sgf
@@ -77,14 +77,6 @@ public:
                       const LoggerHandler& logger) const override;
 
 private:
-    /**
-     * @brief Opens a file for reading.
-     * @param path Path to the file.
-     * @return An open input stream.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
-     */
-    static std::ifstream open_file(const std::string& path);
-
     /**
      * @brief Wraps @p exc in a GraphConstructionException and throws it.
      * @param path The file path associated with the failure.
