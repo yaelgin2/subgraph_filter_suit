@@ -22,12 +22,8 @@ private:
     std::weak_ptr<ILogger> m_logger;
 
 public:
-    /**
-     * @brief Construct from a weak pointer to a logger.
-     * @param weak_logger Weak reference to the logger; may be empty.
-     */
-    explicit LoggerHandler(std::weak_ptr<ILogger> weak_logger)
-        : m_logger(std::move(weak_logger))
+    explicit LoggerHandler(std::weak_ptr<ILogger> log)
+        : m_logger(std::move(log))
     {
     }
 

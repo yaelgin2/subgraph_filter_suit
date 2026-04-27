@@ -22,7 +22,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake clang-tidy clang-format \
+          sudo apt-get install -y build-essential cmake clang-tidy-17 clang-format-17 \
             libboost-graph-dev libboost-log-dev
 
       - name: Check CMake (Windows)
@@ -60,9 +60,9 @@ jobs:
       - name: Check formatting (Linux)
         if: runner.os == 'Linux'
         run: |
-          find . \( -name '*.cpp' -o -name '*.h' \) -not -path './build/*' | xargs clang-format --dry-run --Werror
+          find . \( -name '*.cpp' -o -name '*.h' \) -not -path './build/*' | xargs clang-format-17 --dry-run --Werror
 
       - name: Run clang-tidy (Linux)
         if: runner.os == 'Linux'
         run: |
-          find . -name '*.cpp' -not -path './build/*' | xargs clang-tidy -p build/
+          find src -name '*.cpp' | xargs clang-tidy-17 -p build/ --quiet

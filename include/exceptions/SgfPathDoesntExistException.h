@@ -31,7 +31,7 @@ public:
      * @brief Returns the CLI exit code for this exception type.
      * @return SgfReturnCode::PATH_DOESNT_EXIST.
      */
-    SgfReturnCode return_code() const noexcept override
+    [[nodiscard]] SgfReturnCode return_code() const noexcept override
     {
         return SgfReturnCode::PATH_DOESNT_EXIST;
     }
