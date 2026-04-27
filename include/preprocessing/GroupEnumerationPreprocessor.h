@@ -1,12 +1,12 @@
 #pragma once
 
-#include <memory>
-#include <unordered_map>
-#include <vector>
-#include <ColoredGraph.h>
+#include "ColoredGraph.h"
 #include "ILogger.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
+
+#include <unordered_map>
+#include <vector>
 
 /**
  * @brief Alias representing the collection of discovered groups.
@@ -50,7 +50,6 @@ class GroupEnmerationPreprocessor
 {
 
 public:
-
     /**
      * @brief Construct a new GroupEnmerationPreprocessor.
      *
@@ -59,10 +58,7 @@ public:
      *
      * @throws std::invalid_argument Recommended if graph is null.
      */
-    GroupEnmerationPreprocessor(
-        std::shared_ptr<ColoredGraph> graph,
-        LoggerHandler& m_logger
-    );
+    GroupEnmerationPreprocessor(ColoredGraphPtr graph, LoggerHandler& m_logger);
 
     /**
      * @brief Virtual destructor.
@@ -86,7 +82,6 @@ public:
     std::unordered_map<__uint128_t, uint32_t> calculate();
 
 protected:
-
     /**
      * @brief Sort graph nodes before enumeration.
      *
@@ -122,17 +117,14 @@ protected:
      *
      * @return Unique numeric motif identifier.
      */
-    virtual __uint128_t calculate_motif_number(
-        std::vector<uint32_t> colors,
-        std::vector<std::vector<bool>> edges
-    ) = 0;
+    virtual __uint128_t calculate_motif_number(std::vector<uint32_t> colors,
+                                               std::vector<std::vector<bool>> edges) = 0;
 
 private:
-
     /**
      * @brief Graph instance being processed.
      */
-    std::shared_ptr<ColoredGraph> m_graph;
+    ColoredGraphPtr m_graph;
 
     /**
      * @brief Node ordering used during enumeration.
@@ -154,9 +146,7 @@ private:
      *
      * @param adjacency_matrix Output matrix to populate.
      */
-    void graph_to_adjacency_matrix(
-        std::vector<std::vector<bool>>& adjacency_matrix
-    );
+    void graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix);
 
     /**
      * @brief Build an adjacency matrix for a specific group of vertices.
@@ -168,9 +158,7 @@ private:
      *
      * @return Adjacency matrix of the induced subgraph.
      */
-    std::vector<std::vector<bool>> group_to_adjacency_matrix(
-        const std::vector<uint32_t>& group
-    );
+    std::vector<std::vector<bool>> group_to_adjacency_matrix(const std::vector<uint32_t>& group);
 };
 
-} // namespace sgf
+}  // namespace sgf
