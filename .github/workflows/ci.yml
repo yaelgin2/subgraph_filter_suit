@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake clang-tidy-17 clang-format-17 \
-            libboost-graph-dev libboost-log-dev
+            libboost-graph-dev libboost-log-dev libboost-json-dev
 
       - name: Check CMake (Windows)
         if: runner.os == 'Windows'
@@ -40,7 +40,7 @@ jobs:
       - name: Install Boost via vcpkg (Windows)
         if: runner.os == 'Windows'
         run: |
-          vcpkg install boost-graph boost-log
+          vcpkg install boost-graph boost-log boost-json
           echo "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
         shell: pwsh
 
