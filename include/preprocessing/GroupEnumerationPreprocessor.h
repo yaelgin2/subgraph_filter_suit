@@ -36,15 +36,17 @@ struct hash<__uint128_t>
 }  // namespace std
 
 /**
- * @brief Alias representing the collection of discovered groups.
+ * @brief Callback invoked once per discovered group during enumeration.
  *
- * Each entry contains:
- * - first: a numeric motif/color/group descriptor.
- * - second: the list of vertex identifiers belonging to the group.
+ * Parameters:
+ * - group_structure_descriptor: numeric encoding of the group's edge structure.
+ * - group_vertex_ids: vertex identifiers belonging to the group.
  *
- * The exact meaning of the first field depends on the derived implementation.
+ * The base class passes this callback to stream_groups_to_counter() so that
+ * each group is counted immediately and never stored in a collection.
  */
-using Groups = std::vector<std::pair<uint32_t, std::vector<uint32_t>>>;
+using GroupCounterCallback = std::function<void(uint32_t group_structure_descriptor,
+                                                const std::vector<uint32_t>& group_vertex_ids)>;
 
 namespace sgf
 {
@@ -130,13 +132,18 @@ protected:
     virtual void sort_nodes() = 0;
 
     /**
-     * @brief Discover groups of vertices to evaluate.
+     * @brief Enumerate groups of vertices and report each one via callback.
      *
-     * Derived classes define how candidate groups are generated.
+     * Derived classes discover candidate groups and invoke @p count_group
+     * exactly once per group as it is found. The base class supplies a
+     * counting callback so no group collection is ever materialized in memory.
      *
-     * @return Collection of discovered groups.
+     * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
+     * @param count_group Callback to invoke for each discovered group.
      */
-    virtual Groups find_groups(const std::vector<std::vector<bool>>& graph_adjacency_matrix) = 0;
+    virtual void
+    stream_groups_to_counter(const std::vector<std::vector<bool>>& graph_adjacency_matrix,
+                             const GroupCounterCallback& count_group) = 0;
 
     /**
      * @brief Convert a group into a unique motif identifier.
