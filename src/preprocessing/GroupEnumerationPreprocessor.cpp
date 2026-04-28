@@ -33,16 +33,25 @@ std::unordered_map<__uint128_t, uint32_t> GroupEnmerationPreprocessor::calculate
 {
     m_logger.log(LogLevel::INFO, "Starting graph enumeration calculation.");
     std::unordered_map<__uint128_t, uint32_t> motif_count;
-    std::vector<std::vector<bool>> adjacency_matrix;
-    graph_to_adjacency_matrix(adjacency_matrix);
+
+    // Build full adjacency matrix and establish node traversal order.
+    std::vector<std::vector<bool>> graph_adjacency_matrix;
+    graph_to_adjacency_matrix(graph_adjacency_matrix);
     sort_nodes();
-    const Groups groups = find_groups();
+
+    // Enumerate all candidate groups from the ordered graph.
+    const Groups groups = find_groups(graph_adjacency_matrix);
+
     uint32_t groups_iterated_over = 0;
     for (const auto& [motif_num, group] : groups)
     {
-        const std::vector<std::vector<bool>> group_adjacency_matrix =
-            group_to_adjacency_matrix(group);
-        motif_count[calculate_motif_number(motif_num, group_adjacency_matrix)] += 1;
+        // Extract per-vertex colors for this group.
+        const std::vector<uint32_t> node_colors = group_to_node_colors(group);
+
+        // Encode the group as a motif identifier and increment its frequency.
+        motif_count[calculate_motif_number(motif_num, node_colors)] += 1;
+
+        // Emit a progress log every LOG_INTERVAL groups.
         if (groups_iterated_over % LOG_INTERVAL == 0)
         {
             m_logger.log(LogLevel::DEBUG, "Found groups: " + std::to_string(groups_iterated_over));
@@ -57,11 +66,15 @@ void GroupEnmerationPreprocessor::graph_to_adjacency_matrix(
     std::vector<std::vector<bool>>& adjacency_matrix)
 {
     const uint32_t vertex_count = m_graph.vertex_count();
+
+    // Allocate an N×N matrix, initialised to false (no edges).
     adjacency_matrix.resize(vertex_count);
     for (size_t vertex_index = 0; vertex_index < vertex_count; vertex_index++)
     {
         adjacency_matrix[vertex_index].resize(vertex_count, false);
     }
+
+    // Mark every directed edge present in the graph.
     for (uint32_t node = 0; node < vertex_count; node++)
     {
         const auto [neighbour_begin, neighbour_end] = m_graph.get_neighbours(node);
@@ -71,29 +84,6 @@ void GroupEnmerationPreprocessor::graph_to_adjacency_matrix(
             adjacency_matrix[node][*neighbour_iterator] = true;
         }
     }
-}
-
-std::vector<std::vector<bool>>
-GroupEnmerationPreprocessor::group_to_adjacency_matrix(const std::vector<uint32_t>& group)
-{
-    std::vector<std::vector<bool>> group_adjacency_matrix;
-    const size_t group_size = group.size();
-    group_adjacency_matrix.resize(group_size);
-    for (size_t vertex_index = 0; vertex_index < group_size; vertex_index++)
-    {
-        group_adjacency_matrix[vertex_index].resize(group_size, false);
-    }
-    for (size_t vertex_index = 0; vertex_index < group_size; vertex_index++)
-    {
-        for (size_t neighbour_index = 0; neighbour_index < group_size; neighbour_index++)
-        {
-            if (m_graph.is_edge(group[vertex_index], group[neighbour_index]))
-            {
-                group_adjacency_matrix[vertex_index][neighbour_index] = true;
-            }
-        }
-    }
-    return group_adjacency_matrix;
 }
 
 }  // namespace sgf

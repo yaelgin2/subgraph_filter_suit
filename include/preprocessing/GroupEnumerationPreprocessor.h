@@ -136,7 +136,7 @@ protected:
      *
      * @return Collection of discovered groups.
      */
-    virtual Groups find_groups() = 0;
+    virtual Groups find_groups(const std::vector<std::vector<bool>>& graph_adjacency_matrix) = 0;
 
     /**
      * @brief Convert a group into a unique motif identifier.
@@ -151,7 +151,7 @@ protected:
      * @return Unique numeric motif identifier.
      */
     virtual __uint128_t calculate_motif_number(uint32_t motif_descriptor,
-                                               const std::vector<std::vector<bool>>& edges) = 0;
+                                               const std::vector<uint32_t>& node_colors) = 0;
 
 private:
     /**
@@ -182,16 +182,15 @@ private:
     void graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix);
 
     /**
-     * @brief Build an adjacency matrix for a specific group of vertices.
+     * @brief Extract node colors for a specific group of vertices.
      *
-     * Creates an induced subgraph adjacency matrix preserving the order of
-     * vertices in the supplied group vector.
+     * Returns the color label of each vertex in the group, preserving
+     * the order of vertices as supplied.
      *
      * @param group Vertex identifiers belonging to the group.
-     *
-     * @return Adjacency matrix of the induced subgraph.
+     * @return Color labels corresponding to each vertex in @p group.
      */
-    std::vector<std::vector<bool>> group_to_adjacency_matrix(const std::vector<uint32_t>& group);
+    static std::vector<uint32_t> group_to_node_colors(const std::vector<uint32_t>& group);
 };
 
 }  // namespace sgf
