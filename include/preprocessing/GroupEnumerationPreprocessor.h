@@ -25,11 +25,11 @@ struct hash<__uint128_t>
      */
     size_t operator()(const __uint128_t value) const noexcept
     {
-        constexpr uint32_t HIGH_BITS_SHIFT = 64U;
-        constexpr size_t HASH_MIX_SHIFT = 1U;
-        const uint64_t high = static_cast<uint64_t>(value >> HIGH_BITS_SHIFT);
+        constexpr uint32_t high_bits_shift = 64U;
+        constexpr size_t hash_mix_shift = 1U;
+        const uint64_t high = static_cast<uint64_t>(value >> high_bits_shift);
         const uint64_t low = static_cast<uint64_t>(value);
-        return std::hash<uint64_t>{}(high) ^ (std::hash<uint64_t>{}(low) << HASH_MIX_SHIFT);
+        return std::hash<uint64_t>{}(high) ^ (std::hash<uint64_t>{}(low) << hash_mix_shift);
     }
 };
 
@@ -85,14 +85,20 @@ public:
      *
      * @throws std::invalid_argument Recommended if graph is null.
      */
-    GroupEnmerationPreprocessor(const ColoredGraph& graph, LoggerHandler& logger);
+    GroupEnmerationPreprocessor(const ColoredGraph& graph, LoggerHandler logger);
+
+    GroupEnmerationPreprocessor() = default;
+    GroupEnmerationPreprocessor(const GroupEnmerationPreprocessor&) = delete;
+    GroupEnmerationPreprocessor& operator=(const GroupEnmerationPreprocessor&) = delete;
+    GroupEnmerationPreprocessor(GroupEnmerationPreprocessor&&) = delete;
+    GroupEnmerationPreprocessor& operator=(GroupEnmerationPreprocessor&&) = delete;
 
     /**
      * @brief Virtual destructor.
      *
      * Ensures proper destruction through base pointers.
      */
-    ~GroupEnmerationPreprocessor() = default;
+    virtual ~GroupEnmerationPreprocessor() = default;
 
     /**
      * @brief Run the full group enumeration pipeline.
@@ -144,7 +150,7 @@ protected:
      *
      * @return Unique numeric motif identifier.
      */
-    virtual __uint128_t calculate_motif_number(const uint32_t motif_descriptor,
+    virtual __uint128_t calculate_motif_number(uint32_t motif_descriptor,
                                                const std::vector<std::vector<bool>>& edges) = 0;
 
 private:
@@ -163,7 +169,7 @@ private:
     /**
      * @brief Logger used for runtime messages.
      */
-    LoggerHandler& m_logger;
+    LoggerHandler m_logger;
 
     /**
      * @brief Convert the full graph into an adjacency matrix.

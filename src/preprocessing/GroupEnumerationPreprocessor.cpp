@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace sgf
@@ -22,9 +23,9 @@ constexpr uint32_t LOG_INTERVAL = 1000;
 }  // namespace
 
 GroupEnmerationPreprocessor::GroupEnmerationPreprocessor(const ColoredGraph& graph,
-                                                         LoggerHandler& logger)
+                                                         LoggerHandler logger)
     : m_graph(graph)
-    , m_logger(logger)
+    , m_logger(std::move(logger))
 {
 }
 
