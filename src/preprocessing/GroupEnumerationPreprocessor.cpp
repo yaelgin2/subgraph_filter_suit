@@ -86,4 +86,15 @@ void GroupEnmerationPreprocessor::graph_to_adjacency_matrix(
     }
 }
 
+std::vector<uint32_t> GroupEnmerationPreprocessor::group_to_node_colors(const std::vector<uint32_t>& group)
+{
+    std::vector<uint32_t> node_colors;
+    node_colors.reserve(group.size());
+    for (const auto& vertex : group)
+    {
+        node_colors.push_back(m_graph.get_vertex_color(vertex));
+    }
+    return node_colors;
+}
+
 }  // namespace sgf

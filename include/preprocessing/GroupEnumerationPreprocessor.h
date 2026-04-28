@@ -190,7 +190,7 @@ private:
      * @param group Vertex identifiers belonging to the group.
      * @return Color labels corresponding to each vertex in @p group.
      */
-    static std::vector<uint32_t> group_to_node_colors(const std::vector<uint32_t>& group);
+    std::vector<uint32_t> group_to_node_colors(const std::vector<uint32_t>& group);
 };
 
 }  // namespace sgf
