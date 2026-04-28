@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ColoredGraph.h"
-#include "ILogger.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 
@@ -86,7 +85,7 @@ public:
      *
      * @throws std::invalid_argument Recommended if graph is null.
      */
-    GroupEnmerationPreprocessor(ColoredGraphPtr graph, LoggerHandler& logger);
+    GroupEnmerationPreprocessor(const ColoredGraph& graph, LoggerHandler& logger);
 
     /**
      * @brief Virtual destructor.
@@ -152,7 +151,7 @@ private:
     /**
      * @brief Graph instance being processed.
      */
-    ColoredGraphPtr m_graph;
+    const ColoredGraph& m_graph;
 
     /**
      * @brief Node ordering used during enumeration.
