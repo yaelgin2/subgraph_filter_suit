@@ -8,8 +8,8 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-#include <utility>
 #include <vector>
+#include <utility>
 
 namespace sgf
 {
@@ -39,25 +39,23 @@ std::unordered_map<__uint128_t, uint32_t> GroupEnmerationPreprocessor::calculate
     graph_to_adjacency_matrix(graph_adjacency_matrix);
     sort_nodes();
 
-    // Enumerate all candidate groups from the ordered graph.
-    const Groups groups = find_groups(graph_adjacency_matrix);
-
-    uint32_t groups_iterated_over = 0;
-    for (const auto& [motif_num, group] : groups)
+    // Count each group immediately as it is discovered — no intermediate storage.
+    uint32_t groups_counted = 0;
+    const GroupCounterCallback count_group =
+        [&motif_count, &groups_counted, this](const uint32_t group_structure_descriptor,
+                                              const std::vector<uint32_t>& group_vertex_ids)
     {
-        // Extract per-vertex colors for this group.
-        const std::vector<uint32_t> node_colors = group_to_node_colors(group);
+        const std::vector<uint32_t> node_colors = group_to_node_colors(group_vertex_ids);
+        motif_count[calculate_motif_number(group_structure_descriptor, node_colors)] += 1;
 
-        // Encode the group as a motif identifier and increment its frequency.
-        motif_count[calculate_motif_number(motif_num, node_colors)] += 1;
-
-        // Emit a progress log every LOG_INTERVAL groups.
-        if (groups_iterated_over % LOG_INTERVAL == 0)
+        if (groups_counted % LOG_INTERVAL == 0)
         {
-            m_logger.log(LogLevel::DEBUG, "Found groups: " + std::to_string(groups_iterated_over));
+            m_logger.log(LogLevel::DEBUG, "Counted groups: " + std::to_string(groups_counted));
         }
-        groups_iterated_over++;
-    }
+        groups_counted++;
+    };
+
+    stream_groups_to_counter(graph_adjacency_matrix, count_group);
     m_logger.log(LogLevel::INFO, "Finished graph enumeration calculation.");
     return motif_count;
 }
@@ -86,7 +84,8 @@ void GroupEnmerationPreprocessor::graph_to_adjacency_matrix(
     }
 }
 
-std::vector<uint32_t> GroupEnmerationPreprocessor::group_to_node_colors(const std::vector<uint32_t>& group)
+std::vector<uint32_t>
+GroupEnmerationPreprocessor::group_to_node_colors(const std::vector<uint32_t>& group)
 {
     std::vector<uint32_t> node_colors;
     node_colors.reserve(group.size());
