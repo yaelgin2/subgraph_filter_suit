@@ -3,11 +3,10 @@
 #include "ColoredGraph.h"
 #include "GroupEnumerationPreprocessor.h"
 #include "LoggerHandler.h"
-#include "MotifMap.h"
 
-#include <array>
+#include <algorithm>
 #include <cstdint>
-#include <unordered_map>
+#include <numeric>
 #include <vector>
 
 namespace sgf
@@ -17,23 +16,37 @@ MotifPreprocessor::MotifPreprocessor(const ColoredGraph& graph, LoggerHandler lo
     : GroupEnmerationPreprocessor(graph, std::move(logger))
     , m_graph(graph)
 {
-    // TODO: initialize m_node_order with all vertex indices
 }
 
 void MotifPreprocessor::sort_nodes()
 {
-    // TODO: populate m_node_order with vertex indices sorted by decreasing degree
-    //       use m_graph.vertex_count() and m_graph.get_neighbours() to compute degrees
+    const uint32_t vertex_count = m_graph.vertex_count();
+
+    m_node_order.resize(vertex_count);
+    std::iota(m_node_order.begin(), m_node_order.end(), 0U);
+
+    std::sort(m_node_order.begin(), m_node_order.end(),
+              [this](const uint32_t left_vertex, const uint32_t right_vertex)
+              {
+                  const std::pair<std::vector<uint32_t>::const_iterator,
+                                  std::vector<uint32_t>::const_iterator>
+                      left_neighbours = m_graph.get_neighbours(left_vertex);
+                  const std::pair<std::vector<uint32_t>::const_iterator,
+                                  std::vector<uint32_t>::const_iterator>
+                      right_neighbours = m_graph.get_neighbours(right_vertex);
+                  return std::distance(left_neighbours.first, left_neighbours.second)
+                         > std::distance(right_neighbours.first, right_neighbours.second);
+              });
 }
 
-Groups MotifPreprocessor::find_groups(const std::vector<std::vector<bool>>& graph_adjacency_matrix)
+void MotifPreprocessor::stream_groups_to_counter(
+    const std::vector<std::vector<bool>>& graph_adjacency_matrix,
+    const GroupCounterCallback& count_group)
 {
     // TODO: enumerate all combinations of 4 vertices from m_node_order
     // TODO: for each combination, check that the induced subgraph is connected
     // TODO: compute the raw edge-structure descriptor via compute_motif_descriptor()
-    // TODO: append {descriptor, {v0, v1, v2, v3}} to the result Groups vector
-    // TODO: return the collected groups
-    return {};
+    // TODO: invoke count_group(descriptor, {v0, v1, v2, v3}) for each valid group
 }
 
 __uint128_t MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,

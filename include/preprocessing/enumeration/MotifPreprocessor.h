@@ -57,16 +57,17 @@ protected:
     void sort_nodes() override;
 
     /**
-     * @brief Enumerate all 4-node induced subgraphs of the graph.
+     * @brief Enumerate all 4-node induced subgraphs and report each via callback.
      *
-     * Iterates over ordered node combinations and retains those that form
-     * connected induced subgraphs. Each group entry pairs a raw edge-structure
-     * descriptor with the four vertex identifiers.
+     * Iterates over ordered vertex combinations, checks connectivity of each
+     * induced subgraph, and invokes @p count_group once per valid group.
+     * No group collection is materialized in memory.
      *
      * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
-     * @return All discovered 4-node groups with their edge-structure descriptor.
+     * @param count_group Callback invoked for each discovered group.
      */
-    Groups find_groups(const std::vector<std::vector<bool>>& graph_adjacency_matrix) override;
+    void stream_groups_to_counter(const std::vector<std::vector<bool>>& graph_adjacency_matrix,
+                                  const GroupCounterCallback& count_group) override;
 
     /**
      * @brief Canonicalize a 4-node group into a unique motif identifier.
