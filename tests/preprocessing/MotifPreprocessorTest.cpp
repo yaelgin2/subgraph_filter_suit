@@ -1,12 +1,12 @@
+#include "MotifPreprocessor.h"
+
 #include "ColoredGraph.h"
 #include "Constants.h"
 #include "ILogger.h"
 #include "LoggerHandler.h"
-#include "MotifPreprocessor.h"
-
-#include <gtest/gtest.h>
 
 #include <cstdint>
+#include <gtest/gtest.h>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -49,17 +49,14 @@ protected:
      * @param c3 Color packed into bits 72–95.
      * @return 128-bit key with structure in the high 32 bits and packed colors in the low 96 bits.
      */
-    static __uint128_t colored_key(const uint32_t structure_id,
-                                   const uint32_t c0,
-                                   const uint32_t c1,
-                                   const uint32_t c2,
-                                   const uint32_t c3)
+    static __uint128_t colored_key(const uint32_t structure_id, const uint32_t c0,
+                                   const uint32_t c1, const uint32_t c2, const uint32_t c3)
     {
         const __uint128_t color_part =
-            static_cast<__uint128_t>(c0)
-            | (static_cast<__uint128_t>(c1) << SgfConstants::BITS_PER_COLOR)
-            | (static_cast<__uint128_t>(c2) << (2U * SgfConstants::BITS_PER_COLOR))
-            | (static_cast<__uint128_t>(c3) << (3U * SgfConstants::BITS_PER_COLOR));
+            static_cast<__uint128_t>(c0) |
+            (static_cast<__uint128_t>(c1) << SgfConstants::BITS_PER_COLOR) |
+            (static_cast<__uint128_t>(c2) << (2U * SgfConstants::BITS_PER_COLOR)) |
+            (static_cast<__uint128_t>(c3) << (3U * SgfConstants::BITS_PER_COLOR));
         return zero_color_key(structure_id) | color_part;
     }
 };
@@ -190,8 +187,8 @@ TEST_F(MotifPreprocessorTest, four_vertex_diamond_all_zero_colors)
 TEST_F(MotifPreprocessorTest, four_vertex_complete_k4_all_zero_colors)
 {
     // K4: all 6 edges. Canonical structure ID = 63.
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {
-        {0U, 1U}, {0U, 2U}, {0U, 3U}, {1U, 2U}, {1U, 3U}, {2U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U},
+                                                        {1U, 2U}, {1U, 3U}, {2U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, false);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -207,8 +204,7 @@ TEST_F(MotifPreprocessorTest, four_vertex_complete_k4_all_zero_colors)
 TEST_F(MotifPreprocessorTest, five_vertex_star_k14_all_zero_colors)
 {
     // K1,4: center=0, leaves=1,2,3,4. Each 3-leaf subset induces K1,3. Count = C(4,3) = 4.
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {
-        {0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, colors, false);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -222,8 +218,7 @@ TEST_F(MotifPreprocessorTest, five_vertex_star_k14_all_zero_colors)
 TEST_F(MotifPreprocessorTest, five_vertex_path_p5_all_zero_colors)
 {
     // P5: 0-1-2-3-4. Exactly 2 consecutive 4-vertex sub-paths: {0,1,2,3} and {1,2,3,4}.
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {
-        {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, colors, false);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -237,11 +232,9 @@ TEST_F(MotifPreprocessorTest, five_vertex_path_p5_all_zero_colors)
 TEST_F(MotifPreprocessorTest, five_vertex_complete_k5_all_zero_colors)
 {
     // K5: all 10 edges. Every 4-vertex subset induces K4. Count = C(5,4) = 5.
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {
-        {0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U},
-        {1U, 2U}, {1U, 3U}, {1U, 4U},
-        {2U, 3U}, {2U, 4U},
-        {3U, 4U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U},
+                                                        {1U, 2U}, {1U, 3U}, {1U, 4U}, {2U, 3U},
+                                                        {2U, 4U}, {3U, 4U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, colors, false);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -273,8 +266,8 @@ TEST_F(MotifPreprocessorTest, five_vertex_k4_plus_pendant_all_zero_colors)
     // {0,1,2,3} → K4 (canonical 63).
     // {0,1,2,4}, {0,1,3,4}, {0,2,3,4} → paw each (canonical 15).
     // {1,2,3,4} → unreachable by Kavosh (4 only connects to 0 which is processed first).
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {
-        {0U, 1U}, {0U, 2U}, {0U, 3U}, {1U, 2U}, {1U, 3U}, {2U, 3U}, {0U, 4U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U}, {1U, 2U},
+                                                        {1U, 3U}, {2U, 3U}, {0U, 4U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, colors, false);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -302,8 +295,8 @@ TEST_F(MotifPreprocessorTest, colored_k4_key_encodes_color_not_just_structure)
     // K4 with one vertex colored 1 and the rest 0.
     // Canonical (sorted ascending): {0, 0, 0, 1}.
     // Expected key has color info; must NOT equal the zero-color key.
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {
-        {0U, 1U}, {0U, 2U}, {0U, 3U}, {1U, 2U}, {1U, 3U}, {2U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U},
+                                                        {1U, 2U}, {1U, 3U}, {2U, 3U}};
     const std::vector<uint32_t> colors = {1U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, false);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -321,14 +314,14 @@ TEST_F(MotifPreprocessorTest, colored_k4_automorphic_assignment_same_key)
     // K4 has 24 automorphisms — any permutation of vertex colors gives the same canonical key.
     // Graph A: colors {1,2,3,4}. Graph B: colors {2,1,3,4} (v0 and v1 swapped).
     // Both should canonicalize to sorted {1,2,3,4}.
-    std::vector<std::pair<uint32_t, uint32_t>> edges_a = {
-        {0U, 1U}, {0U, 2U}, {0U, 3U}, {1U, 2U}, {1U, 3U}, {2U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges_a = {{0U, 1U}, {0U, 2U}, {0U, 3U},
+                                                          {1U, 2U}, {1U, 3U}, {2U, 3U}};
     const std::vector<uint32_t> colors_a = {1U, 2U, 3U, 4U};
     const ColoredGraph graph_a(4U, edges_a, colors_a, false);
     MotifPreprocessor preprocessor_a(graph_a, null_logger());
 
-    std::vector<std::pair<uint32_t, uint32_t>> edges_b = {
-        {0U, 1U}, {0U, 2U}, {0U, 3U}, {1U, 2U}, {1U, 3U}, {2U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges_b = {{0U, 1U}, {0U, 2U}, {0U, 3U},
+                                                          {1U, 2U}, {1U, 3U}, {2U, 3U}};
     const std::vector<uint32_t> colors_b = {2U, 1U, 3U, 4U};
     const ColoredGraph graph_b(4U, edges_b, colors_b, false);
     MotifPreprocessor preprocessor_b(graph_b, null_logger());

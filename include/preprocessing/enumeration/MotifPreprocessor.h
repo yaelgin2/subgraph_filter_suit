@@ -124,14 +124,14 @@ private:
      * @param graph_adjacency_matrix Dense boolean adjacency matrix of the full graph.
      * @return Integer whose bits encode edge presence, MSB = first pair read.
      */
-    uint32_t compute_motif_descriptor(const std::vector<uint32_t>& group,
-                                      const std::vector<std::vector<bool>>& graph_adjacency_matrix) const;
+    uint32_t
+    compute_motif_descriptor(const std::vector<uint32_t>& group,
+                             const std::vector<std::vector<bool>>& graph_adjacency_matrix) const;
 
-    void stream_groups_to_counter_for_vertex(const std::vector<std::vector<bool>>& graph_adjacency_matrix,
+    void stream_groups_to_counter_for_vertex(
+        const std::vector<std::vector<bool>>& graph_adjacency_matrix,
         const GroupCounterCallback& count_group,
         const std::vector<bool>& visited_vertices_to_ignore,
-        std::vector<uint64_t>& bfs_visited_vertices,
-        uint32_t root);
-
-    };
+        std::vector<uint64_t>& bfs_visited_vertices, uint32_t root);
+};
 }  // namespace sgf
