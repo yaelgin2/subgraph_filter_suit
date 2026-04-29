@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Constants.h"
+
 #include <array>
 #include <cstdint>
 #include <unordered_map>
@@ -15,7 +17,7 @@ namespace sgf
 struct MotifCanonical
 {
     uint32_t minimal_motif_num;
-    std::vector<std::array<uint32_t, 4>> color_permutations;
+    std::vector<std::array<uint32_t, SgfConstants::MOTIF_SIZE>> color_permutations;
 };
 
 /**

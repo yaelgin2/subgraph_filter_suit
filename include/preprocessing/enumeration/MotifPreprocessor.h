@@ -96,30 +96,42 @@ private:
     std::vector<uint32_t> m_node_order;
 
     /**
-     * @brief Compute the raw edge-structure descriptor for a 4-node group.
+     * @brief Encode the edge structure of a 4-node group as an integer bitmask.
      *
-     * Encodes the presence or absence of each directed or undirected edge
-     * among the four vertices into a compact bitmask used as the map key.
+     * Reads the group's induced adjacency matrix row by row (row 0 first, column
+     * 0 leftmost) and concatenates the edge-presence bits into a single integer,
+     * with the first bit read becoming the MSB.
      *
-     * @param group Four vertex identifiers forming the candidate group.
-     * @param graph_adjacency_matrix Dense boolean adjacency matrix.
-     * @return Raw edge-structure bitmask for the group.
+     * The diagonal is always skipped (self-loops are not supported).
+     * For undirected graphs the lower triangle is also skipped, so each pair
+     * is represented by exactly one bit.
+     *
+     * Directed example — 4 nodes, edge (1→0) only:
+     * @verbatim
+     *   read order: (0,1)(0,2)(0,3)(1,0)(1,2)(1,3)(2,0)(2,1)(2,3)(3,0)(3,1)(3,2)
+     *   bits:        0    0    0    1    0    0    0    0    0    0    0    0
+     *   result:      0b000100000000 = 256
+     * @endverbatim
+     *
+     * Undirected example — 4 nodes, edge (0,1) only:
+     * @verbatim
+     *   read order: (0,1)(0,2)(0,3)(1,2)(1,3)(2,3)
+     *   bits:        1    0    0    0    0    0
+     *   result:      0b100000 = 32
+     * @endverbatim
+     *
+     * @param group Global vertex IDs of the four group members in traversal order.
+     * @param graph_adjacency_matrix Dense boolean adjacency matrix of the full graph.
+     * @return Integer whose bits encode edge presence, MSB = first pair read.
      */
     uint32_t compute_motif_descriptor(const std::vector<uint32_t>& group,
                                       const std::vector<std::vector<bool>>& graph_adjacency_matrix) const;
 
-    /**
-     * @brief Encode a canonical motif number and a permuted color sequence into a 128-bit key.
-     *
-     * Packs the canonical motif number and the four remapped color values into
-     * a single __uint128_t so that color-equivalent groups hash to the same key.
-     *
-     * @param canonical_motif_num The minimal motif number from the canonicalization map.
-     * @param permuted_colors Color values reordered by the canonical permutation.
-     * @return 128-bit motif identifier.
-     */
-    static __uint128_t encode_motif_key(uint32_t canonical_motif_num,
-                                        const std::vector<uint32_t>& permuted_colors);
-};
+    void stream_groups_to_counter_for_vertex(const std::vector<std::vector<bool>>& graph_adjacency_matrix,
+        const GroupCounterCallback& count_group,
+        const std::vector<bool>& visited_vertices_to_ignore,
+        std::vector<uint64_t>& bfs_visited_vertices,
+        uint32_t root);
 
+    };
 }  // namespace sgf
