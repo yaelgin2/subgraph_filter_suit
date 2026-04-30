@@ -31,17 +31,6 @@ public:
     virtual void write(const BoostGraph& graph, const std::string& path) const = 0;
 
     /**
-     * @brief Reads a pattern graph from a file into a ColoredGraph.
-     *
-     * @param path Path to the file.
-     * @return The parsed ColoredGraph.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
-     * @throws GraphConstructionException if the file is malformed or the
-     *         graph structure is invalid.
-     */
-    virtual ColoredGraph read(const std::string& path) const = 0;
-
-    /**
      * @brief Default virtual destructor.
      */
     virtual ~IPatternIOManager() = default;
