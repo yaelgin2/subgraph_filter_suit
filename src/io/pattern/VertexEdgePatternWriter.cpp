@@ -1,7 +1,7 @@
 #include "VertexEdgePatternWriter.h"
 
-#include "VertexEdgeUtils.h"
 #include "IOConstants.h"
+#include "VertexEdgeUtils.h"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -15,7 +15,8 @@ namespace sgf
 void VertexEdgePatternWriter::write_node_labels(const BoostGraph& graph,
                                                 const std::string& base_path)
 {
-    std::ofstream file = VertexEdgeUtils::open_file_for_writing(base_path + IOConstants::NODE_LABELS_SUFFIX);
+    std::ofstream file =
+        VertexEdgeUtils::open_file_for_writing(base_path + IOConstants::NODE_LABELS_SUFFIX);
     const std::pair<boost::graph_traits<BoostGraph>::vertex_iterator,
                     boost::graph_traits<BoostGraph>::vertex_iterator>
         vertex_range = boost::vertices(graph);
@@ -26,10 +27,10 @@ void VertexEdgePatternWriter::write_node_labels(const BoostGraph& graph,
     }
 }
 
-void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph,
-                                              const std::string& base_path)
+void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph, const std::string& base_path)
 {
-    std::ofstream file = VertexEdgeUtils::open_file_for_writing(base_path + IOConstants::EDGE_SUFFIX);
+    std::ofstream file =
+        VertexEdgeUtils::open_file_for_writing(base_path + IOConstants::EDGE_SUFFIX);
     const std::pair<boost::graph_traits<BoostGraph>::edge_iterator,
                     boost::graph_traits<BoostGraph>::edge_iterator>
         edge_range = boost::edges(graph);
