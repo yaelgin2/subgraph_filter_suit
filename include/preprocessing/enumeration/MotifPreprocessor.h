@@ -86,6 +86,38 @@ protected:
 
 private:
     /**
+     * @brief Shared mutable state for one Kavosh BFS run rooted at a single vertex.
+     *
+     * Groups all arguments needed by every enumeration helper so they can be
+     * forwarded as a single parameter rather than repeated on every call.
+     */
+    struct KavoshContext
+    {
+        const std::vector<std::vector<bool>>& adjacency_matrix; ///< Full graph adjacency matrix.
+        const GroupCounterCallback& count_group;                 ///< Callback for emitting groups.
+        const std::vector<bool>& ignore_vertices;               ///< Already-processed vertex mask.
+        std::vector<uint64_t>& bfs_visited;                     ///< BFS depth-encoding array.
+        uint64_t run_id;                                         ///< Root-unique run identifier.
+        uint32_t root;                                           ///< Current root vertex.
+    };
+
+    /**
+     * @brief A half-open iterator range over a vertex's sorted neighbour list.
+     */
+    struct NeighbourRange
+    {
+        std::vector<uint32_t>::const_iterator begin; ///< First neighbour.
+        std::vector<uint32_t>::const_iterator end;   ///< One past last neighbour.
+    };
+
+    /// Low 2 bits of each bfs_visited entry encode BFS depth (0–3); upper bits hold run_id.
+    static constexpr uint64_t BFS_DEPTH_TWO_OFFSET = 2U;
+    /// Encodes depth-3 in the low 2 bits of a bfs_visited entry.
+    static constexpr uint64_t BFS_DEPTH_THREE_OFFSET = 3U;
+    /// Right-shift applied to a bfs_visited entry to recover the run identifier (= root vertex id).
+    static constexpr uint64_t BFS_VERTEX_RUN_SHIFT = 2U;
+
+    /**
      * @brief Reference to the graph being processed.
      */
     const ColoredGraph& m_graph;
@@ -128,10 +160,138 @@ private:
     compute_motif_descriptor(const std::vector<uint32_t>& group,
                              const std::vector<std::vector<bool>>& graph_adjacency_matrix) const;
 
+    /**
+     * @brief Enumerate one root vertex's 4-node groups across all Kavosh BFS depth variations.
+     *
+     * Entry point for all four (1,1,1), (1,1,2), (1,2,2), (1,2,3) sub-enumerations.
+     * Marks the root vertex in @p bfs_visited_vertices and then delegates to
+     * specialised helpers for each depth variation.
+     *
+     * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
+     * @param count_group Callback invoked for each discovered group.
+     * @param visited_vertices_to_ignore Vertices already fully processed (ignored as group members).
+     * @param bfs_visited_vertices Depth-encoding array shared across all root iterations.
+     * @param root The vertex currently acting as root for BFS enumeration.
+     */
     void stream_groups_to_counter_for_vertex(
         const std::vector<std::vector<bool>>& graph_adjacency_matrix,
         const GroupCounterCallback& count_group,
         const std::vector<bool>& visited_vertices_to_ignore,
-        std::vector<uint64_t>& bfs_visited_vertices, uint32_t root);
+        std::vector<uint64_t>& bfs_visited_vertices,
+        const uint32_t root);
+
+    /**
+     * @brief Mark every depth-1 neighbour of root in the BFS-visited array.
+     *
+     * @param ctx Shared run context; bfs_visited is updated in place.
+     * @param depth_one Iterator range over root's direct neighbours.
+     */
+    void mark_depth_one_neighbours(KavoshContext& ctx,
+                                   const NeighbourRange& depth_one) const;
+
+    /**
+     * @brief Emit all groups formed by root and three distinct depth-1 neighbours.
+     *
+     * Implements the (1, 1, 1) Kavosh depth variation.
+     *
+     * @param ctx Shared run context.
+     * @param depth_one Iterator range over root's direct neighbours.
+     */
+    void emit_depth_1_1_1_groups(const KavoshContext& ctx,
+                                 const NeighbourRange& depth_one) const;
+
+    /**
+     * @brief Mark neighbours of a depth-1 vertex as BFS depth-2 if not yet seen in this run.
+     *
+     * @param ctx Shared run context; bfs_visited is updated in place.
+     * @param depth_two Iterator range over the depth-1 vertex's neighbours.
+     */
+    void mark_depth_two_neighbours(KavoshContext& ctx,
+                                   const NeighbourRange& depth_two) const;
+
+    /**
+     * @brief Emit groups: root + first_neighbour (depth-1) + n11 (depth-1) + n2 (depth-2).
+     *
+     * Implements the (1, 1, 2) Kavosh depth variation for a fixed depth-1 anchor.
+     * Double-counting when an n11–n2 edge exists is resolved by emitting only
+     * when no such edge exists, or when first_neighbour < n11.
+     *
+     * @param ctx Shared run context.
+     * @param first_neighbour The depth-1 anchor vertex (n1).
+     * @param depth_one All of root's depth-1 neighbours (candidates for n11).
+     * @param depth_two All neighbours of first_neighbour (depth-2 candidates for n2).
+     */
+    void emit_depth_1_1_2_for_neighbour(const KavoshContext& ctx,
+                                        uint32_t first_neighbour,
+                                        const NeighbourRange& depth_one,
+                                        const NeighbourRange& depth_two) const;
+
+    /**
+     * @brief Emit groups: root + first_neighbour (depth-1) + two distinct depth-2 vertices.
+     *
+     * Implements the (1, 2, 2) Kavosh depth variation for a fixed depth-1 anchor.
+     * Only vertices marked as BFS depth-2 in this run are selected as the pair.
+     *
+     * @param ctx Shared run context.
+     * @param first_neighbour The depth-1 anchor vertex (n1).
+     * @param depth_two All neighbours of first_neighbour (pool for depth-2 pair selection).
+     */
+    void emit_depth_1_2_2_for_neighbour(const KavoshContext& ctx,
+                                        uint32_t first_neighbour,
+                                        const NeighbourRange& depth_two) const;
+
+    /**
+     * @brief For each depth-1 anchor, mark depth-2 reachability then emit (1,1,2) and (1,2,2) groups.
+     *
+     * Outer driver for both depth variations that share the same depth-1 anchor loop.
+     *
+     * @param ctx Shared run context; bfs_visited is updated in place.
+     * @param depth_one Iterator range over root's direct neighbours.
+     */
+    void emit_depth_1_1_2_and_1_2_2_groups(KavoshContext& ctx,
+                                            const NeighbourRange& depth_one) const;
+
+    /**
+     * @brief Emit groups: root + n1 + n2 + n3 for each candidate third-degree vertex.
+     *
+     * Innermost loop of the (1, 2, 3) Kavosh variation for fixed n1 and n2.
+     * Marks new vertices as depth-3; emits for new, depth-2-without-back-edge, and
+     * depth-3 candidates; skips depth-1 back-edges.
+     *
+     * @param ctx Shared run context; bfs_visited may be updated.
+     * @param first_degree_vertex The depth-1 anchor (n1).
+     * @param second_degree_vertex The depth-2 anchor (n2).
+     * @param third_degree Iterator range over n2's neighbours (candidates for n3).
+     */
+    void emit_depth_1_2_3_for_second_degree(KavoshContext& ctx,
+                                            uint32_t first_degree_vertex,
+                                            uint32_t second_degree_vertex,
+                                            const NeighbourRange& third_degree) const;
+
+    /**
+     * @brief Enumerate BFS-depth-2 neighbours of n1 and delegate per-n2 group emission.
+     *
+     * Middle loop of the (1, 2, 3) Kavosh variation for a fixed depth-1 vertex.
+     *
+     * @param ctx Shared run context; bfs_visited may be updated.
+     * @param first_degree_vertex The depth-1 anchor (n1).
+     * @param second_degree Iterator range over n1's neighbours (depth-2 candidates).
+     */
+    void emit_depth_1_2_3_for_first_degree(KavoshContext& ctx,
+                                           uint32_t first_degree_vertex,
+                                           const NeighbourRange& second_degree) const;
+
+    /**
+     * @brief Outermost driver for the (1, 2, 3) Kavosh depth variation.
+     *
+     * Iterates non-ignored depth-1 neighbours of root and delegates to
+     * emit_depth_1_2_3_for_first_degree for each.
+     *
+     * @param ctx Shared run context; bfs_visited may be updated.
+     * @param depth_one Iterator range over root's direct neighbours.
+     */
+    void emit_depth_1_2_3_groups(KavoshContext& ctx,
+                                 const NeighbourRange& depth_one) const;
 };
+
 }  // namespace sgf
