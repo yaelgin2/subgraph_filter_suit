@@ -203,6 +203,9 @@ Exception return codes must be values of `SgfReturnCode` (see `include/exception
 
 All identifiers must be fully descriptive — no single-letter or cryptic abbreviations (no `u`, `v`, `i`, `n`, `t`, etc.). Well-known, universally understood short forms are acceptable (e.g. `src`, `dest`, `idx`, `num`, `min`, `max`). When in doubt, spell it out.
 
+## Constants
+Since no magic numbers are allowed theyh are going to be in constants. constants should NOT be in an anonymous namespace at the top of the cpp file. class specific constants should be in the class private and static and constants shared by multipule classes in a shared constants file in the appropriate folder.
+
 ### Exception handling
 
 All exceptions thrown by this package must inherit from `SgfException` (`include/exceptions/SgfException.h`). The C++ API must **never** let a non-`SgfException` propagate to the caller.
