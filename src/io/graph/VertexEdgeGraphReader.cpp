@@ -5,6 +5,8 @@
 #include "IoGraphUtils.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
+#include "VertexEdgeUtils.h"
+#include "IOConstants.h"
 
 #include <cstdint>
 #include <fstream>
@@ -18,28 +20,6 @@
 namespace sgf
 {
 
-namespace
-{
-
-constexpr uint32_t TOKENS_PER_VERTEX_LINE = 2;
-constexpr uint32_t TOKENS_PER_UNCOLORED_EDGE_LINE = 2;
-constexpr uint32_t TOKENS_PER_COLORED_EDGE_LINE = 3;
-constexpr const char* VERTEX_INDICES_SUFFIX = ".vertex_indices";
-constexpr const char* EDGES_SUFFIX = ".edges";
-
-void throw_if_extra_tokens(std::istringstream& stream, const std::string& context,
-                           const std::string& line, uint32_t expected_count)
-{
-    uint32_t extra = 0;
-    if (stream >> extra)
-    {
-        throw GraphConstructionException(context + ": '" + line + "' (too many tokens, expected " +
-                                         std::to_string(expected_count) + ")");
-    }
-}
-
-}  // namespace
-
 std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(const std::string& line,
                                                                        const std::string& file_path)
 {
@@ -49,11 +29,12 @@ std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(const std
     if (!(stream >> vertex_id >> color))
     {
         throw GraphConstructionException("Malformed vertex line in '" + file_path + "': '" + line +
-                                         "' (expected " + std::to_string(TOKENS_PER_VERTEX_LINE) +
+                                         "' (expected " +
+                                         std::to_string(IOConstants::VERTEX_EDGE_TOKENS_PER_VERTEX_LINE) +
                                          " tokens)");
     }
-    throw_if_extra_tokens(stream, "Malformed vertex line in '" + file_path + "'", line,
-                          TOKENS_PER_VERTEX_LINE);
+    VertexEdgeUtils::throw_if_extra_tokens(stream, "Malformed vertex line in '" + file_path + "'",
+                                           line, IOConstants::VERTEX_EDGE_TOKENS_PER_VERTEX_LINE);
     return {vertex_id, color};
 }
 
@@ -100,7 +81,8 @@ std::vector<uint32_t> VertexEdgeGraphReader::build_vertex_colors(
 }
 
 uint32_t VertexEdgeGraphReader::resolve_vertex_id(
-    uint32_t raw_id, const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
+    const uint32_t raw_id,
+    const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
     const std::string& role, const std::string& line)
 {
     const std::unordered_map<uint32_t, uint32_t>::const_iterator consecutive_index_id =
@@ -124,9 +106,10 @@ bool VertexEdgeGraphReader::parse_edge_line(
     uint32_t color = 0;
     if (!(stream >> raw_src >> raw_dst))
     {
-        throw GraphConstructionException("Malformed edge line (expected at least " +
-                                         std::to_string(TOKENS_PER_UNCOLORED_EDGE_LINE) +
-                                         " tokens): '" + line + "'");
+        throw GraphConstructionException(
+            "Malformed edge line (expected at least " +
+            std::to_string(IOConstants::VERTEX_EDGE_TOKENS_PER_UNCOLORED_EDGE_LINE) +
+            " tokens): '" + line + "'");
     }
     out_src = resolve_vertex_id(raw_src, consecutive_index_by_original_id, "source", line);
     out_dst = resolve_vertex_id(raw_dst, consecutive_index_by_original_id, "destination", line);
@@ -135,7 +118,8 @@ bool VertexEdgeGraphReader::parse_edge_line(
         return false;
     }
     out_color = color;
-    throw_if_extra_tokens(stream, "Malformed edge line", line, TOKENS_PER_COLORED_EDGE_LINE);
+    VertexEdgeUtils::throw_if_extra_tokens(stream, "Malformed edge line", line,
+                                           IOConstants::VERTEX_EDGE_TOKENS_PER_COLORED_EDGE_LINE);
     return true;
 }
 
@@ -184,8 +168,8 @@ VertexEdgeGraphReader::EdgeData VertexEdgeGraphReader::parse_edge_file(
 ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_directed,
                                          const LoggerHandler& logger) const
 {
-    const std::string vertices_path = path + VERTEX_INDICES_SUFFIX;
-    const std::string edges_path = path + EDGES_SUFFIX;
+    const std::string vertices_path = path + IOConstants::NODE_LABELS_SUFFIX;
+    const std::string edges_path = path + IOConstants::EDGE_SUFFIX;
     const std::unordered_map<uint32_t, uint32_t> color_by_id = parse_vertex_file(vertices_path);
     const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
         IoGraphUtils::build_consecutive_index_map(color_by_id);
