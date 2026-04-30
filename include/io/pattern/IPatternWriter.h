@@ -18,7 +18,7 @@ namespace sgf
  * All I/O errors must be wrapped as SgfException subclasses — no raw standard
  * exceptions may propagate to the caller.
  */
-class IPatternIOManager
+class IPatternWriter
 {
 public:
     /**
@@ -30,10 +30,18 @@ public:
      */
     virtual void write(const BoostGraph& graph, const std::string& path) const = 0;
 
+    IPatternWriter() = default;
+
     /**
      * @brief Default virtual destructor.
      */
-    virtual ~IPatternIOManager() = default;
+    virtual ~IPatternWriter() = default;
+
+
+    IPatternWriter(const IPatternWriter&) = default;
+    IPatternWriter& operator=(const IPatternWriter&) = default;
+    IPatternWriter(IPatternWriter&&) = default;
+    IPatternWriter& operator=(IPatternWriter&&) = default;
 };
 
 }  // namespace sgf
