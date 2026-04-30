@@ -2,11 +2,11 @@
 
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
+#include "IOConstants.h"
 #include "IoGraphUtils.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 #include "VertexEdgeUtils.h"
-#include "IOConstants.h"
 
 #include <cstdint>
 #include <fstream>
@@ -28,10 +28,9 @@ std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(const std
     uint32_t color = 0;
     if (!(stream >> vertex_id >> color))
     {
-        throw GraphConstructionException("Malformed vertex line in '" + file_path + "': '" + line +
-                                         "' (expected " +
-                                         std::to_string(IOConstants::VERTEX_EDGE_TOKENS_PER_VERTEX_LINE) +
-                                         " tokens)");
+        throw GraphConstructionException(
+            "Malformed vertex line in '" + file_path + "': '" + line + "' (expected " +
+            std::to_string(IOConstants::VERTEX_EDGE_TOKENS_PER_VERTEX_LINE) + " tokens)");
     }
     VertexEdgeUtils::throw_if_extra_tokens(stream, "Malformed vertex line in '" + file_path + "'",
                                            line, IOConstants::VERTEX_EDGE_TOKENS_PER_VERTEX_LINE);
