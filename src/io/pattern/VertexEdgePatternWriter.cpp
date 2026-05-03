@@ -6,12 +6,13 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <boost/range/iterator_range.hpp>
 #include <cstdint>
 #include <fstream>
 #include <string>
-#include <utility>
 
 namespace sgf
+
 {
 
 void VertexEdgePatternWriter::write_node_labels(const BoostGraph& graph,
@@ -19,13 +20,10 @@ void VertexEdgePatternWriter::write_node_labels(const BoostGraph& graph,
 {
     std::ofstream file =
         VertexEdgeUtils::open_file_for_writing(base_path + IOConstants::NODE_LABELS_SUFFIX);
-    const std::pair<boost::graph_traits<BoostGraph>::vertex_iterator,
-                    boost::graph_traits<BoostGraph>::vertex_iterator>
-        vertex_range = boost::vertices(graph);
-    for (boost::graph_traits<BoostGraph>::vertex_iterator it = vertex_range.first;
-         it != vertex_range.second; ++it)
+    for (const boost::graph_traits<BoostGraph>::vertex_descriptor& vertex :
+         boost::make_iterator_range(boost::vertices(graph)))
     {
-        file << static_cast<uint32_t>(*it) << ' ' << graph[*it].m_color << '\n';
+        file << static_cast<uint32_t>(vertex) << ' ' << graph[vertex].m_color << '\n';
     }
 }
 
@@ -33,14 +31,11 @@ void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph, const std
 {
     std::ofstream file =
         VertexEdgeUtils::open_file_for_writing(base_path + IOConstants::EDGE_SUFFIX);
-    const std::pair<boost::graph_traits<BoostGraph>::edge_iterator,
-                    boost::graph_traits<BoostGraph>::edge_iterator>
-        edge_range = boost::edges(graph);
-    for (boost::graph_traits<BoostGraph>::edge_iterator it = edge_range.first;
-         it != edge_range.second; ++it)
+    for (const boost::graph_traits<BoostGraph>::edge_descriptor& edge :
+         boost::make_iterator_range(boost::edges(graph)))
     {
-        file << static_cast<uint32_t>(boost::source(*it, graph)) << ' '
-             << static_cast<uint32_t>(boost::target(*it, graph)) << ' ' << graph[*it].m_color
+        file << static_cast<uint32_t>(boost::source(edge, graph)) << ' '
+             << static_cast<uint32_t>(boost::target(edge, graph)) << ' ' << graph[edge].m_color
              << '\n';
     }
 }
