@@ -118,6 +118,16 @@ public:
 
 protected:
     /**
+     * @brief Logger used for runtime messages.
+     */
+    LoggerHandler m_logger;
+
+    /**
+     * @brief Graph instance being processed.
+     */
+    const ColoredGraph& m_graph;
+
+    /**
      * @brief Sort graph nodes before enumeration.
      *
      * Derived classes implement the ordering strategy and typically populate
@@ -161,10 +171,6 @@ protected:
                                                const std::vector<uint32_t>& node_colors) = 0;
 
 private:
-    /**
-     * @brief Graph instance being processed.
-     */
-    const ColoredGraph& m_graph;
 
     /**
      * @brief Node ordering used during enumeration.
@@ -172,11 +178,6 @@ private:
      * Typically populated by sort_nodes().
      */
     std::vector<uint32_t> m_node_order;
-
-    /**
-     * @brief Logger used for runtime messages.
-     */
-    LoggerHandler m_logger;
 
     /**
      * @brief Convert the full graph into an adjacency matrix.
