@@ -1,5 +1,11 @@
 #include "VertexEdgeUtils.h"
 
+#include "GraphConstructionException.h"
+#include "SgfPathDoesntExistException.h"
+
+#include <cstdint>
+#include <fstream>
+#include <sstream>
 #include <string>
 
 namespace sgf

@@ -33,7 +33,7 @@ public:
      * @throws GraphConstructionException if any additional token can be read.
      */
     static void throw_if_extra_tokens(std::istringstream& stream, const std::string& context,
-                                      const std::string& line, const uint32_t expected_count);
+                                      const std::string& line, uint32_t expected_count);
 
     /**
      * @brief Opens a file for writing, throwing if it cannot be opened.

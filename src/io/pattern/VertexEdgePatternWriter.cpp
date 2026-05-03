@@ -1,5 +1,6 @@
 #include "VertexEdgePatternWriter.h"
 
+#include "BoostGraph.h"
 #include "IOConstants.h"
 #include "VertexEdgeUtils.h"
 
@@ -8,6 +9,7 @@
 #include <cstdint>
 #include <fstream>
 #include <string>
+#include <utility>
 
 namespace sgf
 {
