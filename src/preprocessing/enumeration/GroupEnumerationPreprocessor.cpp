@@ -24,8 +24,8 @@ constexpr uint32_t LOG_INTERVAL = 1000;
 
 GroupEnmerationPreprocessor::GroupEnmerationPreprocessor(const ColoredGraph& graph,
                                                          LoggerHandler logger)
-    : m_graph(graph)
-    , m_logger(std::move(logger))
+    : m_logger(std::move(logger))
+    , m_graph(graph)
 {
 }
 
