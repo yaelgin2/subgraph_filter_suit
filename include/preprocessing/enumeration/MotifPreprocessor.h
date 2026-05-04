@@ -96,8 +96,8 @@ private:
         const std::vector<std::vector<bool>>& adjacency_matrix; ///< Full graph adjacency matrix.
         const GroupCounterCallback& count_group;                 ///< Callback for emitting groups.
         const std::vector<bool>& ignore_vertices;               ///< Already-processed vertex mask.
-        std::vector<uint64_t>& bfs_visited;                     ///< BFS depth-encoding array.
-        uint64_t run_id;                                         ///< Root-unique run identifier.
+        std::vector<int64_t>& bfs_visited;                     ///< BFS depth-encoding array.
+        int64_t run_id;                                         ///< Root-unique run identifier.
         uint32_t root;                                           ///< Current root vertex.
     };
 
@@ -117,11 +117,11 @@ private:
     };
 
     /// Low 2 bits of each bfs_visited entry encode BFS depth (0–3); upper bits hold run_id.
-    static constexpr uint64_t BFS_DEPTH_TWO_OFFSET = 2U;
+    static constexpr int64_t BFS_DEPTH_TWO_OFFSET = 2;
     /// Encodes depth-3 in the low 2 bits of a bfs_visited entry.
-    static constexpr uint64_t BFS_DEPTH_THREE_OFFSET = 3U;
+    static constexpr int64_t BFS_DEPTH_THREE_OFFSET = 3;
     /// Right-shift applied to a bfs_visited entry to recover the run identifier (= root vertex id).
-    static constexpr uint64_t BFS_VERTEX_RUN_SHIFT = 2U;
+    static constexpr int64_t BFS_VERTEX_RUN_SHIFT = 2;
 
     /**
      * @brief Vertex traversal order, populated by sort_nodes().
@@ -178,7 +178,7 @@ private:
         const std::vector<std::vector<bool>>& graph_adjacency_matrix,
         const GroupCounterCallback& count_group,
         const std::vector<bool>& visited_vertices_to_ignore,
-        std::vector<uint64_t>& bfs_visited_vertices,
+        std::vector<int64_t>& bfs_visited_vertices,
         const uint32_t root);
 
     /**
@@ -235,7 +235,6 @@ private:
      */
     void emit_depth_1_1_2_for_first_vertex(const KavoshContext& ctx,
                                         std::vector<uint32_t>::const_iterator first_neighbour,
-                                        bool is_first_neighbour_reversed,
                                         const NeighbourRange& depth_one,
                                         const NeighbourRange& depth_two) const;
 
@@ -252,7 +251,6 @@ private:
      */
     void emit_depth_1_1_2_for_second_vertex(const KavoshContext& ctx,
                          std::vector<uint32_t>::const_iterator first_neighbour,
-                         bool is_first_neighbour_reversed,
                          const NeighbourRange& depth_one,
                          std::vector<uint32_t>::const_iterator second_neighbour) const;
 
@@ -268,7 +266,6 @@ private:
      */
     void process_first_neighbour_112_122(KavoshContext& ctx,
                                          std::vector<uint32_t>::const_iterator first_neighbour,
-                                         bool is_first_neighbour_reversed,
                                          const NeighbourRange& depth_one) const;
 
     /**
