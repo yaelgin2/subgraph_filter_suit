@@ -29,6 +29,9 @@
 #include <ios>
 #include <ostream>
 #include <string>
+#include <atomic>
+
+std::atomic<int> sgf::FileLogger::s_next_id{0};
 
 namespace sgf
 {
@@ -92,11 +95,13 @@ std::string to_level_label(const LogLevel level)
 }  // namespace
 
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-FileLogger::FileLogger(const std::string& file_name)
+FileLogger::FileLogger(const std::string& file_name) : m_id(s_next_id.fetch_add(1, std::memory_order_relaxed))
 {
     namespace logging = boost::log;
     namespace sinks = boost::log::sinks;
     namespace expr = boost::log::expressions;
+
+    m_logger.add_attribute(LOGGER_ID_KEY, boost::log::attributes::constant<int>(m_id));
 
     const boost::shared_ptr<std::ofstream> file_stream =
         boost::make_shared<std::ofstream>(file_name, std::ios::app);
@@ -111,6 +116,8 @@ FileLogger::FileLogger(const std::string& file_name)
     sink->set_formatter(expr::stream << expr::format_date_time<boost::posix_time::ptime>(
                                             "TimeStamp", "%Y-%m-%d %H:%M:%S")
                                      << " " << expr::smessage);
+
+    sink->set_filter(expr::attr<int>(LOGGER_ID_KEY) == m_id);
 
     logging::core::get()->add_sink(sink);
     logging::add_common_attributes();

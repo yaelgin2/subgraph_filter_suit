@@ -6,6 +6,7 @@
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/trivial.hpp>
 #include <string>
+#include <atomic>
 
 namespace sgf
 {
@@ -30,6 +31,10 @@ public:
     void log(LogLevel level, const std::string& message) override;
 
 private:
+    static constexpr const char* LOGGER_ID_KEY = "LoggerId";
+
+    static std::atomic<int> s_next_id;
+    uint32_t m_id;
     boost::log::sources::severity_logger<boost::log::trivial::severity_level> m_logger;
 };
 
