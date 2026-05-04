@@ -7,6 +7,7 @@
 
 #include "FileLogger.h"
 #include <memory>
+#include <string>
 
 #include <cstdint>
 #include <gtest/gtest.h>
@@ -137,10 +138,7 @@ TEST_F(MotifPreprocessorTest, four_vertex_path_p4_all_zero_colors)
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, false);
 
-    std::shared_ptr<FileLogger> file_logger = std::make_shared<FileLogger>("temp_failing_tests.txt");
-    MotifPreprocessor preprocessor(graph,LoggerHandler{file_logger});
-
-    //MotifPreprocessor preprocessor(graph, null_logger());
+    MotifPreprocessor preprocessor(graph, null_logger());
 
     const std::unordered_map<__uint128_t, uint32_t> result = preprocessor.calculate();
 
@@ -358,20 +356,25 @@ TEST_F(MotifPreprocessorTest, colored_k13_center_vs_leaf_distinct_keys)
     std::vector<std::pair<uint32_t, uint32_t>> edges_a = {{0U, 1U}, {0U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors_a = {5U, 0U, 0U, 0U};
     const ColoredGraph graph_a(4U, edges_a, colors_a, false);
+
     MotifPreprocessor preprocessor_a(graph_a, null_logger());
 
     std::vector<std::pair<uint32_t, uint32_t>> edges_b = {{0U, 1U}, {0U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors_b = {0U, 5U, 5U, 5U};
     const ColoredGraph graph_b(4U, edges_b, colors_b, false);
+
     MotifPreprocessor preprocessor_b(graph_b, null_logger());
 
     const std::unordered_map<__uint128_t, uint32_t> result_a = preprocessor_a.calculate();
     const std::unordered_map<__uint128_t, uint32_t> result_b = preprocessor_b.calculate();
 
-    const __uint128_t key_a = colored_key(11U, 5U, 0U, 0U, 0U);
-    const __uint128_t key_b = colored_key(11U, 0U, 5U, 5U, 5U);
+    const __uint128_t key_a = colored_key(11U, 0U, 0U, 0U, 5U);
+    const __uint128_t key_b = colored_key(11U, 5U, 5U, 5U, 0U);
+
     ASSERT_EQ(result_a.size(), 1U);
     ASSERT_EQ(result_b.size(), 1U);
+    EXPECT_TRUE(result_a.find(key_a) != result_a.end());
+    EXPECT_TRUE(result_b.find(key_b) != result_b.end());
     EXPECT_EQ(result_a.at(key_a), 1U);
     EXPECT_EQ(result_b.at(key_b), 1U);
     EXPECT_NE(key_a, key_b);
