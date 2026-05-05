@@ -1,0 +1,16 @@
+graph,time_seconds,num_colored_motifs,status
+g_den_5_embedded_den_3_uniform_0,2.9,112445,ok
+g_den_5_embedded_den_3_average_0,2.6,75355,ok
+g_den_5_embedded_den_3_rare_0,2.5,35108,ok
+g_den_8_embedded_den_3_uniform_0,7.4,115439,ok
+g_den_8_embedded_den_3_average_0,6.9,90115,ok
+g_den_8_embedded_den_3_rare_0,6.5,44469,ok
+g_den_10_embedded_den_3_uniform_0,11.7,119623,ok
+g_den_10_embedded_den_3_average_0,11.0,98175,ok
+g_den_10_embedded_den_3_rare_0,10.5,48338,ok
+g_den_13_embedded_den_3_uniform_0,23.9,128729,ok
+g_den_13_embedded_den_3_average_0,20.8,105636,ok
+g_den_13_embedded_den_3_rare_0,20.3,55371,ok
+g_den_15_embedded_den_3_uniform_0,89.5,214305,ok
+g_den_15_embedded_den_3_average_0,2.9,112312,ok
+g_den_15_embedded_den_3_rare_0,81.0,77691,ok

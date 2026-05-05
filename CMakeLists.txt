@@ -38,6 +38,7 @@ find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup json)
 
 # ── Sources ───────────────────────────────────────────────────────────────────
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/**/*.cpp)
+list(FILTER SOURCES EXCLUDE REGEX ".*src/cli/.*")
 add_library(subgraph_filter_suite ${SOURCES})
 
 # ── Include paths ─────────────────────────────────────────────────────────────
@@ -71,6 +72,14 @@ target_link_libraries(subgraph_filter_suite PUBLIC
 
 # ── Compiler warnings ─────────────────────────────────────────────────────────
 target_compile_options(subgraph_filter_suite PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Werror>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+)
+
+# ── CLI tools ─────────────────────────────────────────────────────────────────
+add_executable(sgf_motif_counter src/cli/sgf_motif_counter.cpp)
+target_link_libraries(sgf_motif_counter PRIVATE subgraph_filter_suite)
+target_compile_options(sgf_motif_counter PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Werror>
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
 )
