@@ -10,7 +10,7 @@ public:
     /// Suffix for vertex label files.
     static constexpr const char* NODE_LABELS_SUFFIX = ".node_labels";
     /// Suffix for edge files.
-    static constexpr const char* EDGE_SUFFIX = ".edge";
+    static constexpr const char* EDGE_SUFFIX = ".edges";
     /// Number of tokens on a vertex (or node-label) line: id and color.
     static constexpr uint32_t VERTEX_EDGE_TOKENS_PER_VERTEX_LINE = 2;
     /// Minimum tokens on an edge line: source and destination.
