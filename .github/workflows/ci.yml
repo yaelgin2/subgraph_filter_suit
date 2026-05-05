@@ -25,6 +25,12 @@ jobs:
           sudo apt-get install -y build-essential cmake clang-tidy-17 clang-format-17 \
             libboost-graph-dev libboost-log-dev libboost-json-dev
 
+      - name: Setup MinGW-w64 (Windows)
+        if: runner.os == 'Windows'
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+
       - name: Check CMake (Windows)
         if: runner.os == 'Windows'
         id: check_cmake
@@ -37,17 +43,40 @@ jobs:
         with:
           cmake-version: '3.x'
 
+      - name: Enable vcpkg binary caching (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
       - name: Install Boost via vcpkg (Windows)
         if: runner.os == 'Windows'
+        env:
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
         run: |
-          vcpkg install boost-graph boost-log boost-json
-          echo "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
+          vcpkg install `
+            boost-graph:x64-mingw-dynamic `
+            boost-log:x64-mingw-dynamic `
+            boost-json:x64-mingw-dynamic
         shell: pwsh
 
-      - name: Configure
-        run: >
-          cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-          ${{ runner.os == 'Windows' && format('-DCMAKE_TOOLCHAIN_FILE={0}', env.CMAKE_TOOLCHAIN_FILE) || '' }}
+      - name: Configure (Linux)
+        if: runner.os == 'Linux'
+        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S . -B build `
+            -G "MinGW Makefiles" `
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_CXX_COMPILER=g++ `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic
+        shell: pwsh
 
       - name: Build
         run: cmake --build build --config Release
