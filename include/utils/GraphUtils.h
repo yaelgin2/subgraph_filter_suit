@@ -4,7 +4,6 @@
 #include "Constants.h"
 #include "GraphConstructionException.h"
 
-#include <algorithm>
 #include <boost/any/bad_any_cast.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/graphml.hpp>
@@ -249,15 +248,14 @@ GraphUtils::extract_colored_edges(const GraphType& boost_graph, const GetColor& 
 template <typename GraphType, typename GetColor>
 bool GraphUtils::has_edge_colors(const GraphType& boost_graph, const GetColor& get_color)
 {
-    const std::pair<typename boost::graph_traits<GraphType>::edge_iterator,
-                    typename boost::graph_traits<GraphType>::edge_iterator>
-        edge_range = boost::edges(boost_graph);
-    return std::any_of(
-        edge_range.first, edge_range.second,
-        [&](const typename boost::graph_traits<GraphType>::edge_descriptor& edge_desc)
+    for (const auto& edge_desc : boost::make_iterator_range(boost::edges(boost_graph)))
+    {
+        if (get_color(edge_desc) != 0U)
         {
-            return get_color(edge_desc) != 0U;
-        });
+            return true;
+        }
+    }
+    return false;
 }
 
 }  // namespace sgf
