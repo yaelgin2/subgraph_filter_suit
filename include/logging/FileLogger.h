@@ -33,7 +33,8 @@ public:
 private:
     static constexpr const char* LOGGER_ID_KEY = "LoggerId";
 
-    static std::atomic<int> s_next_id;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+    static std::atomic<uint32_t> s_next_id;
     uint32_t m_id;
     boost::log::sources::severity_logger<boost::log::trivial::severity_level> m_logger;
 };

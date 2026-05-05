@@ -1,9 +1,7 @@
 #include "MotifMap.h"
 
-#include <array>
 #include <cstdint>
 #include <unordered_map>
-#include <vector>
 
 namespace sgf
 {

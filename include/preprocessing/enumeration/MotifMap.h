@@ -16,8 +16,8 @@ namespace sgf
  */
 struct MotifCanonical
 {
-    uint32_t minimal_motif_num;
-    std::vector<std::array<uint32_t, SgfConstants::MOTIF_SIZE>> color_permutations;
+    uint32_t m_minimal_motif_num;
+    std::vector<std::array<uint32_t, SgfConstants::MOTIF_SIZE>> m_color_permutations;
 };
 
 /**

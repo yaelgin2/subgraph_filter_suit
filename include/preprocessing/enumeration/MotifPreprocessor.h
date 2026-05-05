@@ -93,12 +93,12 @@ private:
      */
     struct KavoshContext
     {
-        const std::vector<std::vector<bool>>& adjacency_matrix;  ///< Full graph adjacency matrix.
-        const GroupCounterCallback& count_group;                 ///< Callback for emitting groups.
-        const std::vector<bool>& ignore_vertices;                ///< Already-processed vertex mask.
-        std::vector<int64_t>& bfs_visited;                       ///< BFS depth-encoding array.
-        int64_t run_id;                                          ///< Root-unique run identifier.
-        uint32_t root;                                           ///< Current root vertex.
+        const std::vector<std::vector<bool>>& m_adjacency_matrix;  ///< Full graph adjacency matrix.
+        const GroupCounterCallback& m_count_group;   ///< Callback for emitting groups.
+        const std::vector<bool>& m_ignore_vertices;  ///< Already-processed vertex mask.
+        std::vector<int64_t>& m_bfs_visited;         ///< BFS depth-encoding array.
+        int64_t m_run_id;                            ///< Root-unique run identifier.
+        uint32_t m_root;                             ///< Current root vertex.
     };
 
     /**
@@ -110,19 +110,19 @@ private:
      */
     struct NeighbourRange
     {
-        std::vector<uint32_t>::const_iterator begin;  ///< First outgoing neighbour.
-        std::vector<uint32_t>::const_iterator end;    ///< One past last outgoing neighbour.
+        std::vector<uint32_t>::const_iterator m_begin;  ///< First outgoing neighbour.
+        std::vector<uint32_t>::const_iterator m_end;    ///< One past last outgoing neighbour.
         std::vector<uint32_t>::const_iterator
-            rev_begin;  ///< First incoming neighbour (directed only).
-        std::vector<uint32_t>::const_iterator rev_end;  ///< One past last incoming neighbour.
+            m_rev_begin;  ///< First incoming neighbour (directed only).
+        std::vector<uint32_t>::const_iterator m_rev_end;  ///< One past last incoming neighbour.
     };
 
     /// Low 2 bits of each bfs_visited entry encode BFS depth (0–3); upper bits hold run_id.
-    static constexpr int64_t BFS_DEPTH_TWO_OFFSET = 2;
+    static constexpr uint64_t BFS_DEPTH_TWO_OFFSET = 2;
     /// Encodes depth-3 in the low 2 bits of a bfs_visited entry.
-    static constexpr int64_t BFS_DEPTH_THREE_OFFSET = 3;
+    static constexpr uint64_t BFS_DEPTH_THREE_OFFSET = 3;
     /// Right-shift applied to a bfs_visited entry to recover the run identifier (= root vertex id).
-    static constexpr int64_t BFS_VERTEX_RUN_SHIFT = 2;
+    static constexpr uint64_t BFS_VERTEX_RUN_SHIFT = 2;
 
     /**
      * @brief Vertex traversal order, populated by sort_nodes().
@@ -180,7 +180,7 @@ private:
         const std::vector<std::vector<bool>>& graph_adjacency_matrix,
         const GroupCounterCallback& count_group,
         const std::vector<bool>& visited_vertices_to_ignore,
-        std::vector<int64_t>& bfs_visited_vertices, const uint32_t root);
+        std::vector<int64_t>& bfs_visited_vertices, uint32_t root);
 
     /**
      * @brief Mark every depth-1 neighbour of root in the BFS-visited array.

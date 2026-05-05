@@ -4,7 +4,9 @@
 #include "SgfPathDoesntExistException.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
+#include <boost/log/attributes/constant.hpp>
 #include <boost/log/core/core.hpp>
+#include <boost/log/expressions/attr.hpp>
 #include <boost/log/expressions/formatters/date_time.hpp>
 #include <boost/log/expressions/formatters/stream.hpp>
 #include <boost/log/expressions/message.hpp>
@@ -26,12 +28,14 @@
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <ostream>
 #include <string>
 
-std::atomic<int> sgf::FileLogger::s_next_id{0};
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+std::atomic<uint32_t> sgf::FileLogger::s_next_id{0U};
 
 namespace sgf
 {
@@ -102,7 +106,7 @@ FileLogger::FileLogger(const std::string& file_name)
     namespace sinks = boost::log::sinks;
     namespace expr = boost::log::expressions;
 
-    m_logger.add_attribute(LOGGER_ID_KEY, boost::log::attributes::constant<int>(m_id));
+    m_logger.add_attribute(LOGGER_ID_KEY, boost::log::attributes::constant<uint32_t>(m_id));
 
     const boost::shared_ptr<std::ofstream> file_stream =
         boost::make_shared<std::ofstream>(file_name, std::ios::app);
@@ -118,7 +122,7 @@ FileLogger::FileLogger(const std::string& file_name)
                                             "TimeStamp", "%Y-%m-%d %H:%M:%S")
                                      << " " << expr::smessage);
 
-    sink->set_filter(expr::attr<int>(LOGGER_ID_KEY) == m_id);
+    sink->set_filter(expr::attr<uint32_t>(LOGGER_ID_KEY) == m_id);
 
     logging::core::get()->add_sink(sink);
     logging::add_common_attributes();
