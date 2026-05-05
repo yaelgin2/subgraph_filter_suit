@@ -4,9 +4,9 @@
 #include "IOConstants.h"
 #include "SgfPathDoesntExistException.h"
 
+#include <array>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
-#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
