@@ -67,14 +67,14 @@ void MotifPreprocessor::mark_depth_one_neighbours(KavoshContext& ctx,
 {
     for (auto vertex = depth_one.begin; vertex != depth_one.end; ++vertex)
     {
-        m_logger.log(LogLevel::DEBUG, "Marking depth-1 vertex " + std::to_string(*vertex) + " for root " + std::to_string(ctx.root));
+        // m_logger.log(LogLevel::DEBUG, "Marking depth-1 vertex " + std::to_string(*vertex) + " for root " + std::to_string(ctx.root));
         ctx.bfs_visited[*vertex] = ctx.run_id + 1U;
     }
     if (m_graph.is_directed())
     {
         for (auto vertex = depth_one.rev_begin; vertex != depth_one.rev_end; ++vertex)
         {
-            m_logger.log(LogLevel::DEBUG, "Marking depth-1 vertex " + std::to_string(*vertex) + " for root " + std::to_string(ctx.root));
+            // m_logger.log(LogLevel::DEBUG, "Marking depth-1 vertex " + std::to_string(*vertex) + " for root " + std::to_string(ctx.root));
             ctx.bfs_visited[*vertex] = ctx.run_id + 1U;
         }
     }
@@ -153,9 +153,9 @@ void MotifPreprocessor::emit_depth_1_1_1_groups_second_vertex_chosen(const Kavos
                 continue;
             }
             const std::vector<uint32_t> group = {ctx.root, *first_neighbour, *second_neighbour, *third};
-            m_logger.log(LogLevel::DEBUG, 
-                "Found group of structure 1 1 1 vertices: " 
-                + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*third)); 
+            //m_logger.log(LogLevel::DEBUG, 
+            //    "Found group of structure 1 1 1 vertices: " 
+            //    + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*third)); 
             ctx.count_group(compute_motif_descriptor(group, ctx.adjacency_matrix), group);
         }
     }
@@ -169,9 +169,9 @@ void MotifPreprocessor::emit_depth_1_1_1_groups_second_vertex_chosen(const Kavos
                 continue;
             }
             const std::vector<uint32_t> group = {ctx.root, *first_neighbour, *second_neighbour, *third};
-            m_logger.log(LogLevel::DEBUG, 
-                    "Found group of structure 1 1 1 vertices: " 
-                    + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*third)); 
+            //m_logger.log(LogLevel::DEBUG, 
+            //        "Found group of structure 1 1 1 vertices: " 
+            //        + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*third)); 
             ctx.count_group(compute_motif_descriptor(group, ctx.adjacency_matrix), group);
         }
     }
@@ -180,17 +180,17 @@ void MotifPreprocessor::emit_depth_1_1_1_groups_second_vertex_chosen(const Kavos
 void MotifPreprocessor::mark_depth_two_neighbours(KavoshContext& ctx,
                                                   const NeighbourRange& depth_two) const
 {
-    m_logger.log(LogLevel::DEBUG, "Marking depth-2 neighbours, checking " + std::to_string(depth_two.end - depth_two.begin) + " vertices for root " + std::to_string(ctx.root));
+    //m_logger.log(LogLevel::DEBUG, "Marking depth-2 neighbours, checking " + std::to_string(depth_two.end - depth_two.begin) + " vertices for root " + std::to_string(ctx.root));
     for (auto vertex = depth_two.begin; vertex != depth_two.end; ++vertex)
     {
         if ((ctx.bfs_visited[*vertex] >> BFS_VERTEX_RUN_SHIFT) != static_cast<int64_t>(ctx.root))
         {
-            m_logger.log(LogLevel::DEBUG, "Marking depth-2 vertex " + std::to_string(*vertex) + " for root " + std::to_string(ctx.root));
+            //m_logger.log(LogLevel::DEBUG, "Marking depth-2 vertex " + std::to_string(*vertex) + " for root " + std::to_string(ctx.root));
             ctx.bfs_visited[*vertex] = ctx.run_id + BFS_DEPTH_TWO_OFFSET;
         }
         else
         {
-            m_logger.log(LogLevel::DEBUG, "Already visited vertex " + std::to_string(*vertex) + " at depth " + std::to_string(ctx.bfs_visited[*vertex] % 4) + " for root " + std::to_string(ctx.root));
+            //m_logger.log(LogLevel::DEBUG, "Already visited vertex " + std::to_string(*vertex) + " at depth " + std::to_string(ctx.bfs_visited[*vertex] % 4) + " for root " + std::to_string(ctx.root));
         }
     }
     if (m_graph.is_directed())
@@ -210,21 +210,21 @@ void MotifPreprocessor::emit_depth_1_1_2_for_first_vertex(const KavoshContext& c
                                                        const NeighbourRange& depth_one,
                                                        const NeighbourRange& depth_two) const
 {
-    m_logger.log(LogLevel::DEBUG, "Processing depth 1_1_2 groups");
+    //m_logger.log(LogLevel::DEBUG, "Processing depth 1_1_2 groups");
     for (auto second_degree_neighbour = depth_two.begin; 
             second_degree_neighbour != depth_two.end;
              ++second_degree_neighbour)
     {
-        m_logger.log(LogLevel::DEBUG, "Processing depth-2 neighbour " + std::to_string(*second_degree_neighbour) + " for root " + std::to_string(ctx.root) + " and depth-1 neighbour " + std::to_string(*first_neighbour) + " for depth 1_1_2 groups");
+        //m_logger.log(LogLevel::DEBUG, "Processing depth-2 neighbour " + std::to_string(*second_degree_neighbour) + " for root " + std::to_string(ctx.root) + " and depth-1 neighbour " + std::to_string(*first_neighbour) + " for depth 1_1_2 groups");
         if (ctx.ignore_vertices[*(second_degree_neighbour)] ||
             ctx.bfs_visited[*(second_degree_neighbour)] != (ctx.run_id + BFS_DEPTH_TWO_OFFSET))
         {
             if (ctx.ignore_vertices[*(second_degree_neighbour)]) {
-                m_logger.log(LogLevel::DEBUG, "Skipping depth-2 neighbour " + std::to_string(*second_degree_neighbour) + " for depth 1_1_2 groups because it is ignored");
+                //m_logger.log(LogLevel::DEBUG, "Skipping depth-2 neighbour " + std::to_string(*second_degree_neighbour) + " for depth 1_1_2 groups because it is ignored");
             }
             else
             {
-                m_logger.log(LogLevel::DEBUG, "Skipping depth-2 neighbour " + std::to_string(*second_degree_neighbour) + " for depth 1_1_2 groups because it was marked as " + std::to_string(ctx.bfs_visited[*(second_degree_neighbour)] % 4) + " instead of " + std::to_string(BFS_DEPTH_TWO_OFFSET));
+                //m_logger.log(LogLevel::DEBUG, "Skipping depth-2 neighbour " + std::to_string(*second_degree_neighbour) + " for depth 1_1_2 groups because it was marked as " + std::to_string(ctx.bfs_visited[*(second_degree_neighbour)] % 4) + " instead of " + std::to_string(BFS_DEPTH_TWO_OFFSET));
             }
 
             continue;
@@ -253,37 +253,37 @@ void MotifPreprocessor::emit_depth_1_1_2_for_second_vertex(const KavoshContext& 
                                         const NeighbourRange& depth_one,
                                         std::vector<uint32_t>::const_iterator second_neighbour) const
 {
-    m_logger.log(LogLevel::DEBUG, "Entered emit_depth_1_1_2_for_second_vertex");
+    //m_logger.log(LogLevel::DEBUG, "Entered emit_depth_1_1_2_for_second_vertex");
     
     for(auto second_first_degree_negihbour = depth_one.begin;
             second_first_degree_negihbour != depth_one.end;
             ++second_first_degree_negihbour)
     {
-        m_logger.log(LogLevel::DEBUG, "Processing second depth-1 neighbour " + std::to_string(*second_first_degree_negihbour) + " for root " + std::to_string(ctx.root) + " and depth-1 neighbour " + std::to_string(*first_neighbour) + "and depth-2 neighbour " + + " for depth 1_1_2 groups");
+        //m_logger.log(LogLevel::DEBUG, "Processing second depth-1 neighbour " + std::to_string(*second_first_degree_negihbour) + " for root " + std::to_string(ctx.root) + " and depth-1 neighbour " + std::to_string(*first_neighbour) + "and depth-2 neighbour " + + " for depth 1_1_2 groups");
         if (ctx.ignore_vertices[*(second_first_degree_negihbour)] || 
                 *first_neighbour == *second_first_degree_negihbour)
             {
                 if (ctx.ignore_vertices[*(second_first_degree_negihbour)])
                 {
-                    m_logger.log(LogLevel::DEBUG, "Skipping second depth-1 neighbour " + std::to_string(*second_first_degree_negihbour) + " for depth 1_1_2 groups because it is ignored");
+                    //m_logger.log(LogLevel::DEBUG, "Skipping second depth-1 neighbour " + std::to_string(*second_first_degree_negihbour) + " for depth 1_1_2 groups because it is ignored");
                 }
                 else
                 {
-                    m_logger.log(LogLevel::DEBUG, "Skipping second depth-1 neighbour " + std::to_string(*second_first_degree_negihbour) + " for depth 1_1_2 groups because it is the same as the first depth-1 neighbour");
+                    //m_logger.log(LogLevel::DEBUG, "Skipping second depth-1 neighbour " + std::to_string(*second_first_degree_negihbour) + " for depth 1_1_2 groups because it is the same as the first depth-1 neighbour");
                 }
                 continue;
             }
             bool edge_exists = ctx.adjacency_matrix[*(second_first_degree_negihbour)][*(second_neighbour)] ||
                     ctx.adjacency_matrix[*(second_neighbour)][*(second_first_degree_negihbour)];
-            m_logger.log(LogLevel::DEBUG, "Edge exists between second depth-1 neighbour " + std::to_string(*second_first_degree_negihbour) + " and depth-2 neighbour " + std::to_string(*second_neighbour) + ": " + std::to_string(edge_exists));
+            //m_logger.log(LogLevel::DEBUG, "Edge exists between second depth-1 neighbour " + std::to_string(*second_first_degree_negihbour) + " and depth-2 neighbour " + std::to_string(*second_neighbour) + ": " + std::to_string(edge_exists));
             // avoid double-counting due to two paths from root to n2 - from n1 and from n11.
-            m_logger.log(LogLevel::DEBUG, "Is this group to count: " + std::to_string(edge_exists || (edge_exists && *(first_neighbour)<*(second_first_degree_negihbour))));
+            //m_logger.log(LogLevel::DEBUG, "Is this group to count: " + std::to_string(edge_exists || (edge_exists && *(first_neighbour)<*(second_first_degree_negihbour))));
             if (!edge_exists || (edge_exists && *(first_neighbour)<*(second_first_degree_negihbour)))
             {
                 std::vector<uint32_t> group = {ctx.root, *(first_neighbour), *(second_first_degree_negihbour), *(second_neighbour)};
-                m_logger.log(LogLevel::DEBUG, 
-                    "Found group of structure 1 1 2 vertices: " 
-                    + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*second_first_degree_negihbour)); 
+                //m_logger.log(LogLevel::DEBUG, 
+                //    "Found group of structure 1 1 2 vertices: " 
+                //    + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*second_first_degree_negihbour)); 
 
                 ctx.count_group(compute_motif_descriptor(group, ctx.adjacency_matrix), group);
             }
@@ -306,9 +306,9 @@ void MotifPreprocessor::emit_depth_1_1_2_for_second_vertex(const KavoshContext& 
             if (!edge_exists || (edge_exists && *(first_neighbour)<*(second_first_degree_negihbour)))
             {
                 std::vector<uint32_t> group = {ctx.root, *(first_neighbour), *(second_first_degree_negihbour), *(second_neighbour)};
-                m_logger.log(LogLevel::DEBUG, 
-                    "Found group of structure 1 1 2 vertices: " 
-                    + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " +  std::to_string(*second_first_degree_negihbour)); 
+                //m_logger.log(LogLevel::DEBUG, 
+                //    "Found group of structure 1 1 2 vertices: " 
+                //    + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " +  std::to_string(*second_first_degree_negihbour)); 
     
                 ctx.count_group(compute_motif_descriptor(group, ctx.adjacency_matrix), group);
             }
@@ -320,7 +320,7 @@ void MotifPreprocessor::emit_depth_1_2_2_for_first_vertex(const KavoshContext& c
                                                        std::vector<uint32_t>::const_iterator first_neighbour,
                                                         const NeighbourRange& depth_two) const
 {
-    m_logger.log(LogLevel::DEBUG, "Processing depth 1_2_2 groups");
+    //m_logger.log(LogLevel::DEBUG, "Processing depth 1_2_2 groups");
     for (auto first_second_degree_neighbour = depth_two.begin; 
             first_second_degree_neighbour != depth_two.end; 
             ++first_second_degree_neighbour)
@@ -367,9 +367,9 @@ void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(const KavoshContext& 
                 continue;
             }
             std::vector<uint32_t> group = {ctx.root, *(first_neighbour), *(second_neighbour), *(second_second_degree_neighbour)};
-            m_logger.log(LogLevel::DEBUG,
-                        "Found group of structure 1 2 2 vertices: " 
-                        + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*second_second_degree_neighbour)); 
+            //m_logger.log(LogLevel::DEBUG,
+            //            "Found group of structure 1 2 2 vertices: " 
+            //            + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*second_second_degree_neighbour)); 
 
             ctx.count_group(compute_motif_descriptor(group, ctx.adjacency_matrix), group);
         }
@@ -388,9 +388,9 @@ void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(const KavoshContext& 
                 continue;
             }
             std::vector<uint32_t> group = {ctx.root, *(first_neighbour), *(second_neighbour), *(second_second_degree_neighbour)};
-            m_logger.log(LogLevel::DEBUG, 
-                            "Found group of structure 1 2 2 vertices: " 
-                            + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*second_second_degree_neighbour)); 
+            //m_logger.log(LogLevel::DEBUG, 
+            //                "Found group of structure 1 2 2 vertices: " 
+            //                + std::to_string(ctx.root) + ", " + std::to_string(*first_neighbour) + ", "+ std::to_string(*second_neighbour) + ", " + std::to_string(*second_second_degree_neighbour)); 
 
             ctx.count_group(compute_motif_descriptor(group, ctx.adjacency_matrix), group);
         }
@@ -401,7 +401,7 @@ void MotifPreprocessor::process_first_neighbour_112_122(KavoshContext& ctx,
                                                         std::vector<uint32_t>::const_iterator first_neighbour,
                                                         const NeighbourRange& depth_one) const
 {
-    m_logger.log(LogLevel::DEBUG, "Processing depth-1 neighbour " + std::to_string(*first_neighbour) + " for root " + std::to_string(ctx.root) + " for depth 1_1_2 or 1_2_2");
+    //m_logger.log(LogLevel::DEBUG, "Processing depth-1 neighbour " + std::to_string(*first_neighbour) + " for root " + std::to_string(ctx.root) + " for depth 1_1_2 or 1_2_2");
     const auto [two_fwd_begin, two_fwd_end] = m_graph.get_neighbours(*first_neighbour);
     const auto [two_rev_begin, two_rev_end] = m_graph.is_directed()
         ? m_graph.get_neighbours(*first_neighbour, true)
@@ -460,9 +460,9 @@ void MotifPreprocessor::emit_depth_1_2_3_for_third_vertex(KavoshContext& ctx,
     }
     if (is_new || is_depth_two_no_back_edge || is_depth_three)
     {
-        m_logger.log(LogLevel::DEBUG, 
-                        "Found group of structure 1 2 3 vertices: " 
-                        + std::to_string(ctx.root) + ", " + std::to_string(first_degree_vertex) + ", "+ std::to_string(second_degree_vertex) + ", " + std::to_string(third_degree_vertex)); 
+        //m_logger.log(LogLevel::DEBUG, 
+        //                "Found group of structure 1 2 3 vertices: " 
+        //                + std::to_string(ctx.root) + ", " + std::to_string(first_degree_vertex) + ", "+ std::to_string(second_degree_vertex) + ", " + std::to_string(third_degree_vertex)); 
 
         ctx.count_group(compute_motif_descriptor(group, ctx.adjacency_matrix), group);
     }
@@ -607,7 +607,7 @@ void MotifPreprocessor::stream_groups_to_counter_for_vertex(
 __uint128_t MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,
                                                       const std::vector<uint32_t>& node_colors)
 {
-    m_logger.log(LogLevel::DEBUG, "------------------ Calculating motif number for motif descriptor " + std::to_string(motif_descriptor) + " and node colors " + std::to_string(node_colors[0]) + ", " + std::to_string(node_colors[1]) + ", " + std::to_string(node_colors[2]) + ", " + std::to_string(node_colors[3]));
+    //m_logger.log(LogLevel::DEBUG, "------------------ Calculating motif number for motif descriptor " + std::to_string(motif_descriptor) + " and node colors " + std::to_string(node_colors[0]) + ", " + std::to_string(node_colors[1]) + ", " + std::to_string(node_colors[2]) + ", " + std::to_string(node_colors[3]));
     __uint128_t minimal_colors = ~static_cast<__uint128_t>(0);
     const std::unordered_map<uint32_t, MotifCanonical>& motif_map =
         m_graph.is_directed() ? DIRECTED_MOTIF_CANONICAL_MAP : UNDIRECTED_MOTIF_CANONICAL_MAP;
@@ -623,31 +623,31 @@ __uint128_t MotifPreprocessor::calculate_motif_number(const uint32_t motif_descr
                                             node_colors[color_permutation[color_index]])
                                         << (color_index * SgfConstants::BITS_PER_COLOR);
         }
-        for (size_t color_index = 0; color_index < SgfConstants::MOTIF_SIZE; ++color_index)
-        {
-            __uint128_t shifted_color = static_cast<__uint128_t>(node_colors[color_permutation[color_index]]) << (color_index * SgfConstants::BITS_PER_COLOR);
+        // for (size_t color_index = 0; color_index < SgfConstants::MOTIF_SIZE; ++color_index)
+        // {
+        //     //__uint128_t shifted_color = static_cast<__uint128_t>(node_colors[color_permutation[color_index]]) << (color_index * SgfConstants::BITS_PER_COLOR);
 
-            std::ostringstream oss;
-            oss << "Color index: " << color_index
-                << ", node color: " << node_colors[color_permutation[color_index]]
-                << ", shifted color: "
-                << std::setw(20) << std::setfill('0')
-                << static_cast<uint64_t>(shifted_color >> 64)
-                << std::setw(20) << std::setfill('0')
-                << static_cast<uint64_t>(shifted_color);
+        //     //std::ostringstream oss;
+        //     //oss << "Color index: " << color_index
+        //     //    << ", node color: " << node_colors[color_permutation[color_index]]
+        //     //    << ", shifted color: "
+        //     //    << std::setw(20) << std::setfill('0')
+        //     //    << static_cast<uint64_t>(shifted_color >> 64)
+        //     //    << std::setw(20) << std::setfill('0')
+        //     //    << static_cast<uint64_t>(shifted_color);
 
-            m_logger.log(LogLevel::DEBUG, oss.str());            
-        }
+        //     //m_logger.log(LogLevel::DEBUG, oss.str());            
+        // }
         minimal_colors = std::min(minimal_colors, color_permutation_number);
     }
-    std::ostringstream oss;
-    oss << "Minimal motif number: " << minimal_motif_num
-        << ", minimal colors: "
-        << std::setw(20) << std::setfill('0')
-        << static_cast<uint64_t>(minimal_colors >> 64);
+    // std::ostringstream oss;
+    // oss << "Minimal motif number: " << minimal_motif_num
+    //     << ", minimal colors: "
+    //     << std::setw(20) << std::setfill('0')
+    //     << static_cast<uint64_t>(minimal_colors >> 64);
 
-    m_logger.log(LogLevel::DEBUG, oss.str());
-    m_logger.log(LogLevel::DEBUG, "------------------------------------");
+    //m_logger.log(LogLevel::DEBUG, oss.str());
+    //m_logger.log(LogLevel::DEBUG, "------------------------------------");
     return (static_cast<__uint128_t>(minimal_motif_num)
             << (SgfConstants::MOTIF_SIZE * SgfConstants::BITS_PER_COLOR)) |
            minimal_colors;
