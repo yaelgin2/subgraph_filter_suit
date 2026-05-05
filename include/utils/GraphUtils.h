@@ -248,6 +248,7 @@ GraphUtils::extract_colored_edges(const GraphType& boost_graph, const GetColor& 
 template <typename GraphType, typename GetColor>
 bool GraphUtils::has_edge_colors(const GraphType& boost_graph, const GetColor& get_color)
 {
+    // NOLINTNEXTLINE(readability-use-anyofallof)
     for (const auto& edge_desc : boost::make_iterator_range(boost::edges(boost_graph)))
     {
         if (get_color(edge_desc) != 0U)
