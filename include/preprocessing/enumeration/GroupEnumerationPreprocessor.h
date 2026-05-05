@@ -171,7 +171,6 @@ protected:
                                                const std::vector<uint32_t>& node_colors) = 0;
 
 private:
-
     /**
      * @brief Node ordering used during enumeration.
      *

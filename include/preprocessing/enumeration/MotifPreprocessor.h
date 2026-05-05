@@ -93,11 +93,11 @@ private:
      */
     struct KavoshContext
     {
-        const std::vector<std::vector<bool>>& adjacency_matrix; ///< Full graph adjacency matrix.
+        const std::vector<std::vector<bool>>& adjacency_matrix;  ///< Full graph adjacency matrix.
         const GroupCounterCallback& count_group;                 ///< Callback for emitting groups.
-        const std::vector<bool>& ignore_vertices;               ///< Already-processed vertex mask.
-        std::vector<int64_t>& bfs_visited;                     ///< BFS depth-encoding array.
-        int64_t run_id;                                         ///< Root-unique run identifier.
+        const std::vector<bool>& ignore_vertices;                ///< Already-processed vertex mask.
+        std::vector<int64_t>& bfs_visited;                       ///< BFS depth-encoding array.
+        int64_t run_id;                                          ///< Root-unique run identifier.
         uint32_t root;                                           ///< Current root vertex.
     };
 
@@ -110,10 +110,11 @@ private:
      */
     struct NeighbourRange
     {
-        std::vector<uint32_t>::const_iterator begin;     ///< First outgoing neighbour.
-        std::vector<uint32_t>::const_iterator end;       ///< One past last outgoing neighbour.
-        std::vector<uint32_t>::const_iterator rev_begin; ///< First incoming neighbour (directed only).
-        std::vector<uint32_t>::const_iterator rev_end;   ///< One past last incoming neighbour.
+        std::vector<uint32_t>::const_iterator begin;  ///< First outgoing neighbour.
+        std::vector<uint32_t>::const_iterator end;    ///< One past last outgoing neighbour.
+        std::vector<uint32_t>::const_iterator
+            rev_begin;  ///< First incoming neighbour (directed only).
+        std::vector<uint32_t>::const_iterator rev_end;  ///< One past last incoming neighbour.
     };
 
     /// Low 2 bits of each bfs_visited entry encode BFS depth (0–3); upper bits hold run_id.
@@ -170,7 +171,8 @@ private:
      *
      * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
      * @param count_group Callback invoked for each discovered group.
-     * @param visited_vertices_to_ignore Vertices already fully processed (ignored as group members).
+     * @param visited_vertices_to_ignore Vertices already fully processed (ignored as group
+     * members).
      * @param bfs_visited_vertices Depth-encoding array shared across all root iterations.
      * @param root The vertex currently acting as root for BFS enumeration.
      */
@@ -178,8 +180,7 @@ private:
         const std::vector<std::vector<bool>>& graph_adjacency_matrix,
         const GroupCounterCallback& count_group,
         const std::vector<bool>& visited_vertices_to_ignore,
-        std::vector<int64_t>& bfs_visited_vertices,
-        const uint32_t root);
+        std::vector<int64_t>& bfs_visited_vertices, const uint32_t root);
 
     /**
      * @brief Mark every depth-1 neighbour of root in the BFS-visited array.
@@ -187,8 +188,7 @@ private:
      * @param ctx Shared run context; bfs_visited is updated in place.
      * @param depth_one Iterator range over root's direct neighbours.
      */
-    void mark_depth_one_neighbours(KavoshContext& ctx,
-                                   const NeighbourRange& depth_one) const;
+    void mark_depth_one_neighbours(KavoshContext& ctx, const NeighbourRange& depth_one) const;
 
     /**
      * @brief Emit all groups formed by root and three distinct depth-1 neighbours.
@@ -198,19 +198,18 @@ private:
      * @param ctx Shared run context.
      * @param depth_one Iterator range over root's direct neighbours.
      */
-    void emit_depth_1_1_1_groups(const KavoshContext& ctx,
-                                 const NeighbourRange& depth_one) const;
+    void emit_depth_1_1_1_groups(const KavoshContext& ctx, const NeighbourRange& depth_one) const;
 
-    void emit_depth_1_1_1_groups_first_vertex_chosen(const KavoshContext& ctx,
-                                                const NeighbourRange& depth_one,
-                                                std::vector<uint32_t>::const_iterator first_neighbour,
-                                                bool is_first_neighbour_reversed) const;
+    void emit_depth_1_1_1_groups_first_vertex_chosen(
+        const KavoshContext& ctx, const NeighbourRange& depth_one,
+        std::vector<uint32_t>::const_iterator first_neighbour,
+        bool is_first_neighbour_reversed) const;
 
-    void emit_depth_1_1_1_groups_second_vertex_chosen(const KavoshContext& ctx,
-                                            const NeighbourRange& depth_one,
-                                            std::vector<uint32_t>::const_iterator first_neighbour,
-                                            std::vector<uint32_t>::const_iterator second_neighbour,
-                                            bool is_second_neighbour_reversed) const;
+    void emit_depth_1_1_1_groups_second_vertex_chosen(
+        const KavoshContext& ctx, const NeighbourRange& depth_one,
+        std::vector<uint32_t>::const_iterator first_neighbour,
+        std::vector<uint32_t>::const_iterator second_neighbour,
+        bool is_second_neighbour_reversed) const;
 
     /**
      * @brief Mark neighbours of a depth-1 vertex as BFS depth-2 if not yet seen in this run.
@@ -218,8 +217,7 @@ private:
      * @param ctx Shared run context; bfs_visited is updated in place.
      * @param depth_two Iterator range over the depth-1 vertex's neighbours.
      */
-    void mark_depth_two_neighbours(KavoshContext& ctx,
-                                   const NeighbourRange& depth_two) const;
+    void mark_depth_two_neighbours(KavoshContext& ctx, const NeighbourRange& depth_two) const;
 
     /**
      * @brief Emit groups: root + first_neighbour (depth-1) + n11 (depth-1) + n2 (depth-2).
@@ -234,9 +232,9 @@ private:
      * @param depth_two All neighbours of first_neighbour (depth-2 candidates for n2).
      */
     void emit_depth_1_1_2_for_first_vertex(const KavoshContext& ctx,
-                                        std::vector<uint32_t>::const_iterator first_neighbour,
-                                        const NeighbourRange& depth_one,
-                                        const NeighbourRange& depth_two) const;
+                                           std::vector<uint32_t>::const_iterator first_neighbour,
+                                           const NeighbourRange& depth_one,
+                                           const NeighbourRange& depth_two) const;
 
     /**
      * @brief Emit (1,1,2) groups for a single fixed n2 vertex against all n11 candidates.
@@ -249,10 +247,10 @@ private:
      * @param depth_one Combined depth-1 range (fwd + rev).
      * @param n2_vertex The fixed depth-2 vertex.
      */
-    void emit_depth_1_1_2_for_second_vertex(const KavoshContext& ctx,
-                         std::vector<uint32_t>::const_iterator first_neighbour,
-                         const NeighbourRange& depth_one,
-                         std::vector<uint32_t>::const_iterator second_neighbour) const;
+    void emit_depth_1_1_2_for_second_vertex(
+        const KavoshContext& ctx, std::vector<uint32_t>::const_iterator first_neighbour,
+        const NeighbourRange& depth_one,
+        std::vector<uint32_t>::const_iterator second_neighbour) const;
 
     /**
      * @brief Build combined depth-2 range for @p first_neighbour and run (1,1,2)/(1,2,2) emission.
@@ -279,17 +277,18 @@ private:
      * @param depth_two All neighbours of first_neighbour (pool for depth-2 pair selection).
      */
     void emit_depth_1_2_2_for_first_vertex(const KavoshContext& ctx,
-                                        std::vector<uint32_t>::const_iterator first_neighbour,
-                                         const NeighbourRange& depth_two) const;
+                                           std::vector<uint32_t>::const_iterator first_neighbour,
+                                           const NeighbourRange& depth_two) const;
 
     void emit_depth_1_2_2_for_second_vertex(const KavoshContext& ctx,
-                                                       std::vector<uint32_t>::const_iterator first_neighbour,
-                                                       const NeighbourRange& depth_two,
-                                                       std::vector<uint32_t>::const_iterator second_neighbour,
-                                                       bool is_second_vertex_reversed) const;
+                                            std::vector<uint32_t>::const_iterator first_neighbour,
+                                            const NeighbourRange& depth_two,
+                                            std::vector<uint32_t>::const_iterator second_neighbour,
+                                            bool is_second_vertex_reversed) const;
 
     /**
-     * @brief For each depth-1 anchor, mark depth-2 reachability then emit (1,1,2) and (1,2,2) groups.
+     * @brief For each depth-1 anchor, mark depth-2 reachability then emit (1,1,2) and (1,2,2)
+     * groups.
      *
      * Outer driver for both depth variations that share the same depth-1 anchor loop.
      *
@@ -297,7 +296,7 @@ private:
      * @param depth_one Iterator range over root's direct neighbours.
      */
     void emit_depth_1_1_2_and_1_2_2_groups(KavoshContext& ctx,
-                                            const NeighbourRange& depth_one) const;
+                                           const NeighbourRange& depth_one) const;
 
     /**
      * @brief Enumerate BFS-depth-2 neighbours of n1 and delegate per-n2 group emission.
@@ -308,8 +307,7 @@ private:
      * @param first_degree_vertex The depth-1 anchor (n1).
      * @param second_degree Iterator range over n1's neighbours (depth-2 candidates).
      */
-    void emit_depth_1_2_3_for_first_vertex(KavoshContext& ctx,
-                                           uint32_t first_degree_vertex,
+    void emit_depth_1_2_3_for_first_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
                                            const NeighbourRange& second_degree) const;
 
     /**
@@ -324,11 +322,10 @@ private:
      * @param second_degree_vertex The depth-2 anchor (n2).
      * @param third_degree Iterator range over n2's neighbours (candidates for n3).
      */
-    void emit_depth_1_2_3_for_second_vertex(KavoshContext& ctx,
-                                            uint32_t first_degree_vertex,
+    void emit_depth_1_2_3_for_second_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
                                             uint32_t second_degree_vertex,
                                             const NeighbourRange& third_degree) const;
-                                        
+
     /**
      * @brief Emit one (1,2,3) group for a single n3 candidate, updating bfs_visited as needed.
      *
@@ -339,10 +336,9 @@ private:
      * @param second_degree_vertex The depth-2 anchor (n2).
      * @param n3_vertex The candidate depth-3 vertex.
      */
-    void emit_depth_1_2_3_for_third_vertex(KavoshContext& ctx,
-                         uint32_t first_degree_vertex,
-                         uint32_t second_degree_vertex,
-                         uint32_t third_degree_vertex) const;
+    void emit_depth_1_2_3_for_third_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
+                                           uint32_t second_degree_vertex,
+                                           uint32_t third_degree_vertex) const;
 
     /**
      * @brief Outermost driver for the (1, 2, 3) Kavosh depth variation.
@@ -353,8 +349,7 @@ private:
      * @param ctx Shared run context; bfs_visited may be updated.
      * @param depth_one Iterator range over root's direct neighbours.
      */
-    void emit_depth_1_2_3_groups(KavoshContext& ctx,
-                                 const NeighbourRange& depth_one) const;
+    void emit_depth_1_2_3_groups(KavoshContext& ctx, const NeighbourRange& depth_one) const;
 
     /**
      * @brief Combined (out + in) degree of @p vertex; out-degree only for undirected.
@@ -362,7 +357,6 @@ private:
      * @return Count of distinct neighbours in either direction.
      */
     size_t combined_degree(uint32_t vertex) const;
-
 };
 
 }  // namespace sgf

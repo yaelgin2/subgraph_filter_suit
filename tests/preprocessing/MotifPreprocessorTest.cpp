@@ -2,16 +2,14 @@
 
 #include "ColoredGraph.h"
 #include "Constants.h"
+#include "FileLogger.h"
 #include "ILogger.h"
 #include "LoggerHandler.h"
-
-#include "FileLogger.h"
-#include <memory>
-#include <string>
 
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -580,7 +578,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_30_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_31_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -593,7 +592,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_31_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_55_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -606,7 +606,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_55_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_63_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 3U}, {2U, 1U}, {2U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -632,7 +633,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_77_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_79_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -684,7 +686,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_86_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_87_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -710,7 +713,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_92_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_93_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -723,7 +727,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_93_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_94_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -736,7 +741,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_94_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_95_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 3U}, {2U, 1U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -775,7 +781,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_101_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_103_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -801,7 +808,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_106_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_107_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -814,7 +822,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_107_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_109_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -827,7 +836,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_109_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_110_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -840,7 +850,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_110_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_111_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 3U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -853,7 +864,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_111_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_115_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -879,7 +891,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_116_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_117_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -892,7 +905,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_117_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_118_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -905,7 +919,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_118_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_119_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -918,7 +933,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_119_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_122_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -931,7 +947,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_122_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_123_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -944,7 +961,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_123_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_124_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -957,7 +975,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_124_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_125_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -970,7 +989,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_125_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_126_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -983,7 +1003,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_126_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_127_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -996,7 +1017,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_127_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_220_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1009,7 +1031,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_220_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_221_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1022,7 +1045,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_221_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_223_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1048,7 +1072,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_228_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_229_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 0U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1061,7 +1086,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_229_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_230_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1074,7 +1100,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_230_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_231_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1087,7 +1114,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_231_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_237_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1100,7 +1128,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_237_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_238_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1113,7 +1142,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_238_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_239_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1126,7 +1156,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_239_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_246_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1139,7 +1170,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_246_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_247_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1152,7 +1184,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_247_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_255_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1165,7 +1198,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_255_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_295_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1178,7 +1212,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_295_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_302_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1191,7 +1226,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_302_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_303_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 3U}, {2U, 0U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1204,7 +1240,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_303_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_311_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1217,7 +1254,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_311_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_319_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1230,7 +1268,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_319_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_365_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1243,7 +1282,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_365_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_367_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1256,7 +1296,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_367_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_373_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1269,7 +1310,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_373_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_375_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1282,7 +1324,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_375_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_382_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1295,7 +1338,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_382_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_383_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1308,7 +1352,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_383_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_511_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1321,7 +1366,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_511_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_587_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {2U, 3U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1334,7 +1380,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_587_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_591_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 3U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1360,7 +1407,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_593_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_595_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1386,7 +1434,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_596_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_597_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 0U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1399,7 +1448,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_597_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_598_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {3U, 0U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1412,7 +1462,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_598_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_599_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1425,7 +1476,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_599_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_601_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1438,7 +1490,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_601_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_603_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1451,7 +1504,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_603_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_604_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1464,7 +1518,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_604_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_605_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1477,7 +1532,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_605_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_606_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1490,7 +1546,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_606_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_607_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1503,7 +1560,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_607_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_625_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1516,7 +1574,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_625_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_626_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1529,7 +1588,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_626_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_627_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1542,7 +1602,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_627_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_630_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1555,7 +1616,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_630_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_631_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1568,7 +1630,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_631_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_633_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1581,7 +1644,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_633_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_634_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1594,7 +1658,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_634_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_635_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1607,7 +1672,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_635_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_638_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1620,7 +1686,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_638_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_639_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1633,7 +1700,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_639_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_659_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1646,7 +1714,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_659_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_661_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 0U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1659,7 +1728,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_661_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_663_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 1U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1672,7 +1742,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_663_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_666_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {2U, 3U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1685,7 +1756,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_666_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_667_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1698,7 +1770,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_667_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_669_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1711,7 +1784,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_669_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_670_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1724,7 +1798,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_670_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_671_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1750,7 +1825,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_674_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_675_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1763,7 +1839,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_675_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_678_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1776,7 +1853,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_678_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_679_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U},
+                                                        {2U, 0U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1789,7 +1867,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_679_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_683_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1802,7 +1881,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_683_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_686_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1815,7 +1895,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_686_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_687_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1828,7 +1909,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_687_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_694_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1841,7 +1923,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_694_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_695_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1854,7 +1937,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_695_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_703_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1867,7 +1951,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_703_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_729_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 3U}, {2U, 1U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1880,7 +1965,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_729_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_731_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1893,7 +1979,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_731_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_732_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1906,7 +1993,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_732_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_733_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1919,7 +2007,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_733_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_735_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1932,7 +2021,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_735_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_737_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1945,7 +2035,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_737_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_739_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1958,7 +2049,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_739_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_741_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1971,7 +2063,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_741_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_742_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1984,7 +2077,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_742_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_743_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -1997,7 +2091,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_743_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_745_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 3U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2010,7 +2105,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_745_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_746_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2023,7 +2119,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_746_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_747_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2036,7 +2133,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_747_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_748_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2049,7 +2147,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_748_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_749_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2062,7 +2161,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_749_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_750_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2075,7 +2175,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_750_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_751_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2088,7 +2189,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_751_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_753_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2101,7 +2203,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_753_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_755_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2114,7 +2217,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_755_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_756_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2127,7 +2231,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_756_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_757_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2140,7 +2245,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_757_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_758_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2153,7 +2259,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_758_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_759_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2166,7 +2273,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_759_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_761_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {2U, 3U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2179,7 +2287,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_761_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_762_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2192,7 +2301,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_762_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_763_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2205,7 +2315,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_763_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_764_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2218,7 +2329,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_764_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_765_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2231,7 +2343,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_765_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_766_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2244,7 +2357,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_766_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_767_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2257,7 +2371,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_767_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_819_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2270,7 +2385,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_819_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_822_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2283,7 +2399,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_822_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_823_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2296,7 +2413,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_823_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_826_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2309,7 +2427,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_826_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_827_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2322,7 +2441,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_827_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_830_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2335,7 +2455,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_830_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_831_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2348,7 +2469,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_831_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_875_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2361,7 +2483,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_875_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_877_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2374,7 +2497,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_877_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_879_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2387,7 +2511,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_879_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_883_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2400,7 +2525,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_883_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_885_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2413,7 +2539,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_885_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_886_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2426,7 +2553,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_886_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_887_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2439,7 +2567,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_887_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_891_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2452,7 +2581,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_891_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_892_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2465,7 +2595,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_892_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_893_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2478,7 +2609,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_893_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_894_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2491,7 +2623,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_894_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_895_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2504,7 +2637,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_895_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_947_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2517,7 +2651,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_947_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_949_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2530,7 +2665,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_949_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_951_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2543,7 +2679,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_951_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_955_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2556,7 +2693,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_955_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_957_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2569,7 +2707,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_957_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_958_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2582,7 +2721,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_958_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_959_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2595,7 +2735,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_959_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1019_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2608,7 +2749,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1019_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1020_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2621,7 +2763,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1020_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1021_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2634,7 +2777,9 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1021_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1023_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U},
+                                                        {1U, 0U}, {0U, 3U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2647,7 +2792,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1023_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1755_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2660,7 +2806,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1755_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1757_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2673,7 +2820,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1757_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1758_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2686,7 +2834,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1758_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1759_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2699,7 +2848,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1759_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1782_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2712,7 +2862,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1782_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1783_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2725,7 +2876,9 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1783_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1791_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U},
+                                                        {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2738,7 +2891,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1791_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1883_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 3U}, {2U, 1U},
+                                                        {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2751,7 +2905,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1883_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1887_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2764,7 +2919,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1887_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1907_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {2U, 1U}, {2U, 0U},
+                                                        {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2777,7 +2933,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1907_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1911_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2790,7 +2947,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1911_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1917_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2803,7 +2961,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1917_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1918_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2816,7 +2975,9 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1918_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1919_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 0U},
+                                                        {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2829,7 +2990,8 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_1919_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_2029_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {
+        {3U, 2U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2842,7 +3004,9 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_2029_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_2031_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U},
+                                                        {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2855,7 +3019,9 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_2031_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_2039_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 1U},
+                                                        {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U},
+                                                        {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2868,7 +3034,9 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_2039_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_2047_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}, {0U, 2U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U},
+                                                        {1U, 0U}, {0U, 3U}, {0U, 2U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());
@@ -2881,7 +3049,9 @@ TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_2047_all_zero_colors)
 
 TEST_F(MotifPreprocessorTest, directed_four_vertex_motif_4095_all_zero_colors)
 {
-    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U}, {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U}, {1U, 0U}, {0U, 3U}, {0U, 2U}, {0U, 1U}};
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{3U, 2U}, {3U, 1U}, {3U, 0U}, {2U, 3U},
+                                                        {2U, 1U}, {2U, 0U}, {1U, 3U}, {1U, 2U},
+                                                        {1U, 0U}, {0U, 3U}, {0U, 2U}, {0U, 1U}};
     const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U};
     const ColoredGraph graph(4U, edges, colors, true);
     MotifPreprocessor preprocessor(graph, null_logger());

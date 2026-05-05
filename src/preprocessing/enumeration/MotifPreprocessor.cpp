@@ -8,9 +8,7 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <iomanip>
 #include <numeric>
-#include <sstream>
 #include <vector>
 
 namespace sgf

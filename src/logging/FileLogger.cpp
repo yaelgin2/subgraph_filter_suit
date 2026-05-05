@@ -22,6 +22,7 @@
 #include <boost/phoenix/operator.hpp>
 // Required for Boost.Phoenix operator expressions used
 // internally by Boost.Log sinks/formatters; false positive from include dependency analysis.
+#include <atomic>
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <cstddef>
@@ -29,7 +30,6 @@
 #include <ios>
 #include <ostream>
 #include <string>
-#include <atomic>
 
 std::atomic<int> sgf::FileLogger::s_next_id{0};
 
@@ -95,7 +95,8 @@ std::string to_level_label(const LogLevel level)
 }  // namespace
 
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-FileLogger::FileLogger(const std::string& file_name) : m_id(s_next_id.fetch_add(1, std::memory_order_relaxed))
+FileLogger::FileLogger(const std::string& file_name)
+    : m_id(s_next_id.fetch_add(1, std::memory_order_relaxed))
 {
     namespace logging = boost::log;
     namespace sinks = boost::log::sinks;

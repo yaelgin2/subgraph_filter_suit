@@ -3,10 +3,10 @@
 #include "ILogger.h"
 #include "LogLevel.h"
 
+#include <atomic>
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/trivial.hpp>
 #include <string>
-#include <atomic>
 
 namespace sgf
 {
