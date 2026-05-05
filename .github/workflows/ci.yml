@@ -25,11 +25,10 @@ jobs:
           sudo apt-get install -y build-essential cmake clang-tidy-17 clang-format-17 \
             libboost-graph-dev libboost-log-dev libboost-json-dev
 
-      - name: Setup MinGW-w64 (Windows)
+      - name: Add MinGW-w64 to PATH (Windows)
         if: runner.os == 'Windows'
-        uses: egor-tensin/setup-mingw@v2
-        with:
-          platform: x64
+        shell: pwsh
+        run: Add-Content $env:GITHUB_PATH "C:\msys64\mingw64\bin"
 
       - name: Check CMake (Windows)
         if: runner.os == 'Windows'
