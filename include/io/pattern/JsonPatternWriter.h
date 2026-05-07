@@ -2,7 +2,7 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
-#include "IPatternIOManager.h"
+#include "IPatternWriter.h"
 
 #include <boost/json/array.hpp>
 #include <boost/json/object.hpp>
@@ -12,7 +12,7 @@ namespace sgf
 {
 
 /**
- * @class JsonPatternIOManager
+ * @class JsonPatternWriter
  * @brief Reads and writes pattern graphs in JSON format.
  *
  * The JSON format is:
@@ -28,7 +28,7 @@ namespace sgf
  * Node IDs may be non-consecutive on read; they are remapped to dense
  * consecutive indices internally.
  */
-class JsonPatternIOManager : public IPatternIOManager
+class JsonPatternIOManager : public IPatternWriter
 {
 public:
     /**
@@ -48,21 +48,6 @@ public:
      * @throws SgfPathDoesntExistException if the file cannot be opened for writing.
      */
     void write(const BoostGraph& graph, const std::string& path) const override;
-
-    /**
-     * @brief Reads a pattern graph from a JSON file into a ColoredGraph.
-     *
-     * Parses the JSON nodes and links arrays. The graph is always built as
-     * directed. All links must carry a "color" field or none must; a mix
-     * throws GraphConstructionException.
-     *
-     * @param path Path to the JSON file.
-     * @return The parsed ColoredGraph.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
-     * @throws GraphConstructionException if the JSON is malformed or the
-     *         graph structure is invalid.
-     */
-    ColoredGraph read(const std::string& path) const override;
 
 private:
     /**

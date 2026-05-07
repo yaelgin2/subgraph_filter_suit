@@ -1,4 +1,4 @@
-#include "JsonPatternIOManager.h"
+#include "JsonPatternWriter.h"
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"

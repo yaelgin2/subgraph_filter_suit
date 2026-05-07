@@ -1,6 +1,6 @@
 #include "BoostGraph.h"
 #include "IOConstants.h"
-#include "JsonPatternIOManager.h"
+#include "JsonPatternWriter.h"
 #include "SgfPathDoesntExistException.h"
 
 #include <boost/graph/adjacency_list.hpp>
@@ -315,7 +315,7 @@ TEST_F(JsonPatternWriterTest, triangle_all_different_vertex_colors)
  * @brief Triangle graph where all three edges have distinct colors.
  *
  * Verifies that each edge's individual color is preserved independently.
- * Edge order in the JSON matches insertion order: 0→1, 1→2, 0→2.
+ * Edge order in the JSON follows per-vertex iteration: 0→1, 0→2, 1→2.
  */
 TEST_F(JsonPatternWriterTest, triangle_all_different_edge_colors)
 {
@@ -337,9 +337,9 @@ TEST_F(JsonPatternWriterTest, triangle_all_different_edge_colors)
     EXPECT_EQ(get_link(root, 0U).at(IOConstants::JSON_COLOR_KEY).as_int64(),
               static_cast<int64_t>(EDGE_COLOR_01));
     EXPECT_EQ(get_link(root, 1U).at(IOConstants::JSON_COLOR_KEY).as_int64(),
-              static_cast<int64_t>(EDGE_COLOR_12));
-    EXPECT_EQ(get_link(root, 2U).at(IOConstants::JSON_COLOR_KEY).as_int64(),
               static_cast<int64_t>(EDGE_COLOR_02));
+    EXPECT_EQ(get_link(root, 2U).at(IOConstants::JSON_COLOR_KEY).as_int64(),
+              static_cast<int64_t>(EDGE_COLOR_12));
 }
 
 // ── Edge cases ────────────────────────────────────────────────────────────────
