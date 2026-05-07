@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GraphmlIOConstants.h"
+#include "IOConstants.h"
 #include "IColoredGraphReader.h"
 #include "LoggerHandler.h"
 

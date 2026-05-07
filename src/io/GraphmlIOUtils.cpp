@@ -9,10 +9,8 @@
 
 namespace sgf
 {
-namespace graphml_io_utils
-{
 
-std::ifstream open_file(const std::string& path)
+std::ifstream GraphmlUtils::open_file(const std::string& path)
 {
     std::ifstream file(path);
     if (!file.is_open())
@@ -22,7 +20,7 @@ std::ifstream open_file(const std::string& path)
     return file;
 }
 
-std::ofstream open_output_file(const std::string& path)
+std::ofstream GraphmlUtils::open_output_file(const std::string& path)
 {
     std::ofstream file(path);
     if (!file.is_open())
@@ -32,7 +30,7 @@ std::ofstream open_output_file(const std::string& path)
     return file;
 }
 
-bool detect_is_directed(const std::string& path)
+bool GraphmlUtils::detect_is_directed(const std::string& path)
 {
     std::ifstream file = open_file(path);
     // NOLINTNEXTLINE(misc-const-correctness) -- std::getline writes to line
@@ -47,11 +45,10 @@ bool detect_is_directed(const std::string& path)
     return true;
 }
 
-[[noreturn]] void rethrow_as_construction_error(const std::string& path,
-                                                const std::exception& exc)
+[[noreturn]] void GraphmlUtils::rethrow_as_construction_error(const std::string& path,
+                                                              const std::exception& exc)
 {
     throw GraphConstructionException("Failed to read graphml '" + path + "': " + exc.what());
 }
 
-}  // namespace graphml_io_utils
 }  // namespace sgf

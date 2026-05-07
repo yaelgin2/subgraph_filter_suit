@@ -19,7 +19,7 @@ namespace sgf
 
 void GraphmlPatternWriter::write(const BoostGraph& graph, const std::string& path) const
 {
-    std::ofstream file = graphml_io_utils::open_output_file(path);
+    std::ofstream file = GraphmlUtils::open_output_file(path);
     // Boost's dynamic_properties::property() compiles the put() path unconditionally,
     // requiring a mutable graph even when write_graphml only reads properties.
     BoostGraph graph_copy = graph;

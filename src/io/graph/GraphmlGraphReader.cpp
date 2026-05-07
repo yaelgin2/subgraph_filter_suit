@@ -1,5 +1,7 @@
 #include "GraphmlGraphReader.h"
 
+#include "IOConstants.h"
+
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
 #include "GraphUtils.h"
@@ -25,10 +27,10 @@ template <typename GraphType>
 void GraphmlGraphReader::read_graphml_from_file_into_boost_graph(const std::string& path,
                                                                  GraphType& boost_graph)
 {
-    std::ifstream file = graphml_io_utils::open_file(path);
+    std::ifstream file = GraphmlUtils::open_file(path);
     boost::dynamic_properties dynamic_props(boost::ignore_other_properties);
-    dynamic_props.property("color", boost::get(&GraphmlVertexProperties::m_color, boost_graph));
-    dynamic_props.property("color", boost::get(&GraphmlEdgeProperties::m_color, boost_graph));
+    dynamic_props.property("color", boost::get(&IOConstants::GraphmlVertexProperties::m_color, boost_graph));
+    dynamic_props.property("color", boost::get(&IOConstants::GraphmlEdgeProperties::m_color, boost_graph));
     boost::read_graphml(file, boost_graph, dynamic_props);
 }
 
@@ -39,12 +41,12 @@ ColoredGraph GraphmlGraphReader::read_graphml_from_file(const std::string& path,
 {
     if (file_is_directed)
     {
-        GraphmlDirectedBoostGraph boost_graph;
+        IOConstants::GraphmlDirectedBoostGraph boost_graph;
         read_graphml_from_file_into_boost_graph(path, boost_graph);
         return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed,
                                                                 color_map);
     }
-    GraphmlUndirectedBoostGraph boost_graph;
+    IOConstants::GraphmlUndirectedBoostGraph boost_graph;
     read_graphml_from_file_into_boost_graph(path, boost_graph);
     return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed, color_map);
 }
@@ -78,7 +80,7 @@ ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_dir
 {
     try
     {
-        const bool file_is_directed = graphml_io_utils::detect_is_directed(path);
+        const bool file_is_directed = GraphmlUtils::detect_is_directed(path);
         if (!file_is_directed && is_directed)
         {
             throw GraphConstructionException(
@@ -93,19 +95,19 @@ ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_dir
     }
     catch (const boost::bad_any_cast& exc)
     {
-        graphml_io_utils::rethrow_as_construction_error(path, exc);
+        GraphmlUtils::rethrow_as_construction_error(path, exc);
     }
     catch (const boost::property_tree::ptree_bad_path& exc)
     {
-        graphml_io_utils::rethrow_as_construction_error(path, exc);
+        GraphmlUtils::rethrow_as_construction_error(path, exc);
     }
     catch (const boost::parse_error& exc)
     {
-        graphml_io_utils::rethrow_as_construction_error(path, exc);
+        GraphmlUtils::rethrow_as_construction_error(path, exc);
     }
     catch (const boost::property_tree::xml_parser::xml_parser_error& exc)
     {
-        graphml_io_utils::rethrow_as_construction_error(path, exc);
+        GraphmlUtils::rethrow_as_construction_error(path, exc);
     }
     // Unreachable: every catch arm calls [[noreturn]] rethrow_as_construction_error.
     // std::terminate() satisfies compilers that do not propagate [[noreturn]] across
