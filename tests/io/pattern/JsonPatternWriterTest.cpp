@@ -1,6 +1,7 @@
+#include "JsonPatternWriter.h"
+
 #include "BoostGraph.h"
 #include "IOConstants.h"
-#include "JsonPatternWriter.h"
 #include "SgfPathDoesntExistException.h"
 
 #include <boost/graph/adjacency_list.hpp>
@@ -47,11 +48,10 @@ protected:
     /**
      * @brief Adds a directed edge from @p src to @p dst with @p color to @p graph.
      */
-    static void add_edge_with_color(
-        BoostGraph& graph,
-        const boost::graph_traits<BoostGraph>::vertex_descriptor src,
-        const boost::graph_traits<BoostGraph>::vertex_descriptor dst,
-        const uint32_t color)
+    static void add_edge_with_color(BoostGraph& graph,
+                                    const boost::graph_traits<BoostGraph>::vertex_descriptor src,
+                                    const boost::graph_traits<BoostGraph>::vertex_descriptor dst,
+                                    const uint32_t color)
     {
         EdgeProperties props;
         props.m_color = color;

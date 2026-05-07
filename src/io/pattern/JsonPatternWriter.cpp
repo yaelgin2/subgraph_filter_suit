@@ -2,8 +2,8 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
-#include "IOConstants.h"
 #include "ILogger.h"
+#include "IOConstants.h"
 #include "JsonGraphReader.h"
 #include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
