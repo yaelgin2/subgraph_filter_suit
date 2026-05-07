@@ -28,12 +28,12 @@ public:
     /// @brief Directed Boost adjacency list used as intermediate parse target for GraphML files.
     using GraphmlDirectedBoostGraph =
         boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, GraphmlVertexProperties,
-                            GraphmlEdgeProperties>;
+                              GraphmlEdgeProperties>;
 
     /// @brief Undirected Boost adjacency list used as intermediate parse target for GraphML files.
     using GraphmlUndirectedBoostGraph =
         boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, GraphmlVertexProperties,
-                            GraphmlEdgeProperties>;
+                              GraphmlEdgeProperties>;
 };
 
 }  // namespace sgf

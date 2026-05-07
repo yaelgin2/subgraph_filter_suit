@@ -13,6 +13,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphml.hpp>
 #include <boost/property_map/dynamic_property_map.hpp>
+#include <boost/range/iterator_range_core.hpp>
 #include <cstdint>
 #include <fstream>
 #include <string>
@@ -31,12 +32,11 @@ void GraphmlPatternWriter::write(const BoostGraph& graph, const std::string& pat
     const uint32_t vertex_count = static_cast<uint32_t>(boost::num_vertices(graph));
     for (uint32_t index = 0; index < vertex_count; ++index)
     {
-        const IOConstants::GraphmlDirectedBoostGraph::vertex_descriptor v =
+        const IOConstants::GraphmlDirectedBoostGraph::vertex_descriptor vertex_descriptor =
             boost::add_vertex(string_graph);
-        string_graph[v].m_color = std::to_string(graph[index].m_color);
+        string_graph[vertex_descriptor].m_color = std::to_string(graph[index].m_color);
     }
-    for (const BoostGraph::edge_descriptor& edge :
-         boost::make_iterator_range(boost::edges(graph)))
+    for (const BoostGraph::edge_descriptor& edge : boost::make_iterator_range(boost::edges(graph)))
     {
         const BoostGraph::vertex_descriptor src = boost::source(edge, graph);
         const BoostGraph::vertex_descriptor dst = boost::target(edge, graph);
@@ -48,8 +48,8 @@ void GraphmlPatternWriter::write(const BoostGraph& graph, const std::string& pat
     boost::dynamic_properties dynamic_props;
     dynamic_props.property(
         "color", boost::get(&IOConstants::GraphmlVertexProperties::m_color, string_graph));
-    dynamic_props.property(
-        "color", boost::get(&IOConstants::GraphmlEdgeProperties::m_color, string_graph));
+    dynamic_props.property("color",
+                           boost::get(&IOConstants::GraphmlEdgeProperties::m_color, string_graph));
     boost::write_graphml(file, string_graph, dynamic_props);
 }
 

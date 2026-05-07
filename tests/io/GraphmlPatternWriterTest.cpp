@@ -1,9 +1,9 @@
-#include "GraphmlGraphReader.h"
 #include "GraphmlPatternWriter.h"
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
 #include "ColoredGraphTestHelpers.h"
+#include "GraphmlGraphReader.h"
 #include "ILogger.h"
 #include "LoggerHandler.h"
 #include "SgfPathDoesntExistException.h"
@@ -286,8 +286,7 @@ TEST_F(GraphmlPatternWriterTest, triangle_all_different_vertex_colors_directed)
     boost::add_edge(v0, v1, graph);
     boost::add_edge(v1, v2, graph);
     boost::add_edge(v0, v2, graph);
-    const ColoredGraph result =
-        round_trip(graph, "writer_triangle_diff_colors_directed.graphml");
+    const ColoredGraph result = round_trip(graph, "writer_triangle_diff_colors_directed.graphml");
     EXPECT_EQ(result.vertex_count(), 3U);
     EXPECT_EQ(result.edge_count(), 3U);
     EXPECT_NE(result.get_vertex_color(0), result.get_vertex_color(1));

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "IOConstants.h"
 #include "IColoredGraphReader.h"
+#include "IOConstants.h"
 #include "LoggerHandler.h"
 
 #include <cstdint>

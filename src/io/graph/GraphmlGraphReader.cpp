@@ -1,11 +1,10 @@
 #include "GraphmlGraphReader.h"
 
-#include "IOConstants.h"
-
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
 #include "GraphUtils.h"
 #include "GraphmlIOUtils.h"
+#include "IOConstants.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 
@@ -29,8 +28,10 @@ void GraphmlGraphReader::read_graphml_from_file_into_boost_graph(const std::stri
 {
     std::ifstream file = GraphmlUtils::open_file(path);
     boost::dynamic_properties dynamic_props(boost::ignore_other_properties);
-    dynamic_props.property("color", boost::get(&IOConstants::GraphmlVertexProperties::m_color, boost_graph));
-    dynamic_props.property("color", boost::get(&IOConstants::GraphmlEdgeProperties::m_color, boost_graph));
+    dynamic_props.property("color",
+                           boost::get(&IOConstants::GraphmlVertexProperties::m_color, boost_graph));
+    dynamic_props.property("color",
+                           boost::get(&IOConstants::GraphmlEdgeProperties::m_color, boost_graph));
     boost::read_graphml(file, boost_graph, dynamic_props);
 }
 
