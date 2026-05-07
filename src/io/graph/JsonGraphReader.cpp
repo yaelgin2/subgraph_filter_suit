@@ -2,6 +2,7 @@
 
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
+#include "IOConstants.h"
 #include "IoGraphUtils.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
@@ -29,12 +30,6 @@ namespace sgf
 namespace
 {
 
-constexpr const char* NODES_KEY = "nodes";
-constexpr const char* LINKS_KEY = "links";
-constexpr const char* NODE_ID_KEY = "id";
-constexpr const char* COLOR_KEY = "color";
-constexpr const char* SOURCE_KEY = "source";
-constexpr const char* TARGET_KEY = "target";
 constexpr const char* ERR_FAILED_TO_READ = "Failed to read JSON '";
 constexpr const char* ERR_NOT_AN_OBJECT = "JSON root is not an object in '";
 constexpr const char* ERR_MIXED_COLORS =
@@ -120,15 +115,16 @@ JsonGraphReader::collect_node_colors(const boost::json::array& nodes_array)
         for (const auto& node_value : nodes_array)
         {
             const boost::json::object& node_object = node_value.as_object();
-            const int64_t node_id_raw = node_object.at(NODE_ID_KEY).as_int64();
+            const int64_t node_id_raw = node_object.at(IOConstants::JSON_NODE_ID_KEY).as_int64();
             if (node_id_raw < 0 || node_id_raw > std::numeric_limits<uint32_t>::max())
             {
                 throw GraphConstructionException("Invalid node id: " + std::to_string(node_id_raw));
             }
             const uint32_t node_id = static_cast<uint32_t>(node_id_raw);
             const std::pair<std::unordered_map<uint32_t, uint32_t>::iterator, bool> insert_result =
-                color_by_id.emplace(node_id,
-                                    static_cast<uint32_t>(node_object.at(COLOR_KEY).as_int64()));
+                color_by_id.emplace(
+                    node_id,
+                    static_cast<uint32_t>(node_object.at(IOConstants::JSON_COLOR_KEY).as_int64()));
             if (!insert_result.second)
             {
                 throw GraphConstructionException("duplicate node id: " + std::to_string(node_id));
@@ -159,7 +155,7 @@ bool JsonGraphReader::detect_edge_colors(const boost::json::array& links_array)
     size_t colored_count = 0;
     for (const auto& link_value : links_array)
     {
-        if (as_link_object(link_value).contains(COLOR_KEY))
+        if (as_link_object(link_value).contains(IOConstants::JSON_COLOR_KEY))
         {
             ++colored_count;
         }
@@ -179,9 +175,9 @@ std::pair<uint32_t, uint32_t> JsonGraphReader::extract_link_endpoints(
     try
     {
         const uint32_t source_index = consecutive_index_by_original_id.at(
-            static_cast<uint32_t>(link_object.at(SOURCE_KEY).as_int64()));
+            static_cast<uint32_t>(link_object.at(IOConstants::JSON_SOURCE_KEY).as_int64()));
         const uint32_t target_index = consecutive_index_by_original_id.at(
-            static_cast<uint32_t>(link_object.at(TARGET_KEY).as_int64()));
+            static_cast<uint32_t>(link_object.at(IOConstants::JSON_TARGET_KEY).as_int64()));
         return {source_index, target_index};
     }
     catch (const boost::system::system_error& exc)
@@ -207,7 +203,8 @@ std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> JsonGraphReader::extract_c
             const boost::json::object& link_object = as_link_object(link_value);
             const std::pair<uint32_t, uint32_t> endpoints =
                 extract_link_endpoints(link_object, consecutive_index_by_original_id);
-            const uint32_t edge_color = static_cast<uint32_t>(link_object.at(COLOR_KEY).as_int64());
+            const uint32_t edge_color =
+                static_cast<uint32_t>(link_object.at(IOConstants::JSON_COLOR_KEY).as_int64());
             edges.emplace_back(endpoints.first, endpoints.second, edge_color);
         }
     }
@@ -252,8 +249,8 @@ ColoredGraph JsonGraphReader::read(const std::string& path, bool is_directed,
                                    const LoggerHandler& logger) const
 {
     const boost::json::object root_object = parse_json_object(path);
-    const boost::json::array& nodes_array = extract_array(root_object, NODES_KEY);
-    const boost::json::array& links = extract_array(root_object, LINKS_KEY);
+    const boost::json::array& nodes_array = extract_array(root_object, IOConstants::JSON_NODES_KEY);
+    const boost::json::array& links = extract_array(root_object, IOConstants::JSON_LINKS_KEY);
     const std::unordered_map<uint32_t, uint32_t> color_by_id = collect_node_colors(nodes_array);
     const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
         IoGraphUtils::build_consecutive_index_map(color_by_id);
