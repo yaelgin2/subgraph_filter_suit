@@ -2,7 +2,7 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
-#include "IPatternIOManager.h"
+#include "IPatternWriter.h"
 
 #include <exception>
 #include <fstream>
@@ -50,7 +50,7 @@ using UndirectedStringBoostGraph =
  * GraphML file into a ColoredGraph, auto-detecting graph direction from the
  * file's edgedefault attribute.
  */
-class GraphmlPatternIOManager : public IPatternIOManager
+class GraphmlPatternIOManager : public IPatternWriter
 {
 public:
     /**
@@ -63,20 +63,6 @@ public:
      * @throws SgfPathDoesntExistException if the file cannot be opened for writing.
      */
     void write(const BoostGraph& graph, const std::string& path) const override;
-
-    /**
-     * @brief Reads a ColoredGraph from a GraphML file.
-     *
-     * Direction is auto-detected from the file's edgedefault attribute.
-     * Color attributes are mapped from strings to sequential uint32_t IDs.
-     *
-     * @param path Path to the GraphML file.
-     * @return The parsed ColoredGraph.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
-     * @throws GraphConstructionException if the file is malformed or the
-     *         graph structure is invalid.
-     */
-    ColoredGraph read(const std::string& path) const override;
 
 private:
     /**
