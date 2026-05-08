@@ -5,7 +5,6 @@
 #include "GraphUtils.h"
 #include "GraphmlIOUtils.h"
 #include "IOConstants.h"
-#include "IoGraphUtils.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 
