@@ -1,7 +1,6 @@
 #pragma once
 
 #include "IColoredGraphReader.h"
-#include "IoGraphUtils.h"
 #include "IOConstants.h"
 #include "LoggerHandler.h"
 
