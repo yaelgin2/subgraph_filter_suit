@@ -1,43 +1,15 @@
 #pragma once
 
 #include "IColoredGraphReader.h"
-#include "IoGraphUtils.h"
+#include "IOConstants.h"
 #include "LoggerHandler.h"
 
-#include <boost/graph/adjacency_list.hpp>
-#include <exception>
-#include <fstream>
+#include <cstdint>
 #include <map>
 #include <string>
 
 namespace sgf
 {
-
-/**
- * @brief Bundled vertex property carrying a color label for Boost.Graph.
- */
-struct GraphmlVertexProperties
-{
-    std::string m_color = "0";
-};
-
-/**
- * @brief Bundled edge property carrying a color label for Boost.Graph.
- */
-struct GraphmlEdgeProperties
-{
-    std::string m_color = "0";
-};
-
-/// Boost adjacency list for directed GraphML files.
-using GraphmlDirectedBoostGraph =
-    boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, GraphmlVertexProperties,
-                          GraphmlEdgeProperties>;
-
-/// Boost adjacency list for undirected GraphML files.
-using GraphmlUndirectedBoostGraph =
-    boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, GraphmlVertexProperties,
-                          GraphmlEdgeProperties>;
 
 /**
  * @brief Reads a ColoredGraph from a GraphML file using Boost.Graph.
@@ -92,16 +64,7 @@ private:
      * to directed.
      *
      * @param path Path to the GraphML file.
-     * @return True if the graph is directed or no @c edgedefault was found.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
-     */
-    static bool detect_is_directed(const std::string& path);
-
-    /**
-     * @brief Reads a GraphML file into a Boost graph.
-     * @tparam GraphType A Boost adjacency_list type.
-     * @param path Path to the GraphML file.
-     * @param boost_graph BoostGraph to read into.
+     * @param boost_graph Graph to populate.
      */
     template <typename GraphType>
     static void read_graphml_from_file_into_boost_graph(const std::string& path,
@@ -109,7 +72,6 @@ private:
 
     /**
      * @brief Reads a GraphML file into a ColoredGraph using the correct Boost graph type.
-     *
      * @param path Path to the GraphML file.
      * @param file_is_directed Whether the file declares directed edges.
      * @param is_directed Whether to build a directed ColoredGraph.
