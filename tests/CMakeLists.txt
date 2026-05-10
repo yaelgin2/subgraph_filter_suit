@@ -37,7 +37,7 @@ add_sgf_test(motif_preprocessor_tests    preprocessing/MotifPreprocessorTest.cpp
 add_sgf_test(graphml_reader_tests io/graph/GraphmlGraphReaderTest.cpp)
 add_sgf_test(json_reader_tests    io/graph/JsonGraphReaderTest.cpp)
 add_sgf_test(vertex_edge_reader_tests io/graph/VertexEdgeGraphReaderTest.cpp)
-
+add_sgf_test(path_processor_tests      preprocessing/PathProcessorTest.cpp)
 
 # The graphml reader tests need to locate the test-data directory at compile time.
 target_compile_definitions(graphml_reader_tests PRIVATE

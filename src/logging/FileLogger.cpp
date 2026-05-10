@@ -11,8 +11,7 @@
 #include <boost/log/expressions/formatters/stream.hpp>
 #include <boost/log/expressions/message.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/log/sources/severity_feature.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 // NOLINTNEXTLINE(misc-include-cleaner):
 #include <boost/log/support/date_time.hpp>
 //  Required for Boost.Log formatting and Phoenix operator
@@ -25,6 +24,8 @@
 // Required for Boost.Phoenix operator expressions used
 // internally by Boost.Log sinks/formatters; false positive from include dependency analysis.
 #include <atomic>
+#include <boost/log/sources/severity_feature.hpp>
+#include <boost/log/sources/severity_logger.hpp>
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <cstddef>
@@ -36,6 +37,8 @@
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::atomic<uint32_t> sgf::FileLogger::s_next_id{0U};
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+std::atomic<bool> sgf::FileLogger::s_is_initialized{false};
 
 namespace sgf
 {
@@ -103,29 +106,44 @@ FileLogger::FileLogger(const std::string& file_name)
     : m_id(s_next_id.fetch_add(1, std::memory_order_relaxed))
 {
     namespace logging = boost::log;
-    namespace sinks = boost::log::sinks;
     namespace expr = boost::log::expressions;
 
-    m_logger.add_attribute(LOGGER_ID_KEY, boost::log::attributes::constant<uint32_t>(m_id));
+    m_logger.add_attribute(LOGGER_ID_KEY,
+                           boost::log::attributes::constant<int32_t>(static_cast<int32_t>(m_id)));
 
-    const boost::shared_ptr<std::ofstream> file_stream =
-        boost::make_shared<std::ofstream>(file_name, std::ios::app);
-    if (!file_stream->is_open())
+    m_file_stream = boost::make_shared<std::ofstream>(file_name, std::ios::app);
+    if (!m_file_stream->is_open())
     {
         throw SgfPathDoesntExistException("Failed to open log file: " + file_name);
     }
 
-    using TextSink = sinks::synchronous_sink<sinks::text_ostream_backend>;
-    const boost::shared_ptr<TextSink> sink = boost::make_shared<TextSink>();
-    sink->locked_backend()->add_stream(boost::static_pointer_cast<std::ostream>(file_stream));
-    sink->set_formatter(expr::stream << expr::format_date_time<boost::posix_time::ptime>(
-                                            "TimeStamp", "%Y-%m-%d %H:%M:%S")
-                                     << " " << expr::smessage);
+    m_sink = boost::make_shared<TextSink>();
 
-    sink->set_filter(expr::attr<uint32_t>(LOGGER_ID_KEY) == m_id);
+    m_sink->locked_backend()->add_stream(boost::static_pointer_cast<std::ostream>(m_file_stream));
+    m_sink->locked_backend()->auto_flush(true);
 
-    logging::core::get()->add_sink(sink);
-    logging::add_common_attributes();
+    m_sink->set_formatter(expr::stream << expr::format_date_time<boost::posix_time::ptime>(
+                                              "TimeStamp", "%Y-%m-%d %H:%M:%S")
+                                       << " " << expr::smessage);
+
+    m_sink->set_filter(expr::attr<int32_t>(LOGGER_ID_KEY) == static_cast<int32_t>(m_id));
+
+    logging::core::get()->add_sink(m_sink);
+    initialize_logging();
+}
+
+FileLogger::~FileLogger()
+{
+    m_sink->flush();
+    boost::log::core::get()->remove_sink(m_sink);
+}
+
+void FileLogger::initialize_logging()
+{
+    if (!s_is_initialized.exchange(true))
+    {
+        boost::log::add_common_attributes();
+    }
 }
 
 void FileLogger::log(const LogLevel level, const std::string& message)

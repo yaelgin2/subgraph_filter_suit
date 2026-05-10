@@ -29,10 +29,10 @@ GroupEnmerationPreprocessor::GroupEnmerationPreprocessor(const ColoredGraph& gra
 {
 }
 
-std::unordered_map<__uint128_t, uint32_t> GroupEnmerationPreprocessor::calculate()
+std::unordered_map<__int128_t, uint32_t> GroupEnmerationPreprocessor::calculate()
 {
     m_logger.log(LogLevel::INFO, "Starting graph enumeration calculation.");
-    std::unordered_map<__uint128_t, uint32_t> motif_count;
+    std::unordered_map<__int128_t, uint32_t> motif_count;
 
     // Build full adjacency matrix and establish node traversal order.
     std::vector<std::vector<bool>> graph_adjacency_matrix;

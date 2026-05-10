@@ -13,21 +13,22 @@ namespace std
 {
 
 /**
- * @brief Hash specialization for __uint128_t (GCC extension, no std::hash by default).
+ * @brief Hash specialization for __int128_t (GCC extension, no std::hash by default).
  */
 template <>
-struct hash<__uint128_t>
+struct hash<__int128_t>
 {
     /**
      * @brief Hashes a 128-bit unsigned integer.
      * @param value The value to hash.
      * @return Combined hash of the high and low 64-bit halves.
      */
-    size_t operator()(const __uint128_t value) const noexcept
+    size_t operator()(const __int128_t value) const noexcept
     {
         constexpr uint32_t high_bits_shift = 64U;
         constexpr size_t hash_mix_shift = 1U;
-        const uint64_t high = static_cast<uint64_t>(value >> high_bits_shift);
+        const uint64_t high =
+            static_cast<uint64_t>(static_cast<__uint128_t>(value) >> high_bits_shift);
         const uint64_t low = static_cast<uint64_t>(value);
         return std::hash<uint64_t>{}(high) ^ (std::hash<uint64_t>{}(low) << hash_mix_shift);
     }
@@ -114,18 +115,25 @@ public:
      *
      * @return Map of motif identifier to occurrence count.
      */
-    std::unordered_map<__uint128_t, uint32_t> calculate();
+    std::unordered_map<__int128_t, uint32_t> calculate();
 
 protected:
+    /**
+     * @brief Graph instance being processed.
+     */
+    const ColoredGraph& m_graph;
+
     /**
      * @brief Logger used for runtime messages.
      */
     LoggerHandler m_logger;
 
     /**
-     * @brief Graph instance being processed.
+     * @brief Node ordering used during enumeration.
+     *
+     * Typically populated by sort_nodes().
      */
-    const ColoredGraph& m_graph;
+    std::vector<uint32_t> m_node_order;
 
     /**
      * @brief Sort graph nodes before enumeration.
@@ -167,17 +175,10 @@ protected:
      *
      * @return Unique numeric motif identifier.
      */
-    virtual __uint128_t calculate_motif_number(uint32_t motif_descriptor,
-                                               const std::vector<uint32_t>& node_colors) = 0;
+    virtual __int128_t calculate_motif_number(uint32_t motif_descriptor,
+                                              const std::vector<uint32_t>& node_colors) = 0;
 
 private:
-    /**
-     * @brief Node ordering used during enumeration.
-     *
-     * Typically populated by sort_nodes().
-     */
-    std::vector<uint32_t> m_node_order;
-
     /**
      * @brief Convert the full graph into an adjacency matrix.
      *
