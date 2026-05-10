@@ -339,7 +339,7 @@ GitHub Actions (`.github/workflows/ci.yml`, on `develop` branch) runs on Linux a
 run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
 # clang-tidy step — add -p:
-run: find . -name '*.cpp' -not -path './build/*' | xargs clang-tidy -p build/
+run: find src -name '*.cpp' -not -path './build/*' | xargs clang-tidy -p build/
 ```
 
 Both `.clang-format` and `.clang-tidy` are picked up automatically by the tools — no extra flags needed to point at them.
