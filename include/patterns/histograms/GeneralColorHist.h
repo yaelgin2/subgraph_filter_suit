@@ -1,99 +1,76 @@
 #pragma once
 
-#include <vector>
 #include <cstdint>
-#include <utility>
-#include <unordered_map>
+#include <memory>
+#include <tuple>
+#include <vector>
 
-#include "Node.h"
-#include "Graph.h"
+namespace sgf
+{
 
 /**
  * @class GeneralColorHist
- * @brief Maintains a histogram of trees that have appearances by color and pattern depth.
+ * @brief Tracks how many distinct trees can still be extended at each (depth, color) cell.
  *
- * The histogram is a 2D structure:
+ * The histogram is indexed as `m_number_of_trees[depth][color]`:
+ *  - depth: position in the pattern being expanded (grows on demand).
+ *  - color: vertex color in the underlying graph.
  *
- *     m_number_of_neighbours[color][depth]
- *
- * where:
- *  - color ∈ [0, C)
- *  - depth ∈ [0, MAX_S)
- *
- * This structure is used to decide which color and which depth in the pattern
- * should be extended next, based on the maximum number of compatible neighbors.
+ * Used by the pattern expander to choose the next (color, depth) pair to extend.
  */
-class GeneralColorHist {
-private:
-    /**
-     * @brief Histogram matrix.
-     *
-     * m_number_of_neighbours[c][d] stores how many neighbors of color `c`
-     * are compatible with extending the pattern at depth `d`.
-     */
-    std::vector<std::vector<uint32_t>> m_number_of_trees;
-
-    /// Number of distinct colors in the graph
-    int32_t C;
-
-private:
-    /**
-     * @brief Computes the softmax of a vector of uint32_t values.
-     * 
-     * @param input Vector of uint32_t values.
-     * @return Vector of doubles representing the softmax probabilities.
-     */
-    std::vector<double> compute_softmax(const std::vector<uint32_t>& input) const;
-    int32_t num_colors;
-
-    std::vector<double> global_color_prob;
-
-    bool is_color_available(uint32_t c);
-    uint32_t get_color_support(uint32_t c);
-    int32_t get_best_node_to_connect_for_color(int32_t c, uint32_t threshold);
-
-
-
+class GeneralColorHist
+{
 public:
     /**
-     * @brief Construct a IndevidualColorHist object.
-     *
-     * @param num_colors Number of distinct colors (C)
-     * @param max_s Maximum depth / pattern size
+     * @brief Construct an empty histogram for the given color count.
+     * @param num_colors Number of distinct vertex colors in the graph.
      */
-    GeneralColorHist(int32_t num_colors);
+    explicit GeneralColorHist(uint32_t num_colors);
 
     /**
-     * @brief Select the best color and depth to extend next.
+     * @brief Choose a (color, depth) pair to extend next.
      *
-     * Scans the entire histogram and returns the (color, depth) pair
-     * with the maximum number of compatible neighbors.
+     * Cells whose tree count is below @p threshold or zero are skipped. When
+     * @p is_random is true, the result is sampled with weights proportional to
+     * the cell's tree count; otherwise the last-scanned candidate is returned.
      *
-     * @return std::pair<color, depth>
-     *         - color: color index with maximum support
-     *         - depth: pattern depth where extension is most promising
+     * @param threshold Minimum tree count for a cell to be considered.
+     * @param is_random If true, perform weighted random sampling.
+     * @return Tuple `{color, depth, weight}`; all -1/0 if no candidate exists.
      */
-    /// @brief Returns the color, vertex to connect and weight of the best candidate
-    std::tuple<int32_t, int32_t, uint32_t> get_color_to_add(uint32_t threshold=0, bool is_random=true); ;
+    std::tuple<int32_t, int32_t, uint32_t>
+    get_color_to_add(uint32_t threshold = 0U, bool is_random = true);
 
     /**
-     * @brief Increase number of trees that stay valid if color is added as neighbour at depth.
+     * @brief Increment the tree count for a (depth, color) cell, growing rows as needed.
+     * @param pattern_depth Depth within the pattern being extended.
+     * @param current_vertex_color Color of the vertex that adds support.
      */
-    void update_hist_increase_tree_count(
-        const uint32_t pattern_depth,
-        const uint32_t current_vertex_color);
+    void update_hist_increase_tree_count(uint32_t pattern_depth,
+                                         uint32_t current_vertex_color);
 
     /**
-     * @brief Decrease number of trees that stay valid if color is added as neighbour at depth.
+     * @brief Decrement the tree count for an existing (depth, color) cell.
+     * @param pattern_depth Depth within the pattern being extended.
+     * @param current_vertex_color Color of the vertex that loses support.
      */
-    void update_hist_decrease_tree_count(
-        const uint32_t pattern_depth,
-        const uint32_t current_vertex_color);
+    void update_hist_decrease_tree_count(uint32_t pattern_depth,
+                                         uint32_t current_vertex_color);
 
+    /**
+     * @brief Returns the configured number of distinct colors.
+     * @return Color count provided at construction.
+     */
+    uint32_t get_color_count() const
+    {
+        return m_num_colors;
+    }
 
-    uint32_t get_color_number() const { return C; }
-
-   
+private:
+    std::vector<std::vector<uint32_t>> m_number_of_trees;  ///< [depth][color] -> tree count.
+    uint32_t m_num_colors;                                  ///< Number of distinct colors.
 };
 
 using GeneralColorHistPtr = std::shared_ptr<GeneralColorHist>;
+
+}  // namespace sgf
