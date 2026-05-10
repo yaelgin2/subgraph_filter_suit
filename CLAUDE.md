@@ -293,6 +293,8 @@ subgraph_filter_suit/
 │   ├── preprocessing/
 │   ├── filtering/
 │   ├── patterns/
+|   |   ├──tree
+|   |   └──histograms
 │   └── utils/
 ├── src/
 │   ├── graph/
@@ -305,6 +307,8 @@ subgraph_filter_suit/
 │   ├── preprocessing/
 │   ├── filtering/
 │   ├── patterns/
+|   |   ├──tree
+|   |   └──histograms
 │   ├── utils/
 │   └── cli/              # main() for sgf-graph-enumerator, sgf-pattern-finder, sgf-matrix
 ├── tests/
@@ -318,6 +322,8 @@ subgraph_filter_suit/
 │   ├── preprocessing/
 │   ├── filtering/
 │   ├── patterns/
+|   |   ├──tree
+|   |   └──histograms
 │   └── utils/
 ├── .clang-format
 ├── .clang-tidy
