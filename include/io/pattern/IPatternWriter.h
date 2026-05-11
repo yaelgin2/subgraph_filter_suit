@@ -11,10 +11,9 @@ namespace sgf
 {
 
 /**
- * @brief Interface for reading and writing pattern graphs.
+ * @brief Interface for writing pattern graphs.
  *
- * Implementors handle format-specific serialization and deserialization.
- * write() persists a BoostGraph to disk; read() loads a ColoredGraph from disk.
+ * Implementors handle format-specific serialization of a BoostGraph to disk.
  * All I/O errors must be wrapped as SgfException subclasses — no raw standard
  * exceptions may propagate to the caller.
  */
