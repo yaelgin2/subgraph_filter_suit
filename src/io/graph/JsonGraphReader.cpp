@@ -103,6 +103,8 @@ boost::json::object JsonGraphReader::parse_json_object(const std::string& path)
     {
         rethrow_as_construction_error(path, exc.what());
     }
+    // Unreachable: rethrow_as_construction_error is [[noreturn]].
+    std::terminate();
 }
 
 std::unordered_map<uint32_t, uint32_t>
