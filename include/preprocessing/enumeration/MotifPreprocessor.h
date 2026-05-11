@@ -81,8 +81,8 @@ protected:
      * @param node_colors Color labels of the four vertices in group order.
      * @return Canonical 128-bit motif identifier.
      */
-    __uint128_t calculate_motif_number(uint32_t motif_descriptor,
-                                       const std::vector<uint32_t>& node_colors) override;
+    __int128_t calculate_motif_number(uint32_t motif_descriptor,
+                                      const std::vector<uint32_t>& node_colors) override;
 
 private:
     /**

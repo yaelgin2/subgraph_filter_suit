@@ -52,7 +52,7 @@ private:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
     static std::atomic<bool> s_is_initialized;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    static std::atomic<int> s_next_id;
+    static std::atomic<uint32_t> s_next_id;
     uint32_t m_id;
 
     boost::log::sources::severity_logger<boost::log::trivial::severity_level> m_logger;

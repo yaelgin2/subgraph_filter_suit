@@ -568,8 +568,8 @@ void MotifPreprocessor::stream_groups_to_counter_for_vertex(
     emit_depth_1_2_3_groups(ctx, depth_one);
 }
 
-__uint128_t MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,
-                                                      const std::vector<uint32_t>& node_colors)
+__int128_t MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,
+                                                     const std::vector<uint32_t>& node_colors)
 {
     __uint128_t minimal_colors = ~static_cast<__uint128_t>(0);
     const std::unordered_map<uint32_t, MotifCanonical>& motif_map =
@@ -588,9 +588,11 @@ __uint128_t MotifPreprocessor::calculate_motif_number(const uint32_t motif_descr
         }
         minimal_colors = std::min(minimal_colors, color_permutation_number);
     }
-    return (static_cast<__uint128_t>(minimal_motif_num)
-            << static_cast<uint32_t>(SgfConstants::MOTIF_SIZE * SgfConstants::BITS_PER_COLOR)) |
-           minimal_colors;
+    const __uint128_t result =
+        (static_cast<__uint128_t>(minimal_motif_num)
+         << static_cast<uint32_t>(SgfConstants::MOTIF_SIZE * SgfConstants::BITS_PER_COLOR)) |
+        minimal_colors;
+    return static_cast<__int128_t>(result);
 }
 
 uint32_t MotifPreprocessor::compute_motif_descriptor(
