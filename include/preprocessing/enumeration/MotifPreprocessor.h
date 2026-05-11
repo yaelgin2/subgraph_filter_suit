@@ -344,8 +344,8 @@ private:
      * Shared by both the forward and reverse n3 loops in emit_depth_1_2_3_for_second_vertex.
      *
      * @param ctx Shared run context; bfs_visited may be updated.
-     * @param first_degree_vertex The depth-1 anchor (n1).
-     * @param second_degree_vertex The depth-2 anchor (n2).
+     * @param first_degree_vertex The depth-1 anchor.
+     * @param second_degree_vertex The depth-2 anchor.
      * @param third_degree_vertex The candidate depth-3 vertex.
      */
     void emit_depth_1_2_3_for_third_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
