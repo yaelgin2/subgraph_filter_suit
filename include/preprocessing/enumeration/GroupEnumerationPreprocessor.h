@@ -4,37 +4,35 @@
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <unordered_map>
 #include <vector>
 
-namespace std
+namespace sgf
 {
 
 /**
- * @brief Hash specialization for __int128_t (GCC extension, no std::hash by default).
+ * @brief Hash functor for __int128_t (GCC extension; no std::hash specialization by default).
  */
-template <>
-struct hash<__int128_t>
+struct Int128Hash
 {
     /**
-     * @brief Hashes a 128-bit unsigned integer.
+     * @brief Hashes a 128-bit integer.
      * @param value The value to hash.
      * @return Combined hash of the high and low 64-bit halves.
      */
     size_t operator()(const __int128_t value) const noexcept
     {
-        constexpr uint32_t high_bits_shift = 64U;
-        constexpr size_t hash_mix_shift = 1U;
+        constexpr uint32_t HIGH_BITS_SHIFT = 64U;
+        constexpr size_t HASH_MIX_SHIFT = 1U;
         const uint64_t high =
-            static_cast<uint64_t>(static_cast<__uint128_t>(value) >> high_bits_shift);
+            static_cast<uint64_t>(static_cast<__uint128_t>(value) >> HIGH_BITS_SHIFT);
         const uint64_t low = static_cast<uint64_t>(value);
-        return std::hash<uint64_t>{}(high) ^ (std::hash<uint64_t>{}(low) << hash_mix_shift);
+        return std::hash<uint64_t>{}(high) ^ (std::hash<uint64_t>{}(low) << HASH_MIX_SHIFT);
     }
 };
-
-}  // namespace std
 
 /**
  * @brief Callback invoked once per discovered group during enumeration.
@@ -49,11 +47,8 @@ struct hash<__int128_t>
 using GroupCounterCallback = std::function<void(uint32_t group_structure_descriptor,
                                                 const std::vector<uint32_t>& group_vertex_ids)>;
 
-namespace sgf
-{
-
 /**
- * @class GroupEnmerationPreprocessor
+ * @class GroupEnumerationPreprocessor
  * @brief Abstract base class for graph group enumeration and motif preprocessing.
  *
  * This class provides a reusable framework for enumerating groups of vertices
@@ -62,46 +57,42 @@ namespace sgf
  *
  * The class performs the common pipeline:
  * 1. Build a graph adjacency matrix.
- * 2. Sort nodes according to a derived strategy.
+ * 2. Sort nodes according to combined degree.
  * 3. Discover candidate groups.
  * 4. Build per-group adjacency matrices.
  * 5. Convert each group into a motif identifier.
  * 6. Count motif frequencies.
  *
  * Derived classes must implement:
- * - node ordering logic,
  * - group discovery logic,
  * - motif encoding logic.
  *
  * @note This class is abstract and intended for inheritance only.
- * @note The graph object is shared using std::shared_ptr.
  */
-class GroupEnmerationPreprocessor
+class GroupEnumerationPreprocessor
 {
 
 public:
     /**
-     * @brief Construct a new GroupEnmerationPreprocessor.
+     * @brief Construct a new GroupEnumerationPreprocessor.
      *
-     * @param graph Shared pointer to the graph to process.
+     * @param graph The graph to process.
      * @param logger Logger handler used for status/debug output.
-     *
-     * @throws std::invalid_argument Recommended if graph is null.
      */
-    GroupEnmerationPreprocessor(const ColoredGraph& graph, LoggerHandler logger);
+    GroupEnumerationPreprocessor(const ColoredGraph& graph, LoggerHandler logger);
 
-    GroupEnmerationPreprocessor() = default;
-    GroupEnmerationPreprocessor(const GroupEnmerationPreprocessor&) = delete;
-    GroupEnmerationPreprocessor& operator=(const GroupEnmerationPreprocessor&) = delete;
-    GroupEnmerationPreprocessor(GroupEnmerationPreprocessor&&) = delete;
-    GroupEnmerationPreprocessor& operator=(GroupEnmerationPreprocessor&&) = delete;
+    GroupEnumerationPreprocessor() = delete;
+    GroupEnumerationPreprocessor(const GroupEnumerationPreprocessor&) = delete;
+    GroupEnumerationPreprocessor& operator=(const GroupEnumerationPreprocessor&) = delete;
+    GroupEnumerationPreprocessor(GroupEnumerationPreprocessor&&) = delete;
+    GroupEnumerationPreprocessor& operator=(GroupEnumerationPreprocessor&&) = delete;
 
     /**
      * @brief Virtual destructor.
      *
      * Ensures proper destruction through base pointers.
      */
-    virtual ~GroupEnmerationPreprocessor() = default;
+    virtual ~GroupEnumerationPreprocessor() = default;
 
     /**
      * @brief Run the full group enumeration pipeline.
@@ -115,7 +106,7 @@ public:
      *
      * @return Map of motif identifier to occurrence count.
      */
-    std::unordered_map<__int128_t, uint32_t> calculate();
+    std::unordered_map<__int128_t, uint32_t, Int128Hash> calculate();
 
 protected:
     /**
@@ -131,23 +122,25 @@ protected:
     /**
      * @brief Node ordering used during enumeration.
      *
-     * Typically populated by sort_nodes().
+     * Populated by sort_nodes() before group discovery begins.
      */
     std::vector<uint32_t> m_node_order;
 
     /**
-     * @brief Sort graph nodes before enumeration.
-     *
-     * Derived classes implement the ordering strategy and typically populate
-     * m_node_order.
-     *
-     * Ordering may improve:
-     * - deterministic traversal,
-     * - pruning,
-     * - performance,
-     * - symmetry reduction.
+     * @brief Combined (out + in) degree of @p vertex; out-degree only for undirected.
+     * @param vertex Vertex to query.
+     * @return Count of distinct neighbours in either direction.
      */
-    virtual void sort_nodes() = 0;
+    size_t combined_degree(uint32_t vertex) const;
+
+    /**
+     * @brief Sort graph nodes by combined degree (descending) before enumeration.
+     *
+     * Populates m_node_order with vertex indices ordered by decreasing combined degree.
+     * Higher-degree nodes are processed first, which reduces the number of
+     * candidate groups that need full evaluation.
+     */
+    virtual void sort_nodes();
 
     /**
      * @brief Enumerate groups of vertices and report each one via callback.
@@ -161,7 +154,7 @@ protected:
      */
     virtual void
     stream_groups_to_counter(const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-                             const GroupCounterCallback& count_group) = 0;
+                             const GroupCounterCallback& count_group) const = 0;
 
     /**
      * @brief Convert a group into a unique motif identifier.
@@ -171,12 +164,12 @@ protected:
      * - internal edge structure.
      *
      * @param motif_descriptor Numeric motif/color/group descriptor for the group.
-     * @param edges Adjacency matrix of the group.
+     * @param node_colors Color labels of the group's vertices in traversal order.
      *
      * @return Unique numeric motif identifier.
      */
     virtual __int128_t calculate_motif_number(uint32_t motif_descriptor,
-                                              const std::vector<uint32_t>& node_colors) = 0;
+                                              const std::vector<uint32_t>& node_colors) const = 0;
 
 private:
     /**
@@ -187,7 +180,7 @@ private:
      *
      * @param adjacency_matrix Output matrix to populate.
      */
-    void graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix);
+    void graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix) const;
 
     /**
      * @brief Extract node colors for a specific group of vertices.
@@ -198,7 +191,7 @@ private:
      * @param group Vertex identifiers belonging to the group.
      * @return Color labels corresponding to each vertex in @p group.
      */
-    std::vector<uint32_t> group_to_node_colors(const std::vector<uint32_t>& group);
+    std::vector<uint32_t> group_to_node_colors(const std::vector<uint32_t>& group) const;
 };
 
 }  // namespace sgf

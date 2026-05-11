@@ -15,7 +15,7 @@ namespace sgf
  * @class MotifPreprocessor
  * @brief Computes 4-node motif frequency signatures for a colored graph.
  *
- * Extends GroupEnmerationPreprocessor to enumerate all 4-node induced
+ * Extends GroupEnumerationPreprocessor to enumerate all 4-node induced
  * subgraphs, canonicalize each via color permutation using the precomputed
  * DIRECTED_MOTIF_CANONICAL_MAP / UNDIRECTED_MOTIF_CANONICAL_MAP, and count
  * occurrences per canonical motif identifier.
@@ -24,7 +24,7 @@ namespace sgf
  * canonical color assignment, making it invariant to color permutations that
  * preserve the motif shape.
  */
-class MotifPreprocessor : public GroupEnmerationPreprocessor
+class MotifPreprocessor : public GroupEnumerationPreprocessor
 {
 public:
     /**
@@ -48,15 +48,6 @@ public:
 
 protected:
     /**
-     * @brief Sort graph nodes by degree (descending) to improve enumeration pruning.
-     *
-     * Populates m_node_order with vertex indices ordered by decreasing degree.
-     * Higher-degree nodes are processed first, which reduces the number of
-     * candidate groups that need full evaluation.
-     */
-    void sort_nodes() override;
-
-    /**
      * @brief Enumerate all 4-node induced subgraphs and report each via callback.
      *
      * Iterates over ordered vertex combinations, checks connectivity of each
@@ -67,7 +58,7 @@ protected:
      * @param count_group Callback invoked for each discovered group.
      */
     void stream_groups_to_counter(const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-                                  const GroupCounterCallback& count_group) override;
+                                  const GroupCounterCallback& count_group) const override;
 
     /**
      * @brief Canonicalize a 4-node group into a unique motif identifier.
@@ -82,7 +73,7 @@ protected:
      * @return Canonical 128-bit motif identifier.
      */
     __int128_t calculate_motif_number(uint32_t motif_descriptor,
-                                      const std::vector<uint32_t>& node_colors) override;
+                                      const std::vector<uint32_t>& node_colors) const override;
 
 private:
     /**
@@ -123,11 +114,6 @@ private:
     static constexpr uint64_t BFS_DEPTH_THREE_OFFSET = 3;
     /// Right-shift applied to a bfs_visited entry to recover the run identifier (= root vertex id).
     static constexpr uint64_t BFS_VERTEX_RUN_SHIFT = 2;
-
-    /**
-     * @brief Vertex traversal order, populated by sort_nodes().
-     */
-    std::vector<uint32_t> m_node_order;
 
     /**
      * @brief Encode the edge structure of a 4-node group as an integer bitmask.
@@ -180,7 +166,7 @@ private:
         const std::vector<std::vector<bool>>& graph_adjacency_matrix,
         const GroupCounterCallback& count_group,
         const std::vector<bool>& visited_vertices_to_ignore,
-        std::vector<int64_t>& bfs_visited_vertices, uint32_t root);
+        std::vector<int64_t>& bfs_visited_vertices, uint32_t root) const;
 
     /**
      * @brief Mark every depth-1 neighbour of root in the BFS-visited array.
@@ -200,11 +186,28 @@ private:
      */
     void emit_depth_1_1_1_groups(const KavoshContext& ctx, const NeighbourRange& depth_one) const;
 
+    /**
+     * @brief Emit (1,1,1) groups for a fixed first depth-1 neighbour, iterating remaining pairs.
+     *
+     * @param ctx Shared run context.
+     * @param depth_one Iterator range over root's direct neighbours.
+     * @param first_neighbour The chosen first depth-1 vertex.
+     * @param is_first_neighbour_reversed True if first_neighbour was reached via a reverse edge.
+     */
     void emit_depth_1_1_1_groups_first_vertex_chosen(
         const KavoshContext& ctx, const NeighbourRange& depth_one,
         std::vector<uint32_t>::const_iterator first_neighbour,
         bool is_first_neighbour_reversed) const;
 
+    /**
+     * @brief Emit (1,1,1) groups for fixed first and second depth-1 neighbours.
+     *
+     * @param ctx Shared run context.
+     * @param depth_one Iterator range over root's direct neighbours.
+     * @param first_neighbour The chosen first depth-1 vertex.
+     * @param second_neighbour The chosen second depth-1 vertex.
+     * @param is_second_neighbour_reversed True if second_neighbour was reached via a reverse edge.
+     */
     void emit_depth_1_1_1_groups_second_vertex_chosen(
         const KavoshContext& ctx, const NeighbourRange& depth_one,
         std::vector<uint32_t>::const_iterator first_neighbour,
@@ -245,7 +248,7 @@ private:
      * @param ctx Shared run context.
      * @param first_neighbour The depth-1 anchor (n1).
      * @param depth_one Combined depth-1 range (fwd + rev).
-     * @param n2_vertex The fixed depth-2 vertex.
+     * @param second_neighbour The fixed depth-2 vertex.
      */
     void emit_depth_1_1_2_for_second_vertex(
         const KavoshContext& ctx, std::vector<uint32_t>::const_iterator first_neighbour,
@@ -280,6 +283,15 @@ private:
                                            std::vector<uint32_t>::const_iterator first_neighbour,
                                            const NeighbourRange& depth_two) const;
 
+    /**
+     * @brief Emit (1,2,2) groups for a fixed first depth-2 vertex against remaining candidates.
+     *
+     * @param ctx Shared run context.
+     * @param first_neighbour The depth-1 anchor.
+     * @param depth_two Combined depth-2 range (fwd + rev) for pair selection.
+     * @param second_neighbour The chosen first depth-2 vertex.
+     * @param is_second_vertex_reversed True if second_neighbour was reached via a reverse edge.
+     */
     void emit_depth_1_2_2_for_second_vertex(const KavoshContext& ctx,
                                             std::vector<uint32_t>::const_iterator first_neighbour,
                                             const NeighbourRange& depth_two,
@@ -329,12 +341,12 @@ private:
     /**
      * @brief Emit one (1,2,3) group for a single n3 candidate, updating bfs_visited as needed.
      *
-     * Shared by both the forward and reverse n3 loops in emit_depth_1_2_3_for_second_degree.
+     * Shared by both the forward and reverse n3 loops in emit_depth_1_2_3_for_second_vertex.
      *
      * @param ctx Shared run context; bfs_visited may be updated.
      * @param first_degree_vertex The depth-1 anchor (n1).
      * @param second_degree_vertex The depth-2 anchor (n2).
-     * @param n3_vertex The candidate depth-3 vertex.
+     * @param third_degree_vertex The candidate depth-3 vertex.
      */
     void emit_depth_1_2_3_for_third_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
                                            uint32_t second_degree_vertex,
@@ -344,19 +356,12 @@ private:
      * @brief Outermost driver for the (1, 2, 3) Kavosh depth variation.
      *
      * Iterates non-ignored depth-1 neighbours of root and delegates to
-     * emit_depth_1_2_3_for_first_degree for each.
+     * emit_depth_1_2_3_for_first_vertex for each.
      *
      * @param ctx Shared run context; bfs_visited may be updated.
      * @param depth_one Iterator range over root's direct neighbours.
      */
     void emit_depth_1_2_3_groups(KavoshContext& ctx, const NeighbourRange& depth_one) const;
-
-    /**
-     * @brief Combined (out + in) degree of @p vertex; out-degree only for undirected.
-     * @param vertex Vertex to query.
-     * @return Count of distinct neighbours in either direction.
-     */
-    size_t combined_degree(uint32_t vertex) const;
 };
 
 }  // namespace sgf

@@ -8,6 +8,12 @@
 #include <unordered_map>
 #include <vector>
 
+namespace sgf
+{
+
+using NeighbourIteratorPair =
+    std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>;
+
 /**
  * @brief Ordered sequence of (vertex, traversal-direction) hops forming one half-path.
  *
@@ -15,9 +21,6 @@
  * (false = outgoing, true = incoming; only meaningful in directed graphs).
  */
 using PathInformation = std::vector<std::pair<uint32_t, bool>>;
-
-namespace sgf
-{
 
 /**
  * @brief A half-open iterator range over a vertex's sorted neighbour list.
@@ -32,7 +35,7 @@ struct NeighbourRange
  * @class PathProcessor
  * @brief Enumerates all simple 4-edge paths (5 distinct vertices) in a colored graph.
  *
- * Extends GroupEnmerationPreprocessor to enumerate all simple paths consisting
+ * Extends GroupEnumerationPreprocessor to enumerate all simple paths consisting
  * of exactly 4 edges (5 distinct vertices). Each path is treated as rooted at
  * its middle vertex; two pairs of depth-1 and depth-2 neighbours are combined
  * to form the full path. Pairs sharing any vertex are discarded to ensure simplicity.
@@ -42,7 +45,7 @@ struct NeighbourRange
  * lexicographically smaller of the forward and reversed representations so that
  * opposite-direction traversals of the same undirected path yield the same identifier.
  */
-class PathProcessor : public GroupEnmerationPreprocessor
+class PathProcessor : public GroupEnumerationPreprocessor
 {
 public:
     /**
@@ -65,15 +68,6 @@ public:
 
 protected:
     /**
-     * @brief Sort graph nodes by descending degree to prioritise high-connectivity midpoints.
-     *
-     * Populates m_node_order with vertex indices ordered by decreasing degree.
-     * High-degree vertices are processed first as path midpoints, which maximises
-     * the number of valid pairs found early and reduces redundant expansion.
-     */
-    void sort_nodes() override;
-
-    /**
      * @brief Enumerate all simple 4-edge paths and report each via callback.
      *
      * Iterates over all vertices in m_node_order. For each root vertex, all pairs
@@ -86,7 +80,7 @@ protected:
      */
     void stream_groups_to_counter(
         [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-        const GroupCounterCallback& count_group) override;
+        const GroupCounterCallback& count_group) const override;
 
     /**
      * @brief Encode a 4-edge path into a canonical 128-bit motif identifier.
@@ -102,7 +96,7 @@ protected:
      * @return Canonical 128-bit path identifier.
      */
     __int128_t calculate_motif_number(uint32_t motif_descriptor,
-                                      const std::vector<uint32_t>& node_colors) override;
+                                      const std::vector<uint32_t>& node_colors) const override;
 
     /**
      * @brief Enumerate all 4-edge paths rooted at @p root.
@@ -116,7 +110,7 @@ protected:
      * @param root The middle vertex of each enumerated path.
      */
     void stream_groups_to_counter_for_vertex(const GroupCounterCallback& count_group,
-                                             uint32_t root);
+                                             uint32_t root) const;
 
     /**
      * @brief Enumerate paths for all pairs within the outgoing neighbour list of @p root.
@@ -127,14 +121,12 @@ protected:
      *
      * @param count_group Callback invoked for each emitted path.
      * @param root The middle vertex of each enumerated path.
-     * @param depth_one_out_start Iterator to the start of the outgoing neighbour list.
-     * @param depth_one_out_end Iterator past the end of the outgoing neighbour list.
-     * @param depth_one_in_start Iterator to the start of the incoming neighbour list.
-     * @param depth_one_in_end Iterator past the end of the incoming neighbour list.
+     * @param depth_one_out Half-open range over the root's outgoing neighbours.
+     * @param depth_one_in Half-open range over the root's incoming neighbours.
      */
     void stream_groups_for_out_neighbours(const GroupCounterCallback& count_group, uint32_t root,
                                           NeighbourRange depth_one_out,
-                                          NeighbourRange depth_one_in);
+                                          NeighbourRange depth_one_in) const;
 
     /**
      * @brief Enumerate paths for all pairs within the incoming neighbour list of @p root.
@@ -149,7 +141,8 @@ protected:
      */
     void stream_groups_for_in_neighbours(const GroupCounterCallback& count_group, uint32_t root,
                                          std::vector<uint32_t>::const_iterator depth_one_in_start,
-                                         std::vector<uint32_t>::const_iterator depth_one_in_end);
+                                         std::vector<uint32_t>::const_iterator depth_one_in_end)
+        const;
 
 private:
     /**
@@ -202,7 +195,7 @@ private:
     void stream_groups_to_counter_for_two_depth_one_neighbours(
         const GroupCounterCallback& count_group, uint32_t root,
         std::vector<uint32_t>::const_iterator first_depth_one_neighbour,
-        std::vector<uint32_t>::const_iterator second_depth_one_neighbour);
+        std::vector<uint32_t>::const_iterator second_depth_one_neighbour) const;
 
     /**
      * @brief Enumerate paths for a depth-1 neighbour pair with fixed depth-2 directions.
@@ -218,7 +211,7 @@ private:
     void stream_groups_to_counter_for_two_depth_one_neighbours(
         const GroupCounterCallback& count_group, uint32_t root,
         const DepthOneNeighbourInfo& first_neighbour_info,
-        const DepthOneNeighbourInfo& second_neighbour_info);
+        const DepthOneNeighbourInfo& second_neighbour_info) const;
 
     /**
      * @brief Compute the canonical direction descriptor for the reverse traversal of a path.
@@ -255,7 +248,7 @@ private:
      * @param second_path Right 2-hop half-path.
      * @return Vertex index sequence of length PATH_VERTEX_COUNT.
      */
-    static std::vector<uint32_t> concatinate_path(uint32_t root, const PathInformation& first_path,
+    static std::vector<uint32_t> concatenate_path(uint32_t root, const PathInformation& first_path,
                                                   const PathInformation& second_path);
 
     /**
@@ -269,7 +262,7 @@ private:
      * @return Bit-packed direction descriptor (4 bits), or 0 for undirected graphs.
      */
     uint32_t compute_motif_descriptor(const PathInformation& first_path,
-                                      const PathInformation& second_path);
+                                      const PathInformation& second_path) const;
 };
 
 }  // namespace sgf

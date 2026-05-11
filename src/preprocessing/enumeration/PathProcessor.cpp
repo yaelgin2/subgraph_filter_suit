@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
-#include <numeric>
 #include <utility>
 #include <vector>
 
@@ -15,34 +14,13 @@ namespace sgf
 {
 
 PathProcessor::PathProcessor(const ColoredGraph& graph, LoggerHandler logger)
-    : GroupEnmerationPreprocessor(graph, std::move(logger))
+    : GroupEnumerationPreprocessor(graph, std::move(logger))
 {
-}
-
-void PathProcessor::sort_nodes()
-{
-    const uint32_t vertex_count = m_graph.vertex_count();
-
-    m_node_order.resize(vertex_count);
-    std::iota(m_node_order.begin(), m_node_order.end(), 0U);
-
-    std::sort(m_node_order.begin(), m_node_order.end(),
-              [this](const uint32_t left_vertex, const uint32_t right_vertex)
-              {
-                  const std::pair<std::vector<uint32_t>::const_iterator,
-                                  std::vector<uint32_t>::const_iterator>
-                      left_neighbours = m_graph.get_neighbours(left_vertex);
-                  const std::pair<std::vector<uint32_t>::const_iterator,
-                                  std::vector<uint32_t>::const_iterator>
-                      right_neighbours = m_graph.get_neighbours(right_vertex);
-                  return std::distance(left_neighbours.first, left_neighbours.second) >
-                         std::distance(right_neighbours.first, right_neighbours.second);
-              });
 }
 
 void PathProcessor::stream_groups_to_counter(
     [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-    const GroupCounterCallback& count_group)
+    const GroupCounterCallback& count_group) const
 {
     for (const uint32_t vertex : m_node_order)
     {
@@ -51,7 +29,7 @@ void PathProcessor::stream_groups_to_counter(
 }
 
 __int128_t PathProcessor::calculate_motif_number(const uint32_t motif_descriptor,
-                                                 const std::vector<uint32_t>& node_colors)
+                                                 const std::vector<uint32_t>& node_colors) const
 {
     __uint128_t forward_color_sequence = 0U;
     for (const uint32_t vertex_color : node_colors)
@@ -98,8 +76,9 @@ uint32_t PathProcessor::compute_reversed_descriptor(const uint32_t motif_descrip
 }
 
 void PathProcessor::stream_groups_for_out_neighbours(const GroupCounterCallback& count_group,
-                                                     uint32_t root, NeighbourRange depth_one_out,
-                                                     NeighbourRange depth_one_in)
+                                                     const uint32_t root,
+                                                     const NeighbourRange depth_one_out,
+                                                     const NeighbourRange depth_one_in) const
 {
     for (std::vector<uint32_t>::const_iterator first_neighbour_it = depth_one_out.m_begin;
          first_neighbour_it != depth_one_out.m_end; ++first_neighbour_it)
@@ -125,7 +104,7 @@ void PathProcessor::stream_groups_for_out_neighbours(const GroupCounterCallback&
 void PathProcessor::stream_groups_for_in_neighbours(
     const GroupCounterCallback& count_group, const uint32_t root,
     std::vector<uint32_t>::const_iterator depth_one_in_start,
-    std::vector<uint32_t>::const_iterator depth_one_in_end)
+    std::vector<uint32_t>::const_iterator depth_one_in_end) const
 {
     for (std::vector<uint32_t>::const_iterator first_neighbour_it = depth_one_in_start;
          first_neighbour_it != depth_one_in_end; ++first_neighbour_it)
@@ -140,24 +119,24 @@ void PathProcessor::stream_groups_for_in_neighbours(
 }
 
 void PathProcessor::stream_groups_to_counter_for_vertex(const GroupCounterCallback& count_group,
-                                                        const uint32_t root)
+                                                        const uint32_t root) const
 {
-    const auto [depth_one_out_start, depth_one_out_end] = m_graph.get_neighbours(root, false);
-    const auto [depth_one_in_start, depth_one_in_end] = m_graph.get_neighbours(root, true);
+    const NeighbourIteratorPair out_range = m_graph.get_neighbours(root, false);
+    const NeighbourIteratorPair in_range = m_graph.get_neighbours(root, true);
 
-    stream_groups_for_out_neighbours(count_group, root, {depth_one_out_start, depth_one_out_end},
-                                     {depth_one_in_start, depth_one_in_end});
+    stream_groups_for_out_neighbours(count_group, root, {out_range.first, out_range.second},
+                                     {in_range.first, in_range.second});
 
     if (m_graph.is_directed())
     {
-        stream_groups_for_in_neighbours(count_group, root, depth_one_in_start, depth_one_in_end);
+        stream_groups_for_in_neighbours(count_group, root, in_range.first, in_range.second);
     }
 }
 
 void PathProcessor::stream_groups_to_counter_for_two_depth_one_neighbours(
     const GroupCounterCallback& count_group, const uint32_t root,
     std::vector<uint32_t>::const_iterator first_depth_one_neighbour,
-    std::vector<uint32_t>::const_iterator second_depth_one_neighbour)
+    std::vector<uint32_t>::const_iterator second_depth_one_neighbour) const
 {
     stream_groups_to_counter_for_two_depth_one_neighbours(
         count_group, root, DepthOneNeighbourInfo{first_depth_one_neighbour, false},
@@ -179,22 +158,22 @@ void PathProcessor::stream_groups_to_counter_for_two_depth_one_neighbours(
 void PathProcessor::stream_groups_to_counter_for_two_depth_one_neighbours(
     const GroupCounterCallback& count_group, const uint32_t root,
     const DepthOneNeighbourInfo& first_neighbour_info,
-    const DepthOneNeighbourInfo& second_neighbour_info)
+    const DepthOneNeighbourInfo& second_neighbour_info) const
 {
-    const auto [depth_two_one_start, depth_two_one_end] =
+    const NeighbourIteratorPair depth_two_one =
         m_graph.get_neighbours(*first_neighbour_info.m_iterator, first_neighbour_info.m_direction);
-    const auto [depth_two_two_start, depth_two_two_end] = m_graph.get_neighbours(
+    const NeighbourIteratorPair depth_two_two = m_graph.get_neighbours(
         *second_neighbour_info.m_iterator, second_neighbour_info.m_direction);
 
-    for (std::vector<uint32_t>::const_iterator first_depth_two = depth_two_one_start;
-         first_depth_two != depth_two_one_end; ++first_depth_two)
+    for (std::vector<uint32_t>::const_iterator first_depth_two = depth_two_one.first;
+         first_depth_two != depth_two_one.second; ++first_depth_two)
     {
         if (*first_depth_two == root)
         {
             continue;
         }
-        for (std::vector<uint32_t>::const_iterator second_depth_two = depth_two_two_start;
-             second_depth_two != depth_two_two_end; ++second_depth_two)
+        for (std::vector<uint32_t>::const_iterator second_depth_two = depth_two_two.first;
+             second_depth_two != depth_two_two.second; ++second_depth_two)
         {
             if (*second_depth_two == root)
             {
@@ -210,7 +189,7 @@ void PathProcessor::stream_groups_to_counter_for_two_depth_one_neighbours(
             if (!check_path_intersection(full_first_path, full_second_path))
             {
                 const std::vector<uint32_t> path =
-                    concatinate_path(root, full_first_path, full_second_path);
+                    concatenate_path(root, full_first_path, full_second_path);
                 count_group(compute_motif_descriptor(full_first_path, full_second_path), path);
             }
         }
@@ -225,7 +204,7 @@ bool PathProcessor::check_path_intersection(const PathInformation& first_path,
            first_path[1].first == second_path[1].first;
 }
 
-std::vector<uint32_t> PathProcessor::concatinate_path(const uint32_t root,
+std::vector<uint32_t> PathProcessor::concatenate_path(const uint32_t root,
                                                       const PathInformation& first_path,
                                                       const PathInformation& second_path)
 {
@@ -240,7 +219,7 @@ std::vector<uint32_t> PathProcessor::concatinate_path(const uint32_t root,
 }
 
 uint32_t PathProcessor::compute_motif_descriptor(const PathInformation& first_path,
-                                                 const PathInformation& second_path)
+                                                 const PathInformation& second_path) const
 {
     uint32_t motif_descriptor = 0U;
     if (m_graph.is_directed())
