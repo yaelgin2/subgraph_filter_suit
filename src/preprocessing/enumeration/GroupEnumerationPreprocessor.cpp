@@ -58,10 +58,10 @@ void GroupEnumerationPreprocessor::sort_nodes()
               });
 }
 
-std::unordered_map<__int128_t, uint32_t, Int128Hash> GroupEnumerationPreprocessor::calculate()
+std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor::calculate()
 {
     m_logger.log(LogLevel::INFO, "Starting graph enumeration calculation.");
-    std::unordered_map<__int128_t, uint32_t, Int128Hash> motif_count;
+    std::unordered_map<UInt128, uint32_t, UInt128Hash> motif_count;
 
     std::vector<std::vector<bool>> graph_adjacency_matrix;
     graph_to_adjacency_matrix(graph_adjacency_matrix);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Int128.h"
+
 #include <cstdint>
 #include <string>
 
@@ -17,7 +19,7 @@ public:
      * @param value The value to convert.
      * @return Decimal string, with leading '-' for negative values.
      */
-    static std::string int128_to_string(__int128_t value);
+    static std::string int128_to_string(UInt128 value);
 
 private:
     /**

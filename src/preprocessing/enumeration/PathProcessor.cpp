@@ -2,6 +2,7 @@
 
 #include "ColoredGraph.h"
 #include "GroupEnumerationPreprocessor.h"
+#include "Int128.h"
 #include "LoggerHandler.h"
 
 #include <algorithm>
@@ -28,16 +29,16 @@ void PathProcessor::stream_groups_to_counter(
     }
 }
 
-__int128_t PathProcessor::calculate_motif_number(const uint32_t motif_descriptor,
-                                                 const std::vector<uint32_t>& node_colors) const
+UInt128 PathProcessor::calculate_motif_number(const uint32_t motif_descriptor,
+                                              const std::vector<uint32_t>& node_colors) const
 {
-    __uint128_t forward_color_sequence = 0U;
+    UInt128 forward_color_sequence{};
     for (const uint32_t vertex_color : node_colors)
     {
         forward_color_sequence <<= COLOR_BITS_PER_SLOT;
         forward_color_sequence |= vertex_color;
     }
-    __uint128_t reversed_color_sequence = 0U;
+    UInt128 reversed_color_sequence{};
     for (std::vector<uint32_t>::const_reverse_iterator it = node_colors.crbegin();
          it != node_colors.crend(); ++it)
     {
@@ -46,22 +47,22 @@ __int128_t PathProcessor::calculate_motif_number(const uint32_t motif_descriptor
     }
     if (!m_graph.is_directed())
     {
-        return static_cast<__int128_t>(std::min(forward_color_sequence, reversed_color_sequence));
+        return UInt128{std::min(forward_color_sequence, reversed_color_sequence)};
     }
-    __uint128_t motif_number = 0U;
+    UInt128 motif_number{};
     if (forward_color_sequence <= reversed_color_sequence)
     {
         motif_number = forward_color_sequence;
-        motif_number |= static_cast<__uint128_t>(motif_descriptor)
+        motif_number |= UInt128{static_cast<uint64_t>(motif_descriptor)}
                         << (PATH_VERTEX_COUNT * COLOR_BITS_PER_SLOT);
     }
     else
     {
         motif_number = reversed_color_sequence;
-        motif_number |= static_cast<__uint128_t>(compute_reversed_descriptor(motif_descriptor))
+        motif_number |= UInt128{static_cast<uint64_t>(compute_reversed_descriptor(motif_descriptor))}
                         << (PATH_VERTEX_COUNT * COLOR_BITS_PER_SLOT);
     }
-    return static_cast<__int128_t>(motif_number);
+    return UInt128{motif_number};
 }
 
 uint32_t PathProcessor::compute_reversed_descriptor(const uint32_t motif_descriptor)

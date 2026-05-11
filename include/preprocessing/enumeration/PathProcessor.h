@@ -95,8 +95,8 @@ protected:
      * @param node_colors Color labels of the 5 vertices in traversal order.
      * @return Canonical 128-bit path identifier.
      */
-    __int128_t calculate_motif_number(uint32_t motif_descriptor,
-                                      const std::vector<uint32_t>& node_colors) const override;
+    UInt128 calculate_motif_number(uint32_t motif_descriptor,
+                                  const std::vector<uint32_t>& node_colors) const override;
 
     /**
      * @brief Enumerate all 4-edge paths rooted at @p root.

@@ -3,6 +3,7 @@
 #include "ColoredGraph.h"
 #include "Constants.h"
 #include "GroupEnumerationPreprocessor.h"
+#include "Int128.h"
 #include "LoggerHandler.h"
 #include "MotifMap.h"
 
@@ -552,30 +553,30 @@ void MotifPreprocessor::stream_groups_to_counter_for_vertex(
     emit_depth_1_2_3_groups(ctx, depth_one);
 }
 
-__int128_t MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,
-                                                     const std::vector<uint32_t>& node_colors) const
+UInt128 MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,
+                                                  const std::vector<uint32_t>& node_colors) const
 {
-    __uint128_t minimal_colors = ~static_cast<__uint128_t>(0);
+    UInt128 minimal_colors = ~UInt128{};
     const std::unordered_map<uint32_t, MotifCanonical>& motif_map =
         m_graph.is_directed() ? DIRECTED_MOTIF_CANONICAL_MAP : UNDIRECTED_MOTIF_CANONICAL_MAP;
     const MotifCanonical motif_canonical = motif_map.at(motif_descriptor);
     const uint32_t minimal_motif_num = motif_canonical.m_minimal_motif_num;
     for (const auto& color_permutation : motif_canonical.m_color_permutations)
     {
-        __uint128_t color_permutation_number = 0;
-        for (size_t color_index = 0; color_index < SgfConstants::MOTIF_SIZE; ++color_index)
+        UInt128 color_permutation_number{};
+        for (uint32_t color_index = 0; color_index < SgfConstants::MOTIF_SIZE; ++color_index)
         {
             color_permutation_number +=
-                static_cast<__uint128_t>(node_colors.at(color_permutation.at(color_index)))
-                << (color_index * SgfConstants::BITS_PER_COLOR);
+                UInt128{node_colors.at(color_permutation.at(color_index))}
+                << (color_index * static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR));
         }
         minimal_colors = std::min(minimal_colors, color_permutation_number);
     }
-    const __uint128_t result =
-        (static_cast<__uint128_t>(minimal_motif_num)
+    const UInt128 result =
+        (UInt128{static_cast<uint64_t>(minimal_motif_num)}
          << static_cast<uint32_t>(SgfConstants::MOTIF_SIZE * SgfConstants::BITS_PER_COLOR)) |
         minimal_colors;
-    return static_cast<__int128_t>(result);
+    return UInt128{result};
 }
 
 uint32_t MotifPreprocessor::compute_motif_descriptor(

@@ -1,38 +1,16 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "Int128.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 
-#include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <unordered_map>
 #include <vector>
 
 namespace sgf
 {
-
-/**
- * @brief Hash functor for __int128_t (GCC extension; no std::hash specialization by default).
- */
-struct Int128Hash
-{
-    /**
-     * @brief Hashes a 128-bit integer.
-     * @param value The value to hash.
-     * @return Combined hash of the high and low 64-bit halves.
-     */
-    size_t operator()(const __int128_t value) const noexcept
-    {
-        constexpr uint32_t HIGH_BITS_SHIFT = 64U;
-        constexpr size_t HASH_MIX_SHIFT = 1U;
-        const uint64_t high =
-            static_cast<uint64_t>(static_cast<__uint128_t>(value) >> HIGH_BITS_SHIFT);
-        const uint64_t low = static_cast<uint64_t>(value);
-        return std::hash<uint64_t>{}(high) ^ (std::hash<uint64_t>{}(low) << HASH_MIX_SHIFT);
-    }
-};
 
 /**
  * @brief Callback invoked once per discovered group during enumeration.
@@ -106,7 +84,7 @@ public:
      *
      * @return Map of motif identifier to occurrence count.
      */
-    std::unordered_map<__int128_t, uint32_t, Int128Hash> calculate();
+    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate();
 
 protected:
     /**
@@ -168,8 +146,8 @@ protected:
      *
      * @return Unique numeric motif identifier.
      */
-    virtual __int128_t calculate_motif_number(uint32_t motif_descriptor,
-                                              const std::vector<uint32_t>& node_colors) const = 0;
+    virtual UInt128 calculate_motif_number(uint32_t motif_descriptor,
+                                         const std::vector<uint32_t>& node_colors) const = 0;
 
 private:
     /**

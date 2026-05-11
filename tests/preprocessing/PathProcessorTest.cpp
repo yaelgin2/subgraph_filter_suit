@@ -24,16 +24,16 @@ LoggerHandler make_null_logger()
     return LoggerHandler(std::weak_ptr<ILogger>{});
 }
 
-std::unordered_map<__int128_t, uint32_t, Int128Hash> run(const ColoredGraph& graph)
+std::unordered_map<UInt128, uint32_t, UInt128Hash> run(const ColoredGraph& graph)
 {
     PathProcessor processor(graph, make_null_logger());
     return processor.calculate();
 }
 
-__int128_t pack_colors(const std::vector<uint32_t>& colors)
+UInt128 pack_colors(const std::vector<uint32_t>& colors)
 {
     constexpr uint32_t COLOR_BITS = 24U;
-    __int128_t packed = 0;
+    UInt128 packed{};
     for (const uint32_t color : colors)
     {
         packed <<= COLOR_BITS;
@@ -42,7 +42,7 @@ __int128_t pack_colors(const std::vector<uint32_t>& colors)
     return packed;
 }
 
-__int128_t undirected_motif(const std::vector<uint32_t>& colors)
+UInt128 undirected_motif(const std::vector<uint32_t>& colors)
 {
     const std::vector<uint32_t> rev(colors.crbegin(), colors.crend());
     return std::min(pack_colors(colors), pack_colors(rev));
@@ -68,7 +68,7 @@ ColoredGraph make_reversed_directed_chain(std::vector<uint32_t> colors)
 
 // Mask covering the lower 120 bits (5 vertices × 24 color bits).
 // All keys returned from an all-zero-color graph must have this portion equal to 0.
-const __int128_t COLOR_PORTION_MASK = (static_cast<__int128_t>(1) << (5U * 24U)) - 1;
+const UInt128 COLOR_PORTION_MASK = (UInt128{1U} << (5U * 24U)) - UInt128{1U};
 
 }  // namespace
 
@@ -191,13 +191,13 @@ TEST(PathProcessorTest, UndirectedChainAllColorPermutations)
     do
     {
         const ColoredGraph graph = make_undirected_chain(colors);
-        const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+        const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
 
         ASSERT_EQ(result.size(), 1U)
             << "expected exactly one motif for colors [" << colors[0] << "," << colors[1] << ","
             << colors[2] << "," << colors[3] << "," << colors[4] << "]";
 
-        const __int128_t expected_key = undirected_motif(colors);
+        const UInt128 expected_key = undirected_motif(colors);
         ASSERT_EQ(result.count(expected_key), 1U) << "expected motif key not found";
         EXPECT_EQ(result.at(expected_key), 1U) << "expected path count of 1";
     } while (std::next_permutation(colors.begin(), colors.end()));
@@ -209,8 +209,8 @@ TEST(PathProcessorTest, UndirectedChainReversePermutationSameMotif)
     const std::vector<uint32_t> fwd = {1U, 2U, 3U, 4U, 5U};
     const std::vector<uint32_t> rev(fwd.crbegin(), fwd.crend());
 
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> fwd_result = run(make_undirected_chain(fwd));
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> rev_result = run(make_undirected_chain(rev));
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> fwd_result = run(make_undirected_chain(fwd));
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> rev_result = run(make_undirected_chain(rev));
 
     ASSERT_EQ(fwd_result.size(), 1U);
     ASSERT_EQ(rev_result.size(), 1U);
@@ -227,7 +227,7 @@ TEST(PathProcessorTest, DirectedChainAllColorPermutations)
     do
     {
         const ColoredGraph graph = make_directed_chain(colors);
-        const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+        const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
 
         ASSERT_EQ(result.size(), 1U)
             << "directed chain should produce one unique motif for colors [" << colors[0] << ","
@@ -235,57 +235,14 @@ TEST(PathProcessorTest, DirectedChainAllColorPermutations)
     } while (std::next_permutation(colors.begin(), colors.end()));
 }
 
-std::string int128_to_binary_string(__uint128_t value)
-{
-    std::string result(128, '0');
-
-    for (int i = 127; i >= 0; --i)
-    {
-        if (value & (static_cast<__uint128_t>(1) << i))
-        {
-            result[127 - i] = '1';
-        }
-    }
-
-    return result;
-}
-
-std::string int128_to_string(__int128_t value)
-{
-    if (value == 0)
-    {
-        return "0";
-    }
-
-    bool negative = value < 0;
-    __uint128_t temp =
-        negative ? -static_cast<__uint128_t>(value) : static_cast<__uint128_t>(value);
-
-    std::string result;
-
-    while (temp > 0)
-    {
-        result.push_back(static_cast<char>('0' + (temp % 10)));
-        temp /= 10;
-    }
-
-    if (negative)
-    {
-        result.push_back('-');
-    }
-
-    std::reverse(result.begin(), result.end());
-    return result;
-}
-
 TEST(PathProcessorTest, DirectedChainReversePermutationSameMotif)
 {
     const std::vector<uint32_t> fwd = {1U, 2U, 3U, 4U, 5U};
     const std::vector<uint32_t> rev(fwd.crbegin(), fwd.crend());
 
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> fwd_result =
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> fwd_result =
         run(make_directed_chain(fwd));
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> rev_result =
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> rev_result =
         run(make_reversed_directed_chain(rev));
 
     ASSERT_EQ(fwd_result.size(), 1U);
@@ -298,20 +255,20 @@ TEST(PathProcessorTest, DirectedChainReversePermutationSameMotif)
 TEST(PathProcessorTest, UndirectedChainAllZeroColors)
 {
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(make_undirected_chain(zero));
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(make_undirected_chain(zero));
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_EQ(result.count(static_cast<__int128_t>(0)), 1U);
-    EXPECT_EQ(result.at(static_cast<__int128_t>(0)), 1U);
+    EXPECT_EQ(result.count(UInt128{}), 1U);
+    EXPECT_EQ(result.at(UInt128{}), 1U);
 }
 
 TEST(PathProcessorTest, DirectedChainAllZeroColors)
 {
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(make_directed_chain(zero));
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(make_directed_chain(zero));
     ASSERT_FALSE(result.empty());
-    for (const std::pair<const __int128_t, uint32_t>& entry : result)
+    for (const std::pair<const UInt128, uint32_t>& entry : result)
     {
-        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, static_cast<__int128_t>(0))
+        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, UInt128{})
             << "color bits must be zero when all vertex colors are zero";
     }
 }
@@ -327,10 +284,10 @@ TEST(PathProcessorTest, UndirectedChordGraph02AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {0U, 2U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, false);
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
     ASSERT_FALSE(result.empty());
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_EQ(result.count(static_cast<__int128_t>(0)), 1U);
+    EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
 TEST(PathProcessorTest, DirectedChordGraph02AllZeroColors)
@@ -339,9 +296,9 @@ TEST(PathProcessorTest, DirectedChordGraph02AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {0U, 2U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, true);
-    for (const std::pair<const __int128_t, uint32_t>& entry : run(graph))
+    for (const std::pair<const UInt128, uint32_t>& entry : run(graph))
     {
-        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, static_cast<__int128_t>(0));
+        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, UInt128{});
     }
 }
 
@@ -352,10 +309,10 @@ TEST(PathProcessorTest, UndirectedChordGraph13AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {1U, 3U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, false);
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
     ASSERT_FALSE(result.empty());
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_EQ(result.count(static_cast<__int128_t>(0)), 1U);
+    EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
 TEST(PathProcessorTest, DirectedChordGraph13AllZeroColors)
@@ -364,9 +321,9 @@ TEST(PathProcessorTest, DirectedChordGraph13AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {1U, 3U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, true);
-    for (const std::pair<const __int128_t, uint32_t>& entry : run(graph))
+    for (const std::pair<const UInt128, uint32_t>& entry : run(graph))
     {
-        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, static_cast<__int128_t>(0));
+        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, UInt128{});
     }
 }
 
@@ -377,10 +334,10 @@ TEST(PathProcessorTest, UndirectedChordGraph14AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {1U, 4U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, false);
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
     ASSERT_FALSE(result.empty());
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_EQ(result.count(static_cast<__int128_t>(0)), 1U);
+    EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
 TEST(PathProcessorTest, DirectedChordGraph14AllZeroColors)
@@ -389,9 +346,9 @@ TEST(PathProcessorTest, DirectedChordGraph14AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {1U, 4U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, true);
-    for (const std::pair<const __int128_t, uint32_t>& entry : run(graph))
+    for (const std::pair<const UInt128, uint32_t>& entry : run(graph))
     {
-        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, static_cast<__int128_t>(0));
+        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, UInt128{});
     }
 }
 
@@ -402,10 +359,10 @@ TEST(PathProcessorTest, UndirectedChordGraph24AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {2U, 4U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, false);
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
     ASSERT_FALSE(result.empty());
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_EQ(result.count(static_cast<__int128_t>(0)), 1U);
+    EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
 TEST(PathProcessorTest, DirectedChordGraph24AllZeroColors)
@@ -414,9 +371,9 @@ TEST(PathProcessorTest, DirectedChordGraph24AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {2U, 4U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, true);
-    for (const std::pair<const __int128_t, uint32_t>& entry : run(graph))
+    for (const std::pair<const UInt128, uint32_t>& entry : run(graph))
     {
-        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, static_cast<__int128_t>(0));
+        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, UInt128{});
     }
 }
 
@@ -445,10 +402,10 @@ TEST(PathProcessorTest, UndirectedCycleC5AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {4U, 0U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, false);
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
     ASSERT_FALSE(result.empty());
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_EQ(result.at(static_cast<__int128_t>(0)), 5U);
+    EXPECT_EQ(result.at(UInt128{}), 5U);
 }
 
 TEST(PathProcessorTest, DirectedCycleC5AllZeroColors)
@@ -457,9 +414,9 @@ TEST(PathProcessorTest, DirectedCycleC5AllZeroColors)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {4U, 0U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, true);
-    for (const std::pair<const __int128_t, uint32_t>& entry : run(graph))
+    for (const std::pair<const UInt128, uint32_t>& entry : run(graph))
     {
-        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, static_cast<__int128_t>(0));
+        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, UInt128{});
     }
 }
 
@@ -470,9 +427,9 @@ TEST(PathProcessorTest, UndirectedCycleC6AllZeroColors)
                                                         {3U, 4U}, {4U, 5U}, {5U, 0U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(6U, edges, zero, false);
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_EQ(result.at(static_cast<__int128_t>(0)), 6U);
+    EXPECT_EQ(result.at(UInt128{}), 6U);
 }
 
 TEST(PathProcessorTest, UndirectedCompleteK5AllZeroColors)
@@ -482,10 +439,10 @@ TEST(PathProcessorTest, UndirectedCompleteK5AllZeroColors)
                                                         {2U, 4U}, {3U, 4U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, false);
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
     ASSERT_FALSE(result.empty());
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_EQ(result.count(static_cast<__int128_t>(0)), 1U);
+    EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
 TEST(PathProcessorTest, DirectedCompleteK5AllZeroColors)
@@ -495,9 +452,9 @@ TEST(PathProcessorTest, DirectedCompleteK5AllZeroColors)
                                                         {2U, 4U}, {3U, 4U}};
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const ColoredGraph graph(5U, edges, zero, true);
-    for (const std::pair<const __int128_t, uint32_t>& entry : run(graph))
+    for (const std::pair<const UInt128, uint32_t>& entry : run(graph))
     {
-        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, static_cast<__int128_t>(0));
+        EXPECT_EQ(entry.first & COLOR_PORTION_MASK, UInt128{});
     }
 }
 
@@ -528,9 +485,9 @@ TEST(PathProcessorTest, UndirectedCycleC5Colors12345)
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {4U, 0U}};
     const std::vector<uint32_t> colors = {1U, 2U, 3U, 4U, 5U};
     const ColoredGraph graph(5U, edges, colors, false);
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
     ASSERT_EQ(result.size(), 5U);
-    for (const std::pair<const __int128_t, uint32_t>& entry : result)
+    for (const std::pair<const UInt128, uint32_t>& entry : result)
     {
         EXPECT_EQ(entry.second, 1U);
     }
@@ -552,9 +509,9 @@ TEST(PathProcessorTest, UndirectedCycleC6Colors123456)
                                                         {3U, 4U}, {4U, 5U}, {5U, 0U}};
     const std::vector<uint32_t> colors = {1U, 2U, 3U, 4U, 5U, 6U};
     const ColoredGraph graph(6U, edges, colors, false);
-    const std::unordered_map<__int128_t, uint32_t, Int128Hash> result = run(graph);
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(graph);
     ASSERT_EQ(result.size(), 6U);
-    for (const std::pair<const __int128_t, uint32_t>& entry : result)
+    for (const std::pair<const UInt128, uint32_t>& entry : result)
     {
         EXPECT_EQ(entry.second, 1U);
     }

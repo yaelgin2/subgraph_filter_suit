@@ -1,33 +1,26 @@
 #include "LoggingUtils.h"
 
+#include "Int128.h"
+
 #include <algorithm>
 #include <string>
 
 namespace sgf
 {
 
-std::string LoggingUtils::int128_to_string(const __int128_t value)
+std::string LoggingUtils::int128_to_string(UInt128 value)
 {
-    if (value == 0)
+    if (!value)
     {
         return "0";
     }
 
-    const bool negative = value < 0;
-    __uint128_t temp =
-        negative ? -static_cast<__uint128_t>(value) : static_cast<__uint128_t>(value);
-
     std::string result;
 
-    while (temp > 0)
+    while (value)
     {
-        result.push_back(static_cast<char>('0' + static_cast<char>(temp % DECIMAL_BASE)));
-        temp /= DECIMAL_BASE;
-    }
-
-    if (negative)
-    {
-        result.push_back('-');
+        result.push_back(static_cast<char>('0' + static_cast<char>(value % DECIMAL_BASE)));
+        value /= DECIMAL_BASE;
     }
 
     std::reverse(result.begin(), result.end());
