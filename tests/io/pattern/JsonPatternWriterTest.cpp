@@ -24,7 +24,7 @@ using namespace sgf;
 // ── Fixture ───────────────────────────────────────────────────────────────────
 
 /**
- * @brief Test fixture for JsonPatternIOManager::write().
+ * @brief Test fixture for JsonPatternWriter::write().
  *
  * Each test builds a BoostGraph, writes it to a temporary file, then parses
  * the resulting JSON to assert structural correctness. The fixture creates and
@@ -99,7 +99,7 @@ protected:
         std::remove(m_temp_path.c_str());
     }
 
-    JsonPatternIOManager m_writer;
+    JsonPatternWriter m_writer;
     std::string m_temp_path;
 };
 
