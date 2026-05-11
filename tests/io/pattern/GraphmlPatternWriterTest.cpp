@@ -10,6 +10,7 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <cstdint>
+#include <filesystem>
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
@@ -22,28 +23,49 @@ using namespace test_helpers;
 /**
  * @brief Test fixture for GraphmlPatternWriter.
  *
- * Each test writes a BoostGraph to a temp file then reads it back via
- * GraphmlGraphReader to verify the round-trip. All written files land in
- * GTest's temp directory and are never cleaned up manually.
+ * Each test gets a unique temporary directory derived from the test name so
+ * that parallel test runs on any environment cannot collide. All written files
+ * are removed in TearDown.
  */
 class GraphmlPatternWriterTest : public ::testing::Test
 {
 protected:
     /**
+     * @brief Creates a unique temp directory for this test instance.
+     */
+    void SetUp() override
+    {
+        const ::testing::TestInfo* const info =
+            ::testing::UnitTest::GetInstance()->current_test_info();
+        m_temp_dir =
+            std::filesystem::temp_directory_path() / ("sgf_gpw_" + std::string(info->name()));
+        std::filesystem::create_directories(m_temp_dir);
+    }
+
+    /**
+     * @brief Removes the temp directory and all written files.
+     */
+    void TearDown() override
+    {
+        std::filesystem::remove_all(m_temp_dir);
+    }
+
+    /**
      * @brief Writes @p graph to a temp file, reads it back, and returns the result.
      * @param graph BoostGraph to serialize.
-     * @param filename Filename inside the GTest temp directory.
+     * @param filename Filename within this test's unique temp directory.
      * @return The parsed ColoredGraph (always directed — BoostGraph uses directedS).
      */
     ColoredGraph round_trip(const BoostGraph& graph, const std::string& filename)
     {
-        const std::string path = std::string(testing::TempDir()) + "/" + filename;
+        const std::string path = (m_temp_dir / filename).string();
         m_writer.write(graph, path);
         return m_reader.read(path, true, LoggerHandler(std::weak_ptr<ILogger>{}));
     }
 
     GraphmlPatternWriter m_writer;
     GraphmlGraphReader m_reader;
+    std::filesystem::path m_temp_dir;
 };
 
 // ── Empty graph ───────────────────────────────────────────────────────────────
