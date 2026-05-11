@@ -27,7 +27,7 @@ template <typename GraphType>
 void GraphmlGraphReader::read_graphml_from_file_into_boost_graph(const std::string& path,
                                                                  GraphType& boost_graph)
 {
-    std::ifstream file = GraphmlUtils::open_file(path);
+    std::ifstream file = IoGraphUtils::open_file(path);
     boost::dynamic_properties dynamic_props(boost::ignore_other_properties);
     dynamic_props.property("color",
                            boost::get(&IOConstants::GraphmlVertexProperties::m_color, boost_graph));
