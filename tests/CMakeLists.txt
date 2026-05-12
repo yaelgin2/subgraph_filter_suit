@@ -39,6 +39,9 @@ add_sgf_test(vertex_edge_reader_tests         io/graph/VertexEdgeGraphReaderTest
 add_sgf_test(json_pattern_writer_tests        io/pattern/JsonPatternWriterTest.cpp)
 add_sgf_test(vertex_edge_pattern_writer_tests io/pattern/VertexEdgePatternWriterTest.cpp)
 add_sgf_test(graphml_writer_tests             io/GraphmlPatternWriterTest.cpp)
+add_sgf_test(general_color_hist_tests         patterns/histograms/GeneralColorHistTest.cpp)
+add_sgf_test(individual_color_hist_tests      patterns/histograms/IndividualColorHistTest.cpp)
+add_sgf_test(tree_tests                       patterns/tree/TreeTest.cpp)
 
 # The graphml reader tests need to locate the test-data directory at compile time.
 target_compile_definitions(graphml_reader_tests PRIVATE
