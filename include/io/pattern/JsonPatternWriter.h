@@ -13,7 +13,7 @@ namespace sgf
 
 /**
  * @class JsonPatternWriter
- * @brief Reads and writes pattern graphs in JSON format.
+ * @brief Writes pattern graphs in JSON format.
  *
  * The JSON format is:
  * @code
@@ -23,18 +23,17 @@ namespace sgf
  * }
  * @endcode
  *
- * All edges are always serialized with their color value. On read, the graph
+ * All edges are always serialized with their color value. The graph
  * is treated as directed to match the BoostGraph definition (boost::directedS).
- * Node IDs may be non-consecutive on read; they are remapped to dense
- * consecutive indices internally.
+ * Vertex indices in the BoostGraph become the "id" values in the output JSON.
  */
-class JsonPatternIOManager : public IPatternWriter
+class JsonPatternWriter : public IPatternWriter
 {
 public:
     /**
      * @brief Default constructor.
      */
-    JsonPatternIOManager() = default;
+    JsonPatternWriter() = default;
 
     /**
      * @brief Writes a BoostGraph to a JSON file.

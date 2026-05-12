@@ -17,7 +17,7 @@
 namespace sgf
 {
 
-boost::json::array JsonPatternIOManager::build_nodes_array(const BoostGraph& graph)
+boost::json::array JsonPatternWriter::build_nodes_array(const BoostGraph& graph)
 {
     boost::json::array nodes;
 
@@ -35,7 +35,7 @@ boost::json::array JsonPatternIOManager::build_nodes_array(const BoostGraph& gra
     return nodes;
 }
 
-boost::json::array JsonPatternIOManager::build_links_array(const BoostGraph& graph)
+boost::json::array JsonPatternWriter::build_links_array(const BoostGraph& graph)
 {
     boost::json::array links;
 
@@ -55,7 +55,7 @@ boost::json::array JsonPatternIOManager::build_links_array(const BoostGraph& gra
     return links;
 }
 
-void JsonPatternIOManager::write_to_file(const boost::json::object& root, const std::string& path)
+void JsonPatternWriter::write_to_file(const boost::json::object& root, const std::string& path)
 {
     std::ofstream file(path);
 
@@ -67,7 +67,7 @@ void JsonPatternIOManager::write_to_file(const boost::json::object& root, const 
     file << boost::json::serialize(root);
 }
 
-void JsonPatternIOManager::write(const BoostGraph& graph, const std::string& path) const
+void JsonPatternWriter::write(const BoostGraph& graph, const std::string& path) const
 {
     boost::json::object root;
 

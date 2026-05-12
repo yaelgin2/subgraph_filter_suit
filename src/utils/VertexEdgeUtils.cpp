@@ -14,8 +14,8 @@ namespace sgf
 void VertexEdgeUtils::throw_if_extra_tokens(std::istringstream& stream, const std::string& context,
                                             const std::string& line, const uint32_t expected_count)
 {
-    uint32_t extra = 0;
-    if (stream >> extra)
+    std::string extra_token;
+    if (stream >> extra_token)
     {
         throw GraphConstructionException(context + ": '" + line + "' (too many tokens, expected " +
                                          std::to_string(expected_count) + ")");
