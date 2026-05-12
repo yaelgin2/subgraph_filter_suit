@@ -1,8 +1,18 @@
 #include "EnumerationPreprocessManager.h"
 
+#include "ColoredGraph.h"
+#include "IGraphPreprocessor.h"
+#include "Int128.h"
 #include "LogLevel.h"
+#include "LoggerHandler.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace sgf
 {

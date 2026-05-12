@@ -121,13 +121,14 @@ TEST(EnumerationPreprocessManagerTest, single_graph_returns_one_result)
     library.push_back(make_single_vertex_graph(0U));
     EnumerationPreprocessManager manager{std::move(library), null_logger()};
 
-    const std::unordered_map<UInt128, uint32_t, UInt128Hash> expected_map{
-        {UInt128{1U, 0U}, 5U}};
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> expected_map{{UInt128{1U, 0U}, 5U}};
 
     const std::vector<std::unordered_map<UInt128, uint32_t, UInt128Hash>> results =
         manager.preprocess(
             [&expected_map](const ColoredGraph& /*graph*/, LoggerHandler /*logger*/)
-            { return std::make_unique<StubPreprocessor>(expected_map); });
+            {
+                return std::make_unique<StubPreprocessor>(expected_map);
+            });
 
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results[0], expected_map);
@@ -153,7 +154,9 @@ TEST(EnumerationPreprocessManagerTest, multiple_graphs_return_index_aligned_resu
     const std::vector<std::unordered_map<UInt128, uint32_t, UInt128Hash>> results =
         manager.preprocess(
             [&fixed_maps, &call_index](const ColoredGraph& /*graph*/, LoggerHandler /*logger*/)
-            { return std::make_unique<StubPreprocessor>(fixed_maps[call_index++]); });
+            {
+                return std::make_unique<StubPreprocessor>(fixed_maps[call_index++]);
+            });
 
     ASSERT_EQ(results.size(), 3U);
     EXPECT_EQ(results[0], fixed_maps[0]);
@@ -174,7 +177,9 @@ TEST(EnumerationPreprocessManagerTest, calculate_called_once_per_library_graph)
     uint32_t call_count = 0U;
     manager.preprocess(
         [&call_count](const ColoredGraph& /*graph*/, LoggerHandler /*logger*/)
-        { return std::make_unique<CallCountPreprocessor>(call_count); });
+        {
+            return std::make_unique<CallCountPreprocessor>(call_count);
+        });
 
     EXPECT_EQ(call_count, 3U);
 }

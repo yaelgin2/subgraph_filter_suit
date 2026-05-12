@@ -71,7 +71,7 @@ public:
      *
      * Ensures proper destruction through base pointers.
      */
-    virtual ~GroupEnumerationPreprocessor() = default;
+    ~GroupEnumerationPreprocessor() override = default;
 
     /**
      * @brief Run the full group enumeration pipeline.
@@ -85,7 +85,7 @@ public:
      *
      * @return Map of motif identifier to occurrence count.
      */
-    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate();
+    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate() override;
 
 protected:
     /**
