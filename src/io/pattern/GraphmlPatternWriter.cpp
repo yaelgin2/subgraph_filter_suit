@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <fstream>
 #include <string>
-#include <utility>
+#include <tuple>
 
 // IMPORTANT: isolate Boost GraphML to avoid GCC 14 false-positive
 #if defined(__GNUC__) && !defined(__clang__)
@@ -59,12 +59,12 @@ void GraphmlPatternWriter::build_edges(const BoostGraph& graph,
             const boost::graph_traits<BoostGraph>::vertex_descriptor dst =
                 boost::target(edge, graph);
 
-            boost::graph_traits<IOConstants::GraphmlDirectedBoostGraph>::edge_descriptor e;
-            bool ok = false;
-            std::tie(e, ok) = boost::add_edge(src, dst, out);
-            static_cast<void>(ok);
+            boost::graph_traits<IOConstants::GraphmlDirectedBoostGraph>::edge_descriptor new_edge;
+            bool edge_added = false;
+            std::tie(new_edge, edge_added) = boost::add_edge(src, dst, out);
+            static_cast<void>(edge_added);
 
-            out[e].m_color = std::to_string(graph[edge].m_color);
+            out[new_edge].m_color = std::to_string(graph[edge].m_color);
         }
     }
 }

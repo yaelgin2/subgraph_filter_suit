@@ -14,6 +14,7 @@
 #include <boost/system/system_error.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <fstream>
 #include <limits>
 #include <sstream>
