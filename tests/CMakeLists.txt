@@ -38,7 +38,6 @@ add_sgf_test(path_processor_tests             preprocessing/PathProcessorTest.cp
 add_sgf_test(graphml_reader_tests             io/graph/GraphmlGraphReaderTest.cpp)
 add_sgf_test(json_reader_tests                io/graph/JsonGraphReaderTest.cpp)
 add_sgf_test(vertex_edge_reader_tests         io/graph/VertexEdgeGraphReaderTest.cpp)
-add_sgf_test(json_reader_tests                io/graph/JsonGraphReaderTest.cpp)
 add_sgf_test(json_pattern_writer_tests        io/pattern/JsonPatternWriterTest.cpp)
 add_sgf_test(vertex_edge_pattern_writer_tests io/pattern/VertexEdgePatternWriterTest.cpp)
 add_sgf_test(graphml_writer_tests             io/GraphmlPatternWriterTest.cpp)
