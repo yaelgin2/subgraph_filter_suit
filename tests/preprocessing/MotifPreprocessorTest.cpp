@@ -51,17 +51,16 @@ protected:
      * @param c3 Color packed into bits 72–95.
      * @return 128-bit key with structure in the high 32 bits and packed colors in the low 96 bits.
      */
-    static UInt128 colored_key(const uint32_t structure_id, const uint32_t c0,
-                               const uint32_t c1, const uint32_t c2, const uint32_t c3)
+    static UInt128 colored_key(const uint32_t structure_id, const uint32_t c0, const uint32_t c1,
+                               const uint32_t c2, const uint32_t c3)
     {
-        const UInt128 color_part =
-            UInt128{static_cast<uint64_t>(c0)} |
-            (UInt128{static_cast<uint64_t>(c1)}
-             << static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR)) |
-            (UInt128{static_cast<uint64_t>(c2)}
-             << static_cast<uint32_t>(2U * SgfConstants::BITS_PER_COLOR)) |
-            (UInt128{static_cast<uint64_t>(c3)}
-             << static_cast<uint32_t>(3U * SgfConstants::BITS_PER_COLOR));
+        const UInt128 color_part = UInt128{static_cast<uint64_t>(c0)} |
+                                   (UInt128{static_cast<uint64_t>(c1)}
+                                    << static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR)) |
+                                   (UInt128{static_cast<uint64_t>(c2)}
+                                    << static_cast<uint32_t>(2U * SgfConstants::BITS_PER_COLOR)) |
+                                   (UInt128{static_cast<uint64_t>(c3)}
+                                    << static_cast<uint32_t>(3U * SgfConstants::BITS_PER_COLOR));
         return zero_color_key(structure_id) | color_part;
     }
 };
@@ -309,7 +308,7 @@ TEST_F(MotifPreprocessorTest, colored_k4_key_encodes_color_not_just_structure)
 
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = preprocessor.calculate();
 
-    const UInt128 expected_key =colored_key(63U, 1U, 0U, 0U, 0U);
+    const UInt128 expected_key = colored_key(63U, 1U, 0U, 0U, 0U);
     ASSERT_EQ(result.size(), 1U);
     EXPECT_EQ(result.at(expected_key), 1U);
     EXPECT_EQ(result.count(zero_color_key(63U)), 0U);
@@ -336,7 +335,7 @@ TEST_F(MotifPreprocessorTest, colored_k4_automorphic_assignment_same_key)
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result_a = preprocessor_a.calculate();
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result_b = preprocessor_b.calculate();
 
-    const UInt128 expected_key =colored_key(63U, 4U, 3U, 2U, 1U);
+    const UInt128 expected_key = colored_key(63U, 4U, 3U, 2U, 1U);
     ASSERT_EQ(result_a.size(), 1U);
     ASSERT_EQ(result_b.size(), 1U);
     EXPECT_EQ(result_a.at(expected_key), 1U);
@@ -369,8 +368,8 @@ TEST_F(MotifPreprocessorTest, colored_k13_center_vs_leaf_distinct_keys)
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result_a = preprocessor_a.calculate();
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result_b = preprocessor_b.calculate();
 
-    const UInt128 key_a =colored_key(11U, 0U, 0U, 0U, 5U);
-    const UInt128 key_b =colored_key(11U, 5U, 5U, 5U, 0U);
+    const UInt128 key_a = colored_key(11U, 0U, 0U, 0U, 5U);
+    const UInt128 key_b = colored_key(11U, 5U, 5U, 5U, 0U);
 
     ASSERT_EQ(result_a.size(), 1U);
     ASSERT_EQ(result_b.size(), 1U);
@@ -409,7 +408,7 @@ TEST_F(MotifPreprocessorTest, colored_p4_reflection_automorphism_same_key)
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result_a = preprocessor_a.calculate();
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result_b = preprocessor_b.calculate();
 
-    const UInt128 expected_key =colored_key(13U, 1U, 4U, 3U, 2U);
+    const UInt128 expected_key = colored_key(13U, 1U, 4U, 3U, 2U);
     ASSERT_EQ(result_a.size(), 1U);
     ASSERT_EQ(result_b.size(), 1U);
     EXPECT_EQ(result_a.at(expected_key), 1U);
@@ -439,8 +438,8 @@ TEST_F(MotifPreprocessorTest, colored_p4_non_equivalent_colors_different_keys)
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result_a = preprocessor_a.calculate();
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result_b = preprocessor_b.calculate();
 
-    const UInt128 key_a =colored_key(13U, 1U, 4U, 3U, 2U);
-    const UInt128 key_b =colored_key(13U, 1U, 5U, 3U, 2U);
+    const UInt128 key_a = colored_key(13U, 1U, 4U, 3U, 2U);
+    const UInt128 key_b = colored_key(13U, 1U, 5U, 3U, 2U);
     ASSERT_EQ(result_a.size(), 1U);
     ASSERT_EQ(result_b.size(), 1U);
     EXPECT_EQ(result_a.at(key_a), 1U);

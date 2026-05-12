@@ -1,6 +1,7 @@
 #include "GroupEnumerationPreprocessor.h"
 
 #include "ColoredGraph.h"
+#include "Int128.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 

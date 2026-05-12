@@ -96,7 +96,7 @@ protected:
      * @return Canonical 128-bit path identifier.
      */
     UInt128 calculate_motif_number(uint32_t motif_descriptor,
-                                  const std::vector<uint32_t>& node_colors) const override;
+                                   const std::vector<uint32_t>& node_colors) const override;
 
     /**
      * @brief Enumerate all 4-edge paths rooted at @p root.
@@ -139,10 +139,10 @@ protected:
      * @param depth_one_in_start Iterator to the start of the incoming neighbour list.
      * @param depth_one_in_end Iterator past the end of the incoming neighbour list.
      */
-    void stream_groups_for_in_neighbours(const GroupCounterCallback& count_group, uint32_t root,
-                                         std::vector<uint32_t>::const_iterator depth_one_in_start,
-                                         std::vector<uint32_t>::const_iterator depth_one_in_end)
-        const;
+    void
+    stream_groups_for_in_neighbours(const GroupCounterCallback& count_group, uint32_t root,
+                                    std::vector<uint32_t>::const_iterator depth_one_in_start,
+                                    std::vector<uint32_t>::const_iterator depth_one_in_end) const;
 
 private:
     /**

@@ -11,7 +11,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <numeric>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -353,8 +352,8 @@ void MotifPreprocessor::process_first_neighbour_112_122(
 {
     const NeighbourIteratorPair two_fwd = m_graph.get_neighbours(*first_neighbour);
     const NeighbourIteratorPair two_rev = m_graph.is_directed()
-                                             ? m_graph.get_neighbours(*first_neighbour, true)
-                                             : std::make_pair(two_fwd.second, two_fwd.second);
+                                              ? m_graph.get_neighbours(*first_neighbour, true)
+                                              : std::make_pair(two_fwd.second, two_fwd.second);
     const NeighbourRange depth_two{two_fwd.first, two_fwd.second, two_rev.first, two_rev.second};
     mark_depth_two_neighbours(ctx, depth_two);
     emit_depth_1_1_2_for_first_vertex(ctx, first_neighbour, depth_one, depth_two);
@@ -482,10 +481,9 @@ void MotifPreprocessor::emit_depth_1_2_3_for_first_vertex(KavoshContext& ctx,
             const NeighbourIteratorPair three_rev =
                 m_graph.is_directed() ? m_graph.get_neighbours(*second_vertex, true)
                                       : std::make_pair(three_fwd.second, three_fwd.second);
-            emit_depth_1_2_3_for_second_vertex(
-                ctx, first_degree_vertex, *second_vertex,
-                NeighbourRange{three_fwd.first, three_fwd.second, three_rev.first,
-                               three_rev.second});
+            emit_depth_1_2_3_for_second_vertex(ctx, first_degree_vertex, *second_vertex,
+                                               NeighbourRange{three_fwd.first, three_fwd.second,
+                                                              three_rev.first, three_rev.second});
         }
     }
 }
@@ -501,8 +499,8 @@ void MotifPreprocessor::emit_depth_1_2_3_groups(KavoshContext& ctx,
         }
         const NeighbourIteratorPair sec_fwd = m_graph.get_neighbours(*first_vertex);
         const NeighbourIteratorPair sec_rev = m_graph.is_directed()
-                                                 ? m_graph.get_neighbours(*first_vertex, true)
-                                                 : std::make_pair(sec_fwd.second, sec_fwd.second);
+                                                  ? m_graph.get_neighbours(*first_vertex, true)
+                                                  : std::make_pair(sec_fwd.second, sec_fwd.second);
         emit_depth_1_2_3_for_first_vertex(
             ctx, *first_vertex,
             NeighbourRange{sec_fwd.first, sec_fwd.second, sec_rev.first, sec_rev.second});
@@ -541,8 +539,8 @@ void MotifPreprocessor::stream_groups_to_counter_for_vertex(
 
     const NeighbourIteratorPair one_fwd = m_graph.get_neighbours(root);
     const NeighbourIteratorPair one_rev = m_graph.is_directed()
-                                             ? m_graph.get_neighbours(root, true)
-                                             : std::make_pair(one_fwd.second, one_fwd.second);
+                                              ? m_graph.get_neighbours(root, true)
+                                              : std::make_pair(one_fwd.second, one_fwd.second);
     const NeighbourRange depth_one{one_fwd.first, one_fwd.second, one_rev.first, one_rev.second};
 
     KavoshContext ctx{graph_adjacency_matrix, count_group, visited_vertices_to_ignore,
@@ -595,8 +593,8 @@ uint32_t MotifPreprocessor::compute_motif_descriptor(
                 continue;
             }
             motif_descriptor <<= 1U;
-            motif_descriptor +=
-                static_cast<uint32_t>(graph_adjacency_matrix[group[row_index]][group[column_index]]);
+            motif_descriptor += static_cast<uint32_t>(
+                graph_adjacency_matrix[group[row_index]][group[column_index]]);
         }
     }
     return motif_descriptor;

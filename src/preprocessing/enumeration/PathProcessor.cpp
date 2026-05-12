@@ -59,8 +59,9 @@ UInt128 PathProcessor::calculate_motif_number(const uint32_t motif_descriptor,
     else
     {
         motif_number = reversed_color_sequence;
-        motif_number |= UInt128{static_cast<uint64_t>(compute_reversed_descriptor(motif_descriptor))}
-                        << (PATH_VERTEX_COUNT * COLOR_BITS_PER_SLOT);
+        motif_number |=
+            UInt128{static_cast<uint64_t>(compute_reversed_descriptor(motif_descriptor))}
+            << (PATH_VERTEX_COUNT * COLOR_BITS_PER_SLOT);
     }
     return UInt128{motif_number};
 }

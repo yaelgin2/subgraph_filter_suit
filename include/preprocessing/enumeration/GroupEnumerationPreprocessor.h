@@ -147,7 +147,7 @@ protected:
      * @return Unique numeric motif identifier.
      */
     virtual UInt128 calculate_motif_number(uint32_t motif_descriptor,
-                                         const std::vector<uint32_t>& node_colors) const = 0;
+                                           const std::vector<uint32_t>& node_colors) const = 0;
 
 private:
     /**

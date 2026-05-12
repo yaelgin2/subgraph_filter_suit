@@ -73,7 +73,7 @@ protected:
      * @return Canonical 128-bit motif identifier.
      */
     UInt128 calculate_motif_number(uint32_t motif_descriptor,
-                                  const std::vector<uint32_t>& node_colors) const override;
+                                   const std::vector<uint32_t>& node_colors) const override;
 
 private:
     /**

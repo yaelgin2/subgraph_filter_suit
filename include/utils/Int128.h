@@ -29,8 +29,7 @@ struct UInt128
      * @param low The value placed in the low word.
      */
     constexpr explicit UInt128(const uint32_t low) noexcept
-        : m_high(0U)
-        , m_low(static_cast<uint64_t>(low))
+        : m_low(static_cast<uint64_t>(low))
     {
     }
 
@@ -38,7 +37,8 @@ struct UInt128
      * @brief Construct from a single 64-bit value (high word = 0).
      * @param low The value placed in the low word.
      */
-    constexpr explicit UInt128(const uint64_t low) noexcept : m_high(0U), m_low(low)
+    constexpr explicit UInt128(const uint64_t low) noexcept
+        : m_low(low)
     {
     }
 
@@ -47,7 +47,9 @@ struct UInt128
      * @param high The high 64 bits.
      * @param low The low 64 bits.
      */
-    constexpr UInt128(const uint64_t high, const uint64_t low) noexcept : m_high(high), m_low(low)
+    constexpr UInt128(const uint64_t high, const uint64_t low) noexcept
+        : m_high(high)
+        , m_low(low)
     {
     }
 
@@ -206,24 +208,24 @@ struct UInt128
      */
     constexpr UInt128& operator<<=(const uint32_t shift) noexcept
     {
-        constexpr uint32_t WORD_BITS = 64U;
+        constexpr uint32_t word_bits = 64U;
         if (shift == 0U)
         {
             return *this;
         }
-        if (shift >= WORD_BITS * 2U)
+        if (shift >= word_bits * 2U)
         {
             m_high = 0U;
             m_low = 0U;
         }
-        else if (shift >= WORD_BITS)
+        else if (shift >= word_bits)
         {
-            m_high = m_low << (shift - WORD_BITS);
+            m_high = m_low << (shift - word_bits);
             m_low = 0U;
         }
         else
         {
-            m_high = (m_high << shift) | (m_low >> (WORD_BITS - shift));
+            m_high = (m_high << shift) | (m_low >> (word_bits - shift));
             m_low <<= shift;
         }
         return *this;
@@ -248,24 +250,24 @@ struct UInt128
      */
     constexpr UInt128& operator>>=(const uint32_t shift) noexcept
     {
-        constexpr uint32_t WORD_BITS = 64U;
+        constexpr uint32_t word_bits = 64U;
         if (shift == 0U)
         {
             return *this;
         }
-        if (shift >= WORD_BITS * 2U)
+        if (shift >= word_bits * 2U)
         {
             m_high = 0U;
             m_low = 0U;
         }
-        else if (shift >= WORD_BITS)
+        else if (shift >= word_bits)
         {
-            m_low = m_high >> (shift - WORD_BITS);
+            m_low = m_high >> (shift - word_bits);
             m_high = 0U;
         }
         else
         {
-            m_low = (m_low >> shift) | (m_high << (WORD_BITS - shift));
+            m_low = (m_low >> shift) | (m_high << (word_bits - shift));
             m_high >>= shift;
         }
         return *this;
@@ -335,19 +337,20 @@ struct UInt128
      */
     uint32_t divmod_uint32(const uint32_t divisor) noexcept
     {
+        constexpr uint32_t bits_in_32_int = 32U;
         const uint64_t high_q = m_high / divisor;
         const uint64_t high_r = m_high % divisor;
 
-        const uint64_t mid_dividend = (high_r << 32U) | (m_low >> 32U);
+        const uint64_t mid_dividend = (high_r << bits_in_32_int) | (m_low >> bits_in_32_int);
         const uint64_t mid_q = mid_dividend / divisor;
         const uint64_t mid_r = mid_dividend % divisor;
 
-        const uint64_t low_dividend = (mid_r << 32U) | (m_low & 0xFFFF'FFFFUL);
+        const uint64_t low_dividend = (mid_r << bits_in_32_int) | (m_low & 0xFFFF'FFFFUL);
         const uint64_t low_q = low_dividend / divisor;
         const uint32_t remainder = static_cast<uint32_t>(low_dividend % divisor);
 
         m_high = high_q;
-        m_low = (mid_q << 32U) | low_q;
+        m_low = (mid_q << bits_in_32_int) | low_q;
         return remainder;
     }
 
@@ -389,9 +392,9 @@ struct UInt128Hash
      */
     size_t operator()(const UInt128& value) const noexcept
     {
-        constexpr size_t HASH_MIX_SHIFT = 1U;
+        constexpr size_t hash_mix_shift = 1U;
         return std::hash<uint64_t>{}(value.m_high) ^
-               (std::hash<uint64_t>{}(value.m_low) << HASH_MIX_SHIFT);
+               (std::hash<uint64_t>{}(value.m_low) << hash_mix_shift);
     }
 };
 

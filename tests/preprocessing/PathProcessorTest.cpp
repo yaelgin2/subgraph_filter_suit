@@ -209,8 +209,10 @@ TEST(PathProcessorTest, UndirectedChainReversePermutationSameMotif)
     const std::vector<uint32_t> fwd = {1U, 2U, 3U, 4U, 5U};
     const std::vector<uint32_t> rev(fwd.crbegin(), fwd.crend());
 
-    const std::unordered_map<UInt128, uint32_t, UInt128Hash> fwd_result = run(make_undirected_chain(fwd));
-    const std::unordered_map<UInt128, uint32_t, UInt128Hash> rev_result = run(make_undirected_chain(rev));
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> fwd_result =
+        run(make_undirected_chain(fwd));
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> rev_result =
+        run(make_undirected_chain(rev));
 
     ASSERT_EQ(fwd_result.size(), 1U);
     ASSERT_EQ(rev_result.size(), 1U);
@@ -255,7 +257,8 @@ TEST(PathProcessorTest, DirectedChainReversePermutationSameMotif)
 TEST(PathProcessorTest, UndirectedChainAllZeroColors)
 {
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
-    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(make_undirected_chain(zero));
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result =
+        run(make_undirected_chain(zero));
     ASSERT_EQ(result.size(), 1U);
     EXPECT_EQ(result.count(UInt128{}), 1U);
     EXPECT_EQ(result.at(UInt128{}), 1U);
@@ -264,7 +267,8 @@ TEST(PathProcessorTest, UndirectedChainAllZeroColors)
 TEST(PathProcessorTest, DirectedChainAllZeroColors)
 {
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
-    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = run(make_directed_chain(zero));
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result =
+        run(make_directed_chain(zero));
     ASSERT_FALSE(result.empty());
     for (const std::pair<const UInt128, uint32_t>& entry : result)
     {
