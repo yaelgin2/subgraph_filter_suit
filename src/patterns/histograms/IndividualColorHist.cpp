@@ -1,5 +1,7 @@
 #include "IndividualColorHist.h"
 
+#include "PatternException.h"
+
 namespace sgf
 {
 
@@ -15,6 +17,10 @@ void IndividualColorHist::update_hist_decrease_from_neighbours(
 {
     for (const uint32_t depth : neighbour_depths)
     {
+        if (m_number_of_neighbours[depth][current_vertex_color] == 0U)
+        {
+            throw PatternException("cannot decrement a zero neighbour cell");
+        }
         --m_number_of_neighbours[depth][current_vertex_color];
         if (m_number_of_neighbours[depth][current_vertex_color] == 0U)
         {
@@ -48,6 +54,10 @@ void IndividualColorHist::update_neighbours_remove_node_decrease_neighbours_from
 {
     for (const uint32_t color : neighbour_colors)
     {
+        if (m_number_of_neighbours[remove_node_depth][color] == 0U)
+        {
+            throw PatternException("cannot decrement a zero neighbour cell");
+        }
         --m_number_of_neighbours[remove_node_depth][color];
         if (m_number_of_neighbours[remove_node_depth][color] == 0U)
         {

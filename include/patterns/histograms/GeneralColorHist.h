@@ -1,5 +1,7 @@
 #pragma once
 
+#include "PatternException.h"
+
 #include <cstdint>
 #include <memory>
 #include <tuple>
@@ -65,6 +67,9 @@ public:
     {
         return m_num_colors;
     }
+
+    /// Maximum allowed pattern depth passed to update_hist_increase_tree_count.
+    static constexpr uint32_t MAX_PATTERN_DEPTH = UINT32_MAX;
 
 private:
     static constexpr int32_t NO_CANDIDATE_COLOR = -1;   ///< Sentinel: no valid color found.

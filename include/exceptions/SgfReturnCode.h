@@ -17,6 +17,9 @@ enum class SgfReturnCode : int32_t
     INVALID_ARGUMENT = 2,
     GRAPH_CONSTRUCTION_ERROR = 3,
     PATH_DOESNT_EXIST = 4,
+    PATTERN_ERROR = 5,
+    ADD_NODE_ERROR = 6,
+    DELETE_NODE_ERROR = 7,
 };
 
 }  // namespace sgf

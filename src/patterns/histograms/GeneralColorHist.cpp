@@ -14,6 +14,14 @@ void GeneralColorHist::update_hist_increase_tree_count(
     const uint32_t pattern_depth,
     const uint32_t current_vertex_color)
 {
+    if (current_vertex_color >= m_num_colors)
+    {
+        throw PatternException("color index out of range");
+    }
+    if (pattern_depth > MAX_PATTERN_DEPTH)
+    {
+        throw PatternException("pattern depth exceeds maximum");
+    }
     while (pattern_depth >= m_number_of_trees.size())
     {
         m_number_of_trees.push_back(std::vector<uint32_t>(m_num_colors, 0U));
@@ -26,6 +34,18 @@ void GeneralColorHist::update_hist_decrease_tree_count(
     const uint32_t pattern_depth,
     const uint32_t current_vertex_color)
 {
+    if (pattern_depth >= static_cast<uint32_t>(m_number_of_trees.size()))
+    {
+        throw PatternException("pattern depth not in histogram");
+    }
+    if (current_vertex_color >= m_num_colors)
+    {
+        throw PatternException("color index out of range");
+    }
+    if (m_number_of_trees[pattern_depth][current_vertex_color] == 0U)
+    {
+        throw PatternException("cannot decrement a zero cell");
+    }
     --m_number_of_trees[pattern_depth][current_vertex_color];
 }
 
