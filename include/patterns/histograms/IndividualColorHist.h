@@ -59,7 +59,7 @@ public:
      * @param new_node_depth Depth of the newly added node in the pattern.
      * @param neighbour_colors Colors of the new node's neighbours not in the tree path.
      */
-    void update_neigbours_add_node_add_neighbours_to_hist(
+    void update_neighbours_add_node_add_neighbours_to_hist(
         uint32_t new_node_depth,
         const std::vector<uint32_t>& neighbour_colors);
 
@@ -72,7 +72,7 @@ public:
      * @param remove_node_depth Depth of the node being removed.
      * @param neighbour_colors Colors of the removed node's neighbours not in the tree path.
      */
-    void update_neigbours_remove_node_decrease_neighbours_from_hist(
+    void update_neighbours_remove_node_decrease_neighbours_from_hist(
         uint32_t remove_node_depth,
         const std::vector<uint32_t>& neighbour_colors);
 

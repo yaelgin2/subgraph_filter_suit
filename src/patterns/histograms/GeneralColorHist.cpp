@@ -31,7 +31,7 @@ void GeneralColorHist::update_hist_decrease_tree_count(
 
 std::tuple<int32_t, int32_t, uint32_t> GeneralColorHist::get_color_to_add(
     const uint32_t threshold,
-    const bool is_random)
+    const bool is_random) const
 {
     struct Candidate
     {
@@ -45,7 +45,9 @@ std::tuple<int32_t, int32_t, uint32_t> GeneralColorHist::get_color_to_add(
 
     for (uint32_t color = 0U; color < m_num_colors; ++color)
     {
-        for (size_t depth_index = 0U; depth_index < m_number_of_trees.size(); ++depth_index)
+        for (uint32_t depth_index = 0U;
+             depth_index < static_cast<uint32_t>(m_number_of_trees.size());
+             ++depth_index)
         {
             const uint32_t support = m_number_of_trees[depth_index][color];
 
@@ -66,7 +68,7 @@ std::tuple<int32_t, int32_t, uint32_t> GeneralColorHist::get_color_to_add(
 
     if (candidates.empty())
     {
-        return {-1, -1, 0U};
+        return {NO_CANDIDATE_COLOR, NO_CANDIDATE_DEPTH, NO_CANDIDATE_WEIGHT};
     }
 
     if (!is_random)
@@ -78,7 +80,7 @@ std::tuple<int32_t, int32_t, uint32_t> GeneralColorHist::get_color_to_add(
     static thread_local std::mt19937 rng{std::random_device{}()};
     std::uniform_real_distribution<double> dist(0.0, static_cast<double>(total_weight));
 
-    double random_value = dist(rng);
+    const double random_value = dist(rng);
     double accumulated = 0.0;
 
     for (const Candidate& candidate : candidates)

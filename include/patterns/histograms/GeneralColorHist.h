@@ -39,7 +39,7 @@ public:
      * @return Tuple `{color, depth, weight}`; all -1/0 if no candidate exists.
      */
     std::tuple<int32_t, int32_t, uint32_t>
-    get_color_to_add(uint32_t threshold = 0U, bool is_random = true);
+    get_color_to_add(uint32_t threshold = 0U, bool is_random = true) const;
 
     /**
      * @brief Increment the tree count for a (depth, color) cell, growing rows as needed.
@@ -67,6 +67,10 @@ public:
     }
 
 private:
+    static constexpr int32_t NO_CANDIDATE_COLOR = -1;   ///< Sentinel: no valid color found.
+    static constexpr int32_t NO_CANDIDATE_DEPTH = -1;   ///< Sentinel: no valid depth found.
+    static constexpr uint32_t NO_CANDIDATE_WEIGHT = 0U; ///< Sentinel: no valid weight found.
+
     std::vector<std::vector<uint32_t>> m_number_of_trees;  ///< [depth][color] -> tree count.
     uint32_t m_num_colors;                                  ///< Number of distinct colors.
 };

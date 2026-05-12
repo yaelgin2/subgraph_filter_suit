@@ -23,7 +23,7 @@ void IndividualColorHist::update_hist_decrease_from_neighbours(
     }
 }
 
-void IndividualColorHist::update_neigbours_add_node_add_neighbours_to_hist(
+void IndividualColorHist::update_neighbours_add_node_add_neighbours_to_hist(
     const uint32_t new_node_depth,
     const std::vector<uint32_t>& neighbour_colors)
 {
@@ -42,7 +42,7 @@ void IndividualColorHist::update_neigbours_add_node_add_neighbours_to_hist(
     }
 }
 
-void IndividualColorHist::update_neigbours_remove_node_decrease_neighbours_from_hist(
+void IndividualColorHist::update_neighbours_remove_node_decrease_neighbours_from_hist(
     const uint32_t remove_node_depth,
     const std::vector<uint32_t>& neighbour_colors)
 {
