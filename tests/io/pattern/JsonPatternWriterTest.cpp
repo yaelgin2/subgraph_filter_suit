@@ -12,7 +12,7 @@
 #include <boost/json/value.hpp>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <limits>
@@ -24,11 +24,11 @@ using namespace sgf;
 // ── Fixture ───────────────────────────────────────────────────────────────────
 
 /**
- * @brief Test fixture for JsonPatternIOManager::write().
+ * @brief Test fixture for JsonPatternWriter::write().
  *
- * Each test builds a BoostGraph, writes it to a temporary file, then parses
- * the resulting JSON to assert structural correctness. The fixture creates and
- * destroys the temp file around every individual test case.
+ * Each test gets a unique temporary directory derived from the test name so
+ * that parallel test runs on any environment cannot collide. All written files
+ * are removed in TearDown.
  */
 class JsonPatternWriterTest : public ::testing::Test
 {
@@ -60,6 +60,8 @@ protected:
 
     /**
      * @brief Writes @p graph to the temp file and returns the parsed JSON root object.
+     * @param graph The graph to serialize.
+     * @return Parsed JSON root object.
      */
     boost::json::object write_and_parse(const BoostGraph& graph)
     {
@@ -89,18 +91,31 @@ protected:
         return root.at(IOConstants::JSON_LINKS_KEY).as_array().at(index).as_object();
     }
 
+    /**
+     * @brief Creates a unique temp directory for this test instance.
+     */
     void SetUp() override
     {
-        m_temp_path = std::string(testing::TempDir()) + "json_pattern_writer_test.json";
+        const ::testing::TestInfo* const info =
+            ::testing::UnitTest::GetInstance()->current_test_info();
+        const std::filesystem::path temp_dir =
+            std::filesystem::temp_directory_path() / ("sgf_jpw_" + std::string(info->name()));
+        std::filesystem::create_directories(temp_dir);
+        m_temp_path = (temp_dir / "output.json").string();
+        m_temp_dir = temp_dir;
     }
 
+    /**
+     * @brief Removes the temp directory and all written files.
+     */
     void TearDown() override
     {
-        std::remove(m_temp_path.c_str());
+        std::filesystem::remove_all(m_temp_dir);
     }
 
-    JsonPatternIOManager m_writer;
+    JsonPatternWriter m_writer;
     std::string m_temp_path;
+    std::filesystem::path m_temp_dir;
 };
 
 // ── Error path ────────────────────────────────────────────────────────────────
