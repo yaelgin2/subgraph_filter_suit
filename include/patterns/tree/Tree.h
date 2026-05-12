@@ -57,14 +57,6 @@ public:
     ~Tree() = default;
 
     /**
-     * @brief Build a map of vertex index → depth for every node on the path to the root.
-     * @param last_node_in_path Deepest node of the path to trace.
-     * @return Map from vertex index to its depth along the path.
-     */
-    std::unordered_map<uint32_t, uint32_t>
-    get_tree_path_map(const NodePtr& last_node_in_path) const;
-
-    /**
      * @brief Return the root node.
      * @return Shared pointer to the root node.
      */
@@ -108,6 +100,14 @@ private:
     bool m_is_directed;                                   ///< Whether the graph is directed.
     IndividualColorHist m_hist;                           ///< Forward-edge color histogram.
     boost::optional<IndividualColorHist> m_reverse_hist;  ///< Reverse-edge color histogram (directed only).
+
+    /**
+     * @brief Build a map of vertex index → depth for every node on the path to the root.
+     * @param last_node_in_path Deepest node of the path to trace.
+     * @return Map from vertex index to its depth along the path.
+     */
+    std::unordered_map<uint32_t, uint32_t>
+    get_tree_path_map(const NodePtr& last_node_in_path) const;
 
     /**
      * @brief Insert a new child node under @p parent.

@@ -1,7 +1,9 @@
 #include "Tree.h"
 
 #include <algorithm>
-#include <stdexcept>
+#include "AddNodeException.h"
+#include "DeleteNodeException.h"
+#include "PatternException.h"
 #include <unordered_set>
 #include <vector>
 
@@ -27,7 +29,7 @@ Tree::Tree(const uint32_t root_vertex_index,
     // failing to supply one is a programming error, not a runtime condition.
     if (m_is_directed && !m_reverse_hist)
     {
-        throw std::runtime_error("Reverse histogram required for directed trees");
+        throw PatternException("Reverse histogram required for directed trees");
     }
 }
 
@@ -35,7 +37,7 @@ NodePtr Tree::add_node(const NodePtr& parent, const uint32_t vertex_index)
 {
     if (!parent)
     {
-        throw std::runtime_error("Parent is null");
+        throw AddNodeException("Parent is null");
     }
 
     NodePtr new_node = std::make_shared<Node>(vertex_index, parent->m_depth + 1U);
@@ -77,7 +79,7 @@ void Tree::delete_node(const NodePtr& node)
     // orphan its subtree without updating the histogram.
     if (node->m_son)
     {
-        throw std::runtime_error("Cannot delete node with children");
+        throw DeleteNodeException("Cannot delete node with children");
     }
 
     // Splice node out of the circular sibling ring.
@@ -331,7 +333,7 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& new_indexe
             get_colors_of_neighbours_not_in_tree_path(
                 same_parent_indexes, s_list, path_in_tree, empty_excluded, false);
 
-        m_hist.update_neigbours_add_node_add_neighbours_to_hist(m_depth - 1U, add_colours);
+        m_hist.update_neighbours_add_node_add_neighbours_to_hist(m_depth - 1U, add_colours);
 
         if (m_is_directed)
         {
@@ -339,7 +341,7 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& new_indexe
                 get_colors_of_neighbours_not_in_tree_path(
                     same_parent_indexes, s_list, path_in_tree, empty_excluded, true);
 
-            m_reverse_hist.value().update_neigbours_add_node_add_neighbours_to_hist(
+            m_reverse_hist.value().update_neighbours_add_node_add_neighbours_to_hist(
                 m_depth - 1U, add_colours_reverse);
         }
     }
@@ -390,7 +392,7 @@ void Tree::remove_node(const NodePtr& node, const std::vector<ColoredGraph>& s_l
                 {node_to_remove->m_index}, s_list, path_in_tree,
                 node_to_remove->m_previous_children, false);
 
-        m_hist.update_neigbours_remove_node_decrease_neighbours_from_hist(
+        m_hist.update_neighbours_remove_node_decrease_neighbours_from_hist(
             node_to_remove->m_depth - 1U, remove_colours);
 
         if (m_is_directed)
@@ -400,7 +402,7 @@ void Tree::remove_node(const NodePtr& node, const std::vector<ColoredGraph>& s_l
                     {node_to_remove->m_index}, s_list, path_in_tree,
                     node_to_remove->m_previous_children, true);
 
-            m_reverse_hist.value().update_neigbours_remove_node_decrease_neighbours_from_hist(
+            m_reverse_hist.value().update_neighbours_remove_node_decrease_neighbours_from_hist(
                 node_to_remove->m_depth - 1U, remove_colours_reverse);
         }
 
