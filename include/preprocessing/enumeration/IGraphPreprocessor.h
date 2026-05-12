@@ -24,12 +24,6 @@ public:
      */
     virtual ~IGraphPreprocessor() = default;
 
-    IGraphPreprocessor() = default;
-    IGraphPreprocessor(const IGraphPreprocessor&) = delete;
-    IGraphPreprocessor& operator=(const IGraphPreprocessor&) = delete;
-    IGraphPreprocessor(IGraphPreprocessor&&) = delete;
-    IGraphPreprocessor& operator=(IGraphPreprocessor&&) = delete;
-
     /**
      * @brief Run the full preprocessing pipeline and return a frequency signature.
      *
