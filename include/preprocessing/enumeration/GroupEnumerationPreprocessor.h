@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
@@ -47,7 +48,7 @@ using GroupCounterCallback = std::function<void(uint32_t group_structure_descrip
  *
  * @note This class is abstract and intended for inheritance only.
  */
-class GroupEnumerationPreprocessor
+class GroupEnumerationPreprocessor : public IGraphPreprocessor
 {
 
 public:
