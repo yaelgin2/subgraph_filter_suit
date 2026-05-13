@@ -2,6 +2,8 @@
 
 #include "ColoredGraph.h"
 #include "GeneralColorHist.h"
+#include "HistFormatUtils.h"
+#include "LoggerHandler.h"
 #include "Node.h"
 
 #include <cstdint>
@@ -33,9 +35,10 @@ class IndividualColorHist
 public:
     /**
      * @brief Construct an IndividualColorHist linked to a shared GeneralColorHist.
+     * @param logger Logger for before/after tracing of histogram operations.
      * @param general_color_hist Shared histogram updated when this one's counts cross zero.
      */
-    explicit IndividualColorHist(GeneralColorHist& general_color_hist);
+    IndividualColorHist(const LoggerHandler& logger, GeneralColorHist& general_color_hist);
 
     /**
      * @brief Decrease histogram counts when a vertex is added to the match path.
@@ -80,6 +83,7 @@ private:
     std::vector<std::vector<uint32_t>> m_number_of_neighbours;  ///< [depth][color] neighbour count.
     uint32_t m_num_colors;                                       ///< Number of distinct colors.
     GeneralColorHist& m_general_hist;                            ///< Shared general histogram.
+    LoggerHandler m_logger;                                      ///< Logger for before/after tracing.
 };
 
 using IndividualColorHistPtr = std::shared_ptr<IndividualColorHist>;

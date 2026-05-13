@@ -4,6 +4,7 @@
 #include "GeneralColorHist.h"
 #include "IndividualColorHist.h"
 #include "Node.h"
+#include "LoggerHandler.h"
 
 #include <boost/optional.hpp>
 #include <cstdint>
@@ -42,6 +43,7 @@ public:
      */
     Tree(uint32_t root_vertex_index,
          bool is_directed,
+         const LoggerHandler& logger,
          GeneralColorHist& general_hist,
          std::optional<std::reference_wrapper<GeneralColorHist>> reverse_general_hist = std::nullopt);
 
@@ -97,6 +99,7 @@ public:
 private:
     NodePtr m_root;                                       ///< Root node of the tree.
     uint32_t m_depth;                                     ///< Maximum depth reached.
+    LoggerHandler m_logger;                               ///< Logger.
     bool m_is_directed;                                   ///< Whether the graph is directed.
     IndividualColorHist m_hist;                           ///< Forward-edge color histogram.
     boost::optional<IndividualColorHist> m_reverse_hist;  ///< Reverse-edge color histogram (directed only).

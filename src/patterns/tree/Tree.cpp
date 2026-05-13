@@ -12,17 +12,19 @@ namespace sgf
 
 Tree::Tree(const uint32_t root_vertex_index,
            const bool is_directed,
+           const LoggerHandler& logger,
            GeneralColorHist& general_hist,
            const std::optional<std::reference_wrapper<GeneralColorHist>> reverse_general_hist)
     : m_root(std::make_shared<Node>(root_vertex_index, 0U))
     , m_depth(0U)
+    , m_logger(logger)
     , m_is_directed(is_directed)
-    , m_hist(general_hist)
+    , m_hist(logger, general_hist)
     // Wrap the optional reference in an IndividualColorHist so the member owns a stable copy;
     // boost::none signals "no reverse histogram" for undirected trees.
     , m_reverse_hist(reverse_general_hist
                          ? boost::optional<IndividualColorHist>(
-                               IndividualColorHist(reverse_general_hist->get()))
+                               IndividualColorHist(logger, reverse_general_hist->get()))
                          : boost::none)
 {
     // A directed tree must track in-edges through the reverse histogram;
@@ -239,12 +241,32 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& new_indexe
     std::unordered_map<uint32_t, uint32_t> path_in_tree =
         get_tree_path_map(new_indexes[0].second);
 
+    // Check that the new indices are ordered correctly
+    std::unordered_set<NodePtr> parent_indices_appeared;
+    for (size_t node_index = 1; node_index < new_indexes.size(); ++node_index)
+    {
+        if (new_indexes[node_index-1].second != new_indexes[node_index].second)
+        {
+            parent_indices_appeared.insert(new_indexes[node_index-1].second);
+            if (parent_indices_appeared.find(new_indexes[node_index].second) != parent_indices_appeared.end())
+            {
+                throw AddNodeException("New nodes arn't ordered by parent index.");
+            }
+        }
+    }
+
     ++m_depth;
+    m_logger.log(LogLevel::DEBUG,
+        "add_tree_level: adding " + std::to_string(new_indexes.size()) +
+        " nodes at depth " + std::to_string(m_depth));
 
     // Attach all new nodes to the tree before updating the histograms.
     for (const std::pair<uint32_t, NodePtr>& idx : new_indexes)
     {
         added_nodes.push_back(add_node(idx.second, idx.first));
+        m_logger.log(LogLevel::DEBUG,
+            "  added vertex=" + std::to_string(idx.first) +
+            " under parent=" + std::to_string(idx.second->m_index));
     }
 
     // update histogram
@@ -377,12 +399,21 @@ void Tree::remove_node(const NodePtr& node, const std::vector<ColoredGraph>& s_l
     // semantically equivalent to a leaf and must also be removed.
     while (node_to_remove)
     {
+        if (node_to_remove->m_son != nullptr)
+        {
+            throw DeleteNodeException("Unable to delete a nod ewith children.");
+        }
+
         // Reached the root — clear the tree entirely.
         if (node_to_remove->m_depth == 0U)
         {
             m_root.reset();
             break;
         }
+
+        m_logger.log(LogLevel::DEBUG,
+            "remove_node: removing vertex=" + std::to_string(node_to_remove->m_index) +
+            " at depth=" + std::to_string(node_to_remove->m_depth));
 
         // Undo the histogram contribution of this node: remove the colors of
         // neighbours that are external to the tree path (those were added when

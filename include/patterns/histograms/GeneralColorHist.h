@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HistFormatUtils.h"
+#include "LoggerHandler.h"
 #include "PatternException.h"
 
 #include <cstdint>
@@ -26,8 +28,10 @@ public:
     /**
      * @brief Construct an empty histogram for the given color count.
      * @param num_colors Number of distinct vertex colors in the graph.
+     * @param logger Optional logger; defaults to a no-op handler.
      */
-    explicit GeneralColorHist(uint32_t num_colors);
+    explicit GeneralColorHist(uint32_t num_colors,
+                               LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Choose a (color, depth) pair to extend next.
@@ -68,6 +72,15 @@ public:
         return m_num_colors;
     }
 
+    /**
+     * @brief Return the raw histogram matrix for inspection.
+     * @return Reference to the internal [depth][color] tree-count matrix.
+     */
+    const std::vector<std::vector<uint32_t>>& get_histogram() const
+    {
+        return m_number_of_trees;
+    }
+
     /// Maximum allowed pattern depth passed to update_hist_increase_tree_count.
     static constexpr uint32_t MAX_PATTERN_DEPTH = UINT32_MAX;
 
@@ -78,6 +91,7 @@ private:
 
     std::vector<std::vector<uint32_t>> m_number_of_trees;  ///< [depth][color] -> tree count.
     uint32_t m_num_colors;                                  ///< Number of distinct colors.
+    LoggerHandler m_logger;                                 ///< Logger for before/after tracing.
 };
 
 using GeneralColorHistPtr = std::shared_ptr<GeneralColorHist>;
