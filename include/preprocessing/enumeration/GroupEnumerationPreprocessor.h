@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
@@ -47,7 +48,7 @@ using GroupCounterCallback = std::function<void(uint32_t group_structure_descrip
  *
  * @note This class is abstract and intended for inheritance only.
  */
-class GroupEnumerationPreprocessor
+class GroupEnumerationPreprocessor : public IGraphPreprocessor
 {
 
 public:
@@ -70,7 +71,7 @@ public:
      *
      * Ensures proper destruction through base pointers.
      */
-    virtual ~GroupEnumerationPreprocessor() = default;
+    ~GroupEnumerationPreprocessor() override = default;
 
     /**
      * @brief Run the full group enumeration pipeline.
@@ -84,7 +85,7 @@ public:
      *
      * @return Map of motif identifier to occurrence count.
      */
-    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate();
+    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate() override;
 
 protected:
     /**
