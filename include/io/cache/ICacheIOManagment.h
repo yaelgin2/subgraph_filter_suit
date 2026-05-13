@@ -14,26 +14,26 @@ namespace sgf
  * The base class owns path construction and directory creation so that concrete
  * writers only need to handle the byte-level encoding.
  */
-class ICacheWriter
+class ICacheIOManagment
 {
 public:
     /**
-     * @brief Constructs an ICacheWriter targeting a specific directory and base filename.
+     * @brief Constructs an ICacheIOManagment targeting a specific directory and base filename.
      *
      * @param folder        Directory where the cache file will be written.
      * @param base_filename File name without extension (e.g. "motif_cache").
      */
-    ICacheWriter(std::string folder, std::string base_filename);
+    ICacheIOManagment(std::string folder, std::string base_filename);
 
     /**
      * @brief Default virtual destructor.
      */
-    virtual ~ICacheWriter() = default;
+    virtual ~ICacheIOManagment() = default;
 
-    ICacheWriter(const ICacheWriter&) = default;
-    ICacheWriter& operator=(const ICacheWriter&) = default;
-    ICacheWriter(ICacheWriter&&) = default;
-    ICacheWriter& operator=(ICacheWriter&&) = default;
+    ICacheIOManagment(const ICacheIOManagment&) = default;
+    ICacheIOManagment& operator=(const ICacheIOManagment&) = default;
+    ICacheIOManagment(ICacheIOManagment&&) = default;
+    ICacheIOManagment& operator=(ICacheIOManagment&&) = default;
 
     /**
      * @brief Creates the target directory if absent, then writes @p data to the cache file.
@@ -47,6 +47,16 @@ public:
      */
     void write(const EnumerationData& data) const;
 
+     /**
+     * @brief Read data from the cache file.
+     *
+     * The full output path is: @c folder / @c base_filename + "." + get_extension().
+     * Deserialization is delegated to read_from_file().
+     *
+     * @throws SgfPathDoesntExistException if directory creation or file writing fails.
+     */
+    EnumerationData read() const;
+
 protected:
     /**
      * @brief Serializes @p data to @p full_path in the concrete format.
@@ -56,6 +66,14 @@ protected:
      * @throws SgfPathDoesntExistException if the file cannot be opened or written.
      */
     virtual void write_to_file(const EnumerationData& data, const std::string& full_path) const = 0;
+
+    /**
+     * @brief Deseerializes data from @p full_path in the concrete format.
+     *
+     * @param full_path Source file path including the format extension.
+     * @throws SgfPathDoesntExistException if the file cannot be opened or read from.
+     */
+    virtual EnumerationData read_from_file(const std::string& full_path) const = 0;
 
     /**
      * @brief Returns the file extension used by this format, without a leading dot.
