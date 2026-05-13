@@ -54,13 +54,13 @@ struct TempCacheFile
         std::filesystem::remove(std::filesystem::path(m_folder) / (m_base_name + ".bin"));
     }
 
-    TempCacheFile(const TempCacheFile&)            = delete;
+    TempCacheFile(const TempCacheFile&) = delete;
     TempCacheFile& operator=(const TempCacheFile&) = delete;
-    TempCacheFile(TempCacheFile&&)                 = delete;
-    TempCacheFile& operator=(TempCacheFile&&)      = delete;
+    TempCacheFile(TempCacheFile&&) = delete;
+    TempCacheFile& operator=(TempCacheFile&&) = delete;
 
-    std::string m_folder;    ///< Directory in which the file is created.
-    std::string m_base_name; ///< Base filename without extension.
+    std::string m_folder;     ///< Directory in which the file is created.
+    std::string m_base_name;  ///< Base filename without extension.
 };
 
 }  // namespace

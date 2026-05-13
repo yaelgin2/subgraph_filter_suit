@@ -26,8 +26,8 @@ std::string BinaryCacheIOManager::get_extension() const
 // ── Write helpers ─────────────────────────────────────────────────────────────
 
 void BinaryCacheIOManager::write_collection_header(std::ofstream& out, const size_t size,
-                                                    const uint8_t fix_base, const uint8_t format16,
-                                                    const uint8_t format32)
+                                                   const uint8_t fix_base, const uint8_t format16,
+                                                   const uint8_t format32)
 {
     if (size <= MSGPACK_FIX_COLLECTION_MAX)
     {
@@ -45,11 +45,10 @@ void BinaryCacheIOManager::write_collection_header(std::ofstream& out, const siz
     else
     {
         const uint32_t len = static_cast<uint32_t>(size);
-        const std::array<char, 5> bytes = {static_cast<char>(format32),
-                                           static_cast<char>((len >> 24U) & 0xFFU),
-                                           static_cast<char>((len >> 16U) & 0xFFU),
-                                           static_cast<char>((len >> 8U) & 0xFFU),
-                                           static_cast<char>(len & 0xFFU)};
+        const std::array<char, 5> bytes = {
+            static_cast<char>(format32), static_cast<char>((len >> 24U) & 0xFFU),
+            static_cast<char>((len >> 16U) & 0xFFU), static_cast<char>((len >> 8U) & 0xFFU),
+            static_cast<char>(len & 0xFFU)};
         out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
     }
 }
@@ -68,25 +67,21 @@ void BinaryCacheIOManager::write_map_header(std::ofstream& out, const size_t siz
 
 void BinaryCacheIOManager::write_uint32_value(std::ofstream& out, const uint32_t value)
 {
-    const std::array<char, 5> bytes = {static_cast<char>(MSGPACK_UINT32_FORMAT),
-                                       static_cast<char>((value >> 24U) & 0xFFU),
-                                       static_cast<char>((value >> 16U) & 0xFFU),
-                                       static_cast<char>((value >> 8U) & 0xFFU),
-                                       static_cast<char>(value & 0xFFU)};
+    const std::array<char, 5> bytes = {
+        static_cast<char>(MSGPACK_UINT32_FORMAT), static_cast<char>((value >> 24U) & 0xFFU),
+        static_cast<char>((value >> 16U) & 0xFFU), static_cast<char>((value >> 8U) & 0xFFU),
+        static_cast<char>(value & 0xFFU)};
     out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
 }
 
 void BinaryCacheIOManager::write_uint64_value(std::ofstream& out, const uint64_t value)
 {
-    const std::array<char, 9> bytes = {static_cast<char>(MSGPACK_UINT64_FORMAT),
-                                       static_cast<char>((value >> 56U) & 0xFFU),
-                                       static_cast<char>((value >> 48U) & 0xFFU),
-                                       static_cast<char>((value >> 40U) & 0xFFU),
-                                       static_cast<char>((value >> 32U) & 0xFFU),
-                                       static_cast<char>((value >> 24U) & 0xFFU),
-                                       static_cast<char>((value >> 16U) & 0xFFU),
-                                       static_cast<char>((value >> 8U) & 0xFFU),
-                                       static_cast<char>(value & 0xFFU)};
+    const std::array<char, 9> bytes = {
+        static_cast<char>(MSGPACK_UINT64_FORMAT),  static_cast<char>((value >> 56U) & 0xFFU),
+        static_cast<char>((value >> 48U) & 0xFFU), static_cast<char>((value >> 40U) & 0xFFU),
+        static_cast<char>((value >> 32U) & 0xFFU), static_cast<char>((value >> 24U) & 0xFFU),
+        static_cast<char>((value >> 16U) & 0xFFU), static_cast<char>((value >> 8U) & 0xFFU),
+        static_cast<char>(value & 0xFFU)};
     out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
 }
 
@@ -109,7 +104,7 @@ void BinaryCacheIOManager::write_graph_result(std::ofstream& out, const Enumerat
 }
 
 void BinaryCacheIOManager::write_to_file(const EnumerationData& data,
-                                          const std::string& full_path) const
+                                         const std::string& full_path) const
 {
     std::ofstream file(full_path, std::ios::binary);
     if (!file.is_open())
@@ -136,22 +131,22 @@ size_t BinaryCacheIOManager::read_be_uint32_size(std::ifstream& in)
 {
     std::array<char, 4> buf{};
     in.read(buf.data(), static_cast<std::streamsize>(buf.size()));
-    return (static_cast<size_t>(static_cast<uint8_t>(buf[0])) << 24U)
-         | (static_cast<size_t>(static_cast<uint8_t>(buf[1])) << 16U)
-         | (static_cast<size_t>(static_cast<uint8_t>(buf[2])) << 8U)
-         | static_cast<size_t>(static_cast<uint8_t>(buf[3]));
+    return (static_cast<size_t>(static_cast<uint8_t>(buf[0])) << 24U) |
+           (static_cast<size_t>(static_cast<uint8_t>(buf[1])) << 16U) |
+           (static_cast<size_t>(static_cast<uint8_t>(buf[2])) << 8U) |
+           static_cast<size_t>(static_cast<uint8_t>(buf[3]));
 }
 
 size_t BinaryCacheIOManager::read_be_uint16_size(std::ifstream& in)
 {
     std::array<char, 2> buf{};
     in.read(buf.data(), static_cast<std::streamsize>(buf.size()));
-    return (static_cast<size_t>(static_cast<uint8_t>(buf[0])) << 8U)
-         | static_cast<size_t>(static_cast<uint8_t>(buf[1]));
+    return (static_cast<size_t>(static_cast<uint8_t>(buf[0])) << 8U) |
+           static_cast<size_t>(static_cast<uint8_t>(buf[1]));
 }
 
 size_t BinaryCacheIOManager::read_collection_header(std::ifstream& in, const uint8_t format16,
-                                                     const uint8_t format32)
+                                                    const uint8_t format32)
 {
     const uint8_t byte = read_byte(in);
     if (byte == format32)
@@ -179,24 +174,24 @@ uint32_t BinaryCacheIOManager::read_uint32_value(std::ifstream& in)
 {
     std::array<char, 5> bytes{};
     in.read(bytes.data(), static_cast<std::streamsize>(bytes.size()));
-    return (static_cast<uint32_t>(static_cast<uint8_t>(bytes[1])) << 24U)
-         | (static_cast<uint32_t>(static_cast<uint8_t>(bytes[2])) << 16U)
-         | (static_cast<uint32_t>(static_cast<uint8_t>(bytes[3])) << 8U)
-         | static_cast<uint32_t>(static_cast<uint8_t>(bytes[4]));
+    return (static_cast<uint32_t>(static_cast<uint8_t>(bytes[1])) << 24U) |
+           (static_cast<uint32_t>(static_cast<uint8_t>(bytes[2])) << 16U) |
+           (static_cast<uint32_t>(static_cast<uint8_t>(bytes[3])) << 8U) |
+           static_cast<uint32_t>(static_cast<uint8_t>(bytes[4]));
 }
 
 uint64_t BinaryCacheIOManager::read_uint64_value(std::ifstream& in)
 {
     std::array<char, 9> bytes{};
     in.read(bytes.data(), static_cast<std::streamsize>(bytes.size()));
-    return (static_cast<uint64_t>(static_cast<uint8_t>(bytes[1])) << 56U)
-         | (static_cast<uint64_t>(static_cast<uint8_t>(bytes[2])) << 48U)
-         | (static_cast<uint64_t>(static_cast<uint8_t>(bytes[3])) << 40U)
-         | (static_cast<uint64_t>(static_cast<uint8_t>(bytes[4])) << 32U)
-         | (static_cast<uint64_t>(static_cast<uint8_t>(bytes[5])) << 24U)
-         | (static_cast<uint64_t>(static_cast<uint8_t>(bytes[6])) << 16U)
-         | (static_cast<uint64_t>(static_cast<uint8_t>(bytes[7])) << 8U)
-         | static_cast<uint64_t>(static_cast<uint8_t>(bytes[8]));
+    return (static_cast<uint64_t>(static_cast<uint8_t>(bytes[1])) << 56U) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(bytes[2])) << 48U) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(bytes[3])) << 40U) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(bytes[4])) << 32U) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(bytes[5])) << 24U) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(bytes[6])) << 16U) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(bytes[7])) << 8U) |
+           static_cast<uint64_t>(static_cast<uint8_t>(bytes[8]));
 }
 
 UInt128 BinaryCacheIOManager::read_uint128_key(std::ifstream& in)

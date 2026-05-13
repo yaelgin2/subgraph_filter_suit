@@ -57,19 +57,19 @@ protected:
     [[nodiscard]] std::string get_extension() const override;
 
 private:
-    static constexpr uint8_t      MSGPACK_FIXARRAY_BASE       = 0x90U;
-    static constexpr uint8_t      MSGPACK_FIXMAP_BASE         = 0x80U;
-    static constexpr uint8_t      MSGPACK_ARRAY16_FORMAT      = 0xDCU;
-    static constexpr uint8_t      MSGPACK_ARRAY32_FORMAT      = 0xDDU;
-    static constexpr uint8_t      MSGPACK_MAP16_FORMAT        = 0xDEU;
-    static constexpr uint8_t      MSGPACK_MAP32_FORMAT        = 0xDFU;
-    static constexpr uint8_t      MSGPACK_UINT32_FORMAT       = 0xCEU;
-    static constexpr uint8_t      MSGPACK_UINT64_FORMAT       = 0xCFU;
-    static constexpr size_t       MSGPACK_FIX_COLLECTION_MAX  = 15U;
-    static constexpr size_t       MSGPACK_COLLECTION16_MAX    = 65535U;
-    static constexpr uint8_t      MSGPACK_UINT128_ARRAY_SIZE  = 2U;
-    static constexpr uint8_t      MSGPACK_FIX_COLLECTION_MASK = 0x0FU;
-    static constexpr std::streamsize SINGLE_BYTE              = 1;
+    static constexpr uint8_t MSGPACK_FIXARRAY_BASE = 0x90U;
+    static constexpr uint8_t MSGPACK_FIXMAP_BASE = 0x80U;
+    static constexpr uint8_t MSGPACK_ARRAY16_FORMAT = 0xDCU;
+    static constexpr uint8_t MSGPACK_ARRAY32_FORMAT = 0xDDU;
+    static constexpr uint8_t MSGPACK_MAP16_FORMAT = 0xDEU;
+    static constexpr uint8_t MSGPACK_MAP32_FORMAT = 0xDFU;
+    static constexpr uint8_t MSGPACK_UINT32_FORMAT = 0xCEU;
+    static constexpr uint8_t MSGPACK_UINT64_FORMAT = 0xCFU;
+    static constexpr size_t MSGPACK_FIX_COLLECTION_MAX = 15U;
+    static constexpr size_t MSGPACK_COLLECTION16_MAX = 65535U;
+    static constexpr uint8_t MSGPACK_UINT128_ARRAY_SIZE = 2U;
+    static constexpr uint8_t MSGPACK_FIX_COLLECTION_MASK = 0x0FU;
+    static constexpr std::streamsize SINGLE_BYTE = 1;
 
     // ── Write helpers ────────────────────────────────────────────────────────
 
@@ -82,8 +82,8 @@ private:
      * @param format16 Format byte for 16-bit length encoding.
      * @param format32 Format byte for 32-bit length encoding.
      */
-    static void write_collection_header(std::ofstream& out, size_t size,
-                                        uint8_t fix_base, uint8_t format16, uint8_t format32);
+    static void write_collection_header(std::ofstream& out, size_t size, uint8_t fix_base,
+                                        uint8_t format16, uint8_t format32);
 
     /**
      * @brief Writes a MessagePack array header for @p size elements.
