@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 namespace sgf
@@ -23,6 +22,11 @@ namespace sgf
  */
 using PreprocessorFactory =
     std::function<std::unique_ptr<IGraphPreprocessor>(const ColoredGraph&, LoggerHandler)>;
+
+/**
+ * @brief Collection of EnumerationResult values, one per library graph.
+ */
+using EnumerationData = std::vector<EnumerationResult>;
 
 /**
  * @class EnumerationPreprocessManager
@@ -65,8 +69,7 @@ public:
      * @param factory Callable that constructs an IGraphPreprocessor for one graph.
      * @return One frequency-signature map per library graph.
      */
-    std::vector<std::unordered_map<UInt128, uint32_t, UInt128Hash>>
-    preprocess(const PreprocessorFactory& factory) const;
+    EnumerationData preprocess(const PreprocessorFactory& factory) const;
 
 private:
     std::vector<ColoredGraph> m_library;

@@ -7,12 +7,9 @@
 #include "LoggerHandler.h"
 
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
-#include <vector>
 
 namespace sgf
 {
@@ -24,10 +21,9 @@ EnumerationPreprocessManager::EnumerationPreprocessManager(std::vector<ColoredGr
 {
 }
 
-std::vector<std::unordered_map<UInt128, uint32_t, UInt128Hash>>
-EnumerationPreprocessManager::preprocess(const PreprocessorFactory& factory) const
+EnumerationData EnumerationPreprocessManager::preprocess(const PreprocessorFactory& factory) const
 {
-    std::vector<std::unordered_map<UInt128, uint32_t, UInt128Hash>> results;
+    EnumerationData results;
     results.reserve(m_library.size());
     for (size_t graph_index = 0U; graph_index < m_library.size(); ++graph_index)
     {
