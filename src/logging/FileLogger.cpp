@@ -108,6 +108,7 @@ FileLogger::FileLogger(const std::string& file_name)
     using TextSink = sinks::synchronous_sink<sinks::text_ostream_backend>;
     const boost::shared_ptr<TextSink> sink = boost::make_shared<TextSink>();
     sink->locked_backend()->add_stream(boost::static_pointer_cast<std::ostream>(file_stream));
+    sink->locked_backend()->auto_flush(true);
     sink->set_formatter(expr::stream << expr::format_date_time<boost::posix_time::ptime>(
                                             "TimeStamp", "%Y-%m-%d %H:%M:%S")
                                      << " " << expr::smessage);
