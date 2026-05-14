@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EnumerationPreprocessManager.h"
 #include "ICacheIOManagment.h"
 #include "Int128.h"
 
@@ -71,136 +72,164 @@ private:
     static constexpr uint8_t MSGPACK_FIX_COLLECTION_MASK = 0x0FU;
     static constexpr std::streamsize SINGLE_BYTE = 1;
 
+    static constexpr uint8_t BYTE_MASK = 0xFFU;
+    static constexpr uint32_t SHIFT_8 = 8U;
+    static constexpr uint32_t SHIFT_16 = 16U;
+    static constexpr uint32_t SHIFT_24 = 24U;
+    static constexpr uint32_t SHIFT_32 = 32U;
+    static constexpr uint32_t SHIFT_40 = 40U;
+    static constexpr uint32_t SHIFT_48 = 48U;
+    static constexpr uint32_t SHIFT_56 = 56U;
+
+    static constexpr size_t UINT32_MSGPACK_BYTE_COUNT = 5U;
+    static constexpr size_t UINT64_MSGPACK_BYTE_COUNT = 9U;
+    static constexpr size_t UINT16_MSGPACK_BYTE_COUNT = 3U;
+
+    static constexpr size_t UINT32_BYTE_IDX_1 = 1U;
+    static constexpr size_t UINT32_BYTE_IDX_2 = 2U;
+    static constexpr size_t UINT32_BYTE_IDX_3 = 3U;
+    static constexpr size_t UINT32_BYTE_IDX_4 = 4U;
+
+    static constexpr size_t UINT64_BYTE_IDX_1 = 1U;
+    static constexpr size_t UINT64_BYTE_IDX_2 = 2U;
+    static constexpr size_t UINT64_BYTE_IDX_3 = 3U;
+    static constexpr size_t UINT64_BYTE_IDX_4 = 4U;
+    static constexpr size_t UINT64_BYTE_IDX_5 = 5U;
+    static constexpr size_t UINT64_BYTE_IDX_6 = 6U;
+    static constexpr size_t UINT64_BYTE_IDX_7 = 7U;
+    static constexpr size_t UINT64_BYTE_IDX_8 = 8U;
+
     // ── Write helpers ────────────────────────────────────────────────────────
 
     /**
      * @brief Writes an array or map header, choosing the smallest fitting format.
      *
-     * @param out      Output stream.
-     * @param size     Number of elements.
-     * @param fix_base Base byte for the fix format (OR-ed with size for ≤15 elements).
-     * @param format16 Format byte for 16-bit length encoding.
-     * @param format32 Format byte for 32-bit length encoding.
+     * @param output_stream Output stream.
+     * @param size          Number of elements.
+     * @param fix_base      Base byte for the fix format (OR-ed with size for ≤15 elements).
+     * @param format16      Format byte for 16-bit length encoding.
+     * @param format32      Format byte for 32-bit length encoding.
      */
-    static void write_collection_header(std::ofstream& out, size_t size, uint8_t fix_base,
+    static void write_collection_header(std::ofstream& output_stream, size_t size, uint8_t fix_base,
                                         uint8_t format16, uint8_t format32);
 
     /**
      * @brief Writes a MessagePack array header for @p size elements.
-     * @param out  Output stream.
-     * @param size Number of array elements.
+     * @param output_stream Output stream.
+     * @param size          Number of array elements.
      */
-    static void write_array_header(std::ofstream& out, size_t size);
+    static void write_array_header(std::ofstream& output_stream, size_t size);
 
     /**
      * @brief Writes a MessagePack map header for @p size key-value pairs.
-     * @param out  Output stream.
-     * @param size Number of map entries.
+     * @param output_stream Output stream.
+     * @param size          Number of map entries.
      */
-    static void write_map_header(std::ofstream& out, size_t size);
+    static void write_map_header(std::ofstream& output_stream, size_t size);
 
     /**
      * @brief Writes a uint32 value in MessagePack uint32 format (0xCE + 4 bytes BE).
-     * @param out   Output stream.
-     * @param value Value to encode.
+     * @param output_stream Output stream.
+     * @param value         Value to encode.
      */
-    static void write_uint32_value(std::ofstream& out, uint32_t value);
+    static void write_uint32_value(std::ofstream& output_stream, uint32_t value);
 
     /**
      * @brief Writes a uint64 value in MessagePack uint64 format (0xCF + 8 bytes BE).
-     * @param out   Output stream.
-     * @param value Value to encode.
+     * @param output_stream Output stream.
+     * @param value         Value to encode.
      */
-    static void write_uint64_value(std::ofstream& out, uint64_t value);
+    static void write_uint64_value(std::ofstream& output_stream, uint64_t value);
 
     /**
      * @brief Writes a UInt128 as a MessagePack 2-element fixarray [high, low].
-     * @param out   Output stream.
-     * @param value Value to encode.
+     * @param output_stream Output stream.
+     * @param value         Value to encode.
      */
-    static void write_uint128_key(std::ofstream& out, const UInt128& value);
+    static void write_uint128_key(std::ofstream& output_stream, const UInt128& value);
 
     /**
      * @brief Writes one graph's EnumerationResult as a MessagePack map.
-     * @param out    Output stream.
-     * @param result The per-graph frequency map to serialize.
+     * @param output_stream Output stream.
+     * @param result        The per-graph frequency map to serialize.
      */
-    static void write_graph_result(std::ofstream& out, const EnumerationResult& result);
+    static void write_graph_result(std::ofstream& output_stream, const EnumerationResult& result);
 
     // ── Read helpers ─────────────────────────────────────────────────────────
 
     /**
      * @brief Reads a single byte from the stream.
-     * @param in Input stream.
+     * @param input_stream Input stream.
      * @return The byte read, as uint8_t.
      */
-    static uint8_t read_byte(std::ifstream& in);
+    static uint8_t read_byte(std::ifstream& input_stream);
 
     /**
      * @brief Reads 4 bytes big-endian and returns the value as a size_t.
-     * @param in Input stream.
+     * @param input_stream Input stream.
      * @return Decoded 32-bit big-endian value.
      */
-    static size_t read_be_uint32_size(std::ifstream& in);
+    static size_t read_be_uint32_size(std::ifstream& input_stream);
 
     /**
      * @brief Reads 2 bytes big-endian and returns the value as a size_t.
-     * @param in Input stream.
+     * @param input_stream Input stream.
      * @return Decoded 16-bit big-endian value.
      */
-    static size_t read_be_uint16_size(std::ifstream& in);
+    static size_t read_be_uint16_size(std::ifstream& input_stream);
 
     /**
      * @brief Reads an array or map header and returns the element count.
      *
-     * @param in       Input stream.
-     * @param format16 Format byte for 16-bit length encoding.
-     * @param format32 Format byte for 32-bit length encoding.
+     * @param input_stream Input stream.
+     * @param format16     Format byte for 16-bit length encoding.
+     * @param format32     Format byte for 32-bit length encoding.
      * @return Number of elements in the collection.
      */
-    static size_t read_collection_header(std::ifstream& in, uint8_t format16, uint8_t format32);
+    static size_t read_collection_header(std::ifstream& input_stream, uint8_t format16,
+                                         uint8_t format32);
 
     /**
      * @brief Reads a MessagePack array header and returns the element count.
-     * @param in Input stream.
+     * @param input_stream Input stream.
      * @return Number of array elements.
      */
-    static size_t read_array_header(std::ifstream& in);
+    static size_t read_array_header(std::ifstream& input_stream);
 
     /**
      * @brief Reads a MessagePack map header and returns the entry count.
-     * @param in Input stream.
+     * @param input_stream Input stream.
      * @return Number of map entries.
      */
-    static size_t read_map_header(std::ifstream& in);
+    static size_t read_map_header(std::ifstream& input_stream);
 
     /**
      * @brief Reads a MessagePack uint32 value (0xCE + 4 bytes BE).
-     * @param in Input stream.
+     * @param input_stream Input stream.
      * @return Decoded uint32_t value.
      */
-    static uint32_t read_uint32_value(std::ifstream& in);
+    static uint32_t read_uint32_value(std::ifstream& input_stream);
 
     /**
      * @brief Reads a MessagePack uint64 value (0xCF + 8 bytes BE).
-     * @param in Input stream.
+     * @param input_stream Input stream.
      * @return Decoded uint64_t value.
      */
-    static uint64_t read_uint64_value(std::ifstream& in);
+    static uint64_t read_uint64_value(std::ifstream& input_stream);
 
     /**
      * @brief Reads a UInt128 from a MessagePack 2-element fixarray [high, low].
-     * @param in Input stream.
+     * @param input_stream Input stream.
      * @return Decoded UInt128 value.
      */
-    static UInt128 read_uint128_key(std::ifstream& in);
+    static UInt128 read_uint128_key(std::ifstream& input_stream);
 
     /**
      * @brief Reads one graph's EnumerationResult from a MessagePack map.
-     * @param in Input stream.
+     * @param input_stream Input stream.
      * @return Deserialized per-graph frequency map.
      */
-    static EnumerationResult read_graph_result(std::ifstream& in);
+    static EnumerationResult read_graph_result(std::ifstream& input_stream);
 };
 
 }  // namespace sgf
