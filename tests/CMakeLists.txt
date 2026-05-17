@@ -42,6 +42,7 @@ add_sgf_test(json_pattern_writer_tests            io/pattern/JsonPatternWriterTe
 add_sgf_test(vertex_edge_pattern_writer_tests     io/pattern/VertexEdgePatternWriterTest.cpp)
 add_sgf_test(graphml_writer_tests                 io/pattern/GraphmlPatternWriterTest.cpp)
 add_sgf_test(enumeration_preprocess_manager_tests managers/EnumerationPreprocessManagerTest.cpp)
+add_sgf_test(group_enumeration_graph_filter_tests filtering/GroupEnumerationGraphFilterTest.cpp)
 add_sgf_test(csv_cache_io_manager_tests           io/cache/CSVCacheIOManagerTest.cpp)
 add_sgf_test(binary_cache_io_manager_tests        io/cache/BinaryCacheIOManagerTest.cpp)
 
