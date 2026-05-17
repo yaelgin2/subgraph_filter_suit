@@ -9,6 +9,11 @@ namespace sgf
 {
 
 /**
+ * @brief Frequency-signature map produced by a single graph's enumeration preprocessor.
+ */
+using EnumerationResult = std::unordered_map<UInt128, uint32_t, UInt128Hash>;
+
+/**
  * @class IGraphPreprocessor
  * @brief Interface for graph enumeration preprocessors.
  *
@@ -35,7 +40,7 @@ public:
      *
      * @return Map of motif identifier to occurrence count.
      */
-    virtual std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate() = 0;
+    virtual EnumerationResult calculate() = 0;
 };
 
 }  // namespace sgf

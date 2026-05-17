@@ -85,7 +85,7 @@ public:
      *
      * @return Map of motif identifier to occurrence count.
      */
-    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate() override;
+    EnumerationResult calculate() override;
 
 protected:
     /**
