@@ -47,7 +47,7 @@ public:
      */
     void write(const EnumerationData& data) const;
 
-     /**
+    /**
      * @brief Read data from the cache file.
      *
      * The full output path is: @c folder / @c base_filename + "." + get_extension().

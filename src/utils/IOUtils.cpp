@@ -16,7 +16,7 @@ void IOUtils::create_directory_if_needed(const std::string& folder_path)
     if (error_code)
     {
         throw SgfDirectoryCreationException("Failed to create directory '" + folder_path +
-                                          "': " + error_code.message());
+                                            "': " + error_code.message());
     }
 }
 
