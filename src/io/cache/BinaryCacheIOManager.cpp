@@ -37,10 +37,11 @@ void BinaryCacheIOManager::write_collection_header(std::ofstream& output_stream,
 {
     if (size <= MSGPACK_FIX_COLLECTION_MAX)
     {
-        const uint8_t raw_byte = static_cast<uint8_t>(
-            static_cast<uint8_t>(fix_base | static_cast<uint8_t>(static_cast<uint8_t>(size) &
-                                                                  MSGPACK_FIX_COLLECTION_MASK)));
-        output_stream.write(reinterpret_cast<const char*>(&raw_byte), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        const uint8_t raw_byte = static_cast<uint8_t>(static_cast<uint8_t>(
+            fix_base |
+            static_cast<uint8_t>(static_cast<uint8_t>(size) & MSGPACK_FIX_COLLECTION_MASK)));
+        output_stream.write(reinterpret_cast<const char*>(
+                                &raw_byte),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
                             SINGLE_BYTE);
     }
     else if (size <= MSGPACK_COLLECTION16_MAX)
@@ -49,8 +50,10 @@ void BinaryCacheIOManager::write_collection_header(std::ofstream& output_stream,
         const std::array<uint8_t, UINT16_MSGPACK_BYTE_COUNT> bytes = {
             format16, static_cast<uint8_t>((static_cast<uint32_t>(len) >> SHIFT_8) & BYTE_MASK),
             static_cast<uint8_t>(len & BYTE_MASK)};
-        output_stream.write(reinterpret_cast<const char*>(bytes.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                            static_cast<std::streamsize>(bytes.size()));
+        output_stream.write(
+            reinterpret_cast<const char*>(
+                bytes.data()),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+            static_cast<std::streamsize>(bytes.size()));
     }
     else
     {
@@ -60,8 +63,10 @@ void BinaryCacheIOManager::write_collection_header(std::ofstream& output_stream,
             static_cast<uint8_t>((len >> SHIFT_16) & BYTE_MASK),
             static_cast<uint8_t>((len >> SHIFT_8) & BYTE_MASK),
             static_cast<uint8_t>(len & BYTE_MASK)};
-        output_stream.write(reinterpret_cast<const char*>(bytes.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                            static_cast<std::streamsize>(bytes.size()));
+        output_stream.write(
+            reinterpret_cast<const char*>(
+                bytes.data()),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+            static_cast<std::streamsize>(bytes.size()));
     }
 }
 
@@ -84,7 +89,8 @@ void BinaryCacheIOManager::write_uint32_value(std::ofstream& output_stream, cons
         static_cast<uint8_t>((value >> SHIFT_16) & BYTE_MASK),
         static_cast<uint8_t>((value >> SHIFT_8) & BYTE_MASK),
         static_cast<uint8_t>(value & BYTE_MASK)};
-    output_stream.write(reinterpret_cast<const char*>(bytes.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    output_stream.write(reinterpret_cast<const char*>(
+                            bytes.data()),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
                         static_cast<std::streamsize>(bytes.size()));
 }
 
@@ -100,14 +106,16 @@ void BinaryCacheIOManager::write_uint64_value(std::ofstream& output_stream, cons
         static_cast<uint8_t>((value >> SHIFT_16) & BYTE_MASK),
         static_cast<uint8_t>((value >> SHIFT_8) & BYTE_MASK),
         static_cast<uint8_t>(value & BYTE_MASK)};
-    output_stream.write(reinterpret_cast<const char*>(bytes.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    output_stream.write(reinterpret_cast<const char*>(
+                            bytes.data()),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
                         static_cast<std::streamsize>(bytes.size()));
 }
 
 void BinaryCacheIOManager::write_uint128_key(std::ofstream& output_stream, const UInt128& value)
 {
     const uint8_t header = MSGPACK_UINT128_HEADER;
-    output_stream.write(reinterpret_cast<const char*>(&header), SINGLE_BYTE); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    output_stream.write(reinterpret_cast<const char*>(&header),
+                        SINGLE_BYTE);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     write_uint64_value(output_stream, value.m_high);
     write_uint64_value(output_stream, value.m_low);
 }
@@ -156,7 +164,8 @@ void BinaryCacheIOManager::check_read_stream(const std::ifstream& input_stream)
 uint8_t BinaryCacheIOManager::read_byte(std::ifstream& input_stream)
 {
     uint8_t raw_byte{};
-    input_stream.read(reinterpret_cast<char*>(&raw_byte), SINGLE_BYTE); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    input_stream.read(reinterpret_cast<char*>(&raw_byte),
+                      SINGLE_BYTE);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     check_read_stream(input_stream);
     return raw_byte;
 }
@@ -164,8 +173,9 @@ uint8_t BinaryCacheIOManager::read_byte(std::ifstream& input_stream)
 size_t BinaryCacheIOManager::read_be_uint32_size(std::ifstream& input_stream)
 {
     std::array<uint8_t, RAW_UINT32_BYTE_COUNT> buf{};
-    input_stream.read(reinterpret_cast<char*>(buf.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                      static_cast<std::streamsize>(buf.size()));
+    input_stream.read(
+        reinterpret_cast<char*>(buf.data()),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        static_cast<std::streamsize>(buf.size()));
     check_read_stream(input_stream);
     return (static_cast<size_t>(buf[0]) << SHIFT_24) | (static_cast<size_t>(buf[1]) << SHIFT_16) |
            (static_cast<size_t>(buf[2]) << SHIFT_8) | static_cast<size_t>(buf[3]);
@@ -174,8 +184,9 @@ size_t BinaryCacheIOManager::read_be_uint32_size(std::ifstream& input_stream)
 size_t BinaryCacheIOManager::read_be_uint16_size(std::ifstream& input_stream)
 {
     std::array<uint8_t, RAW_UINT16_BYTE_COUNT> buf{};
-    input_stream.read(reinterpret_cast<char*>(buf.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                      static_cast<std::streamsize>(buf.size()));
+    input_stream.read(
+        reinterpret_cast<char*>(buf.data()),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        static_cast<std::streamsize>(buf.size()));
     check_read_stream(input_stream);
     return (static_cast<size_t>(buf[0]) << SHIFT_8) | static_cast<size_t>(buf[1]);
 }
@@ -208,7 +219,8 @@ size_t BinaryCacheIOManager::read_map_header(std::ifstream& input_stream)
 uint32_t BinaryCacheIOManager::read_uint32_value(std::ifstream& input_stream)
 {
     std::array<uint8_t, UINT32_MSGPACK_BYTE_COUNT> bytes{};
-    input_stream.read(reinterpret_cast<char*>(bytes.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    input_stream.read(reinterpret_cast<char*>(
+                          bytes.data()),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
                       static_cast<std::streamsize>(bytes.size()));
     check_read_stream(input_stream);
     if (bytes[FORMAT_BYTE_IDX] != MSGPACK_UINT32_FORMAT)
@@ -224,7 +236,8 @@ uint32_t BinaryCacheIOManager::read_uint32_value(std::ifstream& input_stream)
 uint64_t BinaryCacheIOManager::read_uint64_value(std::ifstream& input_stream)
 {
     std::array<uint8_t, UINT64_MSGPACK_BYTE_COUNT> bytes{};
-    input_stream.read(reinterpret_cast<char*>(bytes.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    input_stream.read(reinterpret_cast<char*>(
+                          bytes.data()),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
                       static_cast<std::streamsize>(bytes.size()));
     check_read_stream(input_stream);
     if (bytes[FORMAT_BYTE_IDX] != MSGPACK_UINT64_FORMAT)
