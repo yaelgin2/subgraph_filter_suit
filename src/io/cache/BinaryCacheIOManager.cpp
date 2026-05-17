@@ -37,8 +37,9 @@ void BinaryCacheIOManager::write_collection_header(std::ofstream& output_stream,
 {
     if (size <= MSGPACK_FIX_COLLECTION_MAX)
     {
-        const char raw_byte =
-            static_cast<char>(fix_base | (static_cast<uint8_t>(size) & MSGPACK_FIX_COLLECTION_MASK)); //NOLINT(hicpp-signed-bitwise)
+        const char raw_byte = static_cast<char>(
+            fix_base | (static_cast<uint8_t>(size) &
+                        MSGPACK_FIX_COLLECTION_MASK));  // NOLINT(hicpp-signed-bitwise)
         output_stream.write(&raw_byte, SINGLE_BYTE);
     }
     else if (size <= MSGPACK_COLLECTION16_MAX)
@@ -46,7 +47,8 @@ void BinaryCacheIOManager::write_collection_header(std::ofstream& output_stream,
         const uint16_t len = static_cast<uint16_t>(size);
         const std::array<char, UINT16_MSGPACK_BYTE_COUNT> bytes = {
             static_cast<char>(format16),
-            static_cast<char>(static_cast<uint8_t>((static_cast<uint32_t>(len) >> SHIFT_8) & BYTE_MASK)),
+            static_cast<char>(
+                static_cast<uint8_t>((static_cast<uint32_t>(len) >> SHIFT_8) & BYTE_MASK)),
             static_cast<char>(static_cast<uint8_t>(len & BYTE_MASK))};
         output_stream.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
     }
