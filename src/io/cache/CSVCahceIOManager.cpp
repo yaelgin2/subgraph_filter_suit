@@ -1,6 +1,7 @@
 #include "CSVCacheIOManager.h"
-
+#include "EnumerationPreprocessManager.h"
 #include "GraphConstructionException.h"
+#include "ICacheIOManagment.h"
 #include "Int128.h"
 #include "SgfPathDoesntExistException.h"
 
@@ -55,8 +56,7 @@ UInt128 CSVIOManager::decimal_to_uint128(const std::string& decimal_str)
 
 void CSVIOManager::write_header(std::ofstream& file)
 {
-    file << CSV_COLUMN_GRAPH_INDEX << ","
-         << CSV_COLUMN_MOTIF_NUMBER << ","
+    file << CSV_COLUMN_GRAPH_INDEX << "," << CSV_COLUMN_MOTIF_NUMBER << ","
          << CSV_COLUMN_APPEARANCES << "\n";
 }
 
@@ -66,9 +66,8 @@ void CSVIOManager::write_rows(const EnumerationData& data, std::ofstream& file)
     {
         for (const auto& entry : data[graph_index])
         {
-            file << graph_index << ","
-                 << uint128_to_decimal(entry.first) << ","
-                 << entry.second << "\n";
+            file << graph_index << "," << uint128_to_decimal(entry.first) << "," << entry.second
+                 << "\n";
         }
     }
 }
