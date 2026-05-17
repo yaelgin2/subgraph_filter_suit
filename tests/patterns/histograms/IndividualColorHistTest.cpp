@@ -195,9 +195,8 @@ TEST_F(IndividualColorHistTest, remove_node_zero_crossing_propagates_to_general)
 TEST_F(IndividualColorHistTest, remove_node_zero_cell_throws)
 {
     m_hist.update_neighbours_add_node_add_neighbours_to_hist(0U, {1U});
-    EXPECT_THROW(
-        m_hist.update_neighbours_remove_node_decrease_neighbours_from_hist(0U, {2U}),
-        PatternException);
+    EXPECT_THROW(m_hist.update_neighbours_remove_node_decrease_neighbours_from_hist(0U, {2U}),
+                 PatternException);
 }
 
 /**
@@ -211,8 +210,7 @@ TEST_F(IndividualColorHistTest, add_remove_roundtrip_leaves_general_unchanged)
     m_hist.update_neighbours_add_node_add_neighbours_to_hist(0U, {0U, 1U});
     m_hist.update_neighbours_remove_node_decrease_neighbours_from_hist(0U, {0U, 1U});
 
-    const std::tuple<int32_t, int32_t, uint32_t> after =
-        m_general_hist.get_color_to_add(0U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> after = m_general_hist.get_color_to_add(0U, false);
 
     EXPECT_EQ(std::get<0>(before), std::get<0>(after));
     EXPECT_EQ(std::get<1>(before), std::get<1>(after));

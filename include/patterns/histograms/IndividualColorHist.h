@@ -38,7 +38,8 @@ public:
      * @param logger Logger for before/after tracing of histogram operations.
      * @param general_color_hist Shared histogram updated when this one's counts cross zero.
      */
-    IndividualColorHist(GeneralColorHist& general_color_hist, const LoggerHandler& logger = LoggerHandler::null());
+    explicit IndividualColorHist(GeneralColorHist& general_color_hist,
+                                 LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Decrease histogram counts when a vertex is added to the match path.
@@ -49,9 +50,8 @@ public:
      * @param current_vertex_color Color of the vertex being added to the match.
      * @param neighbour_depths Depths of tree-path neighbours invalidated by the addition.
      */
-    void update_hist_decrease_from_neighbours(
-        uint32_t current_vertex_color,
-        const std::vector<uint32_t>& neighbour_depths);
+    void update_hist_decrease_from_neighbours(uint32_t current_vertex_color,
+                                              const std::vector<uint32_t>& neighbour_depths);
 
     /**
      * @brief Increase histogram counts when a node is added to the tree.
@@ -63,8 +63,7 @@ public:
      * @param neighbour_colors Colors of the new node's neighbours not in the tree path.
      */
     void update_neighbours_add_node_add_neighbours_to_hist(
-        uint32_t new_node_depth,
-        const std::vector<uint32_t>& neighbour_colors);
+        uint32_t new_node_depth, const std::vector<uint32_t>& neighbour_colors);
 
     /**
      * @brief Decrease histogram counts when a node is removed from the tree (backtracking).
@@ -76,14 +75,13 @@ public:
      * @param neighbour_colors Colors of the removed node's neighbours not in the tree path.
      */
     void update_neighbours_remove_node_decrease_neighbours_from_hist(
-        uint32_t remove_node_depth,
-        const std::vector<uint32_t>& neighbour_colors);
+        uint32_t remove_node_depth, const std::vector<uint32_t>& neighbour_colors);
 
 private:
     std::vector<std::vector<uint32_t>> m_number_of_neighbours;  ///< [depth][color] neighbour count.
-    uint32_t m_num_colors;                                       ///< Number of distinct colors.
-    GeneralColorHist& m_general_hist;                            ///< Shared general histogram.
-    LoggerHandler m_logger;                                      ///< Logger for before/after tracing.
+    uint32_t m_num_colors;                                      ///< Number of distinct colors.
+    GeneralColorHist& m_general_hist;                           ///< Shared general histogram.
+    LoggerHandler m_logger;  ///< Logger for before/after tracing.
 };
 
 using IndividualColorHistPtr = std::shared_ptr<IndividualColorHist>;

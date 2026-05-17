@@ -113,8 +113,7 @@ TEST_F(GeneralColorHistTest, increase_depth_1_on_empty_hist_grows_rows)
 {
     GeneralColorHist hist(1U);
     hist.update_hist_increase_tree_count(1U, 0U);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add(0U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(0U, false);
     EXPECT_EQ(std::get<0>(result), 0);
     EXPECT_EQ(std::get<1>(result), 1);
     EXPECT_EQ(std::get<2>(result), 1U);
@@ -128,8 +127,7 @@ TEST_F(GeneralColorHistTest, increase_depth_2_on_1_row_hist)
     GeneralColorHist hist(1U);
     hist.update_hist_increase_tree_count(0U, 0U);
     hist.update_hist_increase_tree_count(2U, 0U);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add(0U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(0U, false);
     EXPECT_EQ(std::get<2>(result), 1U);
 }
 
@@ -140,8 +138,7 @@ TEST_F(GeneralColorHistTest, increase_color_0_on_1_color_hist)
 {
     GeneralColorHist hist(1U);
     hist.update_hist_increase_tree_count(0U, 0U);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add(0U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(0U, false);
     EXPECT_EQ(std::get<0>(result), 0);
     EXPECT_EQ(std::get<1>(result), 0);
     EXPECT_EQ(std::get<2>(result), 1U);
@@ -154,8 +151,7 @@ TEST_F(GeneralColorHistTest, increase_color_2_on_3_color_hist)
 {
     GeneralColorHist hist(3U);
     hist.update_hist_increase_tree_count(0U, 2U);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add(0U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(0U, false);
     EXPECT_EQ(std::get<0>(result), 2);
     EXPECT_EQ(std::get<1>(result), 0);
     EXPECT_EQ(std::get<2>(result), 1U);
@@ -171,8 +167,7 @@ TEST_F(GeneralColorHistTest, increase_multiple_depths)
     hist.update_hist_increase_tree_count(1U, 1U);
     hist.update_hist_increase_tree_count(2U, 0U);
     hist.update_hist_increase_tree_count(2U, 0U);
-    const std::tuple<int32_t, int32_t, uint32_t> heaviest =
-        hist.get_color_to_add(2U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> heaviest = hist.get_color_to_add(2U, false);
     EXPECT_EQ(std::get<0>(heaviest), 0);
     EXPECT_EQ(std::get<1>(heaviest), 2);
     EXPECT_EQ(std::get<2>(heaviest), 2U);
@@ -187,8 +182,7 @@ TEST_F(GeneralColorHistTest, first_level_ok_then_out_of_bounds_throws)
     GeneralColorHist hist(1U);
     hist.update_hist_increase_tree_count(0U, 0U);
     EXPECT_THROW(hist.update_hist_increase_tree_count(0U, 1U), PatternException);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add(0U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(0U, false);
     EXPECT_EQ(std::get<2>(result), 1U);
 }
 
@@ -203,8 +197,7 @@ TEST_F(GeneralColorHistTest, decrease_nonzero_cell_decrements)
     hist.update_hist_increase_tree_count(0U, 0U);
     hist.update_hist_increase_tree_count(0U, 0U);
     hist.update_hist_decrease_tree_count(0U, 0U);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add(0U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(0U, false);
     EXPECT_EQ(std::get<2>(result), 1U);
 }
 
@@ -216,8 +209,7 @@ TEST_F(GeneralColorHistTest, decrease_to_zero_succeeds)
     GeneralColorHist hist(1U);
     hist.update_hist_increase_tree_count(0U, 0U);
     hist.update_hist_decrease_tree_count(0U, 0U);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add(0U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(0U, false);
     EXPECT_EQ(std::get<0>(result), -1);
 }
 
@@ -229,8 +221,7 @@ TEST_F(GeneralColorHistTest, decrease_to_zero_succeeds)
 TEST_F(GeneralColorHistTest, get_color_empty_hist_returns_sentinel)
 {
     const GeneralColorHist hist(2U);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add();
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add();
     EXPECT_EQ(std::get<0>(result), -1);
     EXPECT_EQ(std::get<1>(result), -1);
     EXPECT_EQ(std::get<2>(result), 0U);
@@ -244,8 +235,7 @@ TEST_F(GeneralColorHistTest, get_color_all_zero_cells_returns_sentinel)
     GeneralColorHist hist(2U);
     hist.update_hist_increase_tree_count(0U, 0U);
     hist.update_hist_decrease_tree_count(0U, 0U);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add();
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add();
     EXPECT_EQ(std::get<0>(result), -1);
 }
 
@@ -258,8 +248,7 @@ TEST_F(GeneralColorHistTest, get_color_not_random_returns_last_scanned)
     hist.update_hist_increase_tree_count(0U, 0U);
     hist.update_hist_increase_tree_count(0U, 1U);
     hist.update_hist_increase_tree_count(0U, 2U);
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add(0U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(0U, false);
     EXPECT_EQ(std::get<0>(result), 2);
     EXPECT_EQ(std::get<1>(result), 0);
 }
@@ -277,8 +266,7 @@ TEST_F(GeneralColorHistTest, get_color_threshold_filters_low_weight)
     hist.update_hist_increase_tree_count(0U, 2U);
     hist.update_hist_increase_tree_count(0U, 2U);
     // color 0 has weight 1 (below threshold), colors 1 and 2 are above
-    const std::tuple<int32_t, int32_t, uint32_t> result =
-        hist.get_color_to_add(2U, false);
+    const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(2U, false);
     EXPECT_NE(std::get<0>(result), 0);
     EXPECT_GE(std::get<2>(result), 2U);
 }
@@ -299,8 +287,7 @@ TEST_F(GeneralColorHistTest, get_color_one_dominant_sampled_more)
     constexpr uint32_t SAMPLE_COUNT = 500U;
     for (uint32_t idx = 0U; idx < SAMPLE_COUNT; ++idx)
     {
-        const std::tuple<int32_t, int32_t, uint32_t> result =
-            hist.get_color_to_add(0U, true);
+        const std::tuple<int32_t, int32_t, uint32_t> result = hist.get_color_to_add(0U, true);
         if (std::get<0>(result) == 0)
         {
             ++dominant_count;

@@ -30,8 +30,7 @@ public:
      * @param num_colors Number of distinct vertex colors in the graph.
      * @param logger Optional logger; defaults to a no-op handler.
      */
-    explicit GeneralColorHist(uint32_t num_colors,
-                               LoggerHandler logger = LoggerHandler::null());
+    explicit GeneralColorHist(uint32_t num_colors, LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Choose a (color, depth) pair to extend next.
@@ -44,24 +43,22 @@ public:
      * @param is_random If true, perform weighted random sampling.
      * @return Tuple `{color, depth, weight}`; all -1/0 if no candidate exists.
      */
-    std::tuple<int32_t, int32_t, uint32_t>
-    get_color_to_add(uint32_t threshold = 0U, bool is_random = true) const;
+    std::tuple<int32_t, int32_t, uint32_t> get_color_to_add(uint32_t threshold = 0U,
+                                                            bool is_random = true) const;
 
     /**
      * @brief Increment the tree count for a (depth, color) cell, growing rows as needed.
      * @param pattern_depth Depth within the pattern being extended.
      * @param current_vertex_color Color of the vertex that adds support.
      */
-    void update_hist_increase_tree_count(uint32_t pattern_depth,
-                                         uint32_t current_vertex_color);
+    void update_hist_increase_tree_count(uint32_t pattern_depth, uint32_t current_vertex_color);
 
     /**
      * @brief Decrement the tree count for an existing (depth, color) cell.
      * @param pattern_depth Depth within the pattern being extended.
      * @param current_vertex_color Color of the vertex that loses support.
      */
-    void update_hist_decrease_tree_count(uint32_t pattern_depth,
-                                         uint32_t current_vertex_color);
+    void update_hist_decrease_tree_count(uint32_t pattern_depth, uint32_t current_vertex_color);
 
     /**
      * @brief Returns the configured number of distinct colors.
@@ -85,13 +82,13 @@ public:
     static constexpr uint32_t MAX_PATTERN_DEPTH = UINT32_MAX;
 
 private:
-    static constexpr int32_t NO_CANDIDATE_COLOR = -1;   ///< Sentinel: no valid color found.
-    static constexpr int32_t NO_CANDIDATE_DEPTH = -1;   ///< Sentinel: no valid depth found.
-    static constexpr uint32_t NO_CANDIDATE_WEIGHT = 0U; ///< Sentinel: no valid weight found.
+    static constexpr int32_t NO_CANDIDATE_COLOR = -1;    ///< Sentinel: no valid color found.
+    static constexpr int32_t NO_CANDIDATE_DEPTH = -1;    ///< Sentinel: no valid depth found.
+    static constexpr uint32_t NO_CANDIDATE_WEIGHT = 0U;  ///< Sentinel: no valid weight found.
 
     std::vector<std::vector<uint32_t>> m_number_of_trees;  ///< [depth][color] -> tree count.
-    uint32_t m_num_colors;                                  ///< Number of distinct colors.
-    LoggerHandler m_logger;                                 ///< Logger for before/after tracing.
+    uint32_t m_num_colors;                                 ///< Number of distinct colors.
+    LoggerHandler m_logger;                                ///< Logger for before/after tracing.
 };
 
 using GeneralColorHistPtr = std::shared_ptr<GeneralColorHist>;
