@@ -54,10 +54,10 @@ protected:
     [[nodiscard]] std::string get_extension() const override;
 
 private:
-    static constexpr const char* CSV_COLUMN_GRAPH_INDEX  = "graph_index";
+    static constexpr const char* CSV_COLUMN_GRAPH_INDEX = "graph_index";
     static constexpr const char* CSV_COLUMN_MOTIF_NUMBER = "motif_number";
-    static constexpr const char* CSV_COLUMN_APPEARANCES  = "appearances";
-    static constexpr size_t      MAX_GRAPH_INDEX         = 1'000'000U;
+    static constexpr const char* CSV_COLUMN_APPEARANCES = "appearances";
+    static constexpr size_t MAX_GRAPH_INDEX = 1'000'000U;
 
     /**
      * @brief Writes the CSV header row to @p file.

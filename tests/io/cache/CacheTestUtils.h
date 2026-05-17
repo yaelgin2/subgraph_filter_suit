@@ -45,8 +45,8 @@ struct TempCacheFile
      */
     ~TempCacheFile()
     {
-        std::filesystem::remove(
-            std::filesystem::path(m_folder) / (m_base_name + "." + m_extension));
+        std::filesystem::remove(std::filesystem::path(m_folder) /
+                                (m_base_name + "." + m_extension));
     }
 
     TempCacheFile(const TempCacheFile&) = delete;

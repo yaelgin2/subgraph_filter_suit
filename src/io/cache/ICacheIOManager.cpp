@@ -1,5 +1,6 @@
 #include "ICacheIOManager.h"
 
+#include "EnumerationPreprocessManager.h"
 #include "IOUtils.h"
 
 #include <filesystem>

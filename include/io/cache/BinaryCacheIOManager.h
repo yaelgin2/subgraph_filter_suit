@@ -58,37 +58,37 @@ protected:
     [[nodiscard]] std::string get_extension() const override;
 
 private:
-    static constexpr uint8_t      MSGPACK_FIXARRAY_BASE        = 0x90U;
-    static constexpr uint8_t      MSGPACK_FIXMAP_BASE          = 0x80U;
-    static constexpr uint8_t      MSGPACK_ARRAY16_FORMAT       = 0xDCU;
-    static constexpr uint8_t      MSGPACK_ARRAY32_FORMAT       = 0xDDU;
-    static constexpr uint8_t      MSGPACK_MAP16_FORMAT         = 0xDEU;
-    static constexpr uint8_t      MSGPACK_MAP32_FORMAT         = 0xDFU;
-    static constexpr uint8_t      MSGPACK_UINT32_FORMAT        = 0xCEU;
-    static constexpr uint8_t      MSGPACK_UINT64_FORMAT        = 0xCFU;
-    static constexpr size_t       MSGPACK_FIX_COLLECTION_MAX   = 15U;
-    static constexpr size_t       MSGPACK_COLLECTION16_MAX     = 65535U;
-    static constexpr uint8_t      MSGPACK_UINT128_ARRAY_SIZE   = 2U;
-    static constexpr uint8_t      MSGPACK_FIX_COLLECTION_MASK  = 0x0FU;
-    static constexpr uint8_t      MSGPACK_UINT128_HEADER       =
+    static constexpr uint8_t MSGPACK_FIXARRAY_BASE = 0x90U;
+    static constexpr uint8_t MSGPACK_FIXMAP_BASE = 0x80U;
+    static constexpr uint8_t MSGPACK_ARRAY16_FORMAT = 0xDCU;
+    static constexpr uint8_t MSGPACK_ARRAY32_FORMAT = 0xDDU;
+    static constexpr uint8_t MSGPACK_MAP16_FORMAT = 0xDEU;
+    static constexpr uint8_t MSGPACK_MAP32_FORMAT = 0xDFU;
+    static constexpr uint8_t MSGPACK_UINT32_FORMAT = 0xCEU;
+    static constexpr uint8_t MSGPACK_UINT64_FORMAT = 0xCFU;
+    static constexpr size_t MSGPACK_FIX_COLLECTION_MAX = 15U;
+    static constexpr size_t MSGPACK_COLLECTION16_MAX = 65535U;
+    static constexpr uint8_t MSGPACK_UINT128_ARRAY_SIZE = 2U;
+    static constexpr uint8_t MSGPACK_FIX_COLLECTION_MASK = 0x0FU;
+    static constexpr uint8_t MSGPACK_UINT128_HEADER =
         static_cast<uint8_t>(MSGPACK_FIXARRAY_BASE | MSGPACK_UINT128_ARRAY_SIZE);
-    static constexpr std::streamsize SINGLE_BYTE               = 1;
+    static constexpr std::streamsize SINGLE_BYTE = 1;
 
-    static constexpr uint8_t  BYTE_MASK   = 0xFFU;
-    static constexpr uint32_t SHIFT_8     = 8U;
-    static constexpr uint32_t SHIFT_16    = 16U;
-    static constexpr uint32_t SHIFT_24    = 24U;
-    static constexpr uint32_t SHIFT_32    = 32U;
-    static constexpr uint32_t SHIFT_40    = 40U;
-    static constexpr uint32_t SHIFT_48    = 48U;
-    static constexpr uint32_t SHIFT_56    = 56U;
+    static constexpr uint8_t BYTE_MASK = 0xFFU;
+    static constexpr uint32_t SHIFT_8 = 8U;
+    static constexpr uint32_t SHIFT_16 = 16U;
+    static constexpr uint32_t SHIFT_24 = 24U;
+    static constexpr uint32_t SHIFT_32 = 32U;
+    static constexpr uint32_t SHIFT_40 = 40U;
+    static constexpr uint32_t SHIFT_48 = 48U;
+    static constexpr uint32_t SHIFT_56 = 56U;
 
     static constexpr size_t UINT32_MSGPACK_BYTE_COUNT = 5U;
     static constexpr size_t UINT64_MSGPACK_BYTE_COUNT = 9U;
     static constexpr size_t UINT16_MSGPACK_BYTE_COUNT = 3U;
-    static constexpr size_t RAW_UINT32_BYTE_COUNT     = 4U;
-    static constexpr size_t RAW_UINT16_BYTE_COUNT     = 2U;
-    static constexpr size_t FORMAT_BYTE_IDX           = 0U;
+    static constexpr size_t RAW_UINT32_BYTE_COUNT = 4U;
+    static constexpr size_t RAW_UINT16_BYTE_COUNT = 2U;
+    static constexpr size_t FORMAT_BYTE_IDX = 0U;
 
     static constexpr size_t UINT32_BYTE_IDX_1 = 1U;
     static constexpr size_t UINT32_BYTE_IDX_2 = 2U;

@@ -74,7 +74,8 @@ void CSVCacheIOManager::write_rows(const EnumerationData& data, std::ofstream& f
     }
 }
 
-void CSVCacheIOManager::write_to_file(const EnumerationData& data, const std::string& full_path) const
+void CSVCacheIOManager::write_to_file(const EnumerationData& data,
+                                      const std::string& full_path) const
 {
     std::ofstream file(full_path);
     if (!file.is_open())

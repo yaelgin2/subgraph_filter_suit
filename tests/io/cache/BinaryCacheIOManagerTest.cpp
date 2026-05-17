@@ -1,6 +1,6 @@
 #include "BinaryCacheIOManager.h"
-#include "CacheTestUtils.h"
 
+#include "CacheTestUtils.h"
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
 
