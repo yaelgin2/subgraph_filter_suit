@@ -12,17 +12,12 @@ GeneralColorHist::GeneralColorHist(const uint32_t num_colors, LoggerHandler logg
     : m_num_colors(num_colors)
     , m_logger(std::move(logger))
 {
-    m_logger.log(LogLevel::DEBUG, "Initating general hist with " + std::to_string(m_num_colors) + " colors.");
 }
 
 void GeneralColorHist::update_hist_increase_tree_count(
     const uint32_t pattern_depth,
     const uint32_t current_vertex_color)
 {
-    m_logger.log(LogLevel::DEBUG,
-        "GeneralColorHist::increase_tree_count(depth=" + std::to_string(pattern_depth) +
-        ", color=" + std::to_string(current_vertex_color) +
-        ") hist_before: " + format_hist_matrix(m_number_of_trees));
 
     if (current_vertex_color >= m_num_colors)
     {
@@ -41,19 +36,12 @@ void GeneralColorHist::update_hist_increase_tree_count(
 
     ++m_number_of_trees[pattern_depth][current_vertex_color];
 
-    m_logger.log(LogLevel::DEBUG,
-        "GeneralColorHist::increase_tree_count hist_after: " +
-        format_hist_matrix(m_number_of_trees));
 }
 
 void GeneralColorHist::update_hist_decrease_tree_count(
     const uint32_t pattern_depth,
     const uint32_t current_vertex_color)
 {
-    m_logger.log(LogLevel::DEBUG,
-        "GeneralColorHist::decrease_tree_count(depth=" + std::to_string(pattern_depth) +
-        ", color=" + std::to_string(current_vertex_color) +
-        ") hist_before: " + format_hist_matrix(m_number_of_trees));
 
     if (pattern_depth >= static_cast<uint32_t>(m_number_of_trees.size()))
     {
@@ -71,10 +59,6 @@ void GeneralColorHist::update_hist_decrease_tree_count(
         throw PatternException("cannot decrement a zero cell");
     }
     --m_number_of_trees[pattern_depth][current_vertex_color];
-
-    m_logger.log(LogLevel::DEBUG,
-        "GeneralColorHist::decrease_tree_count hist_after: " +
-        format_hist_matrix(m_number_of_trees));
 }
 
 std::tuple<int32_t, int32_t, uint32_t> GeneralColorHist::get_color_to_add(
