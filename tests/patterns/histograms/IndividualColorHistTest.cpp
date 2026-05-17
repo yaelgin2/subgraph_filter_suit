@@ -38,6 +38,15 @@ protected:
             m_general_hist.get_color_to_add(0U, false);
         return std::get<0>(result) != -1;
     }
+
+    /**
+     * @brief Creates a no-op LoggerHandler for use in tests.
+     * @return LoggerHandler backed by an expired weak_ptr (all log calls are no-ops).
+     */
+    static LoggerHandler null_logger()
+    {
+        return LoggerHandler{std::weak_ptr<ILogger>{}};
+    }
 };
 
 // ── Construction ──────────────────────────────────────────────────────────────

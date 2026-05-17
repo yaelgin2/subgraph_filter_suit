@@ -12,6 +12,7 @@ GeneralColorHist::GeneralColorHist(const uint32_t num_colors, LoggerHandler logg
     : m_num_colors(num_colors)
     , m_logger(std::move(logger))
 {
+    m_logger.log(LogLevel::DEBUG, "Initating general hist with " + std::to_string(m_num_colors) + " colors.");
 }
 
 void GeneralColorHist::update_hist_increase_tree_count(
@@ -25,10 +26,12 @@ void GeneralColorHist::update_hist_increase_tree_count(
 
     if (current_vertex_color >= m_num_colors)
     {
+        m_logger.log(LogLevel::ERROR, "GeneralColorHist::increase_tree_count: color=" + std::to_string(current_vertex_color) + " out of range (num_colors=" + std::to_string(m_num_colors) + ")");
         throw PatternException("color index out of range");
     }
     if (pattern_depth > MAX_PATTERN_DEPTH)
     {
+        m_logger.log(LogLevel::ERROR, "GeneralColorHist::increase_tree_count: depth=" + std::to_string(pattern_depth) + " exceeds maximum");
         throw PatternException("pattern depth exceeds maximum");
     }
     while (pattern_depth >= m_number_of_trees.size())
@@ -54,14 +57,17 @@ void GeneralColorHist::update_hist_decrease_tree_count(
 
     if (pattern_depth >= static_cast<uint32_t>(m_number_of_trees.size()))
     {
+        m_logger.log(LogLevel::ERROR, "GeneralColorHist::decrease_tree_count: depth=" + std::to_string(pattern_depth) + " not in histogram (size=" + std::to_string(m_number_of_trees.size()) + ")");
         throw PatternException("pattern depth not in histogram");
     }
     if (current_vertex_color >= m_num_colors)
     {
+        m_logger.log(LogLevel::ERROR, "GeneralColorHist::decrease_tree_count: color=" + std::to_string(current_vertex_color) + " out of range (num_colors=" + std::to_string(m_num_colors) + ")");
         throw PatternException("color index out of range");
     }
     if (m_number_of_trees[pattern_depth][current_vertex_color] == 0U)
     {
+        m_logger.log(LogLevel::ERROR, "GeneralColorHist::decrease_tree_count: cell [depth=" + std::to_string(pattern_depth) + "][color=" + std::to_string(current_vertex_color) + "] is already zero");
         throw PatternException("cannot decrement a zero cell");
     }
     --m_number_of_trees[pattern_depth][current_vertex_color];

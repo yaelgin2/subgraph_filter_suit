@@ -38,7 +38,7 @@ public:
      * @param logger Logger for before/after tracing of histogram operations.
      * @param general_color_hist Shared histogram updated when this one's counts cross zero.
      */
-    IndividualColorHist(const LoggerHandler& logger, GeneralColorHist& general_color_hist);
+    IndividualColorHist(GeneralColorHist& general_color_hist, const LoggerHandler& logger = LoggerHandler::null());
 
     /**
      * @brief Decrease histogram counts when a vertex is added to the match path.

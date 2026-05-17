@@ -6,8 +6,8 @@
 namespace sgf
 {
 
-IndividualColorHist::IndividualColorHist(const LoggerHandler& logger,
-                                         GeneralColorHist& general_color_hist)
+IndividualColorHist::IndividualColorHist(GeneralColorHist& general_color_hist,
+                                         const LoggerHandler& logger)
     : m_num_colors(general_color_hist.get_color_count())
     , m_general_hist(general_color_hist)
     , m_logger(logger)
@@ -28,6 +28,7 @@ void IndividualColorHist::update_hist_decrease_from_neighbours(
     {
         if (m_number_of_neighbours[depth][current_vertex_color] == 0U)
         {
+            m_logger.log(LogLevel::ERROR, "IndividualColorHist::decrease_from_neighbours: cell [depth=" + std::to_string(depth) + "][color=" + std::to_string(current_vertex_color) + "] is already zero");
             throw PatternException("cannot decrement a zero neighbour cell");
         }
         --m_number_of_neighbours[depth][current_vertex_color];
@@ -85,6 +86,7 @@ void IndividualColorHist::update_neighbours_remove_node_decrease_neighbours_from
     {
         if (m_number_of_neighbours[remove_node_depth][color] == 0U)
         {
+            m_logger.log(LogLevel::ERROR, "IndividualColorHist::remove_node_decrease_neighbours: cell [depth=" + std::to_string(remove_node_depth) + "][color=" + std::to_string(color) + "] is already zero");
             throw PatternException("cannot decrement a zero neighbour cell");
         }
         --m_number_of_neighbours[remove_node_depth][color];

@@ -6,6 +6,7 @@
 #include "PatternException.h"
 #include <unordered_set>
 #include <vector>
+#include <sstream>
 
 namespace sgf
 {
@@ -19,18 +20,19 @@ Tree::Tree(const uint32_t root_vertex_index,
     , m_depth(0U)
     , m_logger(logger)
     , m_is_directed(is_directed)
-    , m_hist(logger, general_hist)
+    , m_hist(general_hist, logger)
     // Wrap the optional reference in an IndividualColorHist so the member owns a stable copy;
     // boost::none signals "no reverse histogram" for undirected trees.
     , m_reverse_hist(reverse_general_hist
                          ? boost::optional<IndividualColorHist>(
-                               IndividualColorHist(logger, reverse_general_hist->get()))
+                               IndividualColorHist(reverse_general_hist->get(), logger))
                          : boost::none)
 {
     // A directed tree must track in-edges through the reverse histogram;
     // failing to supply one is a programming error, not a runtime condition.
     if (m_is_directed && !m_reverse_hist)
     {
+        m_logger.log(LogLevel::ERROR, "Tree: reverse histogram required for directed tree");
         throw PatternException("Reverse histogram required for directed trees");
     }
 }
@@ -39,6 +41,7 @@ NodePtr Tree::add_node(const NodePtr& parent, const uint32_t vertex_index)
 {
     if (!parent)
     {
+        m_logger.log(LogLevel::ERROR, "add_node: parent is null for vertex=" + std::to_string(vertex_index));
         throw AddNodeException("Parent is null");
     }
 
@@ -81,6 +84,7 @@ void Tree::delete_node(const NodePtr& node)
     // orphan its subtree without updating the histogram.
     if (node->m_son)
     {
+        m_logger.log(LogLevel::ERROR, "delete_node: vertex=" + std::to_string(node->m_index) + " has children");
         throw DeleteNodeException("Cannot delete node with children");
     }
 
@@ -125,7 +129,7 @@ void Tree::delete_node(const NodePtr& node)
         }
         // Accumulate this node's index and all its prior children in the parent so
         // future histogram queries can exclude previously visited vertices.
-        parent->m_previous_children.insert(node->m_index);
+        parent->m_previous_children.insert({node->m_index, node->m_depth});
         parent->m_previous_children.insert(
             node->m_previous_children.begin(), node->m_previous_children.end());
     }
@@ -168,11 +172,18 @@ void Tree::update_neighbours_in_tree_path(
     }
 }
 
+struct PairHash {
+    std::size_t operator()(const std::pair<uint32_t, uint32_t>& p) const {
+        // A common way to combine hashes (e.g., used by Boost)
+        return std::hash<uint32_t>{}(p.first) ^ (std::hash<uint32_t>{}(p.second) << 1);
+    }
+};
+
 std::vector<uint32_t> Tree::get_colors_of_neighbours_not_in_tree_path(
     const std::unordered_set<uint32_t>& candidate_indexes,
     const std::vector<ColoredGraph>& s_list,
     const std::unordered_map<uint32_t, uint32_t>& path_in_tree,
-    const std::unordered_set<uint32_t>& excluded_previous_children,
+    const std::unordered_map<uint32_t, uint32_t>& excluded_previous_children,
     const bool is_reversed) const
 {
     // return all the neighbours of the indexes in s that are also not in the tree path
@@ -181,14 +192,35 @@ std::vector<uint32_t> Tree::get_colors_of_neighbours_not_in_tree_path(
 
     for (const uint32_t candidate_vertex : candidate_indexes)
     {
+        std::unordered_map<uint32_t, uint32_t> neighbours_by_layer;
+        std::unordered_set<std::pair<uint32_t, uint32_t>, PairHash> layer_with_neighbour;
         auto [first_neighbour, last_neighbour] = graph.get_neighbours(candidate_vertex, is_reversed);
         for (auto edge = first_neighbour; edge != last_neighbour; ++edge)
         {
             const uint32_t neighbour_index = *edge;
-            if (path_in_tree.find(neighbour_index) == path_in_tree.end() &&
-                excluded_previous_children.find(neighbour_index) == excluded_previous_children.end())
+            if (path_in_tree.find(neighbour_index) == path_in_tree.end())
             {
-                colours.push_back(graph.get_vertex_color(neighbour_index));
+                if(excluded_previous_children.find(neighbour_index) == excluded_previous_children.end())
+                {
+                    colours.push_back(graph.get_vertex_color(neighbour_index));
+                }
+                else
+                {
+                    layer_with_neighbour.insert({excluded_previous_children.at(neighbour_index), graph.get_vertex_color(neighbour_index)});
+                    uint32_t depth = excluded_previous_children.at(neighbour_index);
+                    if (neighbours_by_layer.find(depth) == neighbours_by_layer.end())
+                    {
+                        neighbours_by_layer[depth] = 0;
+                    }
+                    neighbours_by_layer[depth]++;
+                }
+            }
+        }
+        for(auto [layer, color] : layer_with_neighbour)
+        {
+            for(uint32_t i = 0; i < neighbours_by_layer[layer]-1; i++) 
+            {
+                colours.push_back(color);
             }
         }
     }
@@ -235,12 +267,6 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& new_indexe
         return added_nodes;
     }
 
-    // Build the tree-path map from the first new child's parent up to the root.
-    // All new children share the same tree path initially; the map is incrementally
-    // updated as we move between different parents below.
-    std::unordered_map<uint32_t, uint32_t> path_in_tree =
-        get_tree_path_map(new_indexes[0].second);
-
     // Check that the new indices are ordered correctly
     std::unordered_set<NodePtr> parent_indices_appeared;
     for (size_t node_index = 1; node_index < new_indexes.size(); ++node_index)
@@ -250,6 +276,7 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& new_indexe
             parent_indices_appeared.insert(new_indexes[node_index-1].second);
             if (parent_indices_appeared.find(new_indexes[node_index].second) != parent_indices_appeared.end())
             {
+                m_logger.log(LogLevel::ERROR, "add_tree_level: nodes not grouped by parent at index=" + std::to_string(node_index));
                 throw AddNodeException("New nodes arn't ordered by parent index.");
             }
         }
@@ -279,10 +306,16 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& new_indexe
     // new child is now inside the neighbourhood (and no longer qualifies as "external").
     std::vector<uint32_t> decrease_depths;
     std::vector<uint32_t> decrease_depths_reverse;
-    const std::unordered_set<uint32_t> empty_excluded;
+    const std::unordered_map<uint32_t, uint32_t> empty_excluded;
 
     uint32_t new_child_index = 0U;
     NodePtr last_parent_node;
+
+    // Build the tree-path map from the first new child's parent up to the root.
+    // All new children share the same tree path initially; the map is incrementally
+    // updated as we move between different parents below.
+    std::unordered_map<uint32_t, uint32_t> path_in_tree =
+        get_tree_path_map(new_indexes[0].second);
 
     // Process each group of siblings that share the same parent together so that
     // a single call to update_neighbours_in_tree_path covers all siblings at once,
@@ -330,6 +363,10 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& new_indexe
 
                 current_iter = current_iter->m_parent.lock();
                 last_iter = last_iter->m_parent.lock();
+                                std::stringstream ss1;
+                ss1 << last_iter;
+                std::stringstream ss2;
+                ss2 << current_iter;
             }
         }
 
@@ -393,7 +430,6 @@ void Tree::remove_node(const NodePtr& node, const std::vector<ColoredGraph>& s_l
     // changes so that histogram queries during backtracking use a consistent view.
     std::unordered_map<uint32_t, uint32_t> path_in_tree =
         get_tree_path_map(node_to_remove);
-
     // Backtrack up the ancestor chain as long as each parent becomes childless after
     // its last child is deleted, because an internal node with no children is
     // semantically equivalent to a leaf and must also be removed.
@@ -401,6 +437,7 @@ void Tree::remove_node(const NodePtr& node, const std::vector<ColoredGraph>& s_l
     {
         if (node_to_remove->m_son != nullptr)
         {
+            m_logger.log(LogLevel::ERROR, "remove_node: vertex=" + std::to_string(node_to_remove->m_index) + " has children");
             throw DeleteNodeException("Unable to delete a nod ewith children.");
         }
 
