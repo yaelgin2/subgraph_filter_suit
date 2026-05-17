@@ -2,7 +2,6 @@
 
 #include "ColoredGraph.h"
 #include "IGraphPreprocessor.h"
-#include "Int128.h"
 #include "LoggerHandler.h"
 
 #include <cstdint>
