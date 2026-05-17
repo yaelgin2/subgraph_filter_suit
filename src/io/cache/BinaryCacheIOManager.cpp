@@ -38,8 +38,8 @@ void BinaryCacheIOManager::write_collection_header(std::ofstream& output_stream,
     if (size <= MSGPACK_FIX_COLLECTION_MAX)
     {
         const char raw_byte = static_cast<char>(
-            fix_base | (static_cast<uint8_t>(size) & // NOLINT(hicpp-signed-bitwise)
-                        MSGPACK_FIX_COLLECTION_MASK)); // NOLINT(hicpp-signed-bitwise)
+            fix_base | (static_cast<uint8_t>(size) &    // NOLINT(hicpp-signed-bitwise)
+                        MSGPACK_FIX_COLLECTION_MASK));  // NOLINT(hicpp-signed-bitwise)
         output_stream.write(&raw_byte, SINGLE_BYTE);
     }
     else if (size <= MSGPACK_COLLECTION16_MAX)
