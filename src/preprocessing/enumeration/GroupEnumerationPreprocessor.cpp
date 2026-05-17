@@ -76,10 +76,12 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
                                               const std::vector<uint32_t>& group_vertex_ids)
     {
         const std::vector<uint32_t> node_colors = group_to_node_colors(group_vertex_ids);
-        uint32_t& count = motif_count[calculate_motif_number(group_structure_descriptor, node_colors)];
+        uint32_t& count =
+            motif_count[calculate_motif_number(group_structure_descriptor, node_colors)];
         if (count == std::numeric_limits<uint32_t>::max())
         {
-            throw EnumerationOverflowException("Motif count overflow: occurrence count exceeded uint32_t capacity.");
+            throw EnumerationOverflowException(
+                "Motif count overflow: occurrence count exceeded uint32_t capacity.");
         }
         count += 1U;
 

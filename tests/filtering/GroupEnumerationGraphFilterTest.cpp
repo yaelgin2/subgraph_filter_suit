@@ -150,7 +150,8 @@ TEST_F(GroupEnumerationGraphFilterTest, all_equal_single_graph_library_is_not_fi
     EXPECT_FALSE(result[0]);
 }
 
-TEST_F(GroupEnumerationGraphFilterTest, some_larger_some_equal_single_graph_library_is_not_filterable)
+TEST_F(GroupEnumerationGraphFilterTest,
+       some_larger_some_equal_single_graph_library_is_not_filterable)
 {
     EnumerationData library = {make_result({{key(1U), 2U}, {key(2U), 3U}, {key(3U), 1U}})};
     GroupEnumerationGraphFilter filter_obj(std::move(library));
@@ -193,7 +194,8 @@ TEST_F(GroupEnumerationGraphFilterTest, two_graphs_neither_filterable_all_larger
     EXPECT_FALSE(result[1]);
 }
 
-TEST_F(GroupEnumerationGraphFilterTest, two_graphs_first_filterable_all_smaller_second_not_all_equal)
+TEST_F(GroupEnumerationGraphFilterTest,
+       two_graphs_first_filterable_all_smaller_second_not_all_equal)
 {
     EnumerationData library = {make_result({{key(1U), 5U}, {key(2U), 4U}}),
                                make_result({{key(1U), 2U}, {key(2U), 2U}})};
@@ -208,7 +210,8 @@ TEST_F(GroupEnumerationGraphFilterTest, two_graphs_first_filterable_all_smaller_
     EXPECT_FALSE(result[1]);
 }
 
-TEST_F(GroupEnumerationGraphFilterTest, two_graphs_first_not_filterable_some_larger_second_filterable_one_smaller)
+TEST_F(GroupEnumerationGraphFilterTest,
+       two_graphs_first_not_filterable_some_larger_second_filterable_one_smaller)
 {
     EnumerationData library = {make_result({{key(1U), 2U}, {key(2U), 1U}}),
                                make_result({{key(1U), 2U}, {key(2U), 5U}})};
@@ -250,8 +253,7 @@ TEST_F(GroupEnumerationGraphFilterTest, four_graphs_all_scenarios_covered)
     // Graph 2: all equal → not filterable
     // Graph 3: all smaller → filterable
     EnumerationData library = {make_result({{key(1U), 3U}, {key(2U), 3U}, {key(3U), 3U}}),
-                               make_result({}),
-                               make_result({{key(1U), 2U}, {key(2U), 1U}}),
+                               make_result({}), make_result({{key(1U), 2U}, {key(2U), 1U}}),
                                make_result({{key(1U), 9U}, {key(2U), 9U}})};
     GroupEnumerationGraphFilter filter_obj(std::move(library));
 
@@ -338,7 +340,8 @@ TEST_F(GroupEnumerationGraphFilterTest, empty_query_two_nonempty_library_graphs_
     EXPECT_TRUE(result[1]);
 }
 
-TEST_F(GroupEnumerationGraphFilterTest, empty_query_mixed_library_empty_graph_survives_nonempty_pruned)
+TEST_F(GroupEnumerationGraphFilterTest,
+       empty_query_mixed_library_empty_graph_survives_nonempty_pruned)
 {
     // Graph 0: no motif entries → no constraint violated → survives.
     // Graph 1: has a motif; query has zero → pruned.

@@ -59,4 +59,4 @@ private:
     EnumerationData m_library_cache;
 };
 
-} // namespace sgf
+}  // namespace sgf

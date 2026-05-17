@@ -38,4 +38,4 @@ public:
     }
 };
 
-} // namespace sgf
+}  // namespace sgf
