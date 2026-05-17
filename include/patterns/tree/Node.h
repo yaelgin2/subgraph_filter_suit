@@ -21,8 +21,9 @@ struct Node
      * @param vertex_index Index of the source-graph vertex this node represents.
      * @param tree_depth Depth of this node within the tree (root is 0).
      */
-    Node(const uint32_t vertex_index, const uint32_t tree_depth = 0U)
-        : m_index(vertex_index), m_depth(tree_depth)
+    explicit Node(const uint32_t vertex_index, const uint32_t tree_depth = 0U)
+        : m_index(vertex_index)
+        , m_depth(tree_depth)
     {
     }
 
@@ -31,10 +32,11 @@ struct Node
     std::shared_ptr<Node> m_son;    ///< First child of this node.
     std::weak_ptr<Node> m_parent;   ///< Non-owning back-reference to parent.
 
-    std::unordered_map<uint32_t, uint32_t> m_previous_children;  ///< Indices of previously-removed children.
+    std::unordered_map<uint32_t, uint32_t>
+        m_previous_children;  ///< Indices of previously-removed children.
 
-    uint32_t m_index;                ///< Source-graph vertex index.
-    uint32_t m_depth;                ///< Depth within the tree (root = 0).
+    uint32_t m_index;                  ///< Source-graph vertex index.
+    uint32_t m_depth;                  ///< Depth within the tree (root = 0).
     uint32_t m_match_edge_count = 0U;  ///< Accumulated matching-edge count along path from root.
 };
 

@@ -1,13 +1,13 @@
 #include "patterns/tree/Tree.h"
 
+#include "FileLogger.h"
+#include "LoggerHandler.h"
 #include "exceptions/AddNodeException.h"
 #include "exceptions/DeleteNodeException.h"
 #include "exceptions/PatternException.h"
 #include "graph/ColoredGraph.h"
 #include "patterns/histograms/GeneralColorHist.h"
 #include "patterns/tree/Node.h"
-#include "FileLogger.h"
-#include "LoggerHandler.h"
 
 #include <cstdint>
 #include <gtest/gtest.h>
@@ -92,8 +92,7 @@ protected:
      */
     ColoredGraph make_star_5()
     {
-        std::vector<std::pair<uint32_t, uint32_t>> edges = {
-            {0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}};
+        std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}};
         return ColoredGraph(5U, edges, {0U, 0U, 0U, 0U, 0U}, false);
     }
 
@@ -243,13 +242,10 @@ TEST_F(TreeTest, non_grouped_siblings_throws)
     const ColoredGraph graph = make_star_5();
     Tree tree(0U, graph, null_logger(), m_fwd_hist_2);
     const NodePtr root = tree.get_root();
-    const std::vector<NodePtr> first_children =
-        tree.add_tree_level({{1U, root}, {2U, root}});
+    const std::vector<NodePtr> first_children = tree.add_tree_level({{1U, root}, {2U, root}});
     const NodePtr child_1 = first_children[0];
 
-    EXPECT_THROW(
-        tree.add_tree_level({{3U, root}, {4U, child_1}, {1U, root}}),
-        AddNodeException);
+    EXPECT_THROW(tree.add_tree_level({{3U, root}, {4U, child_1}, {1U, root}}), AddNodeException);
 }
 
 /**
@@ -280,8 +276,7 @@ TEST_F(TreeTest, multiple_children_same_parent)
     const ColoredGraph graph = make_star_5();
     Tree tree(0U, graph, null_logger(), m_fwd_hist_2);
     const NodePtr root = tree.get_root();
-    const std::vector<NodePtr> children =
-        tree.add_tree_level({{1U, root}, {2U, root}});
+    const std::vector<NodePtr> children = tree.add_tree_level({{1U, root}, {2U, root}});
 
     EXPECT_EQ(children.size(), 2U);
     EXPECT_NE(root->m_son, nullptr);
@@ -352,8 +347,7 @@ TEST_F(TreeTest, remove_one_sibling_leaves_other)
     const ColoredGraph graph = make_star_5();
     Tree tree(0U, graph, null_logger(), m_fwd_hist_2);
     const NodePtr root = tree.get_root();
-    const std::vector<NodePtr> children =
-        tree.add_tree_level({{1U, root}, {2U, root}});
+    const std::vector<NodePtr> children = tree.add_tree_level({{1U, root}, {2U, root}});
 
     tree.remove_node(children[0]);
 
@@ -424,21 +418,25 @@ TEST_F(TreeTest, path_tree_updates_hist_correctly)
     Tree tree(0U, graph, null_logger(), fwd_hist_2);
 
     const NodePtr root = tree.get_root();
-    std::vector<sgf::NodePtr> first_layer = tree.add_tree_level(
-        {{0U, root}, {1U, root}, {2U, root}, {3U, root}});
+    std::vector<sgf::NodePtr> first_layer =
+        tree.add_tree_level({{0U, root}, {1U, root}, {2U, root}, {3U, root}});
     expect_hist_equals(fwd_hist_2, {{1U, 0U}});
-    std::vector<sgf::NodePtr> second_layer = tree.add_tree_level(
-        {{1U, first_layer[0]}, {0U, first_layer[1]}, {2U, first_layer[1]},
-         {1U, first_layer[2]}, {3U, first_layer[2]}, {2U, first_layer[3]}});
+    std::vector<sgf::NodePtr> second_layer = tree.add_tree_level({{1U, first_layer[0]},
+                                                                  {0U, first_layer[1]},
+                                                                  {2U, first_layer[1]},
+                                                                  {1U, first_layer[2]},
+                                                                  {3U, first_layer[2]},
+                                                                  {2U, first_layer[3]}});
     expect_hist_equals(fwd_hist_2, {{1U, 0U}, {1U, 0U}});
-    std::vector<sgf::NodePtr> third_layer = tree.add_tree_level(
-        {{2U, second_layer[0]}, {3U, second_layer[2]},
-         {0U, second_layer[3]}, {1U, second_layer[5]}});
+    std::vector<sgf::NodePtr> third_layer = tree.add_tree_level({{2U, second_layer[0]},
+                                                                 {3U, second_layer[2]},
+                                                                 {0U, second_layer[3]},
+                                                                 {1U, second_layer[5]}});
     tree.remove_node(second_layer[1]);
     tree.remove_node(second_layer[4]);
     expect_hist_equals(fwd_hist_2, {{1U, 0U}, {0U, 0U}, {1U, 0U}});
-    std::vector<sgf::NodePtr> forth = tree.add_tree_level(
-        {{3U, third_layer[0]}, {0U, third_layer[3]}});
+    std::vector<sgf::NodePtr> forth =
+        tree.add_tree_level({{3U, third_layer[0]}, {0U, third_layer[3]}});
     tree.remove_node(third_layer[1]);
     tree.remove_node(third_layer[2]);
     expect_hist_equals(fwd_hist_2, {{0U, 0U}, {0U, 0U}, {0U, 0U}});
@@ -474,20 +472,24 @@ TEST_F(TreeTest, triangle_tree_updates_hist_correctly)
     Tree tree(0U, graph, null_logger(), fwd_hist_1);
 
     const NodePtr root = tree.get_root();
-    std::vector<sgf::NodePtr> first_layer = tree.add_tree_level(
-        {{0U, root}, {1U, root}, {2U, root}});
+    std::vector<sgf::NodePtr> first_layer =
+        tree.add_tree_level({{0U, root}, {1U, root}, {2U, root}});
     print_hist(fwd_hist_1);
     expect_hist_equals(fwd_hist_1, {{1U}});
-    std::vector<sgf::NodePtr> second_layer = tree.add_tree_level(
-        {{1U, first_layer[0]}, {2U, first_layer[0]},
-         {0U, first_layer[1]}, {2U, first_layer[1]},
-         {1U, first_layer[2]}, {0U, first_layer[2]}});
+    std::vector<sgf::NodePtr> second_layer = tree.add_tree_level({{1U, first_layer[0]},
+                                                                  {2U, first_layer[0]},
+                                                                  {0U, first_layer[1]},
+                                                                  {2U, first_layer[1]},
+                                                                  {1U, first_layer[2]},
+                                                                  {0U, first_layer[2]}});
     print_hist(fwd_hist_1);
     expect_hist_equals(fwd_hist_1, {{1U}, {1U}});
-    std::vector<sgf::NodePtr> third_layer = tree.add_tree_level(
-        {{2U, second_layer[0]}, {1U, second_layer[1]},
-         {2U, second_layer[2]}, {0U, second_layer[3]},
-         {0U, second_layer[4]}, {1U, second_layer[5]}});
+    std::vector<sgf::NodePtr> third_layer = tree.add_tree_level({{2U, second_layer[0]},
+                                                                 {1U, second_layer[1]},
+                                                                 {2U, second_layer[2]},
+                                                                 {0U, second_layer[3]},
+                                                                 {0U, second_layer[4]},
+                                                                 {1U, second_layer[5]}});
     print_hist(fwd_hist_1);
     expect_hist_equals(fwd_hist_1, {{0U}, {0U}});
 }
@@ -517,18 +519,18 @@ TEST_F(TreeTest, directed_path_tree_updates_hist_correctly)
     Tree tree(0U, graph, null_logger(), fwd_hist_2, rev_hist_2);
 
     const NodePtr root = tree.get_root();
-    std::vector<sgf::NodePtr> first_layer = tree.add_tree_level(
-        {{0U, root}, {1U, root}, {2U, root}, {3U, root}});
+    std::vector<sgf::NodePtr> first_layer =
+        tree.add_tree_level({{0U, root}, {1U, root}, {2U, root}, {3U, root}});
     expect_hist_equals(fwd_hist_2, {{1U, 0U}});
     expect_hist_equals(rev_hist_2, {{1U, 0U}});
-    std::vector<sgf::NodePtr> second_layer = tree.add_tree_level(
-        {{1U, first_layer[0]}, {1U, first_layer[2]}, {3U, first_layer[2]}});
+    std::vector<sgf::NodePtr> second_layer =
+        tree.add_tree_level({{1U, first_layer[0]}, {1U, first_layer[2]}, {3U, first_layer[2]}});
     tree.remove_node(first_layer[1]);
     tree.remove_node(first_layer[3]);
     expect_hist_equals(fwd_hist_2, {{1U, 0U}});
     expect_hist_equals(rev_hist_2, {{0U, 0U}, {1U, 0U}});
-    std::vector<sgf::NodePtr> third_layer = tree.add_tree_level(
-        {{3U, second_layer[1]}, {1U, second_layer[2]}});
+    std::vector<sgf::NodePtr> third_layer =
+        tree.add_tree_level({{3U, second_layer[1]}, {1U, second_layer[2]}});
     tree.remove_node(second_layer[0]);
     expect_hist_equals(fwd_hist_2, {{0U, 0U}});
     expect_hist_equals(rev_hist_2, {{0U, 0U}, {1U, 0U}, {1U, 0U}});
@@ -542,10 +544,9 @@ TEST_F(TreeTest, directed_path_tree_colored_updates_hist_correctly)
 {
     const ColoredGraph graph = make_path_4_directed_colored();
 
-    std::shared_ptr<FileLogger> logger = std::make_shared<FileLogger>("/home/cohent59/subgraph_filter_suit/a.log");
-    GeneralColorHist fwd_hist_4(4, LoggerHandler(logger));
-    GeneralColorHist rev_hist_4(4, LoggerHandler(logger));
-    Tree tree(0U, graph, LoggerHandler(logger), fwd_hist_4, rev_hist_4);
+    GeneralColorHist fwd_hist_4(4);
+    GeneralColorHist rev_hist_4(4);
+    Tree tree(0U, graph, null_logger(), fwd_hist_4, rev_hist_4);
 
     const NodePtr root = tree.get_root();
     std::vector<sgf::NodePtr> first_layer = tree.add_tree_level({{1U, root}});
@@ -571,12 +572,12 @@ TEST_F(TreeTest, triangle_tree_directed_updates_hist_correctly)
     Tree tree(0U, graph, null_logger(), fwd_hist_1, rev_hist_1);
 
     const NodePtr root = tree.get_root();
-    std::vector<sgf::NodePtr> first_layer = tree.add_tree_level(
-        {{0U, root}, {1U, root}, {2U, root}});
+    std::vector<sgf::NodePtr> first_layer =
+        tree.add_tree_level({{0U, root}, {1U, root}, {2U, root}});
     expect_hist_equals(fwd_hist_1, {{1U}});
     expect_hist_equals(rev_hist_1, {{1U}});
-    std::vector<sgf::NodePtr> second_layer = tree.add_tree_level(
-        {{1U, first_layer[0]}, {2U, first_layer[0]}, {2U, first_layer[1]}});
+    std::vector<sgf::NodePtr> second_layer =
+        tree.add_tree_level({{1U, first_layer[0]}, {2U, first_layer[0]}, {2U, first_layer[1]}});
     tree.remove_node(first_layer[2]);
     expect_hist_equals(fwd_hist_1, {{1U}, {1U}});
     expect_hist_equals(rev_hist_1, {{1U}, {1U}});
