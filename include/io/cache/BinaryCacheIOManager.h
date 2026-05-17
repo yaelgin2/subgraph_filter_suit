@@ -1,7 +1,6 @@
 #pragma once
 
-#include "EnumerationPreprocessManager.h"
-#include "ICacheIOManagment.h"
+#include "ICacheIOManager.h"
 #include "Int128.h"
 
 #include <cstddef>
@@ -21,7 +20,7 @@ namespace sgf
  * frequency. Keys are UInt128 values serialized as a 2-element fixarray
  * [high:uint64, low:uint64]; values are uint32.
  */
-class BinaryCacheIOManager : public ICacheIOManagment
+class BinaryCacheIOManager : public ICacheIOManager
 {
 public:
     /**
@@ -38,7 +37,7 @@ protected:
      *
      * @param data      The enumeration data to serialize.
      * @param full_path Destination file path including the .bin extension.
-     * @throws SgfPathDoesntExistException if the file cannot be opened for writing.
+     * @throws SgfPathDoesntExistException if the file cannot be opened or written.
      */
     void write_to_file(const EnumerationData& data, const std::string& full_path) const override;
 
@@ -48,6 +47,7 @@ protected:
      * @param full_path Source file path including the .bin extension.
      * @return The deserialized enumeration data.
      * @throws SgfPathDoesntExistException if the file cannot be opened for reading.
+     * @throws GraphConstructionException if the file contains corrupt or malformed data.
      */
     EnumerationData read_from_file(const std::string& full_path) const override;
 
@@ -58,32 +58,37 @@ protected:
     [[nodiscard]] std::string get_extension() const override;
 
 private:
-    static constexpr uint8_t MSGPACK_FIXARRAY_BASE = 0x90U;
-    static constexpr uint8_t MSGPACK_FIXMAP_BASE = 0x80U;
-    static constexpr uint8_t MSGPACK_ARRAY16_FORMAT = 0xDCU;
-    static constexpr uint8_t MSGPACK_ARRAY32_FORMAT = 0xDDU;
-    static constexpr uint8_t MSGPACK_MAP16_FORMAT = 0xDEU;
-    static constexpr uint8_t MSGPACK_MAP32_FORMAT = 0xDFU;
-    static constexpr uint8_t MSGPACK_UINT32_FORMAT = 0xCEU;
-    static constexpr uint8_t MSGPACK_UINT64_FORMAT = 0xCFU;
-    static constexpr size_t MSGPACK_FIX_COLLECTION_MAX = 15U;
-    static constexpr size_t MSGPACK_COLLECTION16_MAX = 65535U;
-    static constexpr uint8_t MSGPACK_UINT128_ARRAY_SIZE = 2U;
-    static constexpr uint8_t MSGPACK_FIX_COLLECTION_MASK = 0x0FU;
-    static constexpr std::streamsize SINGLE_BYTE = 1;
+    static constexpr uint8_t      MSGPACK_FIXARRAY_BASE        = 0x90U;
+    static constexpr uint8_t      MSGPACK_FIXMAP_BASE          = 0x80U;
+    static constexpr uint8_t      MSGPACK_ARRAY16_FORMAT       = 0xDCU;
+    static constexpr uint8_t      MSGPACK_ARRAY32_FORMAT       = 0xDDU;
+    static constexpr uint8_t      MSGPACK_MAP16_FORMAT         = 0xDEU;
+    static constexpr uint8_t      MSGPACK_MAP32_FORMAT         = 0xDFU;
+    static constexpr uint8_t      MSGPACK_UINT32_FORMAT        = 0xCEU;
+    static constexpr uint8_t      MSGPACK_UINT64_FORMAT        = 0xCFU;
+    static constexpr size_t       MSGPACK_FIX_COLLECTION_MAX   = 15U;
+    static constexpr size_t       MSGPACK_COLLECTION16_MAX     = 65535U;
+    static constexpr uint8_t      MSGPACK_UINT128_ARRAY_SIZE   = 2U;
+    static constexpr uint8_t      MSGPACK_FIX_COLLECTION_MASK  = 0x0FU;
+    static constexpr uint8_t      MSGPACK_UINT128_HEADER       =
+        static_cast<uint8_t>(MSGPACK_FIXARRAY_BASE | MSGPACK_UINT128_ARRAY_SIZE);
+    static constexpr std::streamsize SINGLE_BYTE               = 1;
 
-    static constexpr uint8_t BYTE_MASK = 0xFFU;
-    static constexpr uint32_t SHIFT_8 = 8U;
-    static constexpr uint32_t SHIFT_16 = 16U;
-    static constexpr uint32_t SHIFT_24 = 24U;
-    static constexpr uint32_t SHIFT_32 = 32U;
-    static constexpr uint32_t SHIFT_40 = 40U;
-    static constexpr uint32_t SHIFT_48 = 48U;
-    static constexpr uint32_t SHIFT_56 = 56U;
+    static constexpr uint8_t  BYTE_MASK   = 0xFFU;
+    static constexpr uint32_t SHIFT_8     = 8U;
+    static constexpr uint32_t SHIFT_16    = 16U;
+    static constexpr uint32_t SHIFT_24    = 24U;
+    static constexpr uint32_t SHIFT_32    = 32U;
+    static constexpr uint32_t SHIFT_40    = 40U;
+    static constexpr uint32_t SHIFT_48    = 48U;
+    static constexpr uint32_t SHIFT_56    = 56U;
 
     static constexpr size_t UINT32_MSGPACK_BYTE_COUNT = 5U;
     static constexpr size_t UINT64_MSGPACK_BYTE_COUNT = 9U;
     static constexpr size_t UINT16_MSGPACK_BYTE_COUNT = 3U;
+    static constexpr size_t RAW_UINT32_BYTE_COUNT     = 4U;
+    static constexpr size_t RAW_UINT16_BYTE_COUNT     = 2U;
+    static constexpr size_t FORMAT_BYTE_IDX           = 0U;
 
     static constexpr size_t UINT32_BYTE_IDX_1 = 1U;
     static constexpr size_t UINT32_BYTE_IDX_2 = 2U;
@@ -98,6 +103,8 @@ private:
     static constexpr size_t UINT64_BYTE_IDX_6 = 6U;
     static constexpr size_t UINT64_BYTE_IDX_7 = 7U;
     static constexpr size_t UINT64_BYTE_IDX_8 = 8U;
+
+    static constexpr size_t MAX_GRAPH_COUNT = 10'000'000U;
 
     // ── Write helpers ────────────────────────────────────────────────────────
 
@@ -158,9 +165,17 @@ private:
     // ── Read helpers ─────────────────────────────────────────────────────────
 
     /**
+     * @brief Throws GraphConstructionException if the stream is in a failed state.
+     * @param input_stream Stream to check after a read operation.
+     * @throws GraphConstructionException on EOF or I/O error.
+     */
+    static void check_read_stream(const std::ifstream& input_stream);
+
+    /**
      * @brief Reads a single byte from the stream.
      * @param input_stream Input stream.
      * @return The byte read, as uint8_t.
+     * @throws GraphConstructionException on EOF or I/O error.
      */
     static uint8_t read_byte(std::ifstream& input_stream);
 
@@ -168,6 +183,7 @@ private:
      * @brief Reads 4 bytes big-endian and returns the value as a size_t.
      * @param input_stream Input stream.
      * @return Decoded 32-bit big-endian value.
+     * @throws GraphConstructionException on EOF or I/O error.
      */
     static size_t read_be_uint32_size(std::ifstream& input_stream);
 
@@ -175,6 +191,7 @@ private:
      * @brief Reads 2 bytes big-endian and returns the value as a size_t.
      * @param input_stream Input stream.
      * @return Decoded 16-bit big-endian value.
+     * @throws GraphConstructionException on EOF or I/O error.
      */
     static size_t read_be_uint16_size(std::ifstream& input_stream);
 
@@ -185,6 +202,7 @@ private:
      * @param format16     Format byte for 16-bit length encoding.
      * @param format32     Format byte for 32-bit length encoding.
      * @return Number of elements in the collection.
+     * @throws GraphConstructionException on EOF, I/O error, or corrupt data.
      */
     static size_t read_collection_header(std::ifstream& input_stream, uint8_t format16,
                                          uint8_t format32);
@@ -193,6 +211,7 @@ private:
      * @brief Reads a MessagePack array header and returns the element count.
      * @param input_stream Input stream.
      * @return Number of array elements.
+     * @throws GraphConstructionException on EOF, I/O error, or corrupt data.
      */
     static size_t read_array_header(std::ifstream& input_stream);
 
@@ -200,6 +219,7 @@ private:
      * @brief Reads a MessagePack map header and returns the entry count.
      * @param input_stream Input stream.
      * @return Number of map entries.
+     * @throws GraphConstructionException on EOF, I/O error, or corrupt data.
      */
     static size_t read_map_header(std::ifstream& input_stream);
 
@@ -207,6 +227,7 @@ private:
      * @brief Reads a MessagePack uint32 value (0xCE + 4 bytes BE).
      * @param input_stream Input stream.
      * @return Decoded uint32_t value.
+     * @throws GraphConstructionException on EOF, I/O error, or unexpected format byte.
      */
     static uint32_t read_uint32_value(std::ifstream& input_stream);
 
@@ -214,6 +235,7 @@ private:
      * @brief Reads a MessagePack uint64 value (0xCF + 8 bytes BE).
      * @param input_stream Input stream.
      * @return Decoded uint64_t value.
+     * @throws GraphConstructionException on EOF, I/O error, or unexpected format byte.
      */
     static uint64_t read_uint64_value(std::ifstream& input_stream);
 
@@ -221,6 +243,7 @@ private:
      * @brief Reads a UInt128 from a MessagePack 2-element fixarray [high, low].
      * @param input_stream Input stream.
      * @return Decoded UInt128 value.
+     * @throws GraphConstructionException on EOF, I/O error, or unexpected header byte.
      */
     static UInt128 read_uint128_key(std::ifstream& input_stream);
 
@@ -228,8 +251,17 @@ private:
      * @brief Reads one graph's EnumerationResult from a MessagePack map.
      * @param input_stream Input stream.
      * @return Deserialized per-graph frequency map.
+     * @throws GraphConstructionException on EOF, I/O error, or corrupt data.
      */
     static EnumerationResult read_graph_result(std::ifstream& input_stream);
+
+    /**
+     * @brief Parses all graphs from an open binary stream.
+     * @param input_stream Input stream positioned at the outer array header.
+     * @return Deserialized enumeration data.
+     * @throws GraphConstructionException on corrupt data or allocation failure.
+     */
+    static EnumerationData parse_binary(std::ifstream& input_stream);
 };
 
 }  // namespace sgf

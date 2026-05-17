@@ -8,32 +8,32 @@ namespace sgf
 {
 
 /**
- * @brief Interface for writing enumeration frequency data to a cache file.
+ * @brief Interface for reading and writing enumeration frequency data to a cache file.
  *
  * Subclasses implement format-specific serialization (e.g. CSV, binary).
  * The base class owns path construction and directory creation so that concrete
- * writers only need to handle the byte-level encoding.
+ * implementations only need to handle the byte-level encoding.
  */
-class ICacheIOManagment
+class ICacheIOManager
 {
 public:
     /**
-     * @brief Constructs an ICacheIOManagment targeting a specific directory and base filename.
+     * @brief Constructs an ICacheIOManager targeting a specific directory and base filename.
      *
      * @param folder        Directory where the cache file will be written.
      * @param base_filename File name without extension (e.g. "motif_cache").
      */
-    ICacheIOManagment(std::string folder, std::string base_filename);
+    ICacheIOManager(std::string folder, std::string base_filename);
 
     /**
      * @brief Default virtual destructor.
      */
-    virtual ~ICacheIOManagment() = default;
+    virtual ~ICacheIOManager() = default;
 
-    ICacheIOManagment(const ICacheIOManagment&) = default;
-    ICacheIOManagment& operator=(const ICacheIOManagment&) = default;
-    ICacheIOManagment(ICacheIOManagment&&) = default;
-    ICacheIOManagment& operator=(ICacheIOManagment&&) = default;
+    ICacheIOManager(const ICacheIOManager&) = default;
+    ICacheIOManager& operator=(const ICacheIOManager&) = default;
+    ICacheIOManager(ICacheIOManager&&) = default;
+    ICacheIOManager& operator=(ICacheIOManager&&) = default;
 
     /**
      * @brief Creates the target directory if absent, then writes @p data to the cache file.
@@ -48,12 +48,13 @@ public:
     void write(const EnumerationData& data) const;
 
     /**
-     * @brief Read data from the cache file.
+     * @brief Reads data from the cache file.
      *
-     * The full output path is: @c folder / @c base_filename + "." + get_extension().
+     * The full input path is: @c folder / @c base_filename + "." + get_extension().
      * Deserialization is delegated to read_from_file().
      *
-     * @throws SgfPathDoesntExistException if directory creation or file writing fails.
+     * @return Deserialized enumeration data.
+     * @throws SgfPathDoesntExistException if the file cannot be opened for reading.
      */
     EnumerationData read() const;
 
@@ -68,9 +69,10 @@ protected:
     virtual void write_to_file(const EnumerationData& data, const std::string& full_path) const = 0;
 
     /**
-     * @brief Deseerializes data from @p full_path in the concrete format.
+     * @brief Deserializes data from @p full_path in the concrete format.
      *
      * @param full_path Source file path including the format extension.
+     * @return Deserialized enumeration data.
      * @throws SgfPathDoesntExistException if the file cannot be opened or read from.
      */
     virtual EnumerationData read_from_file(const std::string& full_path) const = 0;

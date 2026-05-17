@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ICacheIOManagment.h"
+#include "ICacheIOManager.h"
 #include "Int128.h"
 
 #include <fstream>
@@ -10,22 +10,22 @@ namespace sgf
 {
 
 /**
- * @class CSVIOManager
+ * @class CSVCacheIOManager
  * @brief Reads and writes enumeration frequency data in CSV format.
  *
  * File format: header row followed by one data row per (graph, motif) pair.
  * Columns: graph_index, motif_number (decimal UInt128), appearances.
  */
-class CSVIOManager : public ICacheIOManagment
+class CSVCacheIOManager : public ICacheIOManager
 {
 public:
     /**
-     * @brief Constructs a CSVIOManager targeting a specific directory and base filename.
+     * @brief Constructs a CSVCacheIOManager targeting a specific directory and base filename.
      *
      * @param folder        Directory of the CSV file.
      * @param base_filename File name without extension.
      */
-    CSVIOManager(std::string folder, std::string base_filename);
+    CSVCacheIOManager(std::string folder, std::string base_filename);
 
 protected:
     /**
@@ -54,9 +54,10 @@ protected:
     [[nodiscard]] std::string get_extension() const override;
 
 private:
-    static constexpr const char* CSV_COLUMN_GRAPH_INDEX = "graph_index";
+    static constexpr const char* CSV_COLUMN_GRAPH_INDEX  = "graph_index";
     static constexpr const char* CSV_COLUMN_MOTIF_NUMBER = "motif_number";
-    static constexpr const char* CSV_COLUMN_APPEARANCES = "appearances";
+    static constexpr const char* CSV_COLUMN_APPEARANCES  = "appearances";
+    static constexpr size_t      MAX_GRAPH_INDEX         = 1'000'000U;
 
     /**
      * @brief Writes the CSV header row to @p file.
@@ -93,6 +94,7 @@ private:
      *
      * @param line Comma-separated row: graph_index,motif_number,appearances.
      * @param data Collection to insert the parsed entry into.
+     * @throws GraphConstructionException if graph_index exceeds MAX_GRAPH_INDEX.
      */
     static void insert_row(const std::string& line, EnumerationData& data);
 

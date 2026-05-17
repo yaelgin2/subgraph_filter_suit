@@ -1,75 +1,22 @@
 #include "BinaryCacheIOManager.h"
+#include "CacheTestUtils.h"
 
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
 
 #include <cstdint>
-#include <filesystem>
 #include <gtest/gtest.h>
-#include <random>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 using namespace sgf;
 
-namespace
-{
-
-/**
- * @brief Generates a random 64-bit identifier using a non-deterministic seed.
- * @return A random uint64_t value.
- */
-uint64_t random_id()
-{
-    std::random_device device;
-    std::mt19937_64 engine{device()};
-    std::uniform_int_distribution<uint64_t> dist;
-    return dist(engine);
-}
-
-/**
- * @brief RAII wrapper that owns a temp .bin file path and deletes it on destruction.
- *
- * The file is placed in the system temporary directory under a random name derived
- * from the given prefix so concurrent test runs do not collide.
- */
-struct TempCacheFile
-{
-    /**
-     * @brief Constructs a temp file handle with a random base name.
-     * @param prefix Prepended to a random numeric suffix.
-     */
-    explicit TempCacheFile(const std::string& prefix)
-        : m_folder(std::filesystem::temp_directory_path().string())
-        , m_base_name(prefix + "_" + std::to_string(random_id()))
-    {
-    }
-
-    /**
-     * @brief Removes the .bin file from the filesystem if it exists.
-     */
-    ~TempCacheFile()
-    {
-        std::filesystem::remove(std::filesystem::path(m_folder) / (m_base_name + ".bin"));
-    }
-
-    TempCacheFile(const TempCacheFile&) = delete;
-    TempCacheFile& operator=(const TempCacheFile&) = delete;
-    TempCacheFile(TempCacheFile&&) = delete;
-    TempCacheFile& operator=(TempCacheFile&&) = delete;
-
-    std::string m_folder;     ///< Directory in which the file is created.
-    std::string m_base_name;  ///< Base filename without extension.
-};
-
-}  // namespace
-
 // ── Empty vector ──────────────────────────────────────────────────────────────
 
 TEST(BinaryCacheIOManagerTest, empty_data_roundtrip)
 {
-    TempCacheFile temp{"empty_data"};
+    TempCacheFile temp{"empty_data", "bin"};
     const BinaryCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const EnumerationData data{};
@@ -83,7 +30,7 @@ TEST(BinaryCacheIOManagerTest, empty_data_roundtrip)
 
 TEST(BinaryCacheIOManagerTest, single_graph_empty_map_roundtrip)
 {
-    TempCacheFile temp{"single_empty_map"};
+    TempCacheFile temp{"single_empty_map", "bin"};
     const BinaryCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const EnumerationData data{EnumerationResult{}};
@@ -98,7 +45,7 @@ TEST(BinaryCacheIOManagerTest, single_graph_empty_map_roundtrip)
 
 TEST(BinaryCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
 {
-    TempCacheFile temp{"two_graphs_first_empty"};
+    TempCacheFile temp{"two_graphs_first_empty", "bin"};
     const BinaryCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const UInt128 key{0xDEADBEEF00000000ULL, 0x00000000CAFEBABEULL};
@@ -118,7 +65,7 @@ TEST(BinaryCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
 
 TEST(BinaryCacheIOManagerTest, two_graphs_both_nonempty_roundtrip)
 {
-    TempCacheFile temp{"two_graphs_both_nonempty"};
+    TempCacheFile temp{"two_graphs_both_nonempty", "bin"};
     const BinaryCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const UInt128 key_a{0x1111111111111111ULL, 0x2222222222222222ULL};

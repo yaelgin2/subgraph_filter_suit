@@ -1,7 +1,8 @@
 #include "CSVCacheIOManager.h"
+
 #include "EnumerationPreprocessManager.h"
 #include "GraphConstructionException.h"
-#include "ICacheIOManagment.h"
+#include "ICacheIOManager.h"
 #include "Int128.h"
 #include "SgfPathDoesntExistException.h"
 
@@ -9,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <new>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -17,17 +19,17 @@
 namespace sgf
 {
 
-CSVIOManager::CSVIOManager(std::string folder, std::string base_filename)
-    : ICacheIOManagment(std::move(folder), std::move(base_filename))
+CSVCacheIOManager::CSVCacheIOManager(std::string folder, std::string base_filename)
+    : ICacheIOManager(std::move(folder), std::move(base_filename))
 {
 }
 
-std::string CSVIOManager::get_extension() const
+std::string CSVCacheIOManager::get_extension() const
 {
     return "csv";
 }
 
-std::string CSVIOManager::uint128_to_decimal(UInt128 value)
+std::string CSVCacheIOManager::uint128_to_decimal(UInt128 value)
 {
     if (!value)
     {
@@ -43,7 +45,7 @@ std::string CSVIOManager::uint128_to_decimal(UInt128 value)
     return digits;
 }
 
-UInt128 CSVIOManager::decimal_to_uint128(const std::string& decimal_str)
+UInt128 CSVCacheIOManager::decimal_to_uint128(const std::string& decimal_str)
 {
     UInt128 result;
     for (const auto& digit_char : decimal_str)
@@ -54,13 +56,13 @@ UInt128 CSVIOManager::decimal_to_uint128(const std::string& decimal_str)
     return result;
 }
 
-void CSVIOManager::write_header(std::ofstream& file)
+void CSVCacheIOManager::write_header(std::ofstream& file)
 {
     file << CSV_COLUMN_GRAPH_INDEX << "," << CSV_COLUMN_MOTIF_NUMBER << ","
          << CSV_COLUMN_APPEARANCES << "\n";
 }
 
-void CSVIOManager::write_rows(const EnumerationData& data, std::ofstream& file)
+void CSVCacheIOManager::write_rows(const EnumerationData& data, std::ofstream& file)
 {
     for (size_t graph_index = 0U; graph_index < data.size(); ++graph_index)
     {
@@ -72,7 +74,7 @@ void CSVIOManager::write_rows(const EnumerationData& data, std::ofstream& file)
     }
 }
 
-void CSVIOManager::write_to_file(const EnumerationData& data, const std::string& full_path) const
+void CSVCacheIOManager::write_to_file(const EnumerationData& data, const std::string& full_path) const
 {
     std::ofstream file(full_path);
     if (!file.is_open())
@@ -81,16 +83,26 @@ void CSVIOManager::write_to_file(const EnumerationData& data, const std::string&
     }
     write_header(file);
     write_rows(data, file);
+    if (file.fail())
+    {
+        throw SgfPathDoesntExistException("Write error on file: '" + full_path + "'");
+    }
 }
 
-void CSVIOManager::insert_row(const std::string& line, EnumerationData& data)
+void CSVCacheIOManager::insert_row(const std::string& line, EnumerationData& data)
 {
     std::istringstream stream(line);
-    std::string graph_idx_str, motif_str, appearances_str;
+    std::string graph_idx_str;
+    std::string motif_str;
+    std::string appearances_str;
     std::getline(stream, graph_idx_str, ',');
     std::getline(stream, motif_str, ',');
     std::getline(stream, appearances_str);
     const size_t graph_index = std::stoull(graph_idx_str);
+    if (graph_index > MAX_GRAPH_INDEX)
+    {
+        throw GraphConstructionException("graph_index exceeds maximum allowed value in CSV cache");
+    }
     const UInt128 motif_key = decimal_to_uint128(motif_str);
     const uint32_t appearances = static_cast<uint32_t>(std::stoul(appearances_str));
     if (data.size() <= graph_index)
@@ -100,7 +112,7 @@ void CSVIOManager::insert_row(const std::string& line, EnumerationData& data)
     data[graph_index][motif_key] = appearances;
 }
 
-EnumerationData CSVIOManager::parse_file(std::ifstream& file)
+EnumerationData CSVCacheIOManager::parse_file(std::ifstream& file)
 {
     EnumerationData result;
     std::string line;
@@ -112,7 +124,7 @@ EnumerationData CSVIOManager::parse_file(std::ifstream& file)
     return result;
 }
 
-EnumerationData CSVIOManager::read_from_file(const std::string& full_path) const
+EnumerationData CSVCacheIOManager::read_from_file(const std::string& full_path) const
 {
     std::ifstream file(full_path);
     if (!file.is_open())
@@ -122,6 +134,11 @@ EnumerationData CSVIOManager::read_from_file(const std::string& full_path) const
     try
     {
         return parse_file(file);
+    }
+    catch (const std::bad_alloc&)
+    {
+        throw GraphConstructionException("Memory allocation failed reading CSV cache file: '" +
+                                         full_path + "'");
     }
     catch (const std::invalid_argument& ex)
     {

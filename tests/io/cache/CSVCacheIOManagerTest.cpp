@@ -1,76 +1,23 @@
 #include "CSVCacheIOManager.h"
+#include "CacheTestUtils.h"
 
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
 
 #include <cstdint>
-#include <filesystem>
 #include <gtest/gtest.h>
-#include <random>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 using namespace sgf;
 
-namespace
-{
-
-/**
- * @brief Generates a random 64-bit identifier using a non-deterministic seed.
- * @return A random uint64_t value.
- */
-uint64_t random_id()
-{
-    std::random_device device;
-    std::mt19937_64 engine{device()};
-    std::uniform_int_distribution<uint64_t> dist;
-    return dist(engine);
-}
-
-/**
- * @brief RAII wrapper that owns a temp .csv file path and deletes it on destruction.
- *
- * The file is placed in the system temporary directory under a random name derived
- * from the given prefix so concurrent test runs do not collide.
- */
-struct TempCacheFile
-{
-    /**
-     * @brief Constructs a temp file handle with a random base name.
-     * @param prefix Prepended to a random numeric suffix.
-     */
-    explicit TempCacheFile(const std::string& prefix)
-        : m_folder(std::filesystem::temp_directory_path().string())
-        , m_base_name(prefix + "_" + std::to_string(random_id()))
-    {
-    }
-
-    /**
-     * @brief Removes the .csv file from the filesystem if it exists.
-     */
-    ~TempCacheFile()
-    {
-        std::filesystem::remove(std::filesystem::path(m_folder) / (m_base_name + ".csv"));
-    }
-
-    TempCacheFile(const TempCacheFile&) = delete;
-    TempCacheFile& operator=(const TempCacheFile&) = delete;
-    TempCacheFile(TempCacheFile&&) = delete;
-    TempCacheFile& operator=(TempCacheFile&&) = delete;
-
-    std::string m_folder;     ///< Directory in which the file is created.
-    std::string m_base_name;  ///< Base filename without extension.
-};
-
-}  // namespace
-
 // ── Empty vector ──────────────────────────────────────────────────────────────
 
 TEST(CSVCacheIOManagerTest, empty_data_roundtrip)
 {
-    TempCacheFile temp{"empty_data"};
-    const CSVIOManager manager{temp.m_folder, temp.m_base_name};
+    TempCacheFile temp{"empty_data", "csv"};
+    const CSVCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const EnumerationData data{};
     manager.write(data);
@@ -87,8 +34,8 @@ TEST(CSVCacheIOManagerTest, empty_data_roundtrip)
 
 TEST(CSVCacheIOManagerTest, single_graph_empty_map_reads_back_as_empty)
 {
-    TempCacheFile temp{"single_empty_map"};
-    const CSVIOManager manager{temp.m_folder, temp.m_base_name};
+    TempCacheFile temp{"single_empty_map", "csv"};
+    const CSVCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const EnumerationData data{EnumerationResult{}};
     manager.write(data);
@@ -101,8 +48,8 @@ TEST(CSVCacheIOManagerTest, single_graph_empty_map_reads_back_as_empty)
 
 TEST(CSVCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
 {
-    TempCacheFile temp{"two_graphs_first_empty"};
-    const CSVIOManager manager{temp.m_folder, temp.m_base_name};
+    TempCacheFile temp{"two_graphs_first_empty", "csv"};
+    const CSVCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const UInt128 key{0xDEADBEEF00000000ULL, 0x00000000CAFEBABEULL};
     const uint32_t value = 77U;
@@ -121,8 +68,8 @@ TEST(CSVCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
 
 TEST(CSVCacheIOManagerTest, two_graphs_both_nonempty_roundtrip)
 {
-    TempCacheFile temp{"two_graphs_both_nonempty"};
-    const CSVIOManager manager{temp.m_folder, temp.m_base_name};
+    TempCacheFile temp{"two_graphs_both_nonempty", "csv"};
+    const CSVCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const UInt128 key_a{0x1111111111111111ULL, 0x2222222222222222ULL};
     const uint32_t val_a = 10U;
