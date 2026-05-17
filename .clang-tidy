@@ -21,7 +21,9 @@ Checks: >
   -modernize-use-trailing-return-type,
   -modernize-use-nodiscard,
   -hicpp-use-auto,
-  -bugprone-easily-swappable-parameters
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -readability-isolate-declaration
 
 # Treat every enabled check as an error (CI fails on any warning)
 WarningsAsErrors: "*"
