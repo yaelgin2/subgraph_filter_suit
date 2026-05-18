@@ -1,12 +1,13 @@
 #pragma once
 
-#include "ColoredGraph.h"
 #include "BoostGraph.h"
-#include "Tree.h"
+#include "ColoredGraph.h"
+#include "GeneralColorHist.h"
 #include "IndividualColorHist.h"
 #include "PatternUtils.h"
-#include "GeneralColorHist.h"
+#include "Tree.h"
 
+#include <boost/optional.hpp>
 #include <chrono>
 #include <cstdint>
 #include <memory>
@@ -15,7 +16,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <boost/optional.hpp>
 
 namespace sgf
 {
@@ -33,15 +33,14 @@ class MultiGraphPatternFinder
 {
 
 public:
-
     /**
      * @brief Construct a finder over a collection of input graphs.
      * @param graph_list   Input graphs (colours are remapped in-place during find_pattern).
      * @param is_directed  Whether the graphs are directed.
      * @param logger       Logger for diagnostics.
      */
-    MultiGraphPatternFinder(
-        std::vector<ColoredGraph>& graph_list, bool is_directed, LoggerHandler logger);
+    MultiGraphPatternFinder(std::vector<ColoredGraph>& graph_list, bool is_directed,
+                            LoggerHandler logger);
 
     /**
      * @brief Run the pattern-finding algorithm.
@@ -49,11 +48,10 @@ public:
      * @param is_random       When true, vertex/edge selection is randomised.
      * @return Pair of {grown pattern BoostGraph, indexes of graphs still alive}.
      */
-    std::pair<BoostGraph, std::unordered_set<uint32_t>>
-    find_pattern(double alive_threshold, bool is_random = true);
+    std::pair<BoostGraph, std::unordered_set<uint32_t>> find_pattern(double alive_threshold,
+                                                                     bool is_random = true);
 
 private:
-
     std::vector<ColoredGraph>& m_graph_list;
     bool m_is_directed;
     std::unordered_set<uint32_t> m_alive_graph_indexes;
@@ -103,9 +101,8 @@ private:
      * @param first_color  Compact colour index of the first vertex.
      * @param leaf_matches Updated in-place with the initial match nodes.
      */
-    void seed_initial_matches(
-        uint32_t first_color,
-        std::vector<std::vector<NodePtr>>& leaf_matches);
+    void seed_initial_matches(uint32_t first_color,
+                              std::vector<std::vector<NodePtr>>& leaf_matches);
 
     /**
      * @brief Seed m_random_engine from the current wall-clock time.
@@ -122,12 +119,9 @@ private:
      * @param done_adding_vertices  Set true when histogram is exhausted.
      * @param failed_add_edge       Set true when edge addition fails.
      */
-    void run_one_growth_step(
-        double alive_threshold,
-        bool is_random,
-        std::vector<std::vector<NodePtr>>& leaf_matches,
-        bool& done_adding_vertices,
-        bool& failed_add_edge);
+    void run_one_growth_step(double alive_threshold, bool is_random,
+                             std::vector<std::vector<NodePtr>>& leaf_matches,
+                             bool& done_adding_vertices, bool& failed_add_edge);
 
     /**
      * @brief Try to add one new vertex (with edge) to the pattern.
@@ -136,10 +130,8 @@ private:
      * @param leaf_matches    Updated in-place if a vertex is added.
      * @return True if a vertex was added.
      */
-    bool attempt_add_vertex(
-        double alive_threshold,
-        bool is_random,
-        std::vector<std::vector<NodePtr>>& leaf_matches);
+    bool attempt_add_vertex(double alive_threshold, bool is_random,
+                            std::vector<std::vector<NodePtr>>& leaf_matches);
 
     /**
      * @brief Log the current set of alive graph indexes at DEBUG level.
@@ -162,9 +154,8 @@ private:
      * @param is_random       Whether selection is weighted-random.
      * @return Tuple of {colour index, depth index, is_edge_reversed}.
      */
-    std::tuple<int32_t, int32_t, bool> get_candidates_from_histogram(
-        uint32_t min_alive_count,
-        bool is_random = true);
+    std::tuple<int32_t, int32_t, bool> get_candidates_from_histogram(uint32_t min_alive_count,
+                                                                     bool is_random = true);
 
     /**
      * @brief Choose between forward and reverse candidates for a directed graph.
@@ -173,10 +164,9 @@ private:
      * @param is_random         Whether selection is weighted-random.
      * @return Tuple of {colour index, depth index, is_edge_reversed}.
      */
-    std::tuple<int32_t, int32_t, bool> select_directed_candidate(
-        const std::tuple<int32_t, int32_t, uint32_t>& forward_candidate,
-        uint32_t min_alive_count,
-        bool is_random);
+    std::tuple<int32_t, int32_t, bool>
+    select_directed_candidate(const std::tuple<int32_t, int32_t, uint32_t>& forward_candidate,
+                              uint32_t min_alive_count, bool is_random);
 
     /* ---------- Pattern extension ---------- */
 
@@ -187,11 +177,10 @@ private:
      * @param is_edge_reversed     When true, the edge goes new_vertex → connection_vertex.
      * @param leaf_matches         Current leaf nodes updated in-place.
      */
-    void extend_pattern_at_node_find_matches_in_s(
-        uint32_t new_vertex_color,
-        uint32_t connection_vertex_id,
-        bool is_edge_reversed,
-        std::vector<std::vector<NodePtr>>& leaf_matches);
+    void extend_pattern_at_node_find_matches_in_s(uint32_t new_vertex_color,
+                                                  uint32_t connection_vertex_id,
+                                                  bool is_edge_reversed,
+                                                  std::vector<std::vector<NodePtr>>& leaf_matches);
 
     /**
      * @brief Collect all valid extension vertices for one graph.
@@ -203,11 +192,8 @@ private:
      * @return List of {vertex index, parent leaf} pairs.
      */
     std::vector<std::pair<uint32_t, NodePtr>> collect_extension_candidates(
-        uint32_t graph_idx,
-        const std::vector<std::vector<NodePtr>>& leaf_matches,
-        uint32_t new_vertex_color,
-        uint32_t connection_vertex_id,
-        bool is_edge_reversed);
+        uint32_t graph_idx, const std::vector<std::vector<NodePtr>>& leaf_matches,
+        uint32_t new_vertex_color, uint32_t connection_vertex_id, bool is_edge_reversed);
 
     /**
      * @brief Update the match tree for one graph after an extension step.
@@ -216,8 +202,7 @@ private:
      * @param leaf_matches         Updated in-place.
      */
     void update_tree_after_extension(
-        uint32_t graph_idx,
-        const std::vector<std::pair<uint32_t, NodePtr>>& extension_candidates,
+        uint32_t graph_idx, const std::vector<std::pair<uint32_t, NodePtr>>& extension_candidates,
         std::vector<std::vector<NodePtr>>& leaf_matches);
 
     /* ---------- Edge scoring and pruning ---------- */
@@ -229,10 +214,8 @@ private:
      * @param alive_threshold   Minimum support fraction among all input graphs.
      * @return True if an edge was added.
      */
-    bool add_edge(
-        std::vector<std::vector<NodePtr>>& leaf_matches,
-        double support_threshold,
-        double alive_threshold);
+    bool add_edge(std::vector<std::vector<NodePtr>>& leaf_matches, double support_threshold,
+                  double alive_threshold);
 
     /**
      * @brief Find the (src, tgt) pair with the highest edge-support score.
@@ -242,11 +225,9 @@ private:
      * @param best_score_out Filled with the best score on success.
      * @return True if any candidate edge was found.
      */
-    bool find_best_candidate_edge(
-        const std::vector<std::vector<NodePtr>>& leaf_matches,
-        uint32_t& best_src_out,
-        uint32_t& best_tgt_out,
-        uint32_t& best_score_out) const;
+    bool find_best_candidate_edge(const std::vector<std::vector<NodePtr>>& leaf_matches,
+                                  uint32_t& best_src_out, uint32_t& best_tgt_out,
+                                  uint32_t& best_score_out) const;
 
     /**
      * @brief Compute the number of alive graphs whose matches support edge (src, tgt).
@@ -255,10 +236,8 @@ private:
      * @param leaf_matches Current leaf nodes of each graph's match tree.
      * @return Support count.
      */
-    uint32_t score_edge_support(
-        uint32_t pattern_src,
-        uint32_t pattern_tgt,
-        const std::vector<std::vector<NodePtr>>& leaf_matches) const;
+    uint32_t score_edge_support(uint32_t pattern_src, uint32_t pattern_tgt,
+                                const std::vector<std::vector<NodePtr>>& leaf_matches) const;
 
     /**
      * @brief Return true if any match in one graph supports edge (src, tgt).
@@ -267,11 +246,8 @@ private:
      * @param pattern_tgt  Target vertex index in the pattern.
      * @param leaf_matches Current leaf nodes (read-only).
      */
-    bool is_edge_supported_by_graph(
-        uint32_t graph_idx,
-        uint32_t pattern_src,
-        uint32_t pattern_tgt,
-        const std::vector<std::vector<NodePtr>>& leaf_matches) const;
+    bool is_edge_supported_by_graph(uint32_t graph_idx, uint32_t pattern_src, uint32_t pattern_tgt,
+                                    const std::vector<std::vector<NodePtr>>& leaf_matches) const;
 
     /**
      * @brief Add edge (src, tgt) to the pattern and prune non-supporting matches.
@@ -279,10 +255,8 @@ private:
      * @param pattern_tgt  Target vertex index in the pattern.
      * @param leaf_matches Updated in-place.
      */
-    void apply_edge_and_prune(
-        uint32_t pattern_src,
-        uint32_t pattern_tgt,
-        std::vector<std::vector<NodePtr>>& leaf_matches);
+    void apply_edge_and_prune(uint32_t pattern_src, uint32_t pattern_tgt,
+                              std::vector<std::vector<NodePtr>>& leaf_matches);
 
     /**
      * @brief Remove leaves from one tree that do not support edge (src, tgt).
@@ -291,11 +265,8 @@ private:
      * @param pattern_tgt  Target vertex index in the pattern.
      * @param leaf_matches Updated in-place.
      */
-    void filter_tree_matches_by_edge(
-        uint32_t tree_idx,
-        uint32_t pattern_src,
-        uint32_t pattern_tgt,
-        std::vector<std::vector<NodePtr>>& leaf_matches);
+    void filter_tree_matches_by_edge(uint32_t tree_idx, uint32_t pattern_src, uint32_t pattern_tgt,
+                                     std::vector<std::vector<NodePtr>>& leaf_matches);
 };
 
 }  // namespace sgf

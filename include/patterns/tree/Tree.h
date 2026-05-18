@@ -91,14 +91,14 @@ public:
      */
     static NodePtr get_node_by_depth(const NodePtr& lowest_node_in_match, uint32_t target_depth);
 
-        /**
+    /**
      * @brief Build a map of vertex index → depth for every node on the path to the root.
      * @param last_node_in_path Deepest node of the path to trace.
      * @return Map from vertex index to its depth along the path.
      */
     static std::unordered_map<uint32_t, uint32_t>
     get_tree_path_map(const NodePtr& last_node_in_path);
-    
+
 private:
     NodePtr m_root;               ///< Root node of the tree.
     uint32_t m_depth;             ///< Maximum depth reached.

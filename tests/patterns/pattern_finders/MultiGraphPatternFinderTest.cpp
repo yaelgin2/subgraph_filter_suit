@@ -2,9 +2,9 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
+#include "FileLogger.h"
 #include "ILogger.h"
 #include "LoggerHandler.h"
-#include "FileLogger.h"
 
 #include <algorithm>
 #include <boost/graph/adjacency_list.hpp>
@@ -92,10 +92,9 @@ GraphSignature make_colored_graph_signature(const ColoredGraph& graph)
  * @param is_directed When false, the reverse edge is also added.
  * @return Extracted signature.
  */
-GraphSignature make_edges_colors_signature(
-    const std::vector<std::pair<uint32_t, uint32_t>>& edges,
-    const std::vector<uint32_t>& colors,
-    const bool is_directed)
+GraphSignature make_edges_colors_signature(const std::vector<std::pair<uint32_t, uint32_t>>& edges,
+                                           const std::vector<uint32_t>& colors,
+                                           const bool is_directed)
 {
     GraphSignature sig;
     sig.m_colors = colors;
@@ -121,23 +120,27 @@ GraphSignature make_edges_colors_signature(
  * @param perm Permutation mapping candidate vertex i to ref vertex perm[i].
  * @return True if all colors and directed edges are preserved under the mapping.
  */
-bool is_valid_mapping(
-    const GraphSignature& candidate_sig,
-    const GraphSignature& ref_sig,
-    const std::vector<uint32_t>& perm)
+bool is_valid_mapping(const GraphSignature& candidate_sig, const GraphSignature& ref_sig,
+                      const std::vector<uint32_t>& perm)
 {
     const uint32_t vertex_count = static_cast<uint32_t>(perm.size());
     for (uint32_t vertex_idx = 0U; vertex_idx < vertex_count; ++vertex_idx)
     {
         if (candidate_sig.m_colors[vertex_idx] != ref_sig.m_colors[perm[vertex_idx]])
+        {
             return false;
+        }
         const std::vector<uint32_t>& ref_adj = ref_sig.m_adjacency[perm[vertex_idx]];
         if (candidate_sig.m_adjacency[vertex_idx].size() != ref_adj.size())
+        {
             return false;
+        }
         for (const uint32_t neighbor : candidate_sig.m_adjacency[vertex_idx])
         {
             if (std::find(ref_adj.begin(), ref_adj.end(), perm[neighbor]) == ref_adj.end())
+            {
                 return false;
+            }
         }
     }
     return true;
@@ -161,7 +164,9 @@ bool find_isomorphism(const GraphSignature& candidate_sig, const GraphSignature&
     do
     {
         if (is_valid_mapping(candidate_sig, ref_sig, perm))
+        {
             return true;
+        }
     } while (std::next_permutation(perm.begin(), perm.end()));
     return false;
 }
@@ -172,12 +177,14 @@ bool find_isomorphism(const GraphSignature& candidate_sig, const GraphSignature&
  * @param ref_sig Reference signature.
  * @return True if a color- and edge-preserving bijection exists.
  */
-bool are_graph_signatures_isomorphic(
-    const GraphSignature& candidate_sig, const GraphSignature& ref_sig)
+bool are_graph_signatures_isomorphic(const GraphSignature& candidate_sig,
+                                     const GraphSignature& ref_sig)
 {
     const uint32_t vertex_count = static_cast<uint32_t>(candidate_sig.m_colors.size());
     if (vertex_count != static_cast<uint32_t>(ref_sig.m_colors.size()))
+    {
         return false;
+    }
     return find_isomorphism(candidate_sig, ref_sig);
 }
 
@@ -194,11 +201,9 @@ bool are_graph_signatures_isomorphic(
  * @param is_directed When true, edges are treated as directed.
  * @return True if an isomorphism exists.
  */
-bool boost_graph_isomorphic_to(
-    const BoostGraph& pattern,
-    const std::vector<std::pair<uint32_t, uint32_t>>& expected_edges,
-    const std::vector<uint32_t>& expected_colors,
-    const bool is_directed)
+bool boost_graph_isomorphic_to(const BoostGraph& pattern,
+                               const std::vector<std::pair<uint32_t, uint32_t>>& expected_edges,
+                               const std::vector<uint32_t>& expected_colors, const bool is_directed)
 {
     const GraphSignature pattern_sig = make_boost_signature(pattern);
     const GraphSignature ref_sig =
@@ -243,8 +248,8 @@ protected:
         ColoredGraph to_graph() const
         {
             std::vector<std::pair<uint32_t, uint32_t>> edge_copy = m_edges;
-            return ColoredGraph(
-                static_cast<uint32_t>(m_colors.size()), edge_copy, m_colors, m_is_directed);
+            return ColoredGraph(static_cast<uint32_t>(m_colors.size()), edge_copy, m_colors,
+                                m_is_directed);
         }
     };
 
@@ -311,7 +316,8 @@ protected:
 
     static GraphSpec make_path_4_with_2_added_vertex()
     {
-        return {{{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}, {4U, 5U}}, {0U, 0U, 0U, 0U, 0U, 0U}, false};
+        return {
+            {{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}, {4U, 5U}}, {0U, 0U, 0U, 0U, 0U, 0U}, false};
     }
 
     static GraphSpec make_path_4_with_1_added_vertex_directed()
@@ -371,22 +377,30 @@ protected:
 
     static GraphSpec complex_graph()
     {
-        return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}}, {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U}, false};
+        return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
+                {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U},
+                false};
     }
 
     static GraphSpec complex_graph_colored()
     {
-        return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}}, {0U, 1U, 2U, 2U, 2U, 3U, 1U, 4U}, false};
+        return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
+                {0U, 1U, 2U, 2U, 2U, 3U, 1U, 4U},
+                false};
     }
 
     static GraphSpec complex_graph_directed()
     {
-        return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}}, {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U}, true};
+        return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
+                {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U},
+                true};
     }
 
     static GraphSpec complex_graph_colored_directed()
     {
-        return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}}, {0U, 1U, 2U, 2U, 2U, 3U, 1U, 4U}, true};
+        return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
+                {0U, 1U, 2U, 2U, 2U, 3U, 1U, 4U},
+                true};
     }
 };
 
@@ -419,11 +433,10 @@ TEST_F(MultiGraphPatternFinderTest, path_4_one_graph_found_graph)
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
-
 
 TEST_F(MultiGraphPatternFinderTest, path_4_directed_one_graph_found_graph)
 {
@@ -435,8 +448,8 @@ TEST_F(MultiGraphPatternFinderTest, path_4_directed_one_graph_found_graph)
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -450,8 +463,8 @@ TEST_F(MultiGraphPatternFinderTest, path_4_colored_one_graph_found_graph)
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -465,8 +478,8 @@ TEST_F(MultiGraphPatternFinderTest, path_4_directed_colored_one_graph_found_grap
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -480,8 +493,8 @@ TEST_F(MultiGraphPatternFinderTest, triangle_3_one_graph_found_graph)
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -495,8 +508,8 @@ TEST_F(MultiGraphPatternFinderTest, triangle_3_directed_one_graph_found_graph)
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -510,8 +523,8 @@ TEST_F(MultiGraphPatternFinderTest, triangle_3_colored_one_graph_found_graph)
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -525,8 +538,8 @@ TEST_F(MultiGraphPatternFinderTest, triangle_3_colored_directed_one_graph_found_
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -540,8 +553,8 @@ TEST_F(MultiGraphPatternFinderTest, star_5_one_graph_found_graph)
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -555,8 +568,8 @@ TEST_F(MultiGraphPatternFinderTest, complex_graph_one_graph_found_graph)
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -570,8 +583,8 @@ TEST_F(MultiGraphPatternFinderTest, complex_graph_directed_one_graph_found_graph
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -585,8 +598,8 @@ TEST_F(MultiGraphPatternFinderTest, complex_graph_colored_one_graph_found_graph)
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -600,8 +613,8 @@ TEST_F(MultiGraphPatternFinderTest, complex_graph_colored_directed_one_graph_fou
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U}));
 }
 
@@ -617,8 +630,8 @@ TEST_F(MultiGraphPatternFinderTest, path_4_with_added_vertex_3_graphs_found_grap
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.7, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U, 2U}));
 }
 
@@ -634,7 +647,7 @@ TEST_F(MultiGraphPatternFinderTest, path_4_with_added_vertex_3_directed_graphs_f
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.7, false);
 
-    EXPECT_TRUE(boost_graph_isomorphic_to(
-        result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
+    EXPECT_TRUE(
+        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U, 2U}));
 }
