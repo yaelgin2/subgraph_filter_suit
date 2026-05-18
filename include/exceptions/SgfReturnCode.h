@@ -19,6 +19,7 @@ enum class SgfReturnCode : int32_t
     PATH_DOESNT_EXIST = 4,
     DIRECTORY_CREATION_ERROR = 5,
     ENUMERATION_OVERFLOW = 6,
+    HISTOGRAM_OVERFLOW = 7,
 };
 
 }  // namespace sgf

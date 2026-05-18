@@ -1,4 +1,5 @@
 #include "SingleGraphHistogram.h"
+#include "HistogramOverflowException.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -116,6 +117,10 @@ void SingleGraphHistogram::add_vertex_neighbour_to_candidate(uint32_t vertex, ui
             if (m_match_vertices.find(*it2) == m_match_vertices.end())
                 outside_sum += log_prob_of_vertex(*it2);
         }
+        if (std::isinf(outside_sum))
+            throw sgf::HistogramOverflowException(
+                "outside_logp sum reached infinity for candidate vertex "
+                + std::to_string(vertex));
         m_candidate_outside_logp[vertex] = outside_sum;
     } else {
         // Existing candidate — increment in-degree.
@@ -157,6 +162,11 @@ std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t k
             static_cast<double>(k_in) * m_log_density
             + log_prob_of_vertex(v)
             + alpha * outside_logp;
+
+        if (std::isinf(score))
+            throw sgf::HistogramOverflowException(
+                "candidate score reached infinity for vertex "
+                + std::to_string(v));
 
         auto parent_it = m_candidate_any_parent.find(v);
         const int32_t connect = (parent_it != m_candidate_any_parent.end())
