@@ -59,6 +59,7 @@ target_include_directories(subgraph_filter_suite PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/tree"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/histograms"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/pattern_finders"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/utils"
 )
 
@@ -71,8 +72,12 @@ target_link_libraries(subgraph_filter_suite PUBLIC
 
 
 # ── Compiler warnings ─────────────────────────────────────────────────────────
+# -Wno-maybe-uninitialized: GCC 14 emits false-positive maybe-uninitialized
+# warnings inside Boost 1.85 adjacency_list copy_impl / add_edge inlined paths.
+# This is a known Boost/GCC interaction; the project code is correct.
 target_compile_options(subgraph_filter_suite PRIVATE
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Werror>
+    $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
+    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
 )
 
