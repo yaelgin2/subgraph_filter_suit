@@ -8,6 +8,7 @@
 #include <cstdint>
 
 namespace sgf
+
 {
 /**
  * @brief Pure-static utilities shared by MultiGraphPatternFinder and
@@ -107,5 +108,4 @@ private:
         uint64_t total_vertices);
 
 };
-
 }
