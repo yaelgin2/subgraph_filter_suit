@@ -58,6 +58,8 @@ target_include_directories(subgraph_filter_suite PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/preprocessing/enumeration"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/filtering"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/histograms"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/pattern"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/utils"
 )
 
