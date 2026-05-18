@@ -93,7 +93,7 @@ TEST_F(GroupEnumerationGraphFilterTest, both_have_key_once_library_is_filterable
     const FilterResult result = filter_obj.filter(query);
 
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_FALSE(result[0]);
+    EXPECT_TRUE(result[0]);
 }
 
 // ── Group 2: Count comparison — all keys in both, single library graph ────────
