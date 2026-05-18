@@ -1,6 +1,7 @@
 #include "GroupEnumerationPreprocessor.h"
 
 #include "ColoredGraph.h"
+#include "EnumerationOverflowException.h"
 #include "Int128.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <numeric>
 #include <string>
 #include <unordered_map>
@@ -74,8 +76,14 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
                                               const std::vector<uint32_t>& group_vertex_ids)
     {
         const std::vector<uint32_t> node_colors = group_to_node_colors(group_vertex_ids);
-        motif_count[calculate_motif_number(group_structure_descriptor, node_colors)] +=
-            static_cast<uint32_t>(1U);
+        uint32_t& count =
+            motif_count[calculate_motif_number(group_structure_descriptor, node_colors)];
+        if (count == std::numeric_limits<uint32_t>::max())
+        {
+            throw EnumerationOverflowException(
+                "Motif count overflow: occurrence count exceeded uint32_t capacity.");
+        }
+        count += 1U;
 
         if (groups_counted % LOG_INTERVAL == 0)
         {
