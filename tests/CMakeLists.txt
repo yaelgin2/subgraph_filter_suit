@@ -45,6 +45,7 @@ add_sgf_test(enumeration_preprocess_manager_tests managers/EnumerationPreprocess
 add_sgf_test(group_enumeration_graph_filter_tests filtering/GroupEnumerationGraphFilterTest.cpp)
 add_sgf_test(csv_cache_io_manager_tests           io/cache/CSVCacheIOManagerTest.cpp)
 add_sgf_test(binary_cache_io_manager_tests        io/cache/BinaryCacheIOManagerTest.cpp)
+add_sgf_test(single_graph_pattern_finder_tests    patterns/SingleGraphPatternFinderTest.cpp)
 
 # The graphml reader tests need to locate the test-data directory at compile time.
 target_compile_definitions(graphml_reader_tests PRIVATE
