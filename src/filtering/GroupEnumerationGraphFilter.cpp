@@ -1,6 +1,10 @@
 #include "GroupEnumerationGraphFilter.h"
 
-#include "Int128.h"
+#include "EnumerationPreprocessManager.h"
+#include "IGraphPreprocessor.h"
+
+#include <cstdint>
+#include <utility>
 
 namespace sgf
 {
@@ -18,11 +22,12 @@ FilterResult GroupEnumerationGraphFilter::filter(const EnumerationResult& graph_
     {
         for (auto [motif_key, motif_appearences] : m_library_cache[library_graph_index])
         {
-            auto graph_feature_appearences_iter = graph_features.find(motif_key);
-            uint32_t graph_feature_appearences =
+            const EnumerationResult::const_iterator graph_feature_appearences_iter =
+                graph_features.find(motif_key);
+            const uint32_t graph_feature_appearences =
                 (graph_feature_appearences_iter != graph_features.end())
                     ? graph_feature_appearences_iter->second
-                    : 0;
+                    : 0U;
             if (graph_feature_appearences < motif_appearences)
             {
                 can_graph_be_filtered[library_graph_index] = true;
