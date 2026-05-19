@@ -33,7 +33,7 @@ public:
      *
      * @return color_map  color_map[new_id] == original colour value.
      */
-    static std::vector<int32_t> map_colors(ColoredGraph& a, ColoredGraph& b);
+    static std::vector<int32_t> map_colors(ColoredGraph& graph_a, ColoredGraph& graph_b);
 
     /**
      * @brief Remap vertex colours across multiple graphs to a shared
@@ -52,13 +52,13 @@ public:
     /**
      * @brief Return the index of every S-vertex whose colour equals @p color.
      */
-    static std::vector<uint32_t> find_initial_matches(const ColoredGraph& s, uint32_t color);
+    static std::vector<uint32_t> find_initial_matches(const ColoredGraph& graph, uint32_t color);
 
     /**
      * @brief Get all matches for all colors in one pass through the graph.
      * @return Vector where result[color] = vector of vertices with that color.
      */
-    static std::vector<std::vector<uint32_t>> get_all_color_matches(const ColoredGraph& s,
+    static std::vector<std::vector<uint32_t>> get_all_color_matches(const ColoredGraph& graph,
                                                                     uint32_t color_count);
 
     /**
@@ -74,7 +74,7 @@ public:
      * @brief Compute per-colour probability distribution from a single graph.
      */
     static std::vector<double> compute_color_distribution(uint32_t color_number,
-                                                          const ColoredGraph& g);
+                                                          const ColoredGraph& graph);
 
     /**
      * @brief Compute edge density = edge_count / (vertex_count*(vertex_count-1)/2).

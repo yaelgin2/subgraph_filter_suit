@@ -3,8 +3,8 @@
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
 #include "GeneralColorHist.h"
-#include "IndividualColorHist.h"
-#include "PatternUtils.h"
+#include "LoggerHandler.h"
+#include "Node.h"
 #include "Tree.h"
 
 #include <boost/optional.hpp>
@@ -52,6 +52,10 @@ public:
                                                                      bool is_random = true);
 
 private:
+    static constexpr uint64_t LOWER_32_BITS_MASK = 0xffffffffULL;
+    static constexpr uint32_t UPPER_32_BITS_SHIFT = 32U;
+    static constexpr double NON_RANDOM_PROBABILITY = 0.5;
+
     std::vector<ColoredGraph>& m_graph_list;
     bool m_is_directed;
     std::unordered_set<uint32_t> m_alive_graph_indexes;
@@ -94,7 +98,7 @@ private:
      * @param color_distribution Per-colour probability vector.
      * @return Compact colour index.
      */
-    uint32_t select_first_color(const std::vector<double>& color_distribution) const;
+    static uint32_t select_first_color(const std::vector<double>& color_distribution);
 
     /**
      * @brief Add the first pattern vertex, populate initial matches per graph.
@@ -216,6 +220,13 @@ private:
      */
     bool add_edge(std::vector<std::vector<NodePtr>>& leaf_matches, double support_threshold,
                   double alive_threshold);
+
+    /**
+     * @brief Return true if (source, target) is a valid candidate edge to score.
+     * @param source_vertex Source vertex index in the pattern.
+     * @param target_vertex Target vertex index in the pattern.
+     */
+    bool is_candidate_edge(uint32_t source_vertex, uint32_t target_vertex) const;
 
     /**
      * @brief Find the (src, tgt) pair with the highest edge-support score.

@@ -1,22 +1,28 @@
 #include "MultiGraphPatternFinder.h"
 
 #include "BoostGraph.h"
+#include "ColoredGraph.h"
 #include "GeneralColorHist.h"
 #include "LogLevel.h"
+#include "LoggerHandler.h"
+#include "Node.h"
 #include "PatternUtils.h"
 #include "Tree.h"
 
 #include <algorithm>
 #include <boost/graph/adjacency_list.hpp>
-#include <boost/range/iterator_range.hpp>
+#include <boost/none.hpp>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <functional>
+#include <memory>
 #include <optional>
 #include <random>
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -28,7 +34,7 @@ MultiGraphPatternFinder::MultiGraphPatternFinder(std::vector<ColoredGraph>& grap
                                                  const bool is_directed, LoggerHandler logger)
     : m_graph_list(graph_list)
     , m_is_directed(is_directed)
-    , m_logger(logger)
+    , m_logger(std::move(logger))
 {
 }
 
@@ -79,8 +85,7 @@ std::vector<std::vector<NodePtr>> MultiGraphPatternFinder::initialize_match_tree
     return std::vector<std::vector<NodePtr>>(graph_count);
 }
 
-uint32_t
-MultiGraphPatternFinder::select_first_color(const std::vector<double>& color_distribution) const
+uint32_t MultiGraphPatternFinder::select_first_color(const std::vector<double>& color_distribution)
 {
     std::vector<std::pair<double, uint32_t>> sorted_colors;
     for (uint32_t color_idx = 0U; color_idx < static_cast<uint32_t>(color_distribution.size());
@@ -113,9 +118,10 @@ void MultiGraphPatternFinder::seed_initial_matches(const uint32_t first_color,
             PatternUtils::find_initial_matches(m_graph_list[graph_idx], first_color);
 
         std::vector<std::pair<uint32_t, NodePtr>> initial_match_pairs;
+        initial_match_pairs.reserve(initial_matches.size());
         for (const uint32_t matched_vertex : initial_matches)
         {
-            initial_match_pairs.push_back({matched_vertex, m_match_trees[graph_idx]->get_root()});
+            initial_match_pairs.emplace_back(matched_vertex, m_match_trees[graph_idx]->get_root());
         }
         leaf_matches[graph_idx] = m_match_trees[graph_idx]->add_tree_level(initial_match_pairs);
 
@@ -138,8 +144,8 @@ void MultiGraphPatternFinder::setup_random_engine()
 {
     const uint64_t time_seed =
         static_cast<uint64_t>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-    std::seed_seq seed_sequence{static_cast<uint32_t>(time_seed & 0xffffffffULL),
-                                static_cast<uint32_t>(time_seed >> 32U)};
+    std::seed_seq seed_sequence{static_cast<uint32_t>(time_seed & LOWER_32_BITS_MASK),
+                                static_cast<uint32_t>(time_seed >> UPPER_32_BITS_SHIFT)};
     m_random_engine.seed(seed_sequence);
 }
 
@@ -204,7 +210,7 @@ void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
     double random_value = m_uniform_dist(m_random_engine);
     if (!is_random)
     {
-        random_value = 0.5;
+        random_value = NON_RANDOM_PROBABILITY;
     }
 
     if (((random_value < vertex_add_probability) && !done_adding_vertices) || failed_add_edge)
@@ -235,15 +241,10 @@ std::pair<BoostGraph, std::unordered_set<uint32_t>> MultiGraphPatternFinder::fin
                      std::to_string(std::chrono::duration<double>(end_time - start_time).count()) +
                      "s");
 
-    BoostGraph result_pattern = std::move(m_pattern);
-    std::unordered_set<uint32_t> result_alive = std::move(m_alive_graph_indexes);
-
     m_match_trees.clear();
-    m_alive_graph_indexes.clear();
-    m_pattern.clear();
     m_color_map.clear();
 
-    return {std::move(result_pattern), std::move(result_alive)};
+    return {std::move(m_pattern), std::move(m_alive_graph_indexes)};
 }
 
 /* ---------- Histogram selection ---------- */
@@ -323,7 +324,7 @@ std::vector<std::pair<uint32_t, NodePtr>> MultiGraphPatternFinder::collect_exten
             if (m_graph_list[graph_idx].get_vertex_color(*neighbor_it) == new_vertex_color &&
                 path_vertex_map.find(*neighbor_it) == path_vertex_map.end())
             {
-                extension_candidates.push_back({*neighbor_it, current_leaf});
+                extension_candidates.emplace_back(*neighbor_it, current_leaf);
             }
         }
     }
@@ -380,27 +381,21 @@ bool MultiGraphPatternFinder::is_edge_supported_by_graph(
     const uint32_t graph_idx, const uint32_t pattern_src, const uint32_t pattern_tgt,
     const std::vector<std::vector<NodePtr>>& leaf_matches) const
 {
-    for (const NodePtr& leaf_node : leaf_matches[graph_idx])
-    {
-        const NodePtr source_tree_node = Tree::get_node_by_depth(leaf_node, pattern_src + 1U);
-        const NodePtr target_tree_node = Tree::get_node_by_depth(leaf_node, pattern_tgt + 1U);
-
-        if (!source_tree_node || !target_tree_node)
-        {
-            continue;
-        }
-
-        const BoostGraph::vertex_descriptor source_vertex_idx =
-            static_cast<BoostGraph::vertex_descriptor>(source_tree_node->m_index);
-        const BoostGraph::vertex_descriptor target_vertex_idx =
-            static_cast<BoostGraph::vertex_descriptor>(target_tree_node->m_index);
-
-        if (m_graph_list[graph_idx].is_edge(source_vertex_idx, target_vertex_idx))
-        {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(leaf_matches[graph_idx].cbegin(), leaf_matches[graph_idx].cend(),
+                       [this, graph_idx, pattern_src, pattern_tgt](const NodePtr& leaf_node)
+                       {
+                           const NodePtr source_node =
+                               Tree::get_node_by_depth(leaf_node, pattern_src + 1U);
+                           const NodePtr target_node =
+                               Tree::get_node_by_depth(leaf_node, pattern_tgt + 1U);
+                           if (!source_node || !target_node)
+                           {
+                               return false;
+                           }
+                           return m_graph_list[graph_idx].is_edge(
+                               static_cast<BoostGraph::vertex_descriptor>(source_node->m_index),
+                               static_cast<BoostGraph::vertex_descriptor>(target_node->m_index));
+                       });
 }
 
 uint32_t MultiGraphPatternFinder::score_edge_support(
@@ -477,6 +472,20 @@ void MultiGraphPatternFinder::apply_edge_and_prune(const uint32_t pattern_src,
     }
 }
 
+bool MultiGraphPatternFinder::is_candidate_edge(const uint32_t source_vertex,
+                                                const uint32_t target_vertex) const
+{
+    if (source_vertex == target_vertex)
+    {
+        return false;
+    }
+    if (!m_is_directed && source_vertex >= target_vertex)
+    {
+        return false;
+    }
+    return !boost::edge(source_vertex, target_vertex, m_pattern).second;
+}
+
 bool MultiGraphPatternFinder::find_best_candidate_edge(
     const std::vector<std::vector<NodePtr>>& leaf_matches, uint32_t& best_src_out,
     uint32_t& best_tgt_out, uint32_t& best_score_out) const
@@ -488,15 +497,7 @@ bool MultiGraphPatternFinder::find_best_candidate_edge(
     {
         for (uint32_t target_vertex = 0U; target_vertex < vertex_count; ++target_vertex)
         {
-            if (source_vertex == target_vertex)
-            {
-                continue;
-            }
-            if (!m_is_directed && source_vertex >= target_vertex)
-            {
-                continue;
-            }
-            if (boost::edge(source_vertex, target_vertex, m_pattern).second)
+            if (!is_candidate_edge(source_vertex, target_vertex))
             {
                 continue;
             }

@@ -1,8 +1,13 @@
 #include "PatternUtils.h"
 
-#include <algorithm>
-#include <iostream>
+#include "BoostGraph.h"
+#include "ColoredGraph.h"
+
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/range/iterator_range_core.hpp>
+#include <cstdint>
 #include <map>
+#include <vector>
 
 /* ---------- private helpers ---------- */
 
@@ -12,10 +17,10 @@ void PatternUtils::scan_graph_colors(const ColoredGraph& graph,
                                      std::map<int32_t, uint32_t>& old_to_new,
                                      std::vector<int32_t>& color_map)
 {
-    for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
+    for (uint32_t vertex = 0U; vertex < graph.vertex_count(); ++vertex)
     {
-        int32_t original_color = graph.get_vertex_color(vertex);
-        if (!old_to_new.count(original_color))
+        const int32_t original_color = static_cast<int32_t>(graph.get_vertex_color(vertex));
+        if (old_to_new.count(original_color) == 0U)
         {
             old_to_new[original_color] = static_cast<uint32_t>(color_map.size());
             color_map.push_back(original_color);
@@ -25,9 +30,10 @@ void PatternUtils::scan_graph_colors(const ColoredGraph& graph,
 
 void PatternUtils::recolor_graph(const std::map<int32_t, uint32_t>& old_to_new, ColoredGraph& graph)
 {
-    for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
+    for (uint32_t vertex = 0U; vertex < graph.vertex_count(); ++vertex)
     {
-        graph.set_vertex_color(vertex, old_to_new.at(graph.get_vertex_color(vertex)));
+        graph.set_vertex_color(vertex,
+                               old_to_new.at(static_cast<int32_t>(graph.get_vertex_color(vertex))));
     }
 }
 
@@ -42,14 +48,14 @@ std::vector<int32_t> PatternUtils::map_colors(ColoredGraph& graph)
     return color_map;
 }
 
-std::vector<int32_t> PatternUtils::map_colors(ColoredGraph& a, ColoredGraph& b)
+std::vector<int32_t> PatternUtils::map_colors(ColoredGraph& graph_a, ColoredGraph& graph_b)
 {
     std::vector<int32_t> color_map;
     std::map<int32_t, uint32_t> old_to_new;
-    scan_graph_colors(a, old_to_new, color_map);
-    scan_graph_colors(b, old_to_new, color_map);
-    recolor_graph(old_to_new, a);
-    recolor_graph(old_to_new, b);
+    scan_graph_colors(graph_a, old_to_new, color_map);
+    scan_graph_colors(graph_b, old_to_new, color_map);
+    recolor_graph(old_to_new, graph_a);
+    recolor_graph(old_to_new, graph_b);
     return color_map;
 }
 
@@ -76,10 +82,11 @@ void PatternUtils::recolor_pattern(BoostGraph& pattern, const std::vector<int32_
     }
 }
 
-std::vector<uint32_t> PatternUtils::find_initial_matches(const ColoredGraph& graph, uint32_t color)
+std::vector<uint32_t> PatternUtils::find_initial_matches(const ColoredGraph& graph,
+                                                         const uint32_t color)
 {
     std::vector<uint32_t> matches;
-    for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
+    for (uint32_t vertex = 0U; vertex < graph.vertex_count(); ++vertex)
     {
         if (graph.get_vertex_color(vertex) == color)
         {
@@ -92,7 +99,7 @@ std::vector<uint32_t> PatternUtils::find_initial_matches(const ColoredGraph& gra
 void PatternUtils::count_vertex_colors(const ColoredGraph& graph, std::vector<uint32_t>& counts,
                                        uint64_t& total_vertices)
 {
-    for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
+    for (uint32_t vertex = 0U; vertex < graph.vertex_count(); ++vertex)
     {
         counts[graph.get_vertex_color(vertex)]++;
         ++total_vertices;
@@ -100,28 +107,29 @@ void PatternUtils::count_vertex_colors(const ColoredGraph& graph, std::vector<ui
 }
 
 std::vector<std::vector<uint32_t>> PatternUtils::get_all_color_matches(const ColoredGraph& graph,
-                                                                       uint32_t color_count)
+                                                                       const uint32_t color_count)
 {
     std::vector<std::vector<uint32_t>> all_matches(color_count);
-    for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
+    for (uint32_t vertex = 0U; vertex < graph.vertex_count(); ++vertex)
     {
-        int32_t color = graph.get_vertex_color(vertex);
+        const int32_t color = static_cast<int32_t>(graph.get_vertex_color(vertex));
         if (color >= 0 && color < static_cast<int32_t>(color_count))
         {
-            all_matches[color].push_back(vertex);
+            all_matches[static_cast<uint32_t>(color)].push_back(vertex);
         }
     }
     return all_matches;
 }
 
 std::vector<double> PatternUtils::counts_to_probability(const std::vector<uint32_t>& counts,
-                                                        uint64_t total_vertices)
+                                                        const uint64_t total_vertices)
 {
     std::vector<double> probability(counts.size());
-    for (uint32_t color_index = 0; color_index < counts.size(); ++color_index)
+    for (uint32_t color_index = 0U; color_index < static_cast<uint32_t>(counts.size());
+         ++color_index)
     {
         probability[color_index] =
-            (total_vertices > 0 && counts[color_index] > 0)
+            (total_vertices > 0U && counts[color_index] > 0U)
                 ? static_cast<double>(counts[color_index]) / static_cast<double>(total_vertices)
                 : 0.0;
     }
@@ -129,51 +137,48 @@ std::vector<double> PatternUtils::counts_to_probability(const std::vector<uint32
 }
 
 std::vector<double>
-PatternUtils::compute_color_distribution(uint32_t color_number, int32_t s_size,
+PatternUtils::compute_color_distribution(const uint32_t color_number, const int32_t s_size,
                                          const std::vector<ColoredGraph>& s_list)
 {
-    std::vector<uint32_t> counts(color_number, 0);
-    uint64_t total_vertices = 0;
+    std::vector<uint32_t> counts(color_number, 0U);
+    uint64_t total_vertices = 0U;
     for (int32_t graph_index = 0; graph_index < s_size; ++graph_index)
     {
-        count_vertex_colors(s_list[graph_index], counts, total_vertices);
+        count_vertex_colors(s_list[static_cast<uint32_t>(graph_index)], counts, total_vertices);
     }
     return counts_to_probability(counts, total_vertices);
 }
 
-std::vector<double> PatternUtils::compute_color_distribution(uint32_t color_number,
+std::vector<double> PatternUtils::compute_color_distribution(const uint32_t color_number,
                                                              const ColoredGraph& graph)
 {
-    std::vector<uint32_t> counts(color_number, 0);
-    uint64_t total_vertices = 0;
+    std::vector<uint32_t> counts(color_number, 0U);
+    uint64_t total_vertices = 0U;
     count_vertex_colors(graph, counts, total_vertices);
     return counts_to_probability(counts, total_vertices);
 }
 
-double PatternUtils::compute_density(uint32_t vertex_count, uint32_t edge_count)
+double PatternUtils::compute_density(const uint32_t vertex_count, const uint32_t edge_count)
 {
-    if (vertex_count < 2)
+    if (vertex_count < 2U)
     {
         return 0.0;
     }
     const uint64_t max_possible_edges =
-        static_cast<uint64_t>(vertex_count) * (vertex_count - 1) / 2;
-    if (max_possible_edges == 0)
+        static_cast<uint64_t>(vertex_count) * (vertex_count - 1U) / 2U;
+    if (max_possible_edges == 0U)
     {
         return 0.0;
     }
     return static_cast<double>(edge_count) / static_cast<double>(max_possible_edges);
 }
 
-void PatternUtils::add_edge(bool is_directed, BoostGraph& graph, uint32_t source, uint32_t target)
+void PatternUtils::add_edge(const bool is_directed, BoostGraph& graph, const uint32_t source,
+                            const uint32_t target)
 {
-    if (is_directed)
+    boost::add_edge(source, target, graph);
+    if (!is_directed)
     {
-        boost::add_edge(source, target, graph);
-    }
-    else
-    {
-        boost::add_edge(source, target, graph);
         boost::add_edge(target, source, graph);
     }
 }
