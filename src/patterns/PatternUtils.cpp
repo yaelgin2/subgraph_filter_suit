@@ -4,7 +4,7 @@
 #include "ColoredGraph.h"
 
 #include <boost/graph/adjacency_list.hpp>
-#include <boost/range/iterator_range.hpp>
+#include <boost/range/iterator_range_core.hpp>
 #include <cstdint>
 #include <map>
 #include <vector>

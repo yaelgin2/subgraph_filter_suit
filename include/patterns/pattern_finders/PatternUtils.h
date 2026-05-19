@@ -33,7 +33,7 @@ public:
      *
      * @return color_map  color_map[new_id] == original colour value.
      */
-    static std::vector<int32_t> map_colors(ColoredGraph& graph_a, ColoredGraph& graph_b);
+    static std::vector<int32_t> map_colors(ColoredGraph& first_graph, ColoredGraph& second_graph);
 
     /**
      * @brief Remap vertex colours across multiple graphs to a shared
@@ -67,14 +67,15 @@ public:
      * @return Vector of size @p color_number where element c is the fraction
      *         of all vertices (across all S-graphs) that have colour c.
      */
-    static std::vector<double> compute_color_distribution(uint32_t color_number, int32_t s_size,
-                                                          const std::vector<ColoredGraph>& s_list);
+    static std::vector<double> compute_color_distribution(uint32_t color_count,
+                                                          int32_t search_graph_count,
+                                                          const std::vector<ColoredGraph>& search_graphs);
 
     /**
      * @brief Compute per-colour probability distribution from a single graph.
      */
-    static std::vector<double> compute_color_distribution(uint32_t color_number,
-                                                          const ColoredGraph& graph);
+    static std::vector<double> compute_color_distribution(uint32_t color_count,
+                                                          const ColoredGraph& source_graph);
 
     /**
      * @brief Compute edge density = edge_count / (vertex_count*(vertex_count-1)/2).
@@ -90,10 +91,11 @@ public:
 
 private:
     static void scan_graph_colors(const ColoredGraph& graph,
-                                  std::map<int32_t, uint32_t>& old_to_new,
+                                  std::map<int32_t, uint32_t>& original_to_remapped_color,
                                   std::vector<int32_t>& color_map);
 
-    static void recolor_graph(const std::map<int32_t, uint32_t>& old_to_new, ColoredGraph& graph);
+    static void recolor_graph(const std::map<int32_t, uint32_t>& original_to_remapped_color,
+                              ColoredGraph& graph);
 
     static void count_vertex_colors(const ColoredGraph& graph, std::vector<uint32_t>& counts,
                                     uint64_t& total_vertices);

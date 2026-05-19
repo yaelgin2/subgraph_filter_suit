@@ -259,7 +259,7 @@ private:
      * @param scored_states  (score, beam_index) pairs sorted ascending by score.
      * @return Cut index: keep [0, cut), discard [cut, end).
      */
-    uint32_t find_gap_cut(const std::vector<std::pair<double, uint32_t>>& scored_states) const;
+    static uint32_t find_gap_cut(const std::vector<std::pair<double, uint32_t>>& scored_states);
 
     /**
      * @brief Return pointers to the NUMBER_OF_STATES_TO_RETURN best beam states.
@@ -267,8 +267,8 @@ private:
      * Scores every state, sorts ascending, and returns pointers into @p beam.
      * The caller must not invalidate the beam before using the pointers.
      */
-    std::vector<PatternState*> select_best_state(std::vector<PatternState>& beam,
-                                                 double background_density, bool is_directed) const;
+    static std::vector<PatternState*> select_best_state(std::vector<PatternState>& beam,
+                                                        double background_density, bool is_directed);
 
     /**
      * @brief Check whether any beam state already beats the score threshold.

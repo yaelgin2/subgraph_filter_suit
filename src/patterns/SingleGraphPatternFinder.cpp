@@ -1,5 +1,6 @@
 #include "SingleGraphPatternFinder.h"
 
+#include "BoostGraph.h"
 #include "ColoredGraph.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
@@ -378,7 +379,7 @@ PatternState SingleGraphPatternFinder::create_initial_state(const BeamContext& c
     boost::add_vertex(VertexProperties{color_id}, pattern);
 
     PatternState state;
-    state.m_pattern = std::move(pattern);
+    state.m_pattern = pattern;
     state.m_hist = std::move(histogram);
     state.m_match_path = {match_vertex};
     state.m_beam_score = 0.0;
@@ -395,7 +396,7 @@ PatternState SingleGraphPatternFinder::create_initial_state(const BeamContext& c
  * Returns scored_states.size() if no significant gap is found (keep all).
  */
 uint32_t SingleGraphPatternFinder::find_gap_cut(  // NOLINT(readability-function-size)
-    const std::vector<std::pair<double, uint32_t>>& scored_states) const
+    const std::vector<std::pair<double, uint32_t>>& scored_states)
 {
     const uint32_t state_count = static_cast<uint32_t>(scored_states.size());
     if (state_count < MIN_STATES_FOR_GAP_PRUNE)
@@ -444,7 +445,7 @@ uint32_t SingleGraphPatternFinder::find_gap_cut(  // NOLINT(readability-function
 // move the beam between this call and the use of the returned pointers.
 std::vector<PatternState*>
 SingleGraphPatternFinder::select_best_state(std::vector<PatternState>& beam,
-                                            double background_density, bool is_directed) const
+                                            double background_density, bool is_directed)
 {
     std::vector<PatternState*> best_states;
 
@@ -526,7 +527,7 @@ std::vector<PatternState> SingleGraphPatternFinder::build_initial_beam(
                   return std::get<0>(first_color) < std::get<0>(second_color);
               });
 
-    std::vector<SeedInfo> seeds =
+    const std::vector<SeedInfo> seeds =
         select_valid_seeds(sorted_colors_with_matches, vertices_by_color, initial_beam_size);
     if (seeds.empty())
     {
@@ -552,7 +553,7 @@ bool SingleGraphPatternFinder::expand_beam(std::vector<PatternState>& beam,
         std::max(1U, m_max_active_patterns / std::max(1U, current_beam_size));
 
     std::vector<PatternState> expanded_beam;
-    expanded_beam.reserve(current_beam_size * branching_factor);
+    expanded_beam.reserve(static_cast<size_t>(current_beam_size) * branching_factor);
 
     for (PatternState& state : beam)
     {
@@ -687,7 +688,7 @@ void SingleGraphPatternFinder::run_beam_expansion(BeamSearchState& beam_state,
 std::vector<BoostGraph> SingleGraphPatternFinder::collect_best_patterns(BeamSearchState& beam_state,
                                                                         bool is_directed) const
 {
-    std::vector<PatternState*> best_states =
+    const std::vector<PatternState*> best_states =
         select_best_state(beam_state.m_beam, beam_state.m_background_density, is_directed);
 
     for (PatternState* state : best_states)
@@ -700,6 +701,7 @@ std::vector<BoostGraph> SingleGraphPatternFinder::collect_best_patterns(BeamSear
     }
 
     std::vector<BoostGraph> result;
+    result.reserve(best_states.size());
     for (PatternState* state : best_states)
     {
         result.push_back(std::move(state->m_pattern));
