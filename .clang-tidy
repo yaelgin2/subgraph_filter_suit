@@ -2,6 +2,11 @@
 # Requires compile_commands.json for accurate analysis — see CLAUDE.md for build steps.
 
 SystemHeaders: false
+
+# -Wno-maybe-uninitialized is GCC-only; compile_commands.json is generated with GCC
+# so Clang (used by clang-tidy) sees an unknown warning option.  Suppress silently.
+ExtraArgsBefore: ['-Wno-unknown-warning-option']
+
 Checks: >
   -*,
   bugprone-*,
