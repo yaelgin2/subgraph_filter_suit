@@ -28,7 +28,8 @@ Checks: >
   -hicpp-use-auto,
   -bugprone-easily-swappable-parameters,
   -cppcoreguidelines-avoid-const-or-ref-data-members,
-  -readability-isolate-declaration
+  -readability-isolate-declaration,
+  -cppcoreguidelines-avoid-const-or-ref-data-members
 
 # Treat every enabled check as an error (CI fails on any warning)
 WarningsAsErrors: "*"

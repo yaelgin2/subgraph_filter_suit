@@ -14,14 +14,6 @@ class GraphmlUtils
 {
 public:
     /**
-     * @brief Opens a file for reading.
-     * @param path Path to the file.
-     * @return An open input stream.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
-     */
-    static std::ifstream open_file(const std::string& path);
-
-    /**
      * @brief Opens a file for writing.
      * @param path Destination file path.
      * @return An open output stream.

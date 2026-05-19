@@ -20,6 +20,8 @@ enum class SgfReturnCode : int32_t
     PATTERN_ERROR = 5,
     ADD_NODE_ERROR = 6,
     DELETE_NODE_ERROR = 7,
+    DIRECTORY_CREATION_ERROR = 8,
+    ENUMERATION_OVERFLOW = 9,
 };
 
 }  // namespace sgf
