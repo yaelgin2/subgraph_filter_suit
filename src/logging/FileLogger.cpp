@@ -117,9 +117,8 @@ FileLogger::FileLogger(const std::string& file_name)
         throw SgfPathDoesntExistException("Failed to open log file: " + file_name);
     }
 
-    using TextSink = sinks::synchronous_sink<sinks::text_ostream_backend>;
     m_sink = boost::make_shared<TextSink>();
-    m_sink->locked_backend()->add_stream(boost::static_pointer_cast<std::ostream>(file_stream));
+    m_sink->locked_backend()->add_stream(boost::static_pointer_cast<std::ostream>(m_file_stream));
     m_sink->locked_backend()->auto_flush(true);
     m_sink->set_formatter(expr::stream << expr::format_date_time<boost::posix_time::ptime>(
                                             "TimeStamp", "%Y-%m-%d %H:%M:%S")
