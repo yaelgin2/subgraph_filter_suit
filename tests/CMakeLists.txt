@@ -31,11 +31,32 @@ endfunction()
 
 # ── Test suites ───────────────────────────────────────────────────────────────
 
-add_sgf_test(colored_graph_tests  graph/ColoredGraphTest.cpp)
-add_sgf_test(graph_utils_tests    utils/GraphUtilsTest.cpp)
-add_sgf_test(graphml_reader_tests io/GraphmlGraphReaderTest.cpp)
+add_sgf_test(colored_graph_tests                  graph/ColoredGraphTest.cpp)
+add_sgf_test(graph_utils_tests                    utils/GraphUtilsTest.cpp)
+add_sgf_test(motif_preprocessor_tests             preprocessing/MotifPreprocessorTest.cpp)
+add_sgf_test(path_processor_tests                 preprocessing/PathProcessorTest.cpp)
+add_sgf_test(graphml_reader_tests                 io/graph/GraphmlGraphReaderTest.cpp)
+add_sgf_test(json_reader_tests                    io/graph/JsonGraphReaderTest.cpp)
+add_sgf_test(vertex_edge_reader_tests             io/graph/VertexEdgeGraphReaderTest.cpp)
+add_sgf_test(json_pattern_writer_tests            io/pattern/JsonPatternWriterTest.cpp)
+add_sgf_test(vertex_edge_pattern_writer_tests     io/pattern/VertexEdgePatternWriterTest.cpp)
+add_sgf_test(graphml_writer_tests                 io/pattern/GraphmlPatternWriterTest.cpp)
+add_sgf_test(enumeration_preprocess_manager_tests managers/EnumerationPreprocessManagerTest.cpp)
+add_sgf_test(group_enumeration_graph_filter_tests filtering/GroupEnumerationGraphFilterTest.cpp)
+add_sgf_test(csv_cache_io_manager_tests           io/cache/CSVCacheIOManagerTest.cpp)
+add_sgf_test(binary_cache_io_manager_tests        io/cache/BinaryCacheIOManagerTest.cpp)
 
 # The graphml reader tests need to locate the test-data directory at compile time.
 target_compile_definitions(graphml_reader_tests PRIVATE
     GRAPHML_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/io/graphml"
+)
+
+# The json reader tests need to locate the test-data directory at compile time.
+target_compile_definitions(json_reader_tests PRIVATE
+    JSON_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/io/json"
+)
+
+# The vertex-edge reader tests need to locate the test-data directory at compile time.
+target_compile_definitions(vertex_edge_reader_tests PRIVATE
+    VERTEX_EDGE_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/io/vertex_edge"
 )

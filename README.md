@@ -37,10 +37,14 @@ Users with system Boost and system GCC typically do not need this flag.
 
 ```bash
 # Run all tests with output on failure
-cd build && ctest --output-on-failure -C Release
+ctest --test-dir build --output-on-failure -C Release
 
 # Run a specific test suite by name
-cd build && ctest -R colored_graph_tests --output-on-failure
+ctest --test-dir build -R colored_graph_tests --output-on-failure
+
+# Run single test
+ctest --test-dir build -R three_vertices_triangle_returns_empty_map --output-on-failure -C Release
+
 ```
 
 ## Project structure
@@ -52,6 +56,9 @@ subgraph_filter_suite/
 │   ├── exceptions/
 │   ├── isomorphism/
 │   ├── io/
+|   |   ├──graph
+|   |   ├──pattern
+|   |   └──cache
 │   ├── managers/
 │   ├── preprocessing/
 │   ├── filtering/

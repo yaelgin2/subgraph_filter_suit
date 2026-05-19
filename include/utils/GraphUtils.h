@@ -3,10 +3,13 @@
 #include "ColoredGraph.h"
 #include "Constants.h"
 #include "GraphConstructionException.h"
-#include "GraphmlGraphReader.h"
 
-#include <algorithm>
+#include <boost/any/bad_any_cast.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <boost/graph/graphml.hpp>
+#include <boost/property_map/dynamic_property_map.hpp>
+#include <boost/property_tree/detail/xml_parser_error.hpp>
+#include <boost/property_tree/exceptions.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <cstdint>
 #include <map>
@@ -18,6 +21,9 @@
 namespace sgf
 {
 
+/**
+ * @brief Utility functions for converting Boost graphs to ColoredGraph.
+ */
 class GraphUtils
 {
 public:
@@ -242,15 +248,15 @@ GraphUtils::extract_colored_edges(const GraphType& boost_graph, const GetColor& 
 template <typename GraphType, typename GetColor>
 bool GraphUtils::has_edge_colors(const GraphType& boost_graph, const GetColor& get_color)
 {
-    const std::pair<typename boost::graph_traits<GraphType>::edge_iterator,
-                    typename boost::graph_traits<GraphType>::edge_iterator>
-        edge_range = boost::edges(boost_graph);
-    return std::any_of(
-        edge_range.first, edge_range.second,
-        [&](const typename boost::graph_traits<GraphType>::edge_descriptor& edge_desc)
+    // NOLINTNEXTLINE(readability-use-anyofallof)
+    for (const auto& edge_desc : boost::make_iterator_range(boost::edges(boost_graph)))
+    {
+        if (get_color(edge_desc) != 0U)
         {
-            return get_color(edge_desc) != 0U;
-        });
+            return true;
+        }
+    }
+    return false;
 }
 
 }  // namespace sgf

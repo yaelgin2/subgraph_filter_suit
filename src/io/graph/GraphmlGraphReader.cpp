@@ -3,9 +3,11 @@
 #include "ColoredGraph.h"
 #include "GraphConstructionException.h"
 #include "GraphUtils.h"
+#include "GraphmlIOUtils.h"
+#include "IOConstants.h"
+#include "IoGraphUtils.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
-#include "SgfPathDoesntExistException.h"
 
 #include <boost/any/bad_any_cast.hpp>
 #include <boost/graph/graphml.hpp>
@@ -21,44 +23,16 @@
 namespace sgf
 {
 
-std::ifstream GraphmlGraphReader::open_file(const std::string& path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        throw SgfPathDoesntExistException("cannot open file: " + path);
-    }
-    return file;
-}
-
-[[noreturn]] void GraphmlGraphReader::rethrow_as_construction_error(const std::string& path,
-                                                                    const std::exception& exc)
-{
-    throw GraphConstructionException("Failed to read graphml '" + path + "': " + exc.what());
-}
-
-bool GraphmlGraphReader::detect_is_directed(const std::string& path)
-{
-    std::ifstream file = open_file(path);
-    std::string line;
-    while (std::getline(file, line))
-    {
-        if (line.find("edgedefault=") != std::string::npos)
-        {
-            return line.find("edgedefault=\"directed\"") != std::string::npos;
-        }
-    }
-    return true;
-}
-
 template <typename GraphType>
 void GraphmlGraphReader::read_graphml_from_file_into_boost_graph(const std::string& path,
                                                                  GraphType& boost_graph)
 {
-    std::ifstream file = open_file(path);
+    std::ifstream file = IoGraphUtils::open_file(path);
     boost::dynamic_properties dynamic_props(boost::ignore_other_properties);
-    dynamic_props.property("color", boost::get(&GraphmlVertexProperties::m_color, boost_graph));
-    dynamic_props.property("color", boost::get(&GraphmlEdgeProperties::m_color, boost_graph));
+    dynamic_props.property("color",
+                           boost::get(&IOConstants::GraphmlVertexProperties::m_color, boost_graph));
+    dynamic_props.property("color",
+                           boost::get(&IOConstants::GraphmlEdgeProperties::m_color, boost_graph));
     boost::read_graphml(file, boost_graph, dynamic_props);
 }
 
@@ -69,12 +43,12 @@ ColoredGraph GraphmlGraphReader::read_graphml_from_file(const std::string& path,
 {
     if (file_is_directed)
     {
-        GraphmlDirectedBoostGraph boost_graph;
+        IOConstants::GraphmlDirectedBoostGraph boost_graph;
         read_graphml_from_file_into_boost_graph(path, boost_graph);
         return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed,
                                                                 color_map);
     }
-    GraphmlUndirectedBoostGraph boost_graph;
+    IOConstants::GraphmlUndirectedBoostGraph boost_graph;
     read_graphml_from_file_into_boost_graph(path, boost_graph);
     return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed, color_map);
 }
@@ -108,7 +82,7 @@ ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_dir
 {
     try
     {
-        const bool file_is_directed = detect_is_directed(path);
+        const bool file_is_directed = GraphmlUtils::detect_is_directed(path);
         if (!file_is_directed && is_directed)
         {
             throw GraphConstructionException(
@@ -123,20 +97,24 @@ ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_dir
     }
     catch (const boost::bad_any_cast& exc)
     {
-        rethrow_as_construction_error(path, exc);
+        GraphmlUtils::rethrow_as_construction_error(path, exc);
     }
     catch (const boost::property_tree::ptree_bad_path& exc)
     {
-        rethrow_as_construction_error(path, exc);
+        GraphmlUtils::rethrow_as_construction_error(path, exc);
     }
     catch (const boost::parse_error& exc)
     {
-        rethrow_as_construction_error(path, exc);
+        GraphmlUtils::rethrow_as_construction_error(path, exc);
     }
     catch (const boost::property_tree::xml_parser::xml_parser_error& exc)
     {
-        rethrow_as_construction_error(path, exc);
+        GraphmlUtils::rethrow_as_construction_error(path, exc);
     }
+    // Unreachable: every catch arm calls [[noreturn]] rethrow_as_construction_error.
+    // std::terminate() satisfies compilers that do not propagate [[noreturn]] across
+    // indirect calls (e.g. MSVC), preventing undefined behavior from a missing return.
+    std::terminate();
 }
 
 }  // namespace sgf
