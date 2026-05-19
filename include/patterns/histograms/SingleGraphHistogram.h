@@ -9,9 +9,9 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -23,8 +23,8 @@ namespace sgf
  */
 struct CandidateVertex
 {
-    int32_t search_vertex; ///< S-graph vertex index of the candidate.
-    double  score;         ///< Histogram score (lower = rarer = better).
+    int32_t m_search_vertex;  ///< S-graph vertex index of the candidate.
+    double m_score;           ///< Histogram score (lower = rarer = better).
 };
 
 /**
@@ -68,13 +68,11 @@ public:
      *                                    influence as the match grows deeper.
      * @param logger                      Optional diagnostic logger.
      */
-    SingleGraphHistogram(
-        const ColoredGraph&        search_graph,
-        const std::vector<double>& vertex_color_probabilities,
-        double                     background_log_density,
-        double                     initial_alpha_weight = 1.0,
-        double                     alpha_decay_rate     = 0.9,
-        LoggerHandler              logger               = LoggerHandler(std::weak_ptr<ILogger>{}));
+    SingleGraphHistogram(const ColoredGraph& search_graph,
+                         const std::vector<double>& vertex_color_probabilities,
+                         double background_log_density, double initial_alpha_weight = 1.0,
+                         double alpha_decay_rate = DEFAULT_ALPHA_DECAY_RATE,
+                         LoggerHandler logger = LoggerHandler(std::weak_ptr<ILogger>{}));
 
     /**
      * @brief Absorb @p vertex_to_absorb into the match path.
@@ -118,8 +116,11 @@ public:
     double log_prob_of_color(uint32_t remapped_color_id) const;
 
 private:
+    /// Default multiplicative decay applied to alpha_weight at each match-depth step.
+    static constexpr double DEFAULT_ALPHA_DECAY_RATE = 0.9;
+
     const ColoredGraph& m_graph;
-    LoggerHandler       m_logger;
+    LoggerHandler m_logger;
 
     /// log(edge_count / possible_edges) of the background graph G.
     double m_background_log_density;
@@ -160,11 +161,11 @@ private:
      * @param candidate_vertex    S-graph vertex being scored.
      * @param current_alpha_weight Alpha weight at the current match depth.
      */
-    std::optional<double> compute_candidate_score(
-        uint32_t candidate_vertex, double current_alpha_weight) const;
+    std::optional<double> compute_candidate_score(uint32_t candidate_vertex,
+                                                  double current_alpha_weight) const;
 
     void add_vertex_neighbour_to_candidate(uint32_t candidate_vertex, uint32_t absorbed_vertex);
     void add_all_vertex_neighbours_to_candidate(uint32_t absorbed_vertex, bool is_reversed);
 };
 
-} // namespace sgf
+}  // namespace sgf

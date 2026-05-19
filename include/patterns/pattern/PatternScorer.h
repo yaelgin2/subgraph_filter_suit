@@ -2,7 +2,6 @@
 
 #include <cstdint>
 
-
 namespace sgf
 {
 
@@ -39,11 +38,8 @@ public:
      * @param background_edge_density        Background graph G edge density.
      * @param vertex_count                   Number of vertices in the pattern.
      */
-    static double score(
-        double   pattern_vertex_color_log_prob,
-        uint32_t pattern_edge_count,
-        double   background_edge_density,
-        uint32_t vertex_count);
+    static double score(double pattern_vertex_color_log_prob, uint32_t pattern_edge_count,
+                        double background_edge_density, uint32_t vertex_count);
 
 private:
     /**
@@ -56,4 +52,4 @@ private:
     static double clamp_probability(double probability) noexcept;
 };
 
-} // namespace sgf
+}  // namespace sgf

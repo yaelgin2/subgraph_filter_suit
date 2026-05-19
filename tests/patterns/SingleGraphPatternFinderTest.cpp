@@ -1,6 +1,7 @@
 #include "SingleGraphPatternFinder.h"
-#include "ColoredGraph.h"
+
 #include "BoostGraph.h"
+#include "ColoredGraph.h"
 #include "FileLogger.h"
 #include "LoggerHandler.h"
 
@@ -15,7 +16,7 @@ using namespace sgf;
 namespace
 {
 
-    /**
+/**
  * @brief Per-vertex color and adjacency list extracted from a graph for isomorphism testing.
  */
 struct GraphSignature
@@ -220,7 +221,7 @@ bool boost_graph_isomorphic_to(const BoostGraph& pattern, const ColoredGraph& re
 class SingleGraphPatternFinderTest : public ::testing::Test
 {
 protected:
-/**
+    /**
      * @brief Bundles the definition of a test graph so edges and colors are written once
      *        and shared between graph construction and pattern assertion.
      */
@@ -386,8 +387,7 @@ TEST_F(SingleGraphPatternFinderTest, empty_graph_throws)
 {
     SingleGraphPatternFinder finder;
     ColoredGraph graph = make_empty_graph();
-    EXPECT_THROW(finder.find_pattern(graph, graph, 0.0, false),
-                 std::runtime_error);
+    EXPECT_THROW(finder.find_pattern(graph, graph, 0.0, false), std::runtime_error);
 }
 
 TEST_F(SingleGraphPatternFinderTest, path_4_in_itself_found_graph)
@@ -402,12 +402,11 @@ TEST_F(SingleGraphPatternFinderTest, path_4_in_itself_found_graph)
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
-
 
 TEST_F(SingleGraphPatternFinderTest, path_4_directed_in_itself_found_graph)
 {
@@ -421,8 +420,8 @@ TEST_F(SingleGraphPatternFinderTest, path_4_directed_in_itself_found_graph)
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -439,8 +438,8 @@ TEST_F(SingleGraphPatternFinderTest, path_4_colored_in_itself_found_graph)
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -457,8 +456,8 @@ TEST_F(SingleGraphPatternFinderTest, path_4_colored_directed_in_itself_found_gra
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -475,8 +474,8 @@ TEST_F(SingleGraphPatternFinderTest, triangle_3_in_itself_found_graph)
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -493,8 +492,8 @@ TEST_F(SingleGraphPatternFinderTest, triangle_3_directed_in_itself_found_graph)
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -511,8 +510,8 @@ TEST_F(SingleGraphPatternFinderTest, triangle_3_colored_in_itself_found_graph)
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -529,8 +528,8 @@ TEST_F(SingleGraphPatternFinderTest, triangle_3_colored_directed_in_itself_found
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -548,8 +547,8 @@ TEST_F(SingleGraphPatternFinderTest, path_4_in_path_4_with_added_vertex_found_gr
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -567,8 +566,8 @@ TEST_F(SingleGraphPatternFinderTest, path_4_in_path_4_with_added_vertex_directed
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -585,8 +584,8 @@ TEST_F(SingleGraphPatternFinderTest, star_5_in_itself_found_graph)
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -603,8 +602,8 @@ TEST_F(SingleGraphPatternFinderTest, complex_graph_in_itself_found_graph)
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -621,8 +620,8 @@ TEST_F(SingleGraphPatternFinderTest, complex_graph_directed_in_itself_found_grap
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -639,8 +638,8 @@ TEST_F(SingleGraphPatternFinderTest, complex_graph_colored_in_itself_found_graph
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }
@@ -657,8 +656,8 @@ TEST_F(SingleGraphPatternFinderTest, complex_graph_colored_directed_in_itself_fo
 
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
     {
-        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
-                                              spec.m_is_directed))
+        EXPECT_TRUE(
+            boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors, spec.m_is_directed))
             << "result[" << idx << "] is not isomorphic to expected";
     }
 }

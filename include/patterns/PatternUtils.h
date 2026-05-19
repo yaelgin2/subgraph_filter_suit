@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ColoredGraph.h"
 #include "BoostGraph.h"
+#include "ColoredGraph.h"
 
-#include <vector>
-#include <map>
 #include <cstdint>
+#include <map>
+#include <vector>
 
 namespace sgf
 
@@ -67,8 +67,7 @@ public:
      * @param pattern    BoostGraph whose vertex m_color fields hold compact IDs.
      * @param color_map  color_map[compact_id] == original colour value.
      */
-    static void recolor_pattern(BoostGraph&                 pattern,
-                                const std::vector<int32_t>& color_map);
+    static void recolor_pattern(BoostGraph& pattern, const std::vector<int32_t>& color_map);
 
     /**
      * @brief Return all S-graph vertices whose colour equals @p color.
@@ -77,8 +76,7 @@ public:
      * @param color  Compact colour id to match.
      * @return Vertex indices in ascending order.
      */
-    static std::vector<uint32_t> find_initial_matches(const ColoredGraph& graph,
-                                                      uint32_t            color);
+    static std::vector<uint32_t> find_initial_matches(const ColoredGraph& graph, uint32_t color);
 
     /**
      * @brief Partition all S-graph vertices by colour in a single pass.
@@ -91,7 +89,7 @@ public:
      * @return Vector of length color_count; result[c] = vertices with compact colour c.
      */
     static std::vector<std::vector<uint32_t>> get_all_color_matches(const ColoredGraph& graph,
-                                                                     uint32_t            color_count);
+                                                                    uint32_t color_count);
 
     /**
      * @brief Compute per-colour probability distribution across a list of graphs.
@@ -104,10 +102,9 @@ public:
      * @param search_graphs       Graphs whose vertex colours are tallied.
      * @return Vector of length color_count; element c = P(vertex has colour c).
      */
-    static std::vector<double> compute_color_distribution(
-        uint32_t                         color_count,
-        int32_t                          search_graph_count,
-        const std::vector<ColoredGraph>& search_graphs);
+    static std::vector<double>
+    compute_color_distribution(uint32_t color_count, int32_t search_graph_count,
+                               const std::vector<ColoredGraph>& search_graphs);
 
     /**
      * @brief Compute per-colour probability distribution from a single graph.
@@ -116,9 +113,8 @@ public:
      * @param source_graph  Graph whose vertex colours are tallied.
      * @return Vector of length color_count; element c = P(vertex has colour c).
      */
-    static std::vector<double> compute_color_distribution(
-        uint32_t            color_count,
-        const ColoredGraph& source_graph);
+    static std::vector<double> compute_color_distribution(uint32_t color_count,
+                                                          const ColoredGraph& source_graph);
 
     /**
      * @brief Compute undirected edge density = edge_count / (n*(n-1)/2).
@@ -155,9 +151,9 @@ private:
      * @param original_to_remapped_color  Map updated in-place: original_color → compact_id.
      * @param color_map                 Inverse map updated in-place: compact_id → original_color.
      */
-    static void scan_graph_colors(const ColoredGraph&          graph,
+    static void scan_graph_colors(const ColoredGraph& graph,
                                   std::map<int32_t, uint32_t>& original_to_remapped_color,
-                                  std::vector<int32_t>&        color_map);
+                                  std::vector<int32_t>& color_map);
 
     /**
      * @brief Rewrite vertex colours in a graph using the compact mapping.
@@ -169,7 +165,7 @@ private:
      * @param graph                       Graph to recolor in-place.
      */
     static void recolor_graph(const std::map<int32_t, uint32_t>& original_to_remapped_color,
-                              ColoredGraph&                       graph);
+                              ColoredGraph& graph);
 
     /**
      * @brief Tally vertex colours in one graph and accumulate totals.
@@ -179,9 +175,8 @@ private:
      *                        Updated in-place (not reset — caller must initialise).
      * @param total_vertices  Running grand total, incremented by graph.vertex_count().
      */
-    static void count_vertex_colors(const ColoredGraph&    graph,
-                                    std::vector<uint32_t>& counts,
-                                    uint64_t&              total_vertices);
+    static void count_vertex_colors(const ColoredGraph& graph, std::vector<uint32_t>& counts,
+                                    uint64_t& total_vertices);
 
     /**
      * @brief Convert per-colour vertex counts to a probability distribution.
@@ -194,7 +189,7 @@ private:
      * @return Probability vector of the same length as counts.
      */
     static std::vector<double> counts_to_probability(const std::vector<uint32_t>& counts,
-                                                     uint64_t                     total_vertices);
+                                                     uint64_t total_vertices);
 };
 
-} // namespace sgf
+}  // namespace sgf
