@@ -150,7 +150,7 @@ GeneralColorHist::get_color_to_add(const uint32_t threshold, const bool is_rando
     }
 
     SGF_DEBUG_LOG(m_logger, "Candidates:");
-    for (Candidate candidate : candidates)
+    for (const Candidate candidate : candidates)
     {
         SGF_DEBUG_LOG(m_logger, "color: " + std::to_string(candidate.m_color) +
                                     " weight: " + std::to_string(candidate.m_weight));
