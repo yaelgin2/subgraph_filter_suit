@@ -107,7 +107,7 @@ private:
      * @return The selected candidate.
      */
     static Candidate select_weighted_random(const std::vector<Candidate>& candidates,
-                                    const uint32_t total_weight);
+                                            const uint32_t total_weight);
 
     /**
      * @brief Build a list of candidates above the given threshold.
@@ -117,9 +117,9 @@ private:
      * @param total_weight Output: sum of all candidate weights.
      * @return Vector of candidates meeting the threshold.
      */
-    static std::vector<Candidate> build_candidates(const std::vector<std::vector<uint32_t>>& histogram,
-                                            const uint32_t num_colors, const uint32_t threshold,
-                                            uint32_t& total_weight);
+    static std::vector<Candidate>
+    build_candidates(const std::vector<std::vector<uint32_t>>& histogram, const uint32_t num_colors,
+                     const uint32_t threshold, uint32_t& total_weight);
 };
 
 using GeneralColorHistPtr = std::shared_ptr<GeneralColorHist>;
