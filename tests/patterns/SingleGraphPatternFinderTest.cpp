@@ -1,6 +1,7 @@
 #include "SingleGraphPatternFinder.h"
 #include "ColoredGraph.h"
 #include "BoostGraph.h"
+#include "FileLogger.h"
 #include "LoggerHandler.h"
 
 #include <cstdint>
@@ -216,7 +217,6 @@ bool boost_graph_isomorphic_to(const BoostGraph& pattern, const ColoredGraph& re
     return are_graph_signatures_isomorphic(pattern_sig, ref_sig);
 }
 
-
 class SingleGraphPatternFinderTest : public ::testing::Test
 {
 protected:
@@ -303,20 +303,9 @@ protected:
         return {{{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}}, {0U, 0U, 0U, 0U, 0U}, false};
     }
 
-    static GraphSpec make_path_4_with_2_added_vertex()
-    {
-        return {
-            {{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}, {4U, 5U}}, {0U, 0U, 0U, 0U, 0U, 0U}, false};
-    }
-
     static GraphSpec make_path_4_with_1_added_vertex_directed()
     {
         return {{{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}}, {0U, 0U, 0U, 0U, 0U}, true};
-    }
-
-    static GraphSpec make_path_4_with_2_added_vertex_directed()
-    {
-        return {{{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}, {4U, 5U}}, {0U, 0U, 0U, 0U, 0U, 0U}, true};
     }
 
     /**
@@ -364,28 +353,28 @@ protected:
         return {{{0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}}, {0U, 0U, 0U, 0U, 0U}, false};
     }
 
-    static GraphSpec complex_graph()
+    static GraphSpec make_complex_graph()
     {
         return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
                 {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U},
                 false};
     }
 
-    static GraphSpec complex_graph_colored()
+    static GraphSpec make_complex_graph_colored()
     {
         return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
                 {0U, 1U, 2U, 2U, 2U, 3U, 1U, 4U},
                 false};
     }
 
-    static GraphSpec complex_graph_directed()
+    static GraphSpec make_complex_graph_directed()
     {
         return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
                 {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U},
                 true};
     }
 
-    static GraphSpec complex_graph_colored_directed()
+    static GraphSpec make_complex_graph_colored_directed()
     {
         return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
                 {0U, 1U, 2U, 2U, 2U, 3U, 1U, 4U},
@@ -401,16 +390,277 @@ TEST_F(SingleGraphPatternFinderTest, empty_graph_throws)
                  std::runtime_error);
 }
 
-TEST_F(SingleGraphPatternFinderTest, path_4_one_graph_found_graph)
+TEST_F(SingleGraphPatternFinderTest, path_4_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder;
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_path_4();
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, 1000.0, false);
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
 
-    EXPECT_TRUE(
-        boost_graph_isomorphic_to(result[0], spec.m_edges, spec.m_colors, spec.m_is_directed));
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+
+TEST_F(SingleGraphPatternFinderTest, path_4_directed_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_path_4_directed();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, path_4_colored_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_path_4_colored();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, path_4_colored_directed_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_path_4_directed_colored();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, triangle_3_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_triangle_3();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, triangle_3_directed_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_triangle_3_directed();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, triangle_3_colored_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_triangle_3_colored();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, triangle_3_colored_directed_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_triangle_3_colored_directed();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, path_4_in_path_4_with_added_vertex_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_path_4();
+    ColoredGraph graph = spec.to_graph();
+    ColoredGraph enviorment = make_path_4_with_1_added_vertex().to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, enviorment, -1000, false);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, path_4_in_path_4_with_added_vertex_directed_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_path_4_directed();
+    ColoredGraph graph = spec.to_graph();
+    ColoredGraph enviorment = make_path_4_with_1_added_vertex_directed().to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, enviorment, -1000, true);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, star_5_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_star_5();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, complex_graph_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_complex_graph();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, complex_graph_directed_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_complex_graph_directed();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, complex_graph_colored_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_complex_graph_colored();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
+}
+
+TEST_F(SingleGraphPatternFinderTest, complex_graph_colored_directed_in_itself_found_graph)
+{
+    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
+    const GraphSpec spec = make_complex_graph_colored_directed();
+    ColoredGraph graph = spec.to_graph();
+
+    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+
+    ASSERT_FALSE(result.empty());
+
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(result.size()); ++idx)
+    {
+        EXPECT_TRUE(boost_graph_isomorphic_to(result[idx], spec.m_edges, spec.m_colors,
+                                              spec.m_is_directed))
+            << "result[" << idx << "] is not isomorphic to expected";
+    }
 }
 
 }  // namespace
