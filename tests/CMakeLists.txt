@@ -1,10 +1,17 @@
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
-)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+# Prefer the GTest already installed in the active environment (e.g. conda) so
+# that the compiler, headers, and library all share the same ABI.  Fall back to
+# FetchContent only when no installed copy is found.
+find_package(GTest QUIET)
+if(NOT GTest_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+endif()
 
 include(GoogleTest)
 
@@ -31,20 +38,33 @@ endfunction()
 
 # ── Test suites ───────────────────────────────────────────────────────────────
 
-add_sgf_test(colored_graph_tests                  graph/ColoredGraphTest.cpp)
-add_sgf_test(graph_utils_tests                    utils/GraphUtilsTest.cpp)
-add_sgf_test(motif_preprocessor_tests             preprocessing/MotifPreprocessorTest.cpp)
-add_sgf_test(path_processor_tests                 preprocessing/PathProcessorTest.cpp)
-add_sgf_test(graphml_reader_tests                 io/graph/GraphmlGraphReaderTest.cpp)
-add_sgf_test(json_reader_tests                    io/graph/JsonGraphReaderTest.cpp)
-add_sgf_test(vertex_edge_reader_tests             io/graph/VertexEdgeGraphReaderTest.cpp)
-add_sgf_test(json_pattern_writer_tests            io/pattern/JsonPatternWriterTest.cpp)
-add_sgf_test(vertex_edge_pattern_writer_tests     io/pattern/VertexEdgePatternWriterTest.cpp)
-add_sgf_test(graphml_writer_tests                 io/pattern/GraphmlPatternWriterTest.cpp)
+add_sgf_test(colored_graph_tests                 graph/ColoredGraphTest.cpp)
+add_sgf_test(graph_utils_tests                   utils/GraphUtilsTest.cpp)
+
+add_sgf_test(graphml_reader_tests                io/graph/GraphmlGraphReaderTest.cpp)
+add_sgf_test(json_reader_tests                   io/graph/JsonGraphReaderTest.cpp)
+add_sgf_test(vertex_edge_reader_tests            io/graph/VertexEdgeGraphReaderTest.cpp)
+
+add_sgf_test(json_pattern_writer_tests           io/pattern/JsonPatternWriterTest.cpp)
+add_sgf_test(vertex_edge_pattern_writer_tests    io/pattern/VertexEdgePatternWriterTest.cpp)
+add_sgf_test(graphml_writer_tests                io/pattern/GraphmlPatternWriterTest.cpp)
+
+add_sgf_test(general_color_hist_tests            patterns/histograms/GeneralColorHistTest.cpp)
+add_sgf_test(individual_color_hist_tests         patterns/histograms/IndividualColorHistTest.cpp)
+
+add_sgf_test(tree_tests                          patterns/tree/TreeTest.cpp)
+
+add_sgf_test(multi_graph_pattern_finder_tests    patterns/pattern_finders/MultiGraphPatternFinderTest.cpp)
+
+add_sgf_test(motif_preprocessor_tests            preprocessing/MotifPreprocessorTest.cpp)
+add_sgf_test(path_processor_tests                preprocessing/PathProcessorTest.cpp)
+
 add_sgf_test(enumeration_preprocess_manager_tests managers/EnumerationPreprocessManagerTest.cpp)
+
 add_sgf_test(group_enumeration_graph_filter_tests filtering/GroupEnumerationGraphFilterTest.cpp)
-add_sgf_test(csv_cache_io_manager_tests           io/cache/CSVCacheIOManagerTest.cpp)
-add_sgf_test(binary_cache_io_manager_tests        io/cache/BinaryCacheIOManagerTest.cpp)
+
+add_sgf_test(csv_cache_io_manager_tests          io/cache/CSVCacheIOManagerTest.cpp)
+add_sgf_test(binary_cache_io_manager_tests       io/cache/BinaryCacheIOManagerTest.cpp)
 
 # The graphml reader tests need to locate the test-data directory at compile time.
 target_compile_definitions(graphml_reader_tests PRIVATE

@@ -102,6 +102,23 @@ bool findSubgraph(const Graph& graph, const Graph& query);
 - No `new` / `delete` — always use `std::make_unique` or `std::make_shared`.
 - Enforced by `cppcoreguidelines-owning-memory`, `modernize-make-unique`, `modernize-make-shared`.
 
+### MSVC compatibility
+
+All code must compile cleanly under MSVC (CI runs the `build-and-test-msvc` job). MSVC promotes several warnings to errors that GCC/Clang allow implicitly:
+
+- **No implicit narrowing conversions** — MSVC C4267/C4244 are errors. Any conversion that may lose data (e.g. `size_t` → `uint32_t`, `double` → `float`) must use an explicit `static_cast`. Never rely on implicit truncation.
+- **No signed/unsigned comparison without a cast** — use `static_cast` to align types before comparing.
+
+When mixing types (e.g. a `BoostGraph::vertex_descriptor` / `size_t` value passed to a function expecting `uint32_t`), always cast at the call site:
+
+```cpp
+// Wrong — implicit narrowing, MSVC error C4267
+some_func(boost::num_vertices(graph));
+
+// Correct
+some_func(static_cast<uint32_t>(boost::num_vertices(graph)));
+```
+
 ### Type safety
 
 - No C-style casts — use `static_cast`, `dynamic_cast`, or `std::bit_cast`.
@@ -294,6 +311,8 @@ subgraph_filter_suit/
 │   ├── preprocessing/
 │   ├── filtering/
 │   ├── patterns/
+|   |   ├──tree
+|   |   └──histograms
 │   └── utils/
 ├── src/
 │   ├── graph/
@@ -306,6 +325,8 @@ subgraph_filter_suit/
 │   ├── preprocessing/
 │   ├── filtering/
 │   ├── patterns/
+|   |   ├──tree
+|   |   └──histograms
 │   ├── utils/
 │   └── cli/              # main() for sgf-graph-enumerator, sgf-pattern-finder, sgf-matrix
 ├── tests/
@@ -319,6 +340,8 @@ subgraph_filter_suit/
 │   ├── preprocessing/
 │   ├── filtering/
 │   ├── patterns/
+|   |   ├──tree
+|   |   └──histograms
 │   └── utils/
 ├── .clang-format
 ├── .clang-tidy

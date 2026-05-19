@@ -48,6 +48,15 @@ public:
     {
         return m_logger.lock() == nullptr;
     }
+
+    /**
+     * @brief Create a no-op logger handler backed by an expired weak_ptr.
+     * @return LoggerHandler that silently drops all log calls.
+     */
+    static LoggerHandler null()
+    {
+        return LoggerHandler(std::weak_ptr<ILogger>{});
+    }
 };
 
 }  // namespace sgf
