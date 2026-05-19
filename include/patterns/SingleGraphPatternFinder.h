@@ -4,6 +4,7 @@
 #include "PatternScorer.h"
 #include "ColoredGraph.h"
 #include "BoostGraph.h"
+#include "LoggerHandler.h"
 
 #include <cstdint>
 #include <unordered_set>
@@ -56,9 +57,10 @@ public:
      * @param alpha_decay          Per-vertex multiplicative alpha decay.
      */
     explicit SingleGraphPatternFinder(
-        uint32_t max_active_patterns  = 500,
-        double   alpha_0              = 1.0,
-        double   alpha_decay          = 0.9);
+        uint32_t      max_active_patterns  = 500,
+        double        alpha_0              = 1.0,
+        double        alpha_decay          = 0.9,
+        LoggerHandler logger               = LoggerHandler(std::weak_ptr<ILogger>{}));
 
     /**
      * @brief Find the rarest subgraph pattern in graph S.
@@ -80,9 +82,10 @@ public:
 private:
     static constexpr uint32_t MAX_ITERATIONS = 50;  // Safety limit for pattern expansion
     
-    uint32_t m_max_active_patterns;
-    double   m_alpha_0;
-    double   m_alpha_decay;
+    uint32_t      m_max_active_patterns;
+    double        m_alpha_0;
+    double        m_alpha_decay;
+    LoggerHandler m_logger;
 
     // Private helper functions
     double score_state(PatternState& state, double background_density,bool is_directed) const;

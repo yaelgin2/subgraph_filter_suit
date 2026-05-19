@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "LoggerHandler.h"
 
 #include <cmath>
 #include <cstdint>
@@ -12,6 +13,9 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
+namespace sgf
+{
 
 /** Candidate returned by get_top_k_vertices. */
 struct CandidateVertex {
@@ -35,11 +39,12 @@ class SingleGraphHistogram
 {
 public:
     SingleGraphHistogram(
-        const sgf::ColoredGraph&          graph,
+        const ColoredGraph&        graph,
         const std::vector<double>& color_prob,
         double                     log_density,
         double                     alpha_0 = 1.0,
-        double                     decay   = 0.9);
+        double                     decay   = 0.9,
+        LoggerHandler              logger  = LoggerHandler(std::weak_ptr<ILogger>{}));
 
     /**
      * @brief Absorb @p s_vertex into the match path.
@@ -67,7 +72,8 @@ public:
     double log_prob_of_color(uint32_t remapped_color) const;
 
 private:
-    const sgf::ColoredGraph& m_graph;
+    const ColoredGraph& m_graph;
+    LoggerHandler m_logger;
     double       m_log_density;
     double       m_alpha_0;
     double       m_decay;
@@ -94,3 +100,5 @@ private:
     void add_vertex_neighbour_to_candidate(uint32_t vertex, uint32_t absorbed_vertex);
     void add_all_vertex_neighbours_to_candidate(uint32_t absorbed_vertex, bool is_reversed);
 };
+
+}

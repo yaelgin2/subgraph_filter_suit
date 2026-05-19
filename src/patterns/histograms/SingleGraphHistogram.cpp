@@ -4,15 +4,20 @@
 #include <cmath>
 #include <limits>
 
+namespace sgf
+{
+
 /* ---------- Construction ---------- */
 
 SingleGraphHistogram::SingleGraphHistogram(
-    const sgf::ColoredGraph&   s_graph,
+    const ColoredGraph&        s_graph,
     const std::vector<double>& color_prob,
     double                     log_density,
     double                     alpha_0,
-    double                     decay)
+    double                     decay,
+    LoggerHandler              logger)
     : m_graph(s_graph)
+    , m_logger(std::move(logger))
     , m_log_density(log_density)
     , m_alpha_0(alpha_0)
     , m_decay(decay)
@@ -118,7 +123,7 @@ void SingleGraphHistogram::add_vertex_neighbour_to_candidate(uint32_t vertex, ui
                 outside_sum += log_prob_of_vertex(*it2);
         }
         if (std::isinf(outside_sum))
-            throw sgf::HistogramOverflowException(
+            throw HistogramOverflowException(
                 "outside_logp sum reached infinity for candidate vertex "
                 + std::to_string(vertex));
         m_candidate_outside_logp[vertex] = outside_sum;
@@ -164,7 +169,7 @@ std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t k
             + alpha * outside_logp;
 
         if (std::isinf(score))
-            throw sgf::HistogramOverflowException(
+            throw HistogramOverflowException(
                 "candidate score reached infinity for vertex "
                 + std::to_string(v));
 
@@ -191,5 +196,7 @@ std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t k
     scored.resize(actual_k);
     return scored;
 }
+
+}  // namespace sgf
 
 

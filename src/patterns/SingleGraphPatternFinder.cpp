@@ -7,15 +7,12 @@
 #include <cassert>
 #include <chrono>
 #include <cmath>
-#include <iostream>
 #include <limits>
 #include <numeric>
 #include <stdexcept>
 
 namespace sgf
 {
-
-static constexpr bool DEBUG = true;
 
 /* ---------- Named constants ---------- */
 
@@ -31,12 +28,14 @@ static constexpr uint32_t NUMBER_OF_STATES_TO_RETURN   = 5;
 /* ---------- Construction ---------- */
 
 SingleGraphPatternFinder::SingleGraphPatternFinder(
-    uint32_t max_active_patterns,
-    double   alpha_0,
-    double   alpha_decay)
+    uint32_t      max_active_patterns,
+    double        alpha_0,
+    double        alpha_decay,
+    LoggerHandler logger)
     : m_max_active_patterns(max_active_patterns)
     , m_alpha_0(alpha_0)
     , m_alpha_decay(alpha_decay)
+    , m_logger(std::move(logger))
 {
 }
 
@@ -63,14 +62,12 @@ void SingleGraphPatternFinder::expand_one_state(
     const uint32_t vertex_color =
         static_cast<uint32_t>(search_graph.get_vertex_color(selected_vertex));
 
-    if (DEBUG) {
-    std::cout << "[EXPAND] selected_vertex=" << selected_vertex
-              << " color=" << vertex_color
-              << " current_pattern_size=" << boost::num_vertices(state.pattern)
-              << " current_edges=" << boost::num_edges(state.pattern) / (is_directed ? 1 : 2)
-              << " current_color_logp=" << state.pattern_color_logp
-              << std::endl;
-    }       
+    m_logger.log(LogLevel::DEBUG,
+        "[EXPAND] selected_vertex=" + std::to_string(selected_vertex)
+        + " color=" + std::to_string(vertex_color)
+        + " current_pattern_size=" + std::to_string(boost::num_vertices(state.pattern))
+        + " current_edges=" + std::to_string(boost::num_edges(state.pattern) / (is_directed ? 1U : 2U))
+        + " current_color_logp=" + std::to_string(state.pattern_color_logp));
     const uint32_t new_pattern_node = boost::add_vertex(
         VertexProperties{vertex_color}, state.pattern);
 
@@ -263,12 +260,10 @@ std::vector<PatternState> SingleGraphPatternFinder::create_beam_from_seeds(
 {
     std::vector<PatternState> beam;
     for (size_t si = 0; si < seeds.size(); ++si) {
-        if (DEBUG)
-        {
-            std::cout << "Seed colour " << color_map[seeds[si].color_id]
-                    << " (p=" << seeds[si].probability << ")  matches="
-                    << seeds[si].matches.size() << "  keeping=" << alloc[si] << "\n";
-        }
+        m_logger.log(LogLevel::DEBUG,
+            "Seed colour " + std::to_string(color_map[seeds[si].color_id])
+            + " (p=" + std::to_string(seeds[si].probability) + ")  matches="
+            + std::to_string(seeds[si].matches.size()) + "  keeping=" + std::to_string(alloc[si]));
         for (uint32_t mi = 0; mi < alloc[si]; ++mi)
             beam.push_back(create_initial_state(
                 search_graph, color_probability, log_bg_density,
@@ -290,7 +285,7 @@ PatternState SingleGraphPatternFinder::create_initial_state(
     bool                       is_directed) const
 {
     std::unique_ptr<SingleGraphHistogram> hist = std::make_unique<SingleGraphHistogram>(
-        search_graph, color_probability, log_bg_density, alpha_0, alpha_decay);
+        search_graph, color_probability, log_bg_density, alpha_0, alpha_decay, m_logger);
     hist->absorb_vertex(match_vertex, is_directed);
 
     BoostGraph pattern;
@@ -358,7 +353,7 @@ std::vector<PatternState*> SingleGraphPatternFinder::select_best_state(
         scored.emplace_back(s, &state);
     }
     std::sort(scored.begin(), scored.end());
-    for(uint32_t i = 0; i < NUMBER_OF_STATES_TO_RETURN; i++)
+    for(uint32_t i = 0; i < NUMBER_OF_STATES_TO_RETURN && i < scored.size(); i++)
     {
         best_states.push_back(scored[i].second);
     }
@@ -374,10 +369,9 @@ bool SingleGraphPatternFinder::any_state_below_threshold(
     for (PatternState& state : beam) {
         const double s = score_state(state, bg_density, is_directed);
         if (s < threshold) {
-            if (DEBUG) {
-                std::cout << "Score " << s << " < threshold " << threshold
-                        << " -- stopping.\n";
-            }
+            m_logger.log(LogLevel::DEBUG,
+                "Score " + std::to_string(s) + " < threshold " + std::to_string(threshold)
+                + " -- stopping.");
             return true;
         }
     }
@@ -530,10 +524,11 @@ SingleGraphPatternFinder::find_pattern(
     const double bg_density = PatternUtils::compute_density(
         background_graph.vertex_count(), background_graph.edge_count());
 
+    m_logger.log(LogLevel::DEBUG, "Initiating beam.");
     std::vector<PatternState> beam = build_initial_beam(
         search_graph, color_probability, color_map, bg_density, is_directed);
     if (beam.empty()) {
-        std::cerr << "SingleGraphPatternFinder: no valid seed.\n";
+        m_logger.log(LogLevel::WARNING, "SingleGraphPatternFinder: no valid seed.");
         return std::vector<BoostGraph>{};
     }
 
@@ -542,15 +537,16 @@ SingleGraphPatternFinder::find_pattern(
     const uint32_t MAX_ITERATIONS = 50;  // Safety limit
     bool threshold_reached = any_state_below_threshold(beam, bg_density, score_threshold, is_directed);
 
+    m_logger.log(LogLevel::DEBUG, "Main loop.");
     while (static_cast<uint32_t>(beam.size()) < m_max_active_patterns && iteration < MAX_ITERATIONS && !threshold_reached) {
+        m_logger.log(LogLevel::DEBUG, "Attempt expension.");
         if (!expand_beam(beam, search_graph, is_directed)) {
-            if (DEBUG)
-            {
-                std::cout << "No more expansions possible at iteration " << iteration << "\n";
-            }
+            m_logger.log(LogLevel::DEBUG,
+                "No more expansions possible at iteration " + std::to_string(iteration));
             break;
         }
         
+        m_logger.log(LogLevel::DEBUG, "Prune states..");
         // Check if any state reached the threshold
         if (any_state_below_threshold(beam, bg_density, score_threshold, is_directed))
         {
@@ -564,20 +560,17 @@ SingleGraphPatternFinder::find_pattern(
 
     for(PatternState* state : best_state)
     {
-        if (DEBUG)
-        {
-            std::cout << "Selected pattern with score: " << score_state(*state, bg_density, is_directed) << "\n";
-        }
+        m_logger.log(LogLevel::DEBUG,
+            "Selected pattern with score: "
+            + std::to_string(score_state(*state, bg_density, is_directed)));
         PatternUtils::recolor_pattern(state->pattern, color_map);
     }
 
     const std::chrono::high_resolution_clock::time_point time_end = std::chrono::high_resolution_clock::now();
-    if (DEBUG)
-    {
-        std::cout << "Total pattern finding time: "
-                << std::chrono::duration<double>(time_end - time_start).count()   
-                << " seconds\n";
-    }
+    m_logger.log(LogLevel::DEBUG,
+        "Total pattern finding time: "
+        + std::to_string(std::chrono::duration<double>(time_end - time_start).count())
+        + " seconds");
 
     std::vector<BoostGraph> result;
     for (PatternState* state : best_state)
