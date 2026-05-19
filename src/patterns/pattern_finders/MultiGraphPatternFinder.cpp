@@ -254,7 +254,7 @@ std::tuple<int32_t, int32_t, bool> MultiGraphPatternFinder::select_directed_cand
     const bool is_random)
 {
     const std::tuple<int32_t, int32_t, uint32_t> reverse_candidate =
-        m_reverse_color_hist->get_color_to_add(std::max(1U, min_alive_count));
+        m_reverse_color_hist->get_color_to_add(std::max(1U, min_alive_count), is_random);
 
     const uint32_t combined_weight =
         std::get<2>(forward_candidate) + std::get<2>(reverse_candidate);
