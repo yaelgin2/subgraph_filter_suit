@@ -206,6 +206,34 @@ private:
         uint32_t                                                     initial_beam_size) const;
 
     /**
+     * @brief Immutable context bundle passed to beam-initialisation helpers.
+     *
+     * Avoids passing eight separate parameters through create_beam_from_seeds
+     * and create_initial_state.  All reference fields must outlive the BeamContext.
+     */
+    struct BeamContext
+    {
+        const ColoredGraph&         search_graph;        ///< S-graph (remapped colours).
+        const std::vector<double>&  color_probability;   ///< P(colour c) from background G.
+        const std::vector<int32_t>& color_map;           ///< Compact id → original colour value.
+        double                      background_log_density; ///< log(edge density of G).
+        bool                        is_directed;         ///< True when edges are directed.
+    };
+
+    /**
+     * @brief Mutable state accumulated during the full beam search.
+     *
+     * Returned by initialise_beam_search and consumed by run_beam_expansion
+     * and collect_best_patterns.
+     */
+    struct BeamSearchState
+    {
+        std::vector<int32_t>      color_map;            ///< Compact id → original colour (for recolor).
+        double                    background_density = 0.0; ///< Raw edge density of G.
+        std::vector<PatternState> beam;                 ///< Live beam states.
+    };
+
+    /**
      * @brief Instantiate PatternStates from seed descriptors and allocation counts.
      *
      * For each seed, creates seed_state_counts[i] initial states, one per
@@ -214,13 +242,7 @@ private:
     std::vector<PatternState> create_beam_from_seeds(
         const std::vector<SeedInfo>& seeds,
         const std::vector<uint32_t>& seed_state_counts,
-        const ColoredGraph&          search_graph,
-        const std::vector<double>&   color_probability,
-        const std::vector<int32_t>&  color_map,
-        double                       background_log_density,
-        double                       initial_alpha_weight,
-        double                       alpha_decay_rate,
-        bool                         is_directed) const;
+        const BeamContext&           context) const;
 
     /**
      * @brief Create one PatternState seeded at a single S-graph vertex.
@@ -230,14 +252,9 @@ private:
      * pattern_vertex_color_log_prob from the colour probability.
      */
     PatternState create_initial_state(
-        const ColoredGraph&        search_graph,
-        const std::vector<double>& color_probability,
-        double                     background_log_density,
-        double                     initial_alpha_weight,
-        double                     alpha_decay_rate,
-        uint32_t                   color_id,
-        uint32_t                   match_vertex,
-        bool                       is_directed) const;
+        const BeamContext& context,
+        uint32_t           color_id,
+        uint32_t           match_vertex) const;
 
     /**
      * @brief Find the index at which to cut a sorted score list (gap detection).
@@ -317,6 +334,49 @@ private:
         double                     background_density,
         uint32_t                   iteration,
         bool                       is_directed) const;
+
+    /**
+     * @brief Remap colours in S and G and build the initial beam.
+     *
+     * Remaps vertex colours in both graphs to compact shared IDs via
+     * PatternUtils::map_colors (modifies both graphs in-place), computes the
+     * background colour distribution and edge density, then calls build_initial_beam.
+     * Original colour values are preserved in BeamSearchState::color_map for
+     * later restoration by collect_best_patterns.
+     */
+    BeamSearchState initialise_beam_search(
+        ColoredGraph& search_graph,
+        ColoredGraph& background_graph,
+        bool          is_directed) const;
+
+    /**
+     * @brief Run the expand-and-check loop until a termination condition fires.
+     *
+     * Terminates when the beam reaches m_max_active_patterns, any state score
+     * falls below score_threshold, no further expansion is possible, or
+     * MAX_ITERATIONS is reached.
+     *
+     * @param beam_state       Mutable beam (beam, color_map, background_density).
+     * @param search_graph     Graph S (with remapped colours) to expand candidates in.
+     * @param score_threshold  Stop early when any state's score beats this value.
+     * @param is_directed      Whether to treat edges as directed.
+     */
+    void run_beam_expansion(
+        BeamSearchState&    beam_state,
+        const ColoredGraph& search_graph,
+        double              score_threshold,
+        bool                is_directed) const;
+
+    /**
+     * @brief Select the best patterns, restore original colours, and return them.
+     *
+     * Scores all beam states, picks the top NUMBER_OF_STATES_TO_RETURN,
+     * remaps vertex colours back to original values via beam_state.color_map,
+     * and moves the resulting BoostGraph patterns into the return vector.
+     */
+    std::vector<BoostGraph> collect_best_patterns(
+        BeamSearchState& beam_state,
+        bool             is_directed) const;
 };
 
 } // namespace sgf

@@ -9,7 +9,7 @@ namespace sgf
 
 /* ---------- Construction ---------- */
 
-SingleGraphHistogram::SingleGraphHistogram(
+SingleGraphHistogram::SingleGraphHistogram( // NOLINT(readability-function-size)
     const ColoredGraph&        search_graph,
     const std::vector<double>& vertex_color_probabilities,
     double                     background_log_density,
@@ -29,7 +29,6 @@ SingleGraphHistogram::SingleGraphHistogram(
         std::min<uint32_t>(search_graph_vertex_count / 100u, 512u);
     m_candidates.reserve(candidate_reserve_hint);
     m_candidate_match_neighbor_count.reserve(candidate_reserve_hint);
-    m_candidate_match_neighbor.reserve(candidate_reserve_hint);
     m_candidate_outside_log_prob.reserve(candidate_reserve_hint);
 
     for (uint32_t color_index = 0; color_index < vertex_color_probabilities.size(); ++color_index)
@@ -83,7 +82,6 @@ void SingleGraphHistogram::absorb_vertex(uint32_t vertex_to_absorb, bool is_dire
 
     m_candidates.erase(vertex_to_absorb);
     m_candidate_match_neighbor_count.erase(vertex_to_absorb);
-    m_candidate_match_neighbor.erase(vertex_to_absorb);
     m_candidate_outside_log_prob.erase(vertex_to_absorb);
 
     add_all_vertex_neighbours_to_candidate(vertex_to_absorb, false);
@@ -129,7 +127,6 @@ void SingleGraphHistogram::add_vertex_neighbour_to_candidate(
         // Brand-new candidate: register and compute its full outside-log-prob.
         m_candidates.insert(candidate_vertex);
         m_candidate_match_neighbor_count[candidate_vertex] = 1;
-        m_candidate_match_neighbor[candidate_vertex]       = absorbed_vertex;
 
         double outside_log_prob_sum = 0.0;
         auto [neighbor_begin, neighbor_end] = m_graph.get_neighbours(candidate_vertex, false);
@@ -155,6 +152,73 @@ void SingleGraphHistogram::add_vertex_neighbour_to_candidate(
     }
 }
 
+/* ---------- compute_candidate_score ---------- */
+
+// Returns nullopt for floating candidates (no match neighbour) at depth > 0 —
+// they are unreachable from the current match and should not be expanded next.
+// Throws HistogramOverflowException if the computed score diverges to infinity.
+std::optional<double> SingleGraphHistogram::compute_candidate_score(
+    uint32_t candidate_vertex, double current_alpha_weight) const
+{
+    const auto degree_iterator = m_candidate_match_neighbor_count.find(candidate_vertex);
+    const uint32_t match_neighbor_count =
+        (degree_iterator != m_candidate_match_neighbor_count.end())
+            ? degree_iterator->second : 0u;
+    // Skip floating candidates (no connection to the current match) except at depth 0
+    // where the first vertex has no match neighbours by definition.
+    if (match_neighbor_count == 0 && m_current_depth > 0)
+        return std::nullopt;
+
+    const auto outside_logp_iterator = m_candidate_outside_log_prob.find(candidate_vertex);
+    if (outside_logp_iterator == m_candidate_outside_log_prob.end())
+        throw std::runtime_error(
+            "SingleGraphHistogram::compute_candidate_score: outside_logp cache "
+            "missing for candidate " + std::to_string(candidate_vertex));
+
+    // Score formula:
+    //   match_neighbor_count * log(density)  — reward edges to the existing match
+    //   + log(p[color(v)])                    — penalise common colours
+    //   + alpha * outside_log_prob            — exploration: prefer rare unmatched neighbours
+    const double candidate_score =
+        static_cast<double>(match_neighbor_count) * m_background_log_density
+        + log_prob_of_vertex(candidate_vertex)
+        + current_alpha_weight * outside_logp_iterator->second;
+
+    if (std::isinf(candidate_score))
+        throw HistogramOverflowException(
+            "candidate score reached infinity for vertex "
+            + std::to_string(candidate_vertex));
+
+    return candidate_score;
+}
+
+} // namespace sgf
+
+namespace
+{
+
+// Partially sort @p candidates so the best result_count entries are in ascending
+// score order at the front, then resize to result_count.
+// partial_sort is cheaper than full sort when only the top-k entries are needed.
+void select_top_k_candidates(std::vector<sgf::CandidateVertex>& candidates,
+                              uint32_t                           result_count)
+{
+    std::partial_sort(
+        candidates.begin(),
+        candidates.begin() + static_cast<std::ptrdiff_t>(result_count),
+        candidates.end(),
+        [](const sgf::CandidateVertex& first, const sgf::CandidateVertex& second)
+        {
+            return first.score < second.score;
+        });
+    candidates.resize(result_count);
+}
+
+} // anonymous namespace
+
+namespace sgf
+{
+
 /* ---------- get_top_k_vertices ---------- */
 
 std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t max_result_count)
@@ -171,62 +235,19 @@ std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t m
 
     for (uint32_t candidate_vertex : m_candidates)
     {
-        const auto   degree_iterator       = m_candidate_match_neighbor_count.find(candidate_vertex);
-        const uint32_t match_neighbor_count = (degree_iterator != m_candidate_match_neighbor_count.end())
-                                              ? degree_iterator->second : 0u;
-        // Skip floating candidates (no connection to the current match) except at depth 0
-        // where the first vertex has no match neighbours by definition.
-        if (match_neighbor_count == 0 && m_current_depth > 0)
+        const std::optional<double> candidate_score =
+            compute_candidate_score(candidate_vertex, current_alpha_weight);
+        if (!candidate_score.has_value())
             continue;
-
-        const auto outside_logp_iterator = m_candidate_outside_log_prob.find(candidate_vertex);
-        if (outside_logp_iterator == m_candidate_outside_log_prob.end())
-            throw std::runtime_error(
-                "SingleGraphHistogram::get_top_k_vertices: outside_logp cache "
-                "missing for candidate " + std::to_string(candidate_vertex));
-        const double outside_log_prob = outside_logp_iterator->second;
-
-        // Score formula:
-        //   match_neighbor_count * log(density)   — reward edges to the existing match
-        //   + log(p[color(v)])                     — penalise common colours
-        //   + alpha * outside_log_prob             — exploration term: prefer candidates
-        //                                            with many rare unmatched neighbours
-        const double candidate_score =
-            static_cast<double>(match_neighbor_count) * m_background_log_density
-            + log_prob_of_vertex(candidate_vertex)
-            + current_alpha_weight * outside_log_prob;
-
-        if (std::isinf(candidate_score))
-            throw HistogramOverflowException(
-                "candidate score reached infinity for vertex "
-                + std::to_string(candidate_vertex));
-
-        auto parent_iterator = m_candidate_match_neighbor.find(candidate_vertex);
-        const int32_t connecting_vertex =
-            (parent_iterator != m_candidate_match_neighbor.end())
-                ? static_cast<int32_t>(parent_iterator->second)
-                : -1;
-
-        scored_candidates.push_back(
-            {static_cast<int32_t>(candidate_vertex), connecting_vertex, candidate_score});
+        scored_candidates.push_back({static_cast<int32_t>(candidate_vertex), *candidate_score});
     }
 
     if (scored_candidates.empty())
         return {};
 
-    // partial_sort is cheaper than full sort when only the top-k matter.
     const uint32_t result_count =
         std::min(max_result_count, static_cast<uint32_t>(scored_candidates.size()));
-    std::partial_sort(
-        scored_candidates.begin(),
-        scored_candidates.begin() + static_cast<std::ptrdiff_t>(result_count),
-        scored_candidates.end(),
-        [](const CandidateVertex& first, const CandidateVertex& second)
-        {
-            return first.score < second.score;
-        });
-
-    scored_candidates.resize(result_count);
+    select_top_k_candidates(scored_candidates, result_count);
     return scored_candidates;
 }
 

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -22,9 +23,8 @@ namespace sgf
  */
 struct CandidateVertex
 {
-    int32_t search_vertex;          ///< S-graph vertex index of the candidate.
-    int32_t connecting_match_vertex; ///< In-match vertex to connect to (-1 if none).
-    double  score;                  ///< Histogram score (lower = rarer = better).
+    int32_t search_vertex; ///< S-graph vertex index of the candidate.
+    double  score;         ///< Histogram score (lower = rarer = better).
 };
 
 /**
@@ -35,8 +35,7 @@ struct CandidateVertex
  * used by get_top_k_vertices() to select the best extensions.
  *
  * Each PatternState owns one histogram.  Because there is exactly one
- * match path, all caches (outside-log-prob, match-neighbour count, connect-parent)
- * are always consistent.
+ * match path, all caches (outside-log-prob, match-neighbour count) are always consistent.
  *
  * Scoring formula per candidate vertex v:
  *   score(v) = match_neighbor_count(v) * background_log_density
@@ -149,10 +148,21 @@ private:
     /// Maintained incrementally: decremented as each neighbour is absorbed.
     std::unordered_map<uint32_t, double> m_candidate_outside_log_prob;
 
-    /// For each candidate, one match-path neighbour to use as the connection point.
-    std::unordered_map<uint32_t, uint32_t> m_candidate_match_neighbor;
-
     inline double log_prob_of_vertex(uint32_t search_vertex) const;
+
+    /**
+     * @brief Compute the histogram score for a single candidate vertex.
+     *
+     * Returns std::nullopt for floating candidates (no match-path neighbour) when
+     * match depth > 0, since they are unreachable from the current match.
+     * Throws HistogramOverflowException if the score diverges to infinity.
+     *
+     * @param candidate_vertex    S-graph vertex being scored.
+     * @param current_alpha_weight Alpha weight at the current match depth.
+     */
+    std::optional<double> compute_candidate_score(
+        uint32_t candidate_vertex, double current_alpha_weight) const;
+
     void add_vertex_neighbour_to_candidate(uint32_t candidate_vertex, uint32_t absorbed_vertex);
     void add_all_vertex_neighbours_to_candidate(uint32_t absorbed_vertex, bool is_reversed);
 };
