@@ -149,12 +149,14 @@ GeneralColorHist::get_color_to_add(const uint32_t threshold, const bool is_rando
         return {NO_CANDIDATE_COLOR, NO_CANDIDATE_DEPTH, NO_CANDIDATE_WEIGHT};
     }
 
+#ifndef NDEBUG
     SGF_DEBUG_LOG(m_logger, "Candidates:");
-    for (const Candidate candidate : candidates)
+    for (const Candidate& candidate : candidates)
     {
         SGF_DEBUG_LOG(m_logger, "color: " + std::to_string(candidate.m_color) +
                                     " weight: " + std::to_string(candidate.m_weight));
     }
+#endif
 
     if (!is_random)
     {
