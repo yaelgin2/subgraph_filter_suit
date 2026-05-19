@@ -437,7 +437,8 @@ void MultiGraphPatternFinder::filter_tree_matches_by_edge(
         const BoostGraph::vertex_descriptor target_vertex_idx =
             static_cast<BoostGraph::vertex_descriptor>(target_tree_node->m_index);
 
-        if (m_graph_list[tree_idx].is_edge(source_vertex_idx, target_vertex_idx))
+        if (m_graph_list[tree_idx].is_edge(static_cast<uint32_t>(source_vertex_idx),
+                                           static_cast<uint32_t>(target_vertex_idx)))
         {
             surviving_matches.push_back(leaf_node);
         }
