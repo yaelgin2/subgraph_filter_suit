@@ -13,6 +13,16 @@ namespace sgf
 {
 
 /**
+ * @brief Internal candidate for get_color_to_add weighted selection.
+ */
+struct Candidate
+{
+    int32_t m_color;        ///< Color index of this candidate.
+    int32_t m_depth_index;  ///< Depth index of this candidate.
+    uint32_t m_weight;      ///< Support weight of this candidate.
+};
+
+/**
  * @class GeneralColorHist
  * @brief Tracks how many distinct trees can still be extended at each (depth, color) cell.
  *
@@ -89,6 +99,27 @@ private:
     std::vector<std::vector<uint32_t>> m_number_of_trees;  ///< [depth][color] -> tree count.
     uint32_t m_num_colors;                                 ///< Number of distinct colors.
     LoggerHandler m_logger;                                ///< Logger for before/after tracing.
+
+    /**
+     * @brief Select a candidate using weighted random sampling.
+     * @param candidates Non-empty list of candidates.
+     * @param total_weight Sum of all candidate weights.
+     * @return The selected candidate.
+     */
+    static Candidate select_weighted_random(const std::vector<Candidate>& candidates,
+                                    const uint32_t total_weight);
+
+    /**
+     * @brief Build a list of candidates above the given threshold.
+     * @param histogram The [depth][color] tree-count matrix.
+     * @param num_colors Number of distinct vertex colors.
+     * @param threshold Minimum tree count for a cell to be considered.
+     * @param total_weight Output: sum of all candidate weights.
+     * @return Vector of candidates meeting the threshold.
+     */
+    static std::vector<Candidate> build_candidates(const std::vector<std::vector<uint32_t>>& histogram,
+                                            const uint32_t num_colors, const uint32_t threshold,
+                                            uint32_t& total_weight);
 };
 
 using GeneralColorHistPtr = std::shared_ptr<GeneralColorHist>;

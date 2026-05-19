@@ -1,5 +1,7 @@
 #include "GeneralColorHist.h"
 
+#include "DebugLog.h"
+#include "HistFormatUtils.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 #include "PatternException.h"
@@ -23,6 +25,9 @@ GeneralColorHist::GeneralColorHist(const uint32_t num_colors, LoggerHandler logg
 void GeneralColorHist::update_hist_increase_tree_count(const uint32_t pattern_depth,
                                                        const uint32_t current_vertex_color)
 {
+    SGF_DEBUG_LOG(m_logger, "increase_tree_count: depth=" + std::to_string(pattern_depth) +
+                                     " color=" + std::to_string(current_vertex_color));
+    SGF_DEBUG_LOG(m_logger, "BEFORE general: " + format_hist_matrix(m_number_of_trees));
 
     if (current_vertex_color >= m_num_colors)
     {
@@ -44,11 +49,15 @@ void GeneralColorHist::update_hist_increase_tree_count(const uint32_t pattern_de
     }
 
     ++m_number_of_trees[pattern_depth][current_vertex_color];
+    SGF_DEBUG_LOG(m_logger, "AFTER general: " + format_hist_matrix(m_number_of_trees));
 }
 
 void GeneralColorHist::update_hist_decrease_tree_count(const uint32_t pattern_depth,
                                                        const uint32_t current_vertex_color)
 {
+    SGF_DEBUG_LOG(m_logger, "decrease_tree_count: depth=" + std::to_string(pattern_depth) +
+                                     " color=" + std::to_string(current_vertex_color));
+    SGF_DEBUG_LOG(m_logger, "BEFORE general: " + format_hist_matrix(m_number_of_trees));
 
     if (pattern_depth >= static_cast<uint32_t>(m_number_of_trees.size()))
     {
@@ -75,30 +84,10 @@ void GeneralColorHist::update_hist_decrease_tree_count(const uint32_t pattern_de
         throw PatternException("cannot decrement a zero cell");
     }
     --m_number_of_trees[pattern_depth][current_vertex_color];
+    SGF_DEBUG_LOG(m_logger, "AFTER general: " + format_hist_matrix(m_number_of_trees));
 }
 
-namespace
-{
-
-/**
- * @brief Internal candidate for get_color_to_add weighted selection.
- */
-struct Candidate
-{
-    int32_t m_color;        ///< Color index of this candidate.
-    int32_t m_depth_index;  ///< Depth index of this candidate.
-    uint32_t m_weight;      ///< Support weight of this candidate.
-};
-
-/**
- * @brief Build a list of candidates above the given threshold.
- * @param histogram The [depth][color] tree-count matrix.
- * @param num_colors Number of distinct vertex colors.
- * @param threshold Minimum tree count for a cell to be considered.
- * @param total_weight Output: sum of all candidate weights.
- * @return Vector of candidates meeting the threshold.
- */
-std::vector<Candidate> build_candidates(const std::vector<std::vector<uint32_t>>& histogram,
+std::vector<Candidate> GeneralColorHist::build_candidates(const std::vector<std::vector<uint32_t>>& histogram,
                                         const uint32_t num_colors, const uint32_t threshold,
                                         uint32_t& total_weight)
 {
@@ -121,13 +110,7 @@ std::vector<Candidate> build_candidates(const std::vector<std::vector<uint32_t>>
     return candidates;
 }
 
-/**
- * @brief Select a candidate using weighted random sampling.
- * @param candidates Non-empty list of candidates.
- * @param total_weight Sum of all candidate weights.
- * @return The selected candidate.
- */
-Candidate select_weighted_random(const std::vector<Candidate>& candidates,
+Candidate GeneralColorHist::select_weighted_random(const std::vector<Candidate>& candidates,
                                  const uint32_t total_weight)
 {
     static thread_local std::mt19937 rng{std::random_device{}()};
@@ -148,27 +131,45 @@ Candidate select_weighted_random(const std::vector<Candidate>& candidates,
     return candidates.back();
 }
 
-}  // namespace
 
 std::tuple<int32_t, int32_t, uint32_t>
 GeneralColorHist::get_color_to_add(const uint32_t threshold, const bool is_random) const
 {
+    SGF_DEBUG_LOG(m_logger, "get_color_to_add: threshold=" + std::to_string(threshold) +
+                                     " is_random=" + (is_random ? "true" : "false"));
+    SGF_DEBUG_LOG(m_logger, "HIST: " + format_hist_matrix(m_number_of_trees));
+
     uint32_t total_weight = 0U;
     const std::vector<Candidate> candidates =
         build_candidates(m_number_of_trees, m_num_colors, threshold, total_weight);
 
     if (candidates.empty())
     {
+        SGF_DEBUG_LOG(m_logger, "RESULT: no candidate found");
         return {NO_CANDIDATE_COLOR, NO_CANDIDATE_DEPTH, NO_CANDIDATE_WEIGHT};
+    }
+
+    SGF_DEBUG_LOG(m_logger, "Candidates:");
+    for (Candidate candidate : candidates)
+    {
+        SGF_DEBUG_LOG(m_logger, "color: " + std::to_string(candidate.m_color) + " weight: " +
+            std::to_string(candidate.m_weight));
     }
 
     if (!is_random)
     {
+        SGF_DEBUG_LOG(m_logger,
+                           "RESULT: color=" + std::to_string(candidates.back().m_color) +
+                               " depth=" + std::to_string(candidates.back().m_depth_index) +
+                               " weight=" + std::to_string(candidates.back().m_weight));
         return {candidates.back().m_color, candidates.back().m_depth_index,
                 candidates.back().m_weight};
     }
 
-    const Candidate selected = select_weighted_random(candidates, total_weight);
+    const Candidate selected = GeneralColorHist::select_weighted_random(candidates, total_weight);
+    SGF_DEBUG_LOG(m_logger, "RESULT: color=" + std::to_string(selected.m_color) +
+                                     " depth=" + std::to_string(selected.m_depth_index) +
+                                     " weight=" + std::to_string(selected.m_weight));
     return {selected.m_color, selected.m_depth_index, selected.m_weight};
 }
 

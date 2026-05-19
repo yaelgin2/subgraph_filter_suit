@@ -54,10 +54,10 @@ std::vector<double> MultiGraphPatternFinder::build_color_distribution() const
 
 void MultiGraphPatternFinder::create_histograms(const uint32_t color_count)
 {
-    m_forward_color_hist = GeneralColorHist(color_count);
+    m_forward_color_hist = GeneralColorHist(color_count, m_logger);
     if (m_is_directed)
     {
-        m_reverse_color_hist = GeneralColorHist(color_count);
+        m_reverse_color_hist = GeneralColorHist(color_count, m_logger);
     }
     else
     {
