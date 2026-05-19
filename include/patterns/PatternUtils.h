@@ -32,7 +32,7 @@ public:
      *
      * @return color_map  color_map[new_id] == original colour value.
      */
-    static std::vector<int32_t> map_colors(ColoredGraph& a, ColoredGraph& b);
+    static std::vector<int32_t> map_colors(ColoredGraph& first_graph, ColoredGraph& second_graph);
 
     /**
      * @brief Remap vertex colours across multiple graphs to a shared
@@ -64,20 +64,23 @@ public:
     /**
      * @brief Compute per-colour probability distribution across all S-graphs.
      *
-     * @return Vector of size @p color_number where element c is the fraction
+     * @return Vector of size @p color_count where element c is the fraction
      *         of all vertices (across all S-graphs) that have colour c.
      */
     static std::vector<double> compute_color_distribution(
-        uint32_t                    color_number,
-        int32_t                     s_size,
-        const std::vector<ColoredGraph>&   s_list);
+        uint32_t                         color_count,
+        int32_t                          search_graph_count,
+        const std::vector<ColoredGraph>& search_graphs);
 
     /**
      * @brief Compute per-colour probability distribution from a single graph.
+     *
+     * @param color_count   Number of distinct (remapped) colours.
+     * @param source_graph  Graph whose vertex colours are tallied.
      */
     static std::vector<double> compute_color_distribution(
-        uint32_t       color_number,
-        const ColoredGraph&   g);
+        uint32_t            color_count,
+        const ColoredGraph& source_graph);
 
     /**
      * @brief Compute edge density = edge_count / (vertex_count*(vertex_count-1)/2).

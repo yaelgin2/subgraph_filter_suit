@@ -17,11 +17,14 @@
 namespace sgf
 {
 
-/** Candidate returned by get_top_k_vertices. */
-struct CandidateVertex {
-    int32_t  s_vertex;         ///< S-graph vertex index.
-    int32_t  connect_s_vertex; ///< In-match vertex to connect to.
-    double   score;            ///< Histogram score (lower = rarer).
+/**
+ * @brief Candidate vertex returned by get_top_k_vertices.
+ */
+struct CandidateVertex
+{
+    int32_t search_vertex;          ///< S-graph vertex index of the candidate.
+    int32_t connecting_match_vertex; ///< In-match vertex to connect to (-1 if none).
+    double  score;                  ///< Histogram score (lower = rarer = better).
 };
 
 /**
@@ -32,73 +35,126 @@ struct CandidateVertex {
  * used by get_top_k_vertices() to select the best extensions.
  *
  * Each PatternState owns one histogram.  Because there is exactly one
- * match path, all caches (outside-logp, in-degree, connect-parent) are
- * always consistent.
+ * match path, all caches (outside-log-prob, match-neighbour count, connect-parent)
+ * are always consistent.
+ *
+ * Scoring formula per candidate vertex v:
+ *   score(v) = match_neighbor_count(v) * background_log_density
+ *            + log(p[color(v)])
+ *            + current_alpha * outside_log_prob(v)
+ *
+ * where:
+ *   current_alpha    = initial_alpha_weight * alpha_decay_rate ^ match_depth
+ *   outside_log_prob = Σ log(p[color(u)]) for u ∈ neighbours(v) not in match
  */
 class SingleGraphHistogram
 {
 public:
+    /**
+     * @brief Construct a histogram for one S-graph match path.
+     *
+     * @param search_graph                S-graph in which matching is performed.
+     * @param vertex_color_probabilities  Per-colour probability distribution.
+     *                                    Element c = P(a random vertex has colour c).
+     *                                    Must be indexed by compact remapped colour ids.
+     * @param background_log_density      log(edge_count / possible_edges) for the
+     *                                    background graph G.  Used as the expected
+     *                                    log-probability that any given edge exists.
+     * @param initial_alpha_weight        Starting weight for the outside-neighbour
+     *                                    score term.  Higher values make the scorer
+     *                                    prefer candidates that have many rare unmatched
+     *                                    neighbours (broader exploration).
+     * @param alpha_decay_rate            Multiplicative factor applied to alpha at each
+     *                                    match-depth step.  Reduces the outside-neighbour
+     *                                    influence as the match grows deeper.
+     * @param logger                      Optional diagnostic logger.
+     */
     SingleGraphHistogram(
-        const ColoredGraph&        graph,
-        const std::vector<double>& color_prob,
-        double                     log_density,
-        double                     alpha_0 = 1.0,
-        double                     decay   = 0.9,
-        LoggerHandler              logger  = LoggerHandler(std::weak_ptr<ILogger>{}));
+        const ColoredGraph&        search_graph,
+        const std::vector<double>& vertex_color_probabilities,
+        double                     background_log_density,
+        double                     initial_alpha_weight = 1.0,
+        double                     alpha_decay_rate     = 0.9,
+        LoggerHandler              logger               = LoggerHandler(std::weak_ptr<ILogger>{}));
 
     /**
-     * @brief Absorb @p s_vertex into the match path.
+     * @brief Absorb @p vertex_to_absorb into the match path.
      *
      * Updates the candidate set and all caches:
-     *  - removes s_vertex from candidates
-     *  - for each neighbour of s_vertex not already in the match,
-     *    registers it as a candidate (or increments its in-degree)
-     *  - updates outside-logp caches for affected candidates
+     *  - removes vertex_to_absorb from candidates
+     *  - for each neighbour of vertex_to_absorb not already in the match,
+     *    registers it as a candidate (or increments its match-neighbour count)
+     *  - updates outside-log-prob caches for affected candidates
+     *
+     * @param vertex_to_absorb  S-graph vertex to add to the match.
+     * @param is_directed       When true, also processes reverse-direction neighbours.
      */
-    void absorb_vertex(uint32_t s_vertex, bool directed);
+    void absorb_vertex(uint32_t vertex_to_absorb, bool is_directed);
 
     /**
-     * @brief Return the top-k best candidate vertices with connect points.
-     * @param k  Maximum number of candidates to return.
-     * @return Vector of up to k CandidateVertex, sorted best (lowest score) first.
-     *         Empty if no candidates remain.
+     * @brief Return the top candidates ranked by score (lowest = rarest = best).
+     *
+     * @param max_result_count  Maximum number of candidates to return.
+     * @return Vector of up to max_result_count CandidateVertex structs, sorted
+     *         ascending by score.  Empty if no valid candidates remain.
      */
-    std::vector<CandidateVertex> get_top_k_vertices(uint32_t k);
+    std::vector<CandidateVertex> get_top_k_vertices(uint32_t max_result_count);
 
-    /** Current match depth (number of absorbed vertices). */
-    uint32_t current_depth() const noexcept { return m_current_depth; }
+    /**
+     * @brief Current match depth (number of absorbed vertices).
+     */
+    uint32_t current_depth() const noexcept
+    {
+        return m_current_depth;
+    }
 
-    /** log(p(color)) for a remapped colour id. Used by pattern-level scorers. */
-    double log_prob_of_color(uint32_t remapped_color) const;
+    /**
+     * @brief log(p(color)) for a remapped colour id.
+     *
+     * Used by pattern-level scorers (e.g. PatternScorer) to accumulate
+     * the colour log-probability term when a vertex is added to the pattern.
+     *
+     * @param remapped_color_id  Compact zero-based colour id (after map_colors).
+     */
+    double log_prob_of_color(uint32_t remapped_color_id) const;
 
 private:
     const ColoredGraph& m_graph;
-    LoggerHandler m_logger;
-    double       m_log_density;
-    double       m_alpha_0;
-    double       m_decay;
-    uint32_t     m_current_depth = 0;
+    LoggerHandler       m_logger;
 
-    // Cache log p(color) per remapped colour id to avoid repeated std::log.
-    std::vector<double> m_color_log_prob;
+    /// log(edge_count / possible_edges) of the background graph G.
+    double m_background_log_density;
 
-    // Set of S-vertices currently in the match path.
+    /// Starting weight for the outside-neighbour score term (decays with depth).
+    double m_initial_alpha_weight;
+
+    /// Per-depth multiplicative decay applied to m_initial_alpha_weight.
+    double m_alpha_decay_rate;
+
+    uint32_t m_current_depth = 0;
+
+    /// Cached log(p[colour]) per remapped colour id to avoid repeated std::log calls.
+    std::vector<double> m_color_log_probabilities;
+
+    /// Set of S-vertices currently in the match path.
     std::unordered_set<uint32_t> m_match_vertices;
 
-    // Candidate set: outside-neighbour vertices with >=1 match-path neighbour.
-    std::unordered_set<uint32_t>           m_candidates;
-    std::unordered_map<uint32_t, uint32_t> m_candidate_in_degree;
+    /// Candidate set: S-vertices adjacent to the match path but not yet in it.
+    std::unordered_set<uint32_t> m_candidates;
 
-    // Per-candidate cache: sum of log(p[color(u)]) for u in neighbours(v)
-    // that are currently outside the match path. Updated incrementally.
-    std::unordered_map<uint32_t, double>   m_candidate_outside_logp;
+    /// Number of match-path neighbours each candidate currently has.
+    std::unordered_map<uint32_t, uint32_t> m_candidate_match_neighbor_count;
 
-    // For each candidate, any match-path neighbour to connect to.
-    std::unordered_map<uint32_t, uint32_t> m_candidate_any_parent;
+    /// Per-candidate sum of log(p[colour(u)]) for neighbours u outside the match.
+    /// Maintained incrementally: decremented as each neighbour is absorbed.
+    std::unordered_map<uint32_t, double> m_candidate_outside_log_prob;
 
-    inline double log_prob_of_vertex(uint32_t s_vertex) const;
-    void add_vertex_neighbour_to_candidate(uint32_t vertex, uint32_t absorbed_vertex);
+    /// For each candidate, one match-path neighbour to use as the connection point.
+    std::unordered_map<uint32_t, uint32_t> m_candidate_match_neighbor;
+
+    inline double log_prob_of_vertex(uint32_t search_vertex) const;
+    void add_vertex_neighbour_to_candidate(uint32_t candidate_vertex, uint32_t absorbed_vertex);
     void add_all_vertex_neighbours_to_candidate(uint32_t absorbed_vertex, bool is_reversed);
 };
 
-}
+} // namespace sgf

@@ -17,11 +17,12 @@ namespace sgf
 /**
  * @brief Seed information for initial beam creation.
  */
-struct SeedInfo {
+struct SeedInfo
+{
     uint32_t              color_id;
     double                probability;
-    std::vector<uint32_t> matches;
-    double                weight;
+    std::vector<uint32_t> vertex_matches;      ///< S-vertices with this colour.
+    double                inverse_probability_weight; ///< 1/probability; rarer colours get higher weight.
 };
 
 /**
@@ -88,65 +89,67 @@ private:
     LoggerHandler m_logger;
 
     // Private helper functions
-    double score_state(PatternState& state, double background_density,bool is_directed) const;
-    
+    double score_state(PatternState& state, double background_density, bool is_directed) const;
+
     void expand_one_state(
         PatternState&          state,
-        const CandidateVertex& cand,
-        const ColoredGraph&           search_graph,
+        const CandidateVertex& candidate,
+        const ColoredGraph&    search_graph,
         bool                   is_directed) const;
-    
-    PatternState clone_state(const PatternState& src) const;
-    
+
+    PatternState clone_state(const PatternState& source_state) const;
+
     std::vector<uint32_t> select_seed_indices(
-        uint32_t total_colors,
-        uint32_t initial_count) const;
-    
+        uint32_t total_color_count,
+        uint32_t initial_beam_size) const;
+
     std::vector<uint32_t> allocate_seed_states(
         const std::vector<SeedInfo>& seeds,
-        uint32_t                     target_count) const;
-    
+        uint32_t                     target_state_count) const;
+
     std::vector<uint32_t> allocate_seed_states_improved(
         const std::vector<SeedInfo>& seeds,
-        uint32_t                     target_count) const;
-    
+        uint32_t                     target_state_count) const;
+
     std::vector<SeedInfo> select_valid_seeds(
-        const std::vector<std::tuple<double, uint32_t, uint32_t>>& valid_colors,
-        const std::vector<std::vector<uint32_t>>& all_matches,
-        uint32_t initial_count) const;
-    
+        const std::vector<std::tuple<double, uint32_t, uint32_t>>& sorted_colors_with_matches,
+        const std::vector<std::vector<uint32_t>>&                   vertices_by_color,
+        uint32_t                                                     initial_beam_size) const;
+
     std::vector<PatternState> create_beam_from_seeds(
         const std::vector<SeedInfo>& seeds,
-        const std::vector<uint32_t>& alloc,
-        const ColoredGraph& search_graph,
-        const std::vector<double>& color_probability,
-        const std::vector<int32_t>& color_map,
-        double log_bg_density,
-        double alpha_0,
-        double alpha_decay,
-        bool is_directed) const;
-    
+        const std::vector<uint32_t>& seed_state_counts,
+        const ColoredGraph&          search_graph,
+        const std::vector<double>&   color_probability,
+        const std::vector<int32_t>&  color_map,
+        double                       background_log_density,
+        double                       initial_alpha_weight,
+        double                       alpha_decay_rate,
+        bool                         is_directed) const;
+
     PatternState create_initial_state(
-        const ColoredGraph&               search_graph,
+        const ColoredGraph&        search_graph,
         const std::vector<double>& color_probability,
-        double                     log_bg_density,
-        double                     alpha_0,
-        double                     alpha_decay,
+        double                     background_log_density,
+        double                     initial_alpha_weight,
+        double                     alpha_decay_rate,
         uint32_t                   color_id,
         uint32_t                   match_vertex,
         bool                       is_directed) const;
-    
+
     uint32_t find_gap_cut(
-        const std::vector<std::pair<double, uint32_t>>& scored) const;
-    
+        const std::vector<std::pair<double, uint32_t>>& scored_states) const;
+
     std::vector<PatternState*> select_best_state(
         std::vector<PatternState>& beam,
         double                     background_density,
         bool                       is_directed) const;
-    
+
     bool any_state_below_threshold(
         std::vector<PatternState>& beam,
-        double bg_density, double threshold, bool is_directed) const;
+        double                     background_density,
+        double                     threshold,
+        bool                       is_directed) const;
 
     /**
      * @brief Build the initial beam from diverse seed colours.

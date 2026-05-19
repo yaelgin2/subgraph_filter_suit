@@ -18,9 +18,9 @@ namespace sgf
  * pattern vertices to S-graph vertices.  The histogram maintains
  * candidate caches relative to this single match's vertex set.
  *
- * pattern_color_logp is maintained incrementally: whenever a vertex of
- * colour c is added to the pattern, the caller adds log(p[c]) to this
- * field.  This avoids iterating over all pattern vertices on every
+ * pattern_vertex_color_log_prob is maintained incrementally: whenever a
+ * vertex of colour c is added to the pattern, the caller adds log(p[c])
+ * to this field.  This avoids iterating over all pattern vertices on every
  * PatternScorer::score call.
  */
 struct PatternState
@@ -32,7 +32,7 @@ struct PatternState
 
     /** Σ log(p[color(v)]) over all vertices currently in the pattern.
      *  Updated in SingleGraphPatternFinder immediately after add_vertex. */
-    double                                pattern_color_logp = 0.0;
+    double                                pattern_vertex_color_log_prob = 0.0;
 };
 
 } // namespace sgf

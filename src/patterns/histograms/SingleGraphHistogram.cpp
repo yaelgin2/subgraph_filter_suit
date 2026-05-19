@@ -10,193 +10,202 @@ namespace sgf
 /* ---------- Construction ---------- */
 
 SingleGraphHistogram::SingleGraphHistogram(
-    const ColoredGraph&        s_graph,
-    const std::vector<double>& color_prob,
-    double                     log_density,
-    double                     alpha_0,
-    double                     decay,
+    const ColoredGraph&        search_graph,
+    const std::vector<double>& vertex_color_probabilities,
+    double                     background_log_density,
+    double                     initial_alpha_weight,
+    double                     alpha_decay_rate,
     LoggerHandler              logger)
-    : m_graph(s_graph)
+    : m_graph(search_graph)
     , m_logger(std::move(logger))
-    , m_log_density(log_density)
-    , m_alpha_0(alpha_0)
-    , m_decay(decay)
-    , m_color_log_prob(color_prob.size(), 0.0)
+    , m_background_log_density(background_log_density)
+    , m_initial_alpha_weight(initial_alpha_weight)
+    , m_alpha_decay_rate(alpha_decay_rate)
+    , m_color_log_probabilities(vertex_color_probabilities.size(), 0.0)
 {
-    const uint32_t s_graph_vertex_number = s_graph.vertex_count();
-    // estimates 1% tops (maximum 512)
-    const uint32_t reserve_hint =
-        std::min<uint32_t>(s_graph_vertex_number / 100u, 512u);
-    m_candidates.reserve(reserve_hint);
-    m_candidate_in_degree.reserve(reserve_hint);
-    m_candidate_any_parent.reserve(reserve_hint);
-    m_candidate_outside_logp.reserve(reserve_hint);
+    const uint32_t search_graph_vertex_count = search_graph.vertex_count();
+    // Reserve ~1% of vertices (capped at 512) to avoid frequent reallocs.
+    const uint32_t candidate_reserve_hint =
+        std::min<uint32_t>(search_graph_vertex_count / 100u, 512u);
+    m_candidates.reserve(candidate_reserve_hint);
+    m_candidate_match_neighbor_count.reserve(candidate_reserve_hint);
+    m_candidate_match_neighbor.reserve(candidate_reserve_hint);
+    m_candidate_outside_log_prob.reserve(candidate_reserve_hint);
 
-    for (uint32_t color_index = 0; color_index < color_prob.size(); ++color_index) {
-        m_color_log_prob[color_index] =
-            (color_prob[color_index] > 0.0)
-                ? std::log(color_prob[color_index])
+    for (uint32_t color_index = 0; color_index < vertex_color_probabilities.size(); ++color_index)
+    {
+        m_color_log_probabilities[color_index] =
+            (vertex_color_probabilities[color_index] > 0.0)
+                ? std::log(vertex_color_probabilities[color_index])
                 : std::numeric_limits<double>::lowest() * 0.5;
     }
 }
 
 /* ---------- Private helpers ---------- */
 
-inline double SingleGraphHistogram::log_prob_of_vertex(uint32_t s_vertex) const
+inline double SingleGraphHistogram::log_prob_of_vertex(uint32_t search_vertex) const
 {
-    const uint32_t color =
-        static_cast<uint32_t>(m_graph.get_vertex_color(s_vertex));
-    if (color >= m_color_log_prob.size())
+    const uint32_t vertex_color =
+        static_cast<uint32_t>(m_graph.get_vertex_color(search_vertex));
+    if (vertex_color >= m_color_log_probabilities.size())
         throw std::out_of_range(
             "SingleGraphHistogram::log_prob_of_vertex: color "
-            + std::to_string(color) + " out of range (size "
-            + std::to_string(m_color_log_prob.size()) + ")");
-    return m_color_log_prob[color];
+            + std::to_string(vertex_color) + " out of range (size "
+            + std::to_string(m_color_log_probabilities.size()) + ")");
+    return m_color_log_probabilities[vertex_color];
 }
 
-double SingleGraphHistogram::log_prob_of_color(uint32_t remapped_color) const
+double SingleGraphHistogram::log_prob_of_color(uint32_t remapped_color_id) const
 {
-    if (remapped_color >= m_color_log_prob.size())
+    if (remapped_color_id >= m_color_log_probabilities.size())
         throw std::out_of_range(
             "SingleGraphHistogram::log_prob_of_color: color "
-            + std::to_string(remapped_color) + " out of range (size "
-            + std::to_string(m_color_log_prob.size()) + ")");
-    return m_color_log_prob[remapped_color];
+            + std::to_string(remapped_color_id) + " out of range (size "
+            + std::to_string(m_color_log_probabilities.size()) + ")");
+    return m_color_log_probabilities[remapped_color_id];
 }
 
 /* ---------- absorb_vertex ---------- */
+
 /**
- * @brief Absorbs a vertex into the current match set and updates candidate structures.
- * 
- * This function performs the following operations:
- * 1. Adds the specified vertex to the match set.
- * 2. Removes the vertex from candidate structures.
- * 3. Processes the neighbors of the absorbed vertex to update candidate information.
- * 
- * @param s_vertex The vertex to absorb into the match set.
+ * @brief Absorb a vertex into the match set and update all candidate caches.
+ *
+ * Steps:
+ * 1. Insert vertex into the match set.
+ * 2. Remove it from every candidate data structure.
+ * 3. Walk its neighbours: register new candidates or update existing ones.
  */
-void SingleGraphHistogram::absorb_vertex(uint32_t s_vertex, bool directed)
+void SingleGraphHistogram::absorb_vertex(uint32_t vertex_to_absorb, bool is_directed)
 {
-    // 1. Add to match set.
-    m_match_vertices.insert(s_vertex);
+    m_match_vertices.insert(vertex_to_absorb);
 
-    // 2. Remove from candidate structures.
-    m_candidates.erase(s_vertex);
-    m_candidate_in_degree.erase(s_vertex);
-    m_candidate_any_parent.erase(s_vertex);
-    m_candidate_outside_logp.erase(s_vertex);
+    m_candidates.erase(vertex_to_absorb);
+    m_candidate_match_neighbor_count.erase(vertex_to_absorb);
+    m_candidate_match_neighbor.erase(vertex_to_absorb);
+    m_candidate_outside_log_prob.erase(vertex_to_absorb);
 
-    // 3. Process neighbours of the newly absorbed vertex.
-    add_all_vertex_neighbours_to_candidate(s_vertex, false);
-    if (directed)
+    add_all_vertex_neighbours_to_candidate(vertex_to_absorb, false);
+    if (is_directed)
     {
-        add_all_vertex_neighbours_to_candidate(s_vertex, true);
+        add_all_vertex_neighbours_to_candidate(vertex_to_absorb, true);
     }
 
     ++m_current_depth;
 }
 
-void SingleGraphHistogram::add_all_vertex_neighbours_to_candidate(uint32_t absorbed_vertex, bool is_reversed)
+void SingleGraphHistogram::add_all_vertex_neighbours_to_candidate(
+    uint32_t absorbed_vertex, bool is_reversed)
 {
-    auto [nb_begin, nb_end] = m_graph.get_neighbours(absorbed_vertex, is_reversed);
-    for (auto it = nb_begin; it != nb_end; ++it) {
-        const uint32_t u = *it;
-        if (m_match_vertices.find(u) != m_match_vertices.end()) continue;
-        add_vertex_neighbour_to_candidate(u, absorbed_vertex);
+    auto [neighbor_begin, neighbor_end] = m_graph.get_neighbours(absorbed_vertex, is_reversed);
+    for (auto neighbor_iterator = neighbor_begin; neighbor_iterator != neighbor_end; ++neighbor_iterator)
+    {
+        const uint32_t neighbor_vertex = *neighbor_iterator;
+        if (m_match_vertices.find(neighbor_vertex) != m_match_vertices.end())
+            continue;
+        add_vertex_neighbour_to_candidate(neighbor_vertex, absorbed_vertex);
     }
 }
 
-void SingleGraphHistogram::add_vertex_neighbour_to_candidate(uint32_t vertex, uint32_t absorbed_vertex)
+void SingleGraphHistogram::add_vertex_neighbour_to_candidate(
+    uint32_t candidate_vertex, uint32_t absorbed_vertex)
 {
-    auto deg_it = m_candidate_in_degree.find(vertex);
-    if (deg_it == m_candidate_in_degree.end()) {
-        // Brand-new candidate.
-        m_candidates.insert(vertex);
-        m_candidate_in_degree[vertex] = 1;
-        m_candidate_any_parent[vertex] = absorbed_vertex;
+    auto degree_iterator = m_candidate_match_neighbor_count.find(candidate_vertex);
+    if (degree_iterator == m_candidate_match_neighbor_count.end())
+    {
+        // Brand-new candidate: register and compute its full outside-log-prob.
+        m_candidates.insert(candidate_vertex);
+        m_candidate_match_neighbor_count[candidate_vertex] = 1;
+        m_candidate_match_neighbor[candidate_vertex]       = absorbed_vertex;
 
-        // Compute full outside-logp by scanning u's neighbours.
-        double outside_sum = 0.0;
-        auto [nb_b, nb_e] = m_graph.get_neighbours(vertex, false);
-        for (auto it2 = nb_b; it2 != nb_e; ++it2) {
-            if (m_match_vertices.find(*it2) == m_match_vertices.end())
-                outside_sum += log_prob_of_vertex(*it2);
+        double outside_log_prob_sum = 0.0;
+        auto [neighbor_begin, neighbor_end] = m_graph.get_neighbours(candidate_vertex, false);
+        for (auto neighbor_iterator = neighbor_begin; neighbor_iterator != neighbor_end; ++neighbor_iterator)
+        {
+            if (m_match_vertices.find(*neighbor_iterator) == m_match_vertices.end())
+                outside_log_prob_sum += log_prob_of_vertex(*neighbor_iterator);
         }
-        if (std::isinf(outside_sum))
+        if (std::isinf(outside_log_prob_sum))
             throw HistogramOverflowException(
                 "outside_logp sum reached infinity for candidate vertex "
-                + std::to_string(vertex));
-        m_candidate_outside_logp[vertex] = outside_sum;
-    } else {
-        // Existing candidate — increment in-degree.
-        ++(deg_it->second);
-        // s_vertex moved from outside to inside for this candidate.
-        auto cache_it = m_candidate_outside_logp.find(vertex);
-        if (cache_it != m_candidate_outside_logp.end())
-            cache_it->second -= log_prob_of_vertex(absorbed_vertex);
+                + std::to_string(candidate_vertex));
+        m_candidate_outside_log_prob[candidate_vertex] = outside_log_prob_sum;
+    }
+    else
+    {
+        // Existing candidate: increment match-neighbour count and remove
+        // absorbed_vertex's contribution from the outside-log-prob cache.
+        ++(degree_iterator->second);
+        auto outside_logp_iterator = m_candidate_outside_log_prob.find(candidate_vertex);
+        if (outside_logp_iterator != m_candidate_outside_log_prob.end())
+            outside_logp_iterator->second -= log_prob_of_vertex(absorbed_vertex);
     }
 }
 
 /* ---------- get_top_k_vertices ---------- */
 
-std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t k)
+std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t max_result_count)
 {
-    if (m_candidates.empty() || k == 0) return {};
+    if (m_candidates.empty() || max_result_count == 0)
+        return {};
 
-    const double alpha =
-        m_alpha_0 * std::pow(m_decay, static_cast<double>(m_current_depth));
+    const double current_alpha_weight =
+        m_initial_alpha_weight
+        * std::pow(m_alpha_decay_rate, static_cast<double>(m_current_depth));
 
-    // Score all valid candidates.
-    std::vector<CandidateVertex> scored;
-    scored.reserve(m_candidates.size());
+    std::vector<CandidateVertex> scored_candidates;
+    scored_candidates.reserve(m_candidates.size());
 
-    for (uint32_t v : m_candidates) {
-        const auto deg_it   = m_candidate_in_degree.find(v);
-        const uint32_t k_in = (deg_it != m_candidate_in_degree.end())
-                              ? deg_it->second : 0u;
-        if (k_in == 0 && m_current_depth > 0) continue;
+    for (uint32_t candidate_vertex : m_candidates)
+    {
+        const auto   degree_iterator       = m_candidate_match_neighbor_count.find(candidate_vertex);
+        const uint32_t match_neighbor_count = (degree_iterator != m_candidate_match_neighbor_count.end())
+                                              ? degree_iterator->second : 0u;
+        if (match_neighbor_count == 0 && m_current_depth > 0)
+            continue;
 
-        const auto cache_it = m_candidate_outside_logp.find(v);
-        if (cache_it == m_candidate_outside_logp.end())
+        const auto outside_logp_iterator = m_candidate_outside_log_prob.find(candidate_vertex);
+        if (outside_logp_iterator == m_candidate_outside_log_prob.end())
             throw std::runtime_error(
                 "SingleGraphHistogram::get_top_k_vertices: outside_logp cache "
-                "missing for candidate " + std::to_string(v));
-        const double outside_logp = cache_it->second;
+                "missing for candidate " + std::to_string(candidate_vertex));
+        const double outside_log_prob = outside_logp_iterator->second;
 
-        const double score =
-            static_cast<double>(k_in) * m_log_density
-            + log_prob_of_vertex(v)
-            + alpha * outside_logp;
+        const double candidate_score =
+            static_cast<double>(match_neighbor_count) * m_background_log_density
+            + log_prob_of_vertex(candidate_vertex)
+            + current_alpha_weight * outside_log_prob;
 
-        if (std::isinf(score))
+        if (std::isinf(candidate_score))
             throw HistogramOverflowException(
                 "candidate score reached infinity for vertex "
-                + std::to_string(v));
+                + std::to_string(candidate_vertex));
 
-        auto parent_it = m_candidate_any_parent.find(v);
-        const int32_t connect = (parent_it != m_candidate_any_parent.end())
-            ? static_cast<int32_t>(parent_it->second)
-            : -1;
+        auto parent_iterator = m_candidate_match_neighbor.find(candidate_vertex);
+        const int32_t connecting_vertex =
+            (parent_iterator != m_candidate_match_neighbor.end())
+                ? static_cast<int32_t>(parent_iterator->second)
+                : -1;
 
-        scored.push_back({static_cast<int32_t>(v), connect, score});
+        scored_candidates.push_back(
+            {static_cast<int32_t>(candidate_vertex), connecting_vertex, candidate_score});
     }
 
-    if (scored.empty()) return {};
+    if (scored_candidates.empty())
+        return {};
 
-    // Partial sort: bring the best k to the front.
-    const uint32_t actual_k = std::min(k, static_cast<uint32_t>(scored.size()));
+    const uint32_t result_count =
+        std::min(max_result_count, static_cast<uint32_t>(scored_candidates.size()));
     std::partial_sort(
-        scored.begin(),
-        scored.begin() + static_cast<std::ptrdiff_t>(actual_k),
-        scored.end(),
-        [](const CandidateVertex& a, const CandidateVertex& b) {
-            return a.score < b.score;
+        scored_candidates.begin(),
+        scored_candidates.begin() + static_cast<std::ptrdiff_t>(result_count),
+        scored_candidates.end(),
+        [](const CandidateVertex& first, const CandidateVertex& second)
+        {
+            return first.score < second.score;
         });
 
-    scored.resize(actual_k);
-    return scored;
+    scored_candidates.resize(result_count);
+    return scored_candidates;
 }
 
-}  // namespace sgf
-
-
+} // namespace sgf

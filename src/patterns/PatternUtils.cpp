@@ -10,24 +10,28 @@ namespace sgf
 {
 
 void PatternUtils::scan_graph_colors(const ColoredGraph& graph,
-                                     std::map<int32_t, uint32_t>& old_to_new,
+                                     std::map<int32_t, uint32_t>& original_to_remapped_color,
                                      std::vector<int32_t>& color_map)
 {
-    for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex) {
-        int32_t original_color = graph.get_vertex_color(vertex);
-        if (!old_to_new.count(original_color)) {
-            old_to_new[original_color] = static_cast<uint32_t>(color_map.size());
+    for (uint32_t vertex_index = 0; vertex_index < graph.vertex_count(); ++vertex_index)
+    {
+        const int32_t original_color = graph.get_vertex_color(vertex_index);
+        if (!original_to_remapped_color.count(original_color))
+        {
+            original_to_remapped_color[original_color] = static_cast<uint32_t>(color_map.size());
             color_map.push_back(original_color);
         }
     }
 }
 
-void PatternUtils::recolor_graph(const std::map<int32_t, uint32_t>& old_to_new,
+void PatternUtils::recolor_graph(const std::map<int32_t, uint32_t>& original_to_remapped_color,
                                   ColoredGraph& graph)
 {
-    for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
+    for (uint32_t vertex_index = 0; vertex_index < graph.vertex_count(); ++vertex_index)
     {
-        graph.set_vertex_color(vertex, old_to_new.at(graph.get_vertex_color(vertex)));
+        graph.set_vertex_color(
+            vertex_index,
+            original_to_remapped_color.at(graph.get_vertex_color(vertex_index)));
     }
 }
 
@@ -36,34 +40,34 @@ void PatternUtils::recolor_graph(const std::map<int32_t, uint32_t>& old_to_new,
 std::vector<int32_t> PatternUtils::map_colors(ColoredGraph& graph)
 {
     std::vector<int32_t> color_map;
-    std::map<int32_t, uint32_t> old_to_new;
-    scan_graph_colors(graph, old_to_new, color_map);
-    recolor_graph(old_to_new, graph);
+    std::map<int32_t, uint32_t> original_to_remapped_color;
+    scan_graph_colors(graph, original_to_remapped_color, color_map);
+    recolor_graph(original_to_remapped_color, graph);
     return color_map;
 }
 
-std::vector<int32_t> PatternUtils::map_colors(ColoredGraph& a, ColoredGraph& b)
+std::vector<int32_t> PatternUtils::map_colors(ColoredGraph& first_graph, ColoredGraph& second_graph)
 {
     std::vector<int32_t> color_map;
-    std::map<int32_t, uint32_t> old_to_new;
-    scan_graph_colors(a, old_to_new, color_map);
-    scan_graph_colors(b, old_to_new, color_map);
-    recolor_graph(old_to_new, a);
-    recolor_graph(old_to_new, b);
+    std::map<int32_t, uint32_t> original_to_remapped_color;
+    scan_graph_colors(first_graph, original_to_remapped_color, color_map);
+    scan_graph_colors(second_graph, original_to_remapped_color, color_map);
+    recolor_graph(original_to_remapped_color, first_graph);
+    recolor_graph(original_to_remapped_color, second_graph);
     return color_map;
 }
 
 std::vector<int32_t> PatternUtils::map_colors(std::vector<ColoredGraph>& graphs)
 {
     std::vector<int32_t> color_map;
-    std::map<int32_t, uint32_t> old_to_new;
+    std::map<int32_t, uint32_t> original_to_remapped_color;
     for (const auto& graph : graphs)
     {
-        scan_graph_colors(graph, old_to_new, color_map);
+        scan_graph_colors(graph, original_to_remapped_color, color_map);
     }
     for (auto& graph : graphs)
     {
-        recolor_graph(old_to_new, graph);
+        recolor_graph(original_to_remapped_color, graph);
     }
     return color_map;
 }
@@ -104,16 +108,16 @@ void PatternUtils::count_vertex_colors(const ColoredGraph& graph,
 
 std::vector<std::vector<uint32_t>> PatternUtils::get_all_color_matches(const ColoredGraph& graph, uint32_t color_count)
 {
-    std::vector<std::vector<uint32_t>> all_matches(color_count);
-    for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex) 
+    std::vector<std::vector<uint32_t>> vertices_by_color(color_count);
+    for (uint32_t vertex_index = 0; vertex_index < graph.vertex_count(); ++vertex_index)
     {
-        int32_t color = graph.get_vertex_color(vertex);
-        if (color >= 0 && color < static_cast<int32_t>(color_count)) 
+        const int32_t vertex_color = graph.get_vertex_color(vertex_index);
+        if (vertex_color >= 0 && vertex_color < static_cast<int32_t>(color_count))
         {
-            all_matches[color].push_back(vertex);
+            vertices_by_color[vertex_color].push_back(vertex_index);
         }
     }
-    return all_matches;
+    return vertices_by_color;
 }
 
 std::vector<double> PatternUtils::counts_to_probability(
@@ -131,27 +135,27 @@ std::vector<double> PatternUtils::counts_to_probability(
 }
 
 std::vector<double> PatternUtils::compute_color_distribution(
-    uint32_t                  color_number,
-    int32_t                   s_size,
-    const std::vector<ColoredGraph>& s_list)
+    uint32_t                         color_count,
+    int32_t                          search_graph_count,
+    const std::vector<ColoredGraph>& search_graphs)
 {
-    std::vector<uint32_t> counts(color_number, 0);
+    std::vector<uint32_t> color_vertex_counts(color_count, 0);
     uint64_t total_vertices = 0;
-    for (int32_t graph_index = 0; graph_index < s_size; ++graph_index)
+    for (int32_t graph_index = 0; graph_index < search_graph_count; ++graph_index)
     {
-        count_vertex_colors(s_list[graph_index], counts, total_vertices);
+        count_vertex_colors(search_graphs[graph_index], color_vertex_counts, total_vertices);
     }
-    return counts_to_probability(counts, total_vertices);
+    return counts_to_probability(color_vertex_counts, total_vertices);
 }
 
 std::vector<double> PatternUtils::compute_color_distribution(
-    uint32_t     color_number,
-    const ColoredGraph& graph)
+    uint32_t            color_count,
+    const ColoredGraph& source_graph)
 {
-    std::vector<uint32_t> counts(color_number, 0);
+    std::vector<uint32_t> color_vertex_counts(color_count, 0);
     uint64_t total_vertices = 0;
-    count_vertex_colors(graph, counts, total_vertices);
-    return counts_to_probability(counts, total_vertices);
+    count_vertex_colors(source_graph, color_vertex_counts, total_vertices);
+    return counts_to_probability(color_vertex_counts, total_vertices);
 }
 
 double PatternUtils::compute_density(uint32_t vertex_count, uint32_t edge_count)
