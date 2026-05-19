@@ -9,6 +9,10 @@
 namespace sgf
 {
 
+// Extend the colour mapping with any new colours found in graph.
+// The two-pass design (scan all graphs first, then recolor) guarantees that
+// the returned color_map covers every colour across all input graphs before
+// any graph is recoloured, which is required for the shared-ID property.
 void PatternUtils::scan_graph_colors(const ColoredGraph& graph,
                                      std::map<int32_t, uint32_t>& original_to_remapped_color,
                                      std::vector<int32_t>& color_map)
@@ -72,6 +76,9 @@ std::vector<int32_t> PatternUtils::map_colors(std::vector<ColoredGraph>& graphs)
     return color_map;
 }
 
+// Translate compact IDs back to original colour values using the inverse map.
+// This is the final step before returning a pattern to the caller so that
+// output colours match the values in the original input files.
 void PatternUtils::recolor_pattern(BoostGraph& pattern,
                                     const std::vector<int32_t>& color_map)
 {
@@ -173,13 +180,16 @@ double PatternUtils::compute_density(uint32_t vertex_count, uint32_t edge_count)
     return static_cast<double>(edge_count) / static_cast<double>(max_possible_edges);
 }
 
+// BoostGraph is a directed adjacency_list internally even for "undirected" patterns.
+// For undirected patterns both directions are stored explicitly so that neighbour
+// iteration finds all edges regardless of which endpoint is queried.
 void PatternUtils::add_edge(bool is_directed, BoostGraph& graph, uint32_t source, uint32_t target)
 {
-    if (is_directed) 
+    if (is_directed)
     {
         boost::add_edge(source, target, graph);
-    } 
-    else 
+    }
+    else
     {
         boost::add_edge(source, target, graph);
         boost::add_edge(target, source, graph);

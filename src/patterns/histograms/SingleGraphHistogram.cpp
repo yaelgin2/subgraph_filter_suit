@@ -37,6 +37,8 @@ SingleGraphHistogram::SingleGraphHistogram(
         m_color_log_probabilities[color_index] =
             (vertex_color_probabilities[color_index] > 0.0)
                 ? std::log(vertex_color_probabilities[color_index])
+                // Use half of lowest() rather than lowest() itself so that
+                // adding two such values does not produce -inf or overflow.
                 : std::numeric_limits<double>::lowest() * 0.5;
     }
 }
@@ -93,6 +95,10 @@ void SingleGraphHistogram::absorb_vertex(uint32_t vertex_to_absorb, bool is_dire
     ++m_current_depth;
 }
 
+// Walk every neighbour of absorbed_vertex (in the forward or reverse direction) and
+// register each non-matched neighbour as a candidate, or update its caches if it is
+// already a candidate.  Called twice for directed graphs (forward + reverse) so that
+// vertices reachable via either direction are considered for the next expansion.
 void SingleGraphHistogram::add_all_vertex_neighbours_to_candidate(
     uint32_t absorbed_vertex, bool is_reversed)
 {
@@ -106,6 +112,14 @@ void SingleGraphHistogram::add_all_vertex_neighbours_to_candidate(
     }
 }
 
+// Register candidate_vertex as a new candidate or update its caches now that
+// absorbed_vertex (a newly matched vertex) is its neighbour.
+//
+// Two cases:
+//   New candidate     — insert into all four candidate maps; compute outside-log-prob
+//                       by scanning all current neighbours of candidate_vertex.
+//   Existing candidate — increment match-neighbour count; subtract absorbed_vertex's
+//                        log-prob from the outside cache (it moved from outside to inside).
 void SingleGraphHistogram::add_vertex_neighbour_to_candidate(
     uint32_t candidate_vertex, uint32_t absorbed_vertex)
 {
@@ -160,6 +174,8 @@ std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t m
         const auto   degree_iterator       = m_candidate_match_neighbor_count.find(candidate_vertex);
         const uint32_t match_neighbor_count = (degree_iterator != m_candidate_match_neighbor_count.end())
                                               ? degree_iterator->second : 0u;
+        // Skip floating candidates (no connection to the current match) except at depth 0
+        // where the first vertex has no match neighbours by definition.
         if (match_neighbor_count == 0 && m_current_depth > 0)
             continue;
 
@@ -170,6 +186,11 @@ std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t m
                 "missing for candidate " + std::to_string(candidate_vertex));
         const double outside_log_prob = outside_logp_iterator->second;
 
+        // Score formula:
+        //   match_neighbor_count * log(density)   — reward edges to the existing match
+        //   + log(p[color(v)])                     — penalise common colours
+        //   + alpha * outside_log_prob             — exploration term: prefer candidates
+        //                                            with many rare unmatched neighbours
         const double candidate_score =
             static_cast<double>(match_neighbor_count) * m_background_log_density
             + log_prob_of_vertex(candidate_vertex)
@@ -193,6 +214,7 @@ std::vector<CandidateVertex> SingleGraphHistogram::get_top_k_vertices(uint32_t m
     if (scored_candidates.empty())
         return {};
 
+    // partial_sort is cheaper than full sort when only the top-k matter.
     const uint32_t result_count =
         std::min(max_result_count, static_cast<uint32_t>(scored_candidates.size()));
     std::partial_sort(

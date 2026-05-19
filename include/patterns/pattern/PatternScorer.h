@@ -7,10 +7,16 @@ namespace sgf
 {
 
 /**
- * @brief Pattern-level beam pruning scorer.
+ * @brief Stateless scorer that assigns a log-likelihood score to a candidate pattern.
  *
- * Stateless — never instantiated.  All inputs are precomputed scalars
- * maintained incrementally by PatternState and Tree.
+ * The score measures how surprising (rare) the pattern is under a random-graph
+ * null model where each vertex colour is i.i.d. from the background distribution
+ * and each edge exists independently with the background graph's edge density.
+ *
+ * Lower (more negative) score = more surprising = better pattern.
+ *
+ * All inputs are scalars maintained incrementally by PatternState, so this
+ * class never needs to iterate over pattern vertices or edges directly.
  */
 class PatternScorer
 {
@@ -40,6 +46,13 @@ public:
         uint32_t vertex_count);
 
 private:
+    /**
+     * @brief Clamp a probability to (epsilon, 1-epsilon) to keep log() finite.
+     *
+     * Without clamping, log(0) = -inf and log(1) = 0 break the edge-term
+     * calculation.  The epsilon of 1e-12 is negligible in practice but keeps
+     * all arithmetic well-defined.
+     */
     static double clamp_probability(double probability) noexcept;
 };
 

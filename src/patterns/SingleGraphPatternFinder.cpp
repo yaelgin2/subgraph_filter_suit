@@ -16,13 +16,31 @@ namespace sgf
 
 /* ---------- Named constants ---------- */
 
+/// The initial beam contains m_max_active_patterns / INITIAL_BEAM_DIVISOR states.
+/// Starting smaller gives the expansion loop room to fill the beam gradually.
 static constexpr uint32_t INITIAL_BEAM_DIVISOR    = 3;
+
+/// Minimum number of distinct seed colours chosen during beam initialisation.
 static constexpr uint32_t MIN_SEED_COLORS         = 3;
+
+/// Rough number of initial beam states allocated per seed colour.
+/// Dividing initial_beam_size by this gives the number of seed colours to pick.
 static constexpr uint32_t STATES_PER_SEED         = 10;
+
+/// Number of expansion iterations before gap-based pruning is enabled.
+/// Early iterations have small, noisy beams where gap detection is unreliable.
 static constexpr uint32_t PRUNE_WARMUP_ITERATIONS = 5;
+
+/// After warmup, always keep at least this fraction of scored states.
 static constexpr double   MIN_KEEP_FRACTION       = 0.3;
+
+/// A gap must be at least this fraction of the total score range to trigger pruning.
 static constexpr double   MIN_GAP_SCORE_RATIO     = 0.1;
+
+/// Minimum beam size for gap-based pruning to be applied at all.
 static constexpr uint32_t MIN_STATES_FOR_GAP_PRUNE  = 3;
+
+/// Number of best-scored patterns returned by find_pattern.
 static constexpr uint32_t NUMBER_OF_STATES_TO_RETURN = 5;
 
 /* ---------- Construction ---------- */
@@ -45,6 +63,8 @@ double SingleGraphPatternFinder::score_state(
     PatternState& state, double background_density, bool is_directed) const
 {
     const uint32_t vertex_count = boost::num_vertices(state.pattern);
+    // BoostGraph stores both directions for undirected edges, so halve the count
+    // to get the true number of undirected edges passed to PatternScorer.
     const uint32_t edge_count   = is_directed
                                       ? boost::num_edges(state.pattern)
                                       : boost::num_edges(state.pattern) / 2;
@@ -79,8 +99,11 @@ void SingleGraphPatternFinder::expand_one_state(
     state.pattern_vertex_color_log_prob +=
         state.hist->log_prob_of_color(vertex_color);
 
-    // Add all edges between the new vertex and existing match vertices.
-    // Pattern is small, so iterating match_path is cheaper than scanning neighbours.
+    // Wire up edges between the new pattern node and all already-matched nodes.
+    // match_path[i] corresponds to pattern node i (depth == index), so checking
+    // edges in S between the new vertex and match_path[i] tells us whether to
+    // add an edge between new_pattern_node and pattern node i.
+    // Pattern is small, so iterating match_path is cheaper than scanning S-neighbours.
     for (uint32_t match_index = 0; match_index < state.match_path.size(); ++match_index)
     {
         if (search_graph.is_edge(new_search_vertex, state.match_path[match_index]))
@@ -89,6 +112,7 @@ void SingleGraphPatternFinder::expand_one_state(
         }
         if (is_directed)
         {
+            // For directed graphs check the reverse direction independently.
             if (search_graph.is_edge(state.match_path[match_index], new_search_vertex))
             {
                 PatternUtils::add_edge(is_directed, state.pattern, match_index, new_pattern_node);
@@ -102,6 +126,11 @@ void SingleGraphPatternFinder::expand_one_state(
 
 /* ---------- clone_state ---------- */
 
+// Deep copy required for beam branching: when a state has multiple promising
+// candidates the state is cloned for all but the last candidate, and the
+// original is expanded in-place for the last candidate (avoids one extra copy).
+// The histogram must be deep-copied because its incremental caches are
+// specific to the match path and will diverge as the two branches evolve.
 PatternState SingleGraphPatternFinder::clone_state(const PatternState& source_state) const
 {
     PatternState destination_state;
@@ -209,6 +238,9 @@ std::vector<uint32_t> SingleGraphPatternFinder::allocate_seed_states_improved(
             seeds_needing_more.push_back(seed_index);
     }
 
+    // Second pass: if the proportional allocation fell short, redistribute the
+    // remaining quota to seeds that still have spare match capacity, prioritising
+    // rarer colours so the beam stays focused on the most surprising regions.
     if (total_allocated < target_state_count && !seeds_needing_more.empty())
     {
         uint32_t states_needed = target_state_count - total_allocated;
@@ -238,6 +270,10 @@ std::vector<uint32_t> SingleGraphPatternFinder::allocate_seed_states_improved(
 
 /* ---------- select_valid_seeds ---------- */
 
+// Collect seeds in rarest-first order until the total accumulated vertex matches
+// reaches 2 * initial_beam_size.  The 2x factor provides slack so that after
+// the capacity-capped allocation step we still have enough diverse matches to
+// fill the initial beam.
 std::vector<SeedInfo> SingleGraphPatternFinder::select_valid_seeds(
     const std::vector<std::tuple<double, uint32_t, uint32_t>>& sorted_colors_with_matches,
     const std::vector<std::vector<uint32_t>>&                   vertices_by_color,
@@ -303,6 +339,9 @@ std::vector<PatternState> SingleGraphPatternFinder::create_beam_from_seeds(
 
 /* ---------- create_initial_state ---------- */
 
+// Builds a one-vertex PatternState.  The histogram is created first, then the
+// seed vertex is immediately absorbed so that neighbour caches are populated
+// before the first call to get_top_k_vertices.
 PatternState SingleGraphPatternFinder::create_initial_state(
     const ColoredGraph&        search_graph,
     const std::vector<double>& color_probability,
@@ -376,6 +415,8 @@ uint32_t SingleGraphPatternFinder::find_gap_cut(
 
 /* ---------- select_best_state ---------- */
 
+// Returns raw pointers into the beam vector.  The caller must not resize or
+// move the beam between this call and the use of the returned pointers.
 std::vector<PatternState*> SingleGraphPatternFinder::select_best_state(
     std::vector<PatternState>& beam,
     double                     background_density,
@@ -446,6 +487,9 @@ std::vector<PatternState> SingleGraphPatternFinder::build_initial_beam(
     {
         if (!vertices_by_color[color_id].empty())
         {
+            // A colour with zero probability means it exists in S but not in the
+            // background G — it is infinitely rare.  Use it as the sole seed so that
+            // the entire beam starts from the most surprising colour possible.
             if (color_id >= color_probability.size() || color_probability[color_id] == 0)
             {
                 sorted_colors_with_matches = {
@@ -507,6 +551,8 @@ bool SingleGraphPatternFinder::expand_beam(
         }
 
         any_expanded = true;
+        // Clone the state for all candidates except the last.  The last candidate
+        // expands the original state in-place to avoid one unnecessary deep copy.
         for (size_t candidate_index = 0; candidate_index + 1 < candidates.size(); ++candidate_index)
         {
             PatternState cloned_state = clone_state(state);
@@ -542,6 +588,9 @@ void SingleGraphPatternFinder::prune_beam(
     std::sort(scored_states.begin(), scored_states.end());
 
     uint32_t keep_count = static_cast<uint32_t>(scored_states.size());
+    // Gap pruning is suppressed for the first PRUNE_WARMUP_ITERATIONS iterations.
+    // Early beams are small and diverse; applying gap detection too soon can
+    // accidentally eliminate entire colour families before they have matured.
     if (iteration >= PRUNE_WARMUP_ITERATIONS)
         keep_count = std::min(keep_count, find_gap_cut(scored_states));
     keep_count = std::min(keep_count, m_max_active_patterns);
@@ -572,9 +621,14 @@ std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(
     const std::chrono::high_resolution_clock::time_point start_time =
         std::chrono::high_resolution_clock::now();
 
+    // Remap colours to compact IDs shared by both graphs so that scoring can
+    // index the probability vector directly.  Both graphs are modified in-place;
+    // original colours are restored in the returned patterns via recolor_pattern.
     const std::vector<int32_t> color_map =
         PatternUtils::map_colors(search_graph, background_graph);
 
+    // Colour probabilities are derived from the background graph G, not S,
+    // because G represents the null model (what a random graph looks like).
     const std::vector<double> color_probability = PatternUtils::compute_color_distribution(
         static_cast<uint32_t>(color_map.size()), background_graph);
 

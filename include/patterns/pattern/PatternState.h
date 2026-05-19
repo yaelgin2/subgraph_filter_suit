@@ -25,13 +25,22 @@ namespace sgf
  */
 struct PatternState
 {
+    /// Growing pattern subgraph (compact colour IDs; edges doubled for undirected).
     BoostGraph                            pattern;
-    std::unique_ptr<SingleGraphHistogram> hist;         ///< Owned histogram.
-    std::vector<uint32_t>                 match_path;   ///< S-vertex at each pattern depth.
-    double                                beam_score         = 0.0;
+
+    /// Histogram that tracks candidates and their scores relative to this match.
+    std::unique_ptr<SingleGraphHistogram> hist;
+
+    /// match_path[depth] = S-graph vertex absorbed at that depth.
+    /// Used to map pattern node indices back to S-graph vertices when adding edges.
+    std::vector<uint32_t>                 match_path;
+
+    /// Reserved for future use; not currently updated by the finder.
+    double                                beam_score = 0.0;
 
     /** Σ log(p[color(v)]) over all vertices currently in the pattern.
-     *  Updated in SingleGraphPatternFinder immediately after add_vertex. */
+     *  Maintained incrementally in SingleGraphPatternFinder::expand_one_state
+     *  to avoid re-iterating the pattern on every PatternScorer::score call. */
     double                                pattern_vertex_color_log_prob = 0.0;
 };
 
