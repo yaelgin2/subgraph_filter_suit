@@ -380,11 +380,7 @@ bool SingleGraphPatternFinder::any_state_below_threshold(const double threshold)
     return std::any_of(m_beam.begin(), m_beam.end(), [this, threshold](const PatternState& state) {
         const double state_score =
             state.m_score_valid ? state.m_beam_score : score_state(state);
-        if (state_score < threshold)
-        {
-            return true;
-        }
-        return false;
+        return state_score < threshold;
     });
 }
 
