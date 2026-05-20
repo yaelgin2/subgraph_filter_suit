@@ -2,6 +2,7 @@
 
 #include "IFilterOutputManager.h"
 #include "SgfPathDoesntExistException.h"
+#include "FilteringUtils.h"
 
 #include <cstddef>
 #include <fstream>

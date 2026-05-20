@@ -2,6 +2,7 @@
 
 #include "EnumerationPreprocessManager.h"
 #include "IGraphPreprocessor.h"
+#include "FilteringUtils.h"
 
 #include <cstdint>
 #include <utility>

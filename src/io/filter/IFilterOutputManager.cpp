@@ -1,10 +1,12 @@
 #include "IFilterOutputManager.h"
 
 #include "IOUtils.h"
+#include "FilteringUtils.h"
 
 #include <filesystem>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace sgf
 {
