@@ -43,7 +43,7 @@ public:
      * serialization is delegated to write_to_file().
      *
      * @param data Enumeration data to persist.
-     * @throws SgfPathDoesntExistException if directory creation or file writing fails.
+     * @throws SgfPathExistsException if directory creation or file writing fails.
      */
     void write(const EnumerationData& data) const;
 
@@ -54,7 +54,7 @@ public:
      * Deserialization is delegated to read_from_file().
      *
      * @return Deserialized enumeration data.
-     * @throws SgfPathDoesntExistException if the file cannot be opened for reading.
+     * @throws SgfPathExistsException if the file cannot be opened for reading.
      */
     EnumerationData read() const;
 
@@ -64,7 +64,7 @@ protected:
      *
      * @param data      Enumeration data to write.
      * @param full_path Destination file path including the format extension.
-     * @throws SgfPathDoesntExistException if the file cannot be opened or written.
+     * @throws SgfPathExistsException if the file cannot be opened or written.
      */
     virtual void write_to_file(const EnumerationData& data, const std::string& full_path) const = 0;
 
@@ -73,7 +73,7 @@ protected:
      *
      * @param full_path Source file path including the format extension.
      * @return Deserialized enumeration data.
-     * @throws SgfPathDoesntExistException if the file cannot be opened or read from.
+     * @throws SgfPathExistsException if the file cannot be opened or read from.
      */
     virtual EnumerationData read_from_file(const std::string& full_path) const = 0;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GraphConstructionException.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <cstdint>
 #include <fstream>
@@ -40,7 +40,7 @@ public:
      *
      * @param path Path of the file to create or overwrite.
      * @return An open output stream.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      */
     static std::ofstream open_file_for_writing(const std::string& path);
 };

@@ -37,7 +37,7 @@ protected:
      *
      * @param data      The enumeration data to serialize.
      * @param full_path Destination file path including the .bin extension.
-     * @throws SgfPathDoesntExistException if the file cannot be opened or written.
+     * @throws SgfPathExistsException if the file cannot be opened or written.
      */
     void write_to_file(const EnumerationData& data, const std::string& full_path) const override;
 
@@ -46,7 +46,7 @@ protected:
      *
      * @param full_path Source file path including the .bin extension.
      * @return The deserialized enumeration data.
-     * @throws SgfPathDoesntExistException if the file cannot be opened for reading.
+     * @throws SgfPathExistsException if the file cannot be opened for reading.
      * @throws GraphConstructionException if the file contains corrupt or malformed data.
      */
     EnumerationData read_from_file(const std::string& full_path) const override;

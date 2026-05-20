@@ -1,7 +1,7 @@
 #include "FileLogger.h"
 
 #include "LogLevel.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/log/attributes/constant.hpp>
@@ -114,7 +114,7 @@ FileLogger::FileLogger(const std::string& file_name)
     m_file_stream = boost::make_shared<std::ofstream>(file_name, std::ios::app);
     if (!m_file_stream->is_open())
     {
-        throw SgfPathDoesntExistException("Failed to open log file: " + file_name);
+        throw SgfPathExistsException("Failed to open log file: " + file_name);
     }
 
     m_sink = boost::make_shared<TextSink>();

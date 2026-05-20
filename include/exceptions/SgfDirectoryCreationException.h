@@ -11,7 +11,7 @@ namespace sgf
 /**
  * @brief Thrown when a required directory cannot be created.
  *
- * Distinct from SgfPathDoesntExistException, which covers missing files.
+ * Distinct from SgfPathExistsException, which covers missing files.
  * This exception signals a filesystem permission or I/O error during
  * directory creation. CLI exit code: SgfReturnCode::DIRECTORY_CREATION_ERROR.
  */

@@ -38,7 +38,7 @@ public:
      * @param is_directed Whether to build a directed ColoredGraph.
      * @param logger Optional logger for warnings and the color map. May be expired.
      * @return The parsed ColoredGraph.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException if the file is malformed, contains
      *         too many distinct color values, or an undirected file is requested
      *         as directed.
@@ -62,7 +62,7 @@ private:
      *
      * @param path Path to the GraphML file.
      * @param boost_graph Output graph to populate. Must be default-constructed.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException on malformed XML or parse errors.
      */
     template <typename GraphType>

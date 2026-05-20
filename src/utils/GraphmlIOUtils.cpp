@@ -2,7 +2,7 @@
 
 #include "GraphConstructionException.h"
 #include "IoGraphUtils.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <exception>
 #include <fstream>
@@ -16,7 +16,7 @@ std::ofstream GraphmlUtils::open_output_file(const std::string& path)
     std::ofstream file(path);
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("cannot open file for writing: " + path);
+        throw SgfPathExistsException("cannot open file for writing: " + path);
     }
     return file;
 }
