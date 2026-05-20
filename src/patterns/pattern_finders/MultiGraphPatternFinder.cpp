@@ -235,7 +235,7 @@ std::pair<BoostGraph, std::unordered_set<uint32_t>> MultiGraphPatternFinder::fin
 {
     PatternUtils::recolor_pattern(m_pattern, m_color_map);
 
-    const std::chrono::time_point<std::chrono::high_resolution_clock> end_time =
+    [[maybe_unused]] const std::chrono::time_point<std::chrono::high_resolution_clock> end_time =
         std::chrono::high_resolution_clock::now();
     SGF_DEBUG_LOG(m_logger,
                   "find_pattern completed in " +
