@@ -3,11 +3,11 @@
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
 #include "FileLogger.h"
+#include "InvalidArgumentException.h"
 #include "LoggerHandler.h"
 
 #include <cstdint>
 #include <gtest/gtest.h>
-#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -299,11 +299,19 @@ protected:
         return {{{0U, 1U}, {1U, 2U}, {2U, 3U}}, {0U, 1U, 2U, 3U}, false};
     }
 
+    /**
+     * @brief Undirected graph: 5 vertices forming a path-4 plus an additional vertex.
+     * @return GraphSpec for the path-4-plus-1 graph.
+     */
     static GraphSpec make_path_4_with_1_added_vertex()
     {
         return {{{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}}, {0U, 0U, 0U, 0U, 0U}, false};
     }
 
+    /**
+     * @brief Directed graph: 5 vertices forming a directed path-4 plus an additional vertex.
+     * @return GraphSpec for the directed path-4-plus-1 graph.
+     */
     static GraphSpec make_path_4_with_1_added_vertex_directed()
     {
         return {{{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}}, {0U, 0U, 0U, 0U, 0U}, true};
@@ -354,6 +362,10 @@ protected:
         return {{{0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}}, {0U, 0U, 0U, 0U, 0U}, false};
     }
 
+    /**
+     * @brief Undirected 8-vertex graph with a branching path structure, all color 0.
+     * @return GraphSpec for the complex graph.
+     */
     static GraphSpec make_complex_graph()
     {
         return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
@@ -361,6 +373,10 @@ protected:
                 false};
     }
 
+    /**
+     * @brief Undirected 8-vertex graph with a branching path structure, distinct per-vertex colors.
+     * @return GraphSpec for the colored complex graph.
+     */
     static GraphSpec make_complex_graph_colored()
     {
         return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
@@ -368,6 +384,10 @@ protected:
                 false};
     }
 
+    /**
+     * @brief Directed 8-vertex graph with a branching path structure, all color 0.
+     * @return GraphSpec for the directed complex graph.
+     */
     static GraphSpec make_complex_graph_directed()
     {
         return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
@@ -375,28 +395,62 @@ protected:
                 true};
     }
 
+    /**
+     * @brief Directed 8-vertex graph with a branching path structure, distinct per-vertex colors.
+     * @return GraphSpec for the directed colored complex graph.
+     */
     static GraphSpec make_complex_graph_colored_directed()
     {
         return {{{0U, 1U}, {1U, 2U}, {1U, 3U}, {1U, 4U}, {4U, 5U}, {0U, 6U}, {6U, 7U}},
                 {0U, 1U, 2U, 2U, 2U, 3U, 1U, 4U},
                 true};
     }
+
+    /**
+     * @brief Construct a finder with explicit parameters (background = graph spec).
+     * @param spec GraphSpec whose graph is used as the background for the null model.
+     * @return Constructed SingleGraphPatternFinder.
+     */
+    static SingleGraphPatternFinder make_finder(const GraphSpec& spec)
+    {
+        return SingleGraphPatternFinder(spec.to_graph(), spec.m_is_directed, 500U, 0.1, 0.9,
+                                        null_logger());
+    }
+
+    /**
+     * @brief Construct a finder with a custom background graph.
+     * @param background_spec GraphSpec whose graph is used as the background for the null model.
+     * @param is_directed Whether edges are treated as directed.
+     * @return Constructed SingleGraphPatternFinder.
+     */
+    static SingleGraphPatternFinder make_finder(const GraphSpec& background_spec,
+                                                const bool is_directed)
+    {
+        return SingleGraphPatternFinder(background_spec.to_graph(), is_directed, 500U, 0.1, 0.9,
+                                        null_logger());
+    }
 };
 
-TEST_F(SingleGraphPatternFinderTest, empty_graph_throws)
+TEST_F(SingleGraphPatternFinderTest, empty_background_graph_throws)
 {
-    SingleGraphPatternFinder finder;
-    ColoredGraph graph = make_empty_graph();
-    EXPECT_THROW(finder.find_pattern(graph, graph, 0.0, false), std::runtime_error);
+    EXPECT_THROW(SingleGraphPatternFinder(make_empty_graph(), false), InvalidArgumentException);
+}
+
+TEST_F(SingleGraphPatternFinderTest, empty_search_graph_throws)
+{
+    const GraphSpec spec = make_path_4();
+    SingleGraphPatternFinder finder = make_finder(spec);
+    ColoredGraph empty_graph = make_empty_graph();
+    EXPECT_THROW(finder.find_pattern(empty_graph, 0.0), InvalidArgumentException);
 }
 
 TEST_F(SingleGraphPatternFinderTest, path_4_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_path_4();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -410,11 +464,11 @@ TEST_F(SingleGraphPatternFinderTest, path_4_in_itself_found_graph)
 
 TEST_F(SingleGraphPatternFinderTest, path_4_directed_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_path_4_directed();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -428,11 +482,11 @@ TEST_F(SingleGraphPatternFinderTest, path_4_directed_in_itself_found_graph)
 
 TEST_F(SingleGraphPatternFinderTest, path_4_colored_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_path_4_colored();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -446,11 +500,11 @@ TEST_F(SingleGraphPatternFinderTest, path_4_colored_in_itself_found_graph)
 
 TEST_F(SingleGraphPatternFinderTest, path_4_colored_directed_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_path_4_directed_colored();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -464,11 +518,11 @@ TEST_F(SingleGraphPatternFinderTest, path_4_colored_directed_in_itself_found_gra
 
 TEST_F(SingleGraphPatternFinderTest, triangle_3_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_triangle_3();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -482,11 +536,11 @@ TEST_F(SingleGraphPatternFinderTest, triangle_3_in_itself_found_graph)
 
 TEST_F(SingleGraphPatternFinderTest, triangle_3_directed_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_triangle_3_directed();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -500,11 +554,11 @@ TEST_F(SingleGraphPatternFinderTest, triangle_3_directed_in_itself_found_graph)
 
 TEST_F(SingleGraphPatternFinderTest, triangle_3_colored_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_triangle_3_colored();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -518,11 +572,11 @@ TEST_F(SingleGraphPatternFinderTest, triangle_3_colored_in_itself_found_graph)
 
 TEST_F(SingleGraphPatternFinderTest, triangle_3_colored_directed_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_triangle_3_colored_directed();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -536,12 +590,12 @@ TEST_F(SingleGraphPatternFinderTest, triangle_3_colored_directed_in_itself_found
 
 TEST_F(SingleGraphPatternFinderTest, path_4_in_path_4_with_added_vertex_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_path_4();
+    SingleGraphPatternFinder finder =
+        make_finder(make_path_4_with_1_added_vertex(), spec.m_is_directed);
     ColoredGraph graph = spec.to_graph();
-    ColoredGraph enviorment = make_path_4_with_1_added_vertex().to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, enviorment, -1000, false);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -555,12 +609,12 @@ TEST_F(SingleGraphPatternFinderTest, path_4_in_path_4_with_added_vertex_found_gr
 
 TEST_F(SingleGraphPatternFinderTest, path_4_in_path_4_with_added_vertex_directed_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_path_4_directed();
+    SingleGraphPatternFinder finder =
+        make_finder(make_path_4_with_1_added_vertex_directed(), spec.m_is_directed);
     ColoredGraph graph = spec.to_graph();
-    ColoredGraph enviorment = make_path_4_with_1_added_vertex_directed().to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, enviorment, -1000, true);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -574,11 +628,11 @@ TEST_F(SingleGraphPatternFinderTest, path_4_in_path_4_with_added_vertex_directed
 
 TEST_F(SingleGraphPatternFinderTest, star_5_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_star_5();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -592,11 +646,11 @@ TEST_F(SingleGraphPatternFinderTest, star_5_in_itself_found_graph)
 
 TEST_F(SingleGraphPatternFinderTest, complex_graph_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_complex_graph();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -610,11 +664,11 @@ TEST_F(SingleGraphPatternFinderTest, complex_graph_in_itself_found_graph)
 
 TEST_F(SingleGraphPatternFinderTest, complex_graph_directed_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_complex_graph_directed();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -628,11 +682,11 @@ TEST_F(SingleGraphPatternFinderTest, complex_graph_directed_in_itself_found_grap
 
 TEST_F(SingleGraphPatternFinderTest, complex_graph_colored_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_complex_graph_colored();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, false);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
@@ -646,11 +700,11 @@ TEST_F(SingleGraphPatternFinderTest, complex_graph_colored_in_itself_found_graph
 
 TEST_F(SingleGraphPatternFinderTest, complex_graph_colored_directed_in_itself_found_graph)
 {
-    SingleGraphPatternFinder finder(500, 0.1, 0.9, null_logger());
     const GraphSpec spec = make_complex_graph_colored_directed();
+    SingleGraphPatternFinder finder = make_finder(spec);
     ColoredGraph graph = spec.to_graph();
 
-    std::vector<BoostGraph> result = finder.find_pattern(graph, graph, -1000, true);
+    const std::vector<BoostGraph> result = finder.find_pattern(graph, -1000.0);
 
     ASSERT_FALSE(result.empty());
 
