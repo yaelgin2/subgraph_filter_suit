@@ -36,8 +36,7 @@ static GraphSpec make_path_4_with_1_added_vertex()
 
 static GraphSpec make_path_4_with_2_added_vertex()
 {
-    return {
-        {{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}, {4U, 5U}}, {0U, 0U, 0U, 0U, 0U, 0U}, false};
+    return {{{0U, 1U}, {2U, 1U}, {2U, 3U}, {1U, 4U}, {4U, 5U}}, {0U, 0U, 0U, 0U, 0U, 0U}, false};
 }
 
 /**

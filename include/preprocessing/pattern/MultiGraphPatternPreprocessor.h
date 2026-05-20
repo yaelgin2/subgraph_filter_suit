@@ -1,7 +1,7 @@
 #pragma once
 
-#include "LoggerHandler.h"
 #include "ColoredGraph.h"
+#include "LoggerHandler.h"
 #include "MultiGraphPatternFinder.h"
 
 #include <vector>
@@ -35,12 +35,11 @@ public:
      * @param alive_precent Minimum fraction of graphs (0–100) a pattern must appear in.
      * @return Vector of mined patterns, each paired with the set of graph indices it covers.
      */
-    std::vector<MultiGraphPatternResult> calculate(uint32_t pattern_number,
-                                                   uint32_t alive_precent);
+    std::vector<MultiGraphPatternResult> calculate(uint32_t pattern_number, uint32_t alive_precent);
 
 private:
     std::vector<ColoredGraph>& m_graph_library;  ///< Library of graphs to mine.
-    const bool m_is_directed;                    ///< Whether graphs are directed.
+    const bool M_IS_DIRECTED;                    ///< Whether graphs are directed.
     LoggerHandler m_logger;                      ///< Logger for runtime messages.
 };
 
