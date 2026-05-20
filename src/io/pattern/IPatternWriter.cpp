@@ -1,5 +1,6 @@
 #include "IPatternWriter.h"
 
+#include "BoostGraph.h"
 #include "IOUtils.h"
 
 #include <filesystem>
