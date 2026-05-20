@@ -194,4 +194,3 @@ void PatternUtils::add_edge(bool is_directed, BoostGraph& graph, uint32_t source
 }
 
 }  // namespace sgf
-

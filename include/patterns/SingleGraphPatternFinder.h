@@ -146,9 +146,9 @@ private:
 
     // ── Persistent state (set at construction) ────────────────────────────────
 
-    ColoredGraph m_background_graph;   ///< Original (unremapped) background graph G.
+    ColoredGraph m_background_graph;  ///< Original (unremapped) background graph G.
     bool m_is_directed;
-    double m_background_density;       ///< Edge density of G, precomputed at construction.
+    double m_background_density;  ///< Edge density of G, precomputed at construction.
     uint32_t m_max_active_patterns;
     double m_alpha_0;
     double m_alpha_decay;
@@ -157,8 +157,8 @@ private:
     // ── Transient search state (populated by find_pattern, cleared on return) ─
 
     std::vector<PatternState> m_beam;
-    std::vector<int32_t> m_color_map;          ///< compact_id → original colour value.
-    std::vector<double> m_color_probability;   ///< P(colour c) from background G.
+    std::vector<int32_t> m_color_map;         ///< compact_id → original colour value.
+    std::vector<double> m_color_probability;  ///< P(colour c) from background G.
 
     // ── Internal helper types ─────────────────────────────────────────────────
 
@@ -249,9 +249,9 @@ private:
     /**
      * @brief Create PatternStates from seed descriptors and per-seed allocation counts.
      */
-    std::vector<PatternState> create_beam_from_seeds(
-        const std::vector<SeedInfo>& seeds, const std::vector<uint32_t>& seed_state_counts,
-        const ColoredGraph& search_graph) const;
+    std::vector<PatternState> create_beam_from_seeds(const std::vector<SeedInfo>& seeds,
+                                                     const std::vector<uint32_t>& seed_state_counts,
+                                                     const ColoredGraph& search_graph) const;
 
     /**
      * @brief Create one PatternState seeded at a single S-graph vertex.
@@ -283,6 +283,20 @@ private:
      * @brief Check whether any beam state's score is already below @p threshold.
      */
     bool any_state_below_threshold(double threshold) const;
+
+    /**
+     * @brief Collect all colours present in the search graph and sort them by probability.
+     *
+     * Returns a vector of (probability, color_id, match_count) tuples sorted
+     * ascending by probability so the rarest colour comes first.  If any colour
+     * has zero or absent probability the vector is collapsed to that single entry
+     * and returned immediately, since an absent colour is automatically the rarest.
+     *
+     * @param vertices_by_color Vertices grouped by compact colour id.
+     * @return Sorted colour descriptors ready for select_valid_seeds.
+     */
+    std::vector<std::tuple<double, uint32_t, uint32_t>> collect_sorted_colors_with_matches(
+        const std::vector<std::vector<uint32_t>>& vertices_by_color) const;
 
     /**
      * @brief Build m_beam from diverse seed colours.

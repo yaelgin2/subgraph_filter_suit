@@ -2,9 +2,9 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
+#include "DebugLog.h"
 #include "GeneralColorHist.h"
 #include "LogLevel.h"
-#include "DebugLog.h"
 #include "LoggerHandler.h"
 #include "Node.h"
 #include "PatternUtils.h"
@@ -198,7 +198,7 @@ void MultiGraphPatternFinder::log_alive_graph_indexes() const
     {
         alive_indices_log += std::to_string(alive_idx) + " ";
     }
-   SGF_DEBUG_LOG(m_logger, "Alive indices: " + alive_indices_log);
+    SGF_DEBUG_LOG(m_logger, "Alive indices: " + alive_indices_log);
 }
 
 void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
@@ -237,9 +237,10 @@ std::pair<BoostGraph, std::unordered_set<uint32_t>> MultiGraphPatternFinder::fin
 
     const std::chrono::time_point<std::chrono::high_resolution_clock> end_time =
         std::chrono::high_resolution_clock::now();
-    SGF_DEBUG_LOG(m_logger, "find_pattern completed in " +
-                     std::to_string(std::chrono::duration<double>(end_time - start_time).count()) +
-                     "s");
+    SGF_DEBUG_LOG(m_logger,
+                  "find_pattern completed in " +
+                      std::to_string(std::chrono::duration<double>(end_time - start_time).count()) +
+                      "s");
 
     m_match_trees.clear();
     m_color_map.clear();
