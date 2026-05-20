@@ -37,8 +37,9 @@ public:
      */
     VertexEdgePatternWriter() = default;
 
+private:
     /**
-     * @brief Writes a BoostGraph to @p path.node_labels and @p path.edge.
+     * @brief Writes @p graph to @p path.node_labels and @p path.edge.
      *
      * Each vertex is written as "<index> <color>". Each edge is written as
      * "<source> <target> <color>".
@@ -47,9 +48,7 @@ public:
      * @param path Base file path; suffixes are appended automatically.
      * @throws SgfPathDoesntExistException if either output file cannot be opened.
      */
-    void write(const BoostGraph& graph, const std::string& path) const override;
-
-private:
+    void do_write(const BoostGraph& graph, const std::string& path) const override;
     /**
      * @brief Writes vertex data to @p base_path.node_labels.
      *

@@ -35,8 +35,9 @@ public:
      */
     JsonPatternWriter() = default;
 
+private:
     /**
-     * @brief Writes a BoostGraph to a JSON file.
+     * @brief Writes @p graph to @p path in JSON format.
      *
      * Serializes all vertices with their colors and all directed edges with
      * their colors. Vertex indices in the BoostGraph become the "id" values
@@ -46,9 +47,7 @@ public:
      * @param path Destination file path.
      * @throws SgfPathDoesntExistException if the file cannot be opened for writing.
      */
-    void write(const BoostGraph& graph, const std::string& path) const override;
-
-private:
+    void do_write(const BoostGraph& graph, const std::string& path) const override;
     /**
      * @brief Builds a JSON array of node objects from a BoostGraph.
      *

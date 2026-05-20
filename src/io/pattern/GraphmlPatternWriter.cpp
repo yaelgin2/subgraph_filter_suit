@@ -69,7 +69,7 @@ void GraphmlPatternWriter::build_edges(const BoostGraph& graph,
     }
 }
 
-void GraphmlPatternWriter::write(const BoostGraph& graph, const std::string& path) const
+void GraphmlPatternWriter::do_write(const BoostGraph& graph, const std::string& path) const
 {
     std::ofstream file = GraphmlUtils::open_output_file(path);
 

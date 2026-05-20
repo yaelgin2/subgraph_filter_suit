@@ -67,7 +67,7 @@ void JsonPatternWriter::write_to_file(const boost::json::object& root, const std
     file << boost::json::serialize(root);
 }
 
-void JsonPatternWriter::write(const BoostGraph& graph, const std::string& path) const
+void JsonPatternWriter::do_write(const BoostGraph& graph, const std::string& path) const
 {
     boost::json::object root;
 
