@@ -1,7 +1,7 @@
 #include "IFilterOutputManager.h"
 
-#include "IOUtils.h"
 #include "FilteringUtils.h"
+#include "IOUtils.h"
 
 #include <filesystem>
 #include <string>

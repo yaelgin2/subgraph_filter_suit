@@ -1,7 +1,7 @@
 #pragma once
 
-#include "FilteringUtils.h"
 #include "EnumerationPreprocessManager.h"
+#include "FilteringUtils.h"
 #include "IGraphPreprocessor.h"
 
 #include <vector>

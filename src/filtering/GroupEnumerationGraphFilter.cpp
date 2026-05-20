@@ -1,8 +1,8 @@
 #include "GroupEnumerationGraphFilter.h"
 
 #include "EnumerationPreprocessManager.h"
-#include "IGraphPreprocessor.h"
 #include "FilteringUtils.h"
+#include "IGraphPreprocessor.h"
 
 #include <cstdint>
 #include <utility>

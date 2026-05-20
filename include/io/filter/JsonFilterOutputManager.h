@@ -48,8 +48,7 @@ protected:
      * @param full_path Destination file path.
      * @throws SgfPathDoesntExistException if the file cannot be opened or written.
      */
-    void write_to_file(const std::vector<std::string>& filenames,
-                       const FilterResult& results,
+    void write_to_file(const std::vector<std::string>& filenames, const FilterResult& results,
                        const std::string& full_path) const override;
 
     /**

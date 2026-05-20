@@ -1,8 +1,8 @@
 #include "JsonFilterOutputManager.h"
 
+#include "FilteringUtils.h"
 #include "IFilterOutputManager.h"
 #include "SgfPathDoesntExistException.h"
-#include "FilteringUtils.h"
 
 #include <boost/json/object.hpp>
 #include <boost/json/serialize.hpp>

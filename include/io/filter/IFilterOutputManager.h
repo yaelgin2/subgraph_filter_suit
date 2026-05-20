@@ -58,8 +58,7 @@ protected:
      * @throws SgfPathDoesntExistException if the file cannot be opened or written.
      */
     virtual void write_to_file(const std::vector<std::string>& filenames,
-                               const FilterResult& results,
-                               const std::string& full_path) const = 0;
+                               const FilterResult& results, const std::string& full_path) const = 0;
 
     /**
      * @brief Returns the file extension used by this format, without a leading dot.
