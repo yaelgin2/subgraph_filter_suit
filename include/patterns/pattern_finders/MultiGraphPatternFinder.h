@@ -19,6 +19,9 @@
 
 namespace sgf
 {
+
+using MultiGraphPatternResult = std::pair<BoostGraph, std::unordered_set<uint32_t>>;
+
 /**
  * @class MultiGraphPatternFinder
  * @brief Implements the core pattern-growth algorithm over multiple input graphs.
@@ -48,8 +51,7 @@ public:
      * @param is_random       When true, vertex/edge selection is randomised.
      * @return Pair of {grown pattern BoostGraph, indexes of graphs still alive}.
      */
-    std::pair<BoostGraph, std::unordered_set<uint32_t>> find_pattern(double alive_threshold,
-                                                                     bool is_random = true);
+    MultiGraphPatternResult find_pattern(double alive_threshold, bool is_random = true);
 
 private:
     static constexpr uint64_t LOWER_32_BITS_MASK = 0xffffffffULL;
