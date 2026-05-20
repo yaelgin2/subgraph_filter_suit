@@ -44,7 +44,7 @@ public:
      *
      * @param filenames Library graph filenames, one per library graph.
      * @param results   Filter result per library graph; true = pruned, false = survives.
-     * @throws SgfPathDoesntExistException if directory creation or file writing fails.
+     * @throws SgfPathExistsException if directory creation or file writing fails.
      */
     void write(const std::vector<std::string>& filenames, const FilterResult& results) const;
 
@@ -55,7 +55,7 @@ protected:
      * @param filenames Library graph filenames.
      * @param results   Filter result per library graph.
      * @param full_path Destination file path including the format extension.
-     * @throws SgfPathDoesntExistException if the file cannot be opened or written.
+     * @throws SgfPathExistsException if the file cannot be opened or written.
      */
     virtual void write_to_file(const std::vector<std::string>& filenames,
                                const FilterResult& results, const std::string& full_path) const = 0;

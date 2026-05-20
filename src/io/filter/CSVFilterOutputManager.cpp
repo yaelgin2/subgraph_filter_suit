@@ -2,7 +2,7 @@
 
 #include "FilteringUtils.h"
 #include "IFilterOutputManager.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <cstddef>
 #include <fstream>
@@ -30,7 +30,7 @@ void CSVFilterOutputManager::write_to_file(const std::vector<std::string>& filen
     std::ofstream file(full_path);
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("Cannot open file for writing: '" + full_path + "'");
+        throw SgfPathExistsException("Cannot open file for writing: '" + full_path + "'");
     }
     for (size_t idx = 0U; idx < filenames.size(); ++idx)
     {
@@ -38,7 +38,7 @@ void CSVFilterOutputManager::write_to_file(const std::vector<std::string>& filen
     }
     if (file.fail())
     {
-        throw SgfPathDoesntExistException("Write error on file: '" + full_path + "'");
+        throw SgfPathExistsException("Write error on file: '" + full_path + "'");
     }
 }
 

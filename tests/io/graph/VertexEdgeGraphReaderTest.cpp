@@ -6,7 +6,7 @@
 #include "ILogger.h"
 #include "InvalidArgumentException.h"
 #include "LoggerHandler.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <algorithm>
 #include <gtest/gtest.h>
@@ -71,33 +71,33 @@ protected:
 // ── Path errors ───────────────────────────────────────────────────────────────
 
 /**
- * @brief Reading a base path where both files do not exist must throw SgfPathDoesntExistException.
+ * @brief Reading a base path where both files do not exist must throw SgfPathExistsException.
  */
 TEST_F(VertexEdgeGraphReaderTest, nonexistent_path_throws_path_doesnt_exist)
 {
     EXPECT_THROW(
         m_reader.read(data("does_not_exist"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        SgfPathDoesntExistException);
+        SgfPathExistsException);
 }
 
 /**
- * @brief Missing .vertex_indices file (with .edges present) must throw SgfPathDoesntExistException.
+ * @brief Missing .vertex_indices file (with .edges present) must throw SgfPathExistsException.
  */
 TEST_F(VertexEdgeGraphReaderTest, missing_vertex_file_throws_path_doesnt_exist)
 {
     EXPECT_THROW(
         m_reader.read(data("missing_vertex_file"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        SgfPathDoesntExistException);
+        SgfPathExistsException);
 }
 
 /**
- * @brief Missing .edges file (with .vertex_indices present) must throw SgfPathDoesntExistException.
+ * @brief Missing .edges file (with .vertex_indices present) must throw SgfPathExistsException.
  */
 TEST_F(VertexEdgeGraphReaderTest, missing_edge_file_throws_path_doesnt_exist)
 {
     EXPECT_THROW(
         m_reader.read(data("missing_edge_file"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        SgfPathDoesntExistException);
+        SgfPathExistsException);
 }
 
 // ── Malformed vertex file ─────────────────────────────────────────────────────

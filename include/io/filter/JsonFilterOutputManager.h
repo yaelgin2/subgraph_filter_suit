@@ -46,7 +46,7 @@ protected:
      * @param filenames Library graph filenames.
      * @param results   Filter result per library graph.
      * @param full_path Destination file path.
-     * @throws SgfPathDoesntExistException if the file cannot be opened or written.
+     * @throws SgfPathExistsException if the file cannot be opened or written.
      */
     void write_to_file(const std::vector<std::string>& filenames, const FilterResult& results,
                        const std::string& full_path) const override;

@@ -5,7 +5,7 @@
 #include "ICacheIOManager.h"
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <array>
 #include <cstddef>
@@ -128,7 +128,7 @@ void BinaryCacheIOManager::write_to_file(const EnumerationData& data,
     std::ofstream file(full_path, std::ios::binary);
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("Cannot open file for writing: '" + full_path + "'");
+        throw SgfPathExistsException("Cannot open file for writing: '" + full_path + "'");
     }
     write_array_header(file, data.size());
     for (const auto& result : data)
@@ -137,7 +137,7 @@ void BinaryCacheIOManager::write_to_file(const EnumerationData& data,
     }
     if (file.fail())
     {
-        throw SgfPathDoesntExistException("Write error on file: '" + full_path + "'");
+        throw SgfPathExistsException("Write error on file: '" + full_path + "'");
     }
 }
 
@@ -286,7 +286,7 @@ EnumerationData BinaryCacheIOManager::read_from_file(const std::string& full_pat
     std::ifstream file(full_path, std::ios::binary);
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("Cannot open file for reading: '" + full_path + "'");
+        throw SgfPathExistsException("Cannot open file for reading: '" + full_path + "'");
     }
     try
     {

@@ -46,7 +46,7 @@ private:
      *
      * @param graph The pattern graph to serialize.
      * @param path Base file path; suffixes are appended automatically.
-     * @throws SgfPathDoesntExistException if either output file cannot be opened.
+     * @throws SgfPathExistsException if either output file cannot be opened.
      */
     void do_write(const BoostGraph& graph, const std::string& path) const override;
     /**
@@ -54,7 +54,7 @@ private:
      *
      * @param graph The source graph.
      * @param base_path Base file path without suffix.
-     * @throws SgfPathDoesntExistException if the file cannot be opened for writing.
+     * @throws SgfPathExistsException if the file cannot be opened for writing.
      */
     static void write_node_labels(const BoostGraph& graph, const std::string& base_path);
 
@@ -63,7 +63,7 @@ private:
      *
      * @param graph The source graph.
      * @param base_path Base file path without suffix.
-     * @throws SgfPathDoesntExistException if the file cannot be opened for writing.
+     * @throws SgfPathExistsException if the file cannot be opened for writing.
      */
     static void write_edge_file(const BoostGraph& graph, const std::string& base_path);
 };

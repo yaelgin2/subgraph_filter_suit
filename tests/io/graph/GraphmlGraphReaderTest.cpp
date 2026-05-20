@@ -6,7 +6,7 @@
 #include "ILogger.h"
 #include "InvalidArgumentException.h"
 #include "LoggerHandler.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -42,13 +42,13 @@ protected:
 // ── Invalid path ──────────────────────────────────────────────────────────────
 
 /**
- * @brief Reading a path that does not exist must throw SgfPathDoesntExistException.
+ * @brief Reading a path that does not exist must throw SgfPathExistsException.
  */
 TEST_F(GraphmlGraphReaderTest, nonexistent_path_throws_path_doesnt_exist)
 {
     EXPECT_THROW(m_reader.read(data("does_not_exist.graphml"), false,
                                LoggerHandler(std::weak_ptr<ILogger>{})),
-                 SgfPathDoesntExistException);
+                 SgfPathExistsException);
 }
 
 // ── Parse errors ──────────────────────────────────────────────────────────────

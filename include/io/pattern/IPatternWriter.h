@@ -40,7 +40,7 @@ public:
      *
      * @param graph The pattern graph to serialize.
      * @param path Destination file path.
-     * @throws SgfPathDoesntExistException if directory creation or file writing fails.
+     * @throws SgfPathExistsException if directory creation or file writing fails.
      */
     void write(const BoostGraph& graph, const std::string& path) const;
 
@@ -52,7 +52,7 @@ private:
      *
      * @param graph The pattern graph to serialize.
      * @param path Destination file path.
-     * @throws SgfPathDoesntExistException if the file cannot be opened or written.
+     * @throws SgfPathExistsException if the file cannot be opened or written.
      */
     virtual void do_write(const BoostGraph& graph, const std::string& path) const = 0;
 };

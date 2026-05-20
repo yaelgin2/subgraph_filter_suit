@@ -17,7 +17,7 @@ public:
      * A no-op if the directory already exists.
      *
      * @param folder_path Path of the directory to create.
-     * @throws SgfPathDoesntExistException if the directory cannot be created.
+     * @throws SgfPathExistsException if the directory cannot be created.
      */
     static void create_directory_if_needed(const std::string& folder_path);
 };

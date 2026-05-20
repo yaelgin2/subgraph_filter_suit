@@ -15,14 +15,14 @@ namespace sgf
  * "file not found" from "file found but malformed".
  * CLI exit code: SgfReturnCode::PATH_DOESNT_EXIST.
  */
-class SgfPathDoesntExistException : public SgfException
+class SgfPathExistsException : public SgfException
 {
 public:
     /**
-     * @brief Constructs an SgfPathDoesntExistException.
+     * @brief Constructs an SgfPathExistsException.
      * @param message Description of the missing or inaccessible path.
      */
-    explicit SgfPathDoesntExistException(const std::string& message)
+    explicit SgfPathExistsException(const std::string& message)
         : SgfException(message)
     {
     }

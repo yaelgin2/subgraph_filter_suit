@@ -45,7 +45,7 @@ public:
      * @param is_directed Whether to build a directed ColoredGraph.
      * @param logger Optional logger for diagnostics. May be expired.
      * @return The parsed ColoredGraph.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException if the JSON is malformed, a node
      *         lacks a "color" field, edge colors are mixed, or a link
      *         references an unknown node ID.
@@ -78,7 +78,7 @@ private:
      *
      * @param path Path to the JSON file.
      * @return The root JSON object.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException if the JSON is malformed or the
      *         root value is not a JSON object.
      */

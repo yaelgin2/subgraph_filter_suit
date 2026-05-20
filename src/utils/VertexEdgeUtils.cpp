@@ -1,7 +1,7 @@
 #include "VertexEdgeUtils.h"
 
 #include "GraphConstructionException.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <cstdint>
 #include <fstream>
@@ -27,7 +27,7 @@ std::ofstream VertexEdgeUtils::open_file_for_writing(const std::string& path)
     std::ofstream file(path);
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("Cannot open for writing: '" + path + "'");
+        throw SgfPathExistsException("Cannot open for writing: '" + path + "'");
     }
     return file;
 }

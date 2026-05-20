@@ -2,7 +2,7 @@
 
 #include "BoostGraph.h"
 #include "IOConstants.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/json/array.hpp>
@@ -61,7 +61,7 @@ void JsonPatternWriter::write_to_file(const boost::json::object& root, const std
 
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("Cannot open file for writing: '" + path + "'");
+        throw SgfPathExistsException("Cannot open file for writing: '" + path + "'");
     }
 
     file << boost::json::serialize(root);

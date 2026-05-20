@@ -45,7 +45,7 @@ private:
      *
      * @param graph The pattern graph to serialize.
      * @param path Destination file path.
-     * @throws SgfPathDoesntExistException if the file cannot be opened for writing.
+     * @throws SgfPathExistsException if the file cannot be opened for writing.
      */
     void do_write(const BoostGraph& graph, const std::string& path) const override;
     /**
@@ -73,7 +73,7 @@ private:
      *
      * @param root The JSON root object to serialize.
      * @param path Destination file path.
-     * @throws SgfPathDoesntExistException if the file cannot be opened for writing.
+     * @throws SgfPathExistsException if the file cannot be opened for writing.
      */
     static void write_to_file(const boost::json::object& root, const std::string& path);
 };
