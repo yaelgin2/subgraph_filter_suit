@@ -1,11 +1,11 @@
 #include "GroupEnumerationPreprocessor.h"
 
 #include "ColoredGraph.h"
+#include "DebugLog.h"
 #include "EnumerationOverflowException.h"
 #include "Int128.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
-#include "DebugLog.h"
 
 #include <algorithm>
 #include <cstddef>
