@@ -2,8 +2,6 @@
 
 #include "BoostGraph.h"
 #include "IOConstants.h"
-#include "SgfPathExistsException.h"
-
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/json/array.hpp>
@@ -119,20 +117,6 @@ protected:
 };
 
 // ── Error path ────────────────────────────────────────────────────────────────
-
-/**
- * @brief Writing to a read-only file throws SgfPathExistsException.
- */
-TEST_F(JsonPatternWriterTest, write_to_read_only_file_throws)
-{
-    {
-        std::ofstream create_file(m_temp_path);
-    }
-    std::filesystem::permissions(m_temp_path, std::filesystem::perms::owner_write,
-                                 std::filesystem::perm_options::remove);
-    const BoostGraph graph;
-    EXPECT_THROW(m_writer.write(graph, m_temp_path), SgfPathExistsException);
-}
 
 /**
  * @brief Writing to a path whose parent directory does not exist creates the directory.

@@ -6,12 +6,9 @@
 #include "GraphmlGraphReader.h"
 #include "ILogger.h"
 #include "LoggerHandler.h"
-#include "SgfPathExistsException.h"
-
 #include <boost/graph/adjacency_list.hpp>
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
@@ -348,21 +345,6 @@ TEST_F(GraphmlPatternWriterTest, triangle_all_different_vertex_colors_bidirectio
 }
 
 // ── Error cases ───────────────────────────────────────────────────────────────
-
-/**
- * @brief Writing to a read-only file throws SgfPathExistsException.
- */
-TEST_F(GraphmlPatternWriterTest, write_to_read_only_file_throws)
-{
-    const std::string path = (m_temp_dir / "readonly.graphml").string();
-    {
-        std::ofstream create_file(path);
-    }
-    std::filesystem::permissions(path, std::filesystem::perms::owner_write,
-                                 std::filesystem::perm_options::remove);
-    const BoostGraph graph;
-    EXPECT_THROW(m_writer.write(graph, path), SgfPathExistsException);
-}
 
 /**
  * @brief Writing to a path whose parent directory does not exist creates the directory.

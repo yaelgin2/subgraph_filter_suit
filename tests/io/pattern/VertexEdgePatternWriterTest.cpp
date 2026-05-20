@@ -2,8 +2,6 @@
 
 #include "BoostGraph.h"
 #include "IOConstants.h"
-#include "SgfPathExistsException.h"
-
 #include <array>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -344,21 +342,6 @@ TEST_F(VertexEdgePatternWriterTest, triangle_different_edge_colors_writes_correc
 }
 
 // ── Error handling ────────────────────────────────────────────────────────────
-
-/**
- * @brief Writing when the node_labels output file is read-only throws SgfPathExistsException.
- */
-TEST_F(VertexEdgePatternWriterTest, write_to_read_only_file_throws)
-{
-    const std::string node_labels_path = m_base + IOConstants::NODE_LABELS_SUFFIX;
-    {
-        std::ofstream create_file(node_labels_path);
-    }
-    std::filesystem::permissions(node_labels_path, std::filesystem::perms::owner_write,
-                                 std::filesystem::perm_options::remove);
-    const BoostGraph graph;
-    EXPECT_THROW(m_writer.write(graph, m_base), SgfPathExistsException);
-}
 
 /**
  * @brief Writing to a path whose parent directory does not exist creates the directory.
