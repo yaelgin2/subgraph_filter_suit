@@ -133,7 +133,8 @@ std::vector<double> PatternUtils::counts_to_probability(const std::vector<uint32
                                                         uint64_t total_vertices)
 {
     std::vector<double> probability(counts.size());
-    for (uint32_t color_index = 0; color_index < counts.size(); ++color_index)
+    for (uint32_t color_index = 0; color_index < static_cast<uint32_t>(counts.size());
+         ++color_index)
     {
         probability[color_index] =
             (total_vertices > 0 && counts[color_index] > 0)
@@ -185,15 +186,12 @@ double PatternUtils::compute_density(uint32_t vertex_count, uint32_t edge_count)
 // iteration finds all edges regardless of which endpoint is queried.
 void PatternUtils::add_edge(bool is_directed, BoostGraph& graph, uint32_t source, uint32_t target)
 {
-    if (is_directed)
+    boost::add_edge(source, target, graph);
+    if (!is_directed)
     {
-        boost::add_edge(source, target, graph);
-    }
-    else
-    {
-        boost::add_edge(source, target, graph);
         boost::add_edge(target, source, graph);
     }
 }
 
 }  // namespace sgf
+

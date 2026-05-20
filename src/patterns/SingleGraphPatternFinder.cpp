@@ -2,6 +2,7 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
+#include "InvalidArgumentException.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 #include "PatternScorer.h"
@@ -15,115 +16,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
-namespace
-{
-
-/// Intermediate result shared between allocate_proportionally and fill_remaining_quota.
-struct ProportionalAllocation
-{
-    std::vector<uint32_t> m_state_counts;
-    uint32_t m_total_allocated = 0;
-    std::vector<size_t> m_seeds_needing_more;
-};
-
-/// First pass: distribute target_state_count states proportional to
-/// inverse_probability_weight. Each seed gets at least 1, capped by match capacity.
-/// Seeds with spare capacity are recorded in result.seeds_needing_more.
-ProportionalAllocation allocate_proportionally(const std::vector<sgf::SeedInfo>& seeds,
-                                               double total_weight, uint32_t target_state_count)
-{
-    ProportionalAllocation result;
-    result.m_state_counts.resize(seeds.size(), 0);
-    for (size_t seed_index = 0; seed_index < seeds.size(); ++seed_index)
-    {
-        const double raw_allocation = static_cast<double>(target_state_count) *
-                                      seeds[seed_index].m_inverse_probability_weight / total_weight;
-        const uint32_t match_capacity =
-            static_cast<uint32_t>(seeds[seed_index].m_vertex_matches.size());
-        const uint32_t allocation = std::max(
-            1U, std::min(static_cast<uint32_t>(std::round(raw_allocation)), match_capacity));
-        result.m_state_counts[seed_index] = allocation;
-        result.m_total_allocated += allocation;
-        if (allocation < match_capacity)
-        {
-            result.m_seeds_needing_more.push_back(seed_index);
-        }
-    }
-    return result;
-}
-
-/// Second pass: give remaining quota to seeds with spare capacity,
-/// prioritising rarer colours (higher inverse_probability_weight) first.
-void fill_remaining_quota(ProportionalAllocation& alloc, const std::vector<sgf::SeedInfo>& seeds,
-                          uint32_t target_state_count)
-{
-    if (alloc.m_total_allocated >= target_state_count || alloc.m_seeds_needing_more.empty())
-    {
-        return;
-    }
-
-    uint32_t states_needed = target_state_count - alloc.m_total_allocated;
-    std::sort(alloc.m_seeds_needing_more.begin(), alloc.m_seeds_needing_more.end(),
-              [&](const size_t left_index, const size_t right_index)
-              {
-                  return seeds[left_index].m_inverse_probability_weight >
-                         seeds[right_index].m_inverse_probability_weight;
-              });
-
-    for (const size_t seed_index : alloc.m_seeds_needing_more)
-    {
-        if (states_needed == 0)
-        {
-            break;
-        }
-        const uint32_t match_capacity =
-            static_cast<uint32_t>(seeds[seed_index].m_vertex_matches.size());
-        const uint32_t additional_capacity = match_capacity - alloc.m_state_counts[seed_index];
-        const uint32_t states_to_add = std::min(additional_capacity, states_needed);
-        alloc.m_state_counts[seed_index] += states_to_add;
-        states_needed -= states_to_add;
-    }
-}
-
-}  // anonymous namespace
-
 namespace sgf
 {
-
-/* ---------- Named constants ---------- */
-
-/// The initial beam contains m_max_active_patterns / INITIAL_BEAM_DIVISOR states.
-/// Starting smaller gives the expansion loop room to fill the beam gradually.
-static constexpr uint32_t INITIAL_BEAM_DIVISOR = 3;
-
-/// Minimum number of distinct seed colours chosen during beam initialisation.
-static constexpr uint32_t MIN_SEED_COLORS = 3;
-
-/// Rough number of initial beam states allocated per seed colour.
-/// Dividing initial_beam_size by this gives the number of seed colours to pick.
-static constexpr uint32_t STATES_PER_SEED = 10;
-
-/// Number of expansion iterations before gap-based pruning is enabled.
-/// Early iterations have small, noisy beams where gap detection is unreliable.
-static constexpr uint32_t PRUNE_WARMUP_ITERATIONS = 5;
-
-/// After warmup, always keep at least this fraction of scored states.
-static constexpr double MIN_KEEP_FRACTION = 0.3;
-
-/// A gap must be at least this fraction of the total score range to trigger pruning.
-static constexpr double MIN_GAP_SCORE_RATIO = 0.1;
-
-/// Minimum beam size for gap-based pruning to be applied at all.
-static constexpr uint32_t MIN_STATES_FOR_GAP_PRUNE = 3;
-
-/// Number of best-scored patterns returned by find_pattern.
-static constexpr uint32_t NUMBER_OF_STATES_TO_RETURN = 5;
 
 /* ---------- Construction ---------- */
 
@@ -138,7 +37,7 @@ SingleGraphPatternFinder::SingleGraphPatternFinder(uint32_t max_active_patterns,
 
 /* ---------- score_state ---------- */
 
-double SingleGraphPatternFinder::score_state(PatternState& state, double background_density,
+double SingleGraphPatternFinder::score_state(const PatternState& state, double background_density,
                                              bool is_directed)
 {
     const uint32_t vertex_count = boost::num_vertices(state.m_pattern);
@@ -198,6 +97,7 @@ void SingleGraphPatternFinder::expand_one_state(PatternState& state,
 
     state.m_hist->absorb_vertex(new_search_vertex, is_directed);
     state.m_match_path.push_back(new_search_vertex);
+    state.m_score_valid = false;
 }
 
 /* ---------- clone_state ---------- */
@@ -214,6 +114,7 @@ PatternState SingleGraphPatternFinder::clone_state(const PatternState& source_st
     destination_state.m_hist = std::make_unique<SingleGraphHistogram>(*source_state.m_hist);
     destination_state.m_match_path = source_state.m_match_path;
     destination_state.m_beam_score = source_state.m_beam_score;
+    destination_state.m_score_valid = false;
     destination_state.m_pattern_vertex_color_log_prob =
         source_state.m_pattern_vertex_color_log_prob;
     return destination_state;
@@ -237,8 +138,9 @@ std::vector<uint32_t> SingleGraphPatternFinder::select_seed_indices(uint32_t tot
 
     if (seed_count > 1 && total_color_count > 1)
     {
+        const uint32_t denominator = seed_count - 1U;  // safe: seed_count > 1
         const double index_step =
-            static_cast<double>(total_color_count - 1) / static_cast<double>(seed_count - 1);
+            static_cast<double>(total_color_count - 1U) / static_cast<double>(denominator);
         for (uint32_t seed_index = 1; seed_index < seed_count; ++seed_index)
         {
             seed_indices.push_back(static_cast<uint32_t>(std::round(seed_index * index_step)));
@@ -248,40 +150,70 @@ std::vector<uint32_t> SingleGraphPatternFinder::select_seed_indices(uint32_t tot
     return seed_indices;
 }
 
-/* ---------- allocate_seed_states ---------- */
+/* ---------- allocate_proportionally ---------- */
 
-/**
- * Distribute @p target_state_count states across seeds proportional to
- * inverse_probability_weight (rarer colours get more).
- * Each seed gets at least 1, capped by its available vertex match count.
- */
-std::vector<uint32_t>
-SingleGraphPatternFinder::allocate_seed_states(const std::vector<SeedInfo>& seeds,
-                                               uint32_t target_state_count)
+SingleGraphPatternFinder::ProportionalAllocation
+SingleGraphPatternFinder::allocate_proportionally(const std::vector<SeedInfo>& seeds,
+                                                  double total_weight,
+                                                  uint32_t target_state_count)
 {
-    double total_weight = 0.0;
-    for (const SeedInfo& seed : seeds)
-    {
-        total_weight += seed.m_inverse_probability_weight;
-    }
-
-    std::vector<uint32_t> state_counts(seeds.size());
+    ProportionalAllocation result;
+    result.m_state_counts.resize(seeds.size(), 0);
     for (size_t seed_index = 0; seed_index < seeds.size(); ++seed_index)
     {
         const double raw_allocation = static_cast<double>(target_state_count) *
                                       seeds[seed_index].m_inverse_probability_weight / total_weight;
         const uint32_t match_capacity =
             static_cast<uint32_t>(seeds[seed_index].m_vertex_matches.size());
-        state_counts[seed_index] = std::max(
-            1U, std::min(static_cast<uint32_t>(std::round(raw_allocation)), match_capacity));
+        const uint32_t allocation =
+            std::max(MIN_STATES_PER_SEED,
+                     std::min(static_cast<uint32_t>(std::round(raw_allocation)), match_capacity));
+        result.m_state_counts[seed_index] = allocation;
+        result.m_total_allocated += allocation;
+        if (allocation < match_capacity)
+        {
+            result.m_seeds_needing_more.push_back(seed_index);
+        }
     }
-    return state_counts;
+    return result;
 }
 
-/**
- * Improved allocation: first pass distributes proportionally, second pass
- * redistributes any remaining quota to seeds with spare capacity (rarer first).
- */
+/* ---------- fill_remaining_quota ---------- */
+
+void SingleGraphPatternFinder::fill_remaining_quota(ProportionalAllocation& alloc,
+                                                    const std::vector<SeedInfo>& seeds,
+                                                    uint32_t target_state_count)
+{
+    if (alloc.m_total_allocated >= target_state_count || alloc.m_seeds_needing_more.empty())
+    {
+        return;
+    }
+
+    uint32_t states_needed = target_state_count - alloc.m_total_allocated;
+    std::sort(alloc.m_seeds_needing_more.begin(), alloc.m_seeds_needing_more.end(),
+              [&](const size_t left_index, const size_t right_index)
+              {
+                  return seeds[left_index].m_inverse_probability_weight >
+                         seeds[right_index].m_inverse_probability_weight;
+              });
+
+    for (const size_t seed_index : alloc.m_seeds_needing_more)
+    {
+        if (states_needed == 0)
+        {
+            break;
+        }
+        const uint32_t match_capacity =
+            static_cast<uint32_t>(seeds[seed_index].m_vertex_matches.size());
+        const uint32_t additional_capacity = match_capacity - alloc.m_state_counts[seed_index];
+        const uint32_t states_to_add = std::min(additional_capacity, states_needed);
+        alloc.m_state_counts[seed_index] += states_to_add;
+        states_needed -= states_to_add;
+    }
+}
+
+/* ---------- allocate_seed_states_improved ---------- */
+
 std::vector<uint32_t>
 SingleGraphPatternFinder::allocate_seed_states_improved(const std::vector<SeedInfo>& seeds,
                                                         uint32_t target_state_count)
@@ -305,9 +237,9 @@ SingleGraphPatternFinder::allocate_seed_states_improved(const std::vector<SeedIn
 /* ---------- select_valid_seeds ---------- */
 
 // Collect seeds in rarest-first order until the total accumulated vertex matches
-// reaches 2 * initial_beam_size.  The 2x factor provides slack so that after
-// the capacity-capped allocation step we still have enough diverse matches to
-// fill the initial beam.
+// reaches SEED_MATCH_BUFFER_FACTOR * initial_beam_size.  The buffer ensures that
+// after capacity-capped allocation there are still enough diverse matches to fill
+// the initial beam.
 std::vector<SeedInfo> SingleGraphPatternFinder::select_valid_seeds(
     const std::vector<std::tuple<double, uint32_t, uint32_t>>& sorted_colors_with_matches,
     const std::vector<std::vector<uint32_t>>& vertices_by_color, uint32_t initial_beam_size)
@@ -325,8 +257,8 @@ std::vector<SeedInfo> SingleGraphPatternFinder::select_valid_seeds(
                          1.0 / color_probability});
         total_match_count += vertex_match_count;
 
-        // Stop once we have 2x the target matches (ensures good diversity).
-        if (total_match_count >= initial_beam_size * 2)
+        if (static_cast<uint64_t>(total_match_count) >=
+            static_cast<uint64_t>(initial_beam_size) * SEED_MATCH_BUFFER_FACTOR)
         {
             break;
         }
@@ -383,19 +315,14 @@ PatternState SingleGraphPatternFinder::create_initial_state(const BeamContext& c
     state.m_hist = std::move(histogram);
     state.m_match_path = {match_vertex};
     state.m_beam_score = 0.0;
+    state.m_score_valid = false;
     state.m_pattern_vertex_color_log_prob = state.m_hist->log_prob_of_color(color_id);
     return state;
 }
 
 /* ---------- find_gap_cut ---------- */
 
-/**
- * Given a sorted-ascending score vector, find a cut point at the largest
- * gap above the minimum-keep floor that is statistically significant
- * relative to the total score range.
- * Returns scored_states.size() if no significant gap is found (keep all).
- */
-uint32_t SingleGraphPatternFinder::find_gap_cut(  // NOLINT(readability-function-size)
+uint32_t SingleGraphPatternFinder::find_gap_cut(
     const std::vector<std::pair<double, uint32_t>>& scored_states)
 {
     const uint32_t state_count = static_cast<uint32_t>(scored_states.size());
@@ -441,41 +368,43 @@ uint32_t SingleGraphPatternFinder::find_gap_cut(  // NOLINT(readability-function
 
 /* ---------- select_best_state ---------- */
 
-// Returns raw pointers into the beam vector.  The caller must not resize or
-// move the beam between this call and the use of the returned pointers.
-std::vector<PatternState*>
-SingleGraphPatternFinder::select_best_state(std::vector<PatternState>& beam,
+std::vector<uint32_t>
+SingleGraphPatternFinder::select_best_state(const std::vector<PatternState>& beam,
                                             double background_density, bool is_directed)
 {
-    std::vector<PatternState*> best_states;
-
-    std::vector<std::pair<double, PatternState*>> scored_states;
+    std::vector<std::pair<double, uint32_t>> scored_states;
     scored_states.reserve(beam.size());
-    for (PatternState& state : beam)
+    for (uint32_t state_index = 0; state_index < static_cast<uint32_t>(beam.size()); ++state_index)
     {
-        const double score = score_state(state, background_density, is_directed);
-        scored_states.emplace_back(score, &state);
+        const double score = beam[state_index].m_score_valid
+                                 ? beam[state_index].m_beam_score
+                                 : score_state(beam[state_index], background_density, is_directed);
+        scored_states.emplace_back(score, state_index);
     }
     std::sort(scored_states.begin(), scored_states.end());
 
+    std::vector<uint32_t> best_indices;
+    best_indices.reserve(NUMBER_OF_STATES_TO_RETURN);
     for (uint32_t result_index = 0; result_index < NUMBER_OF_STATES_TO_RETURN &&
                                     result_index < static_cast<uint32_t>(scored_states.size());
          ++result_index)
     {
-        best_states.push_back(scored_states[result_index].second);
+        best_indices.push_back(scored_states[result_index].second);
     }
-    return best_states;
+    return best_indices;
 }
 
 /* ---------- any_state_below_threshold ---------- */
 
-bool SingleGraphPatternFinder::any_state_below_threshold(std::vector<PatternState>& beam,
+bool SingleGraphPatternFinder::any_state_below_threshold(const std::vector<PatternState>& beam,
                                                          double background_density,
                                                          double threshold, bool is_directed) const
 {
-    for (PatternState& state : beam)
+    for (const PatternState& state : beam)
     {
-        const double state_score = score_state(state, background_density, is_directed);
+        const double state_score = state.m_score_valid
+                                       ? state.m_beam_score
+                                       : score_state(state, background_density, is_directed);
         if (state_score < threshold)
         {
             m_logger.log(LogLevel::DEBUG, "Score " + std::to_string(state_score) + " < threshold " +
@@ -504,13 +433,18 @@ std::vector<PatternState> SingleGraphPatternFinder::build_initial_beam(
     {
         if (!vertices_by_color[color_id].empty())
         {
-            // A colour with zero probability means it exists in S but not in the
-            // background G — it is infinitely rare.  Use it as the sole seed so that
-            // the entire beam starts from the most surprising colour possible.
-            if (color_id >= color_probability.size() || color_probability[color_id] == 0)
+            // A colour absent from the background probability vector or with zero probability
+            // is infinitely rare — use it as the sole seed.
+            const bool is_absent_or_zero = (color_id >= static_cast<uint32_t>(color_probability.size())) ||
+                                           (color_probability[color_id] == 0.0);
+            if (is_absent_or_zero)
             {
+                const double absent_prob =
+                    (color_id < static_cast<uint32_t>(color_probability.size()))
+                        ? color_probability[color_id]
+                        : 0.0;
                 sorted_colors_with_matches = {
-                    {color_probability[color_id], color_id,
+                    {absent_prob, color_id,
                      static_cast<uint32_t>(vertices_by_color[color_id].size())}};
                 break;
             }
@@ -597,8 +531,10 @@ void SingleGraphPatternFinder::prune_beam(std::vector<PatternState>& beam,
     scored_states.reserve(beam.size());
     for (uint32_t state_index = 0; state_index < static_cast<uint32_t>(beam.size()); ++state_index)
     {
-        scored_states.emplace_back(score_state(beam[state_index], background_density, is_directed),
-                                   state_index);
+        const double score = score_state(beam[state_index], background_density, is_directed);
+        beam[state_index].m_beam_score = score;
+        beam[state_index].m_score_valid = true;
+        scored_states.emplace_back(score, state_index);
     }
     std::sort(scored_states.begin(), scored_states.end());
 
@@ -662,8 +598,7 @@ void SingleGraphPatternFinder::run_beam_expansion(BeamSearchState& beam_state,
     bool threshold_reached = any_state_below_threshold(
         beam_state.m_beam, beam_state.m_background_density, score_threshold, is_directed);
 
-    while (static_cast<uint32_t>(beam_state.m_beam.size()) < m_max_active_patterns &&
-           iteration < MAX_ITERATIONS && !threshold_reached)
+    while (iteration < MAX_ITERATIONS && !threshold_reached)
     {
         m_logger.log(LogLevel::DEBUG, "Attempt expansion.");
         if (!expand_beam(beam_state.m_beam, search_graph, is_directed))
@@ -672,6 +607,8 @@ void SingleGraphPatternFinder::run_beam_expansion(BeamSearchState& beam_state,
                          "No more expansions possible at iteration " + std::to_string(iteration));
             break;
         }
+
+        prune_beam(beam_state.m_beam, beam_state.m_background_density, iteration, is_directed);
 
         if (any_state_below_threshold(beam_state.m_beam, beam_state.m_background_density,
                                       score_threshold, is_directed))
@@ -688,23 +625,24 @@ void SingleGraphPatternFinder::run_beam_expansion(BeamSearchState& beam_state,
 std::vector<BoostGraph> SingleGraphPatternFinder::collect_best_patterns(BeamSearchState& beam_state,
                                                                         bool is_directed) const
 {
-    const std::vector<PatternState*> best_states =
+    const std::vector<uint32_t> best_indices =
         select_best_state(beam_state.m_beam, beam_state.m_background_density, is_directed);
 
-    for (PatternState* state : best_states)
+    for (const uint32_t state_index : best_indices)
     {
+        PatternState& state = beam_state.m_beam[state_index];
         m_logger.log(
             LogLevel::DEBUG,
             "Selected pattern with score: " +
-                std::to_string(score_state(*state, beam_state.m_background_density, is_directed)));
-        PatternUtils::recolor_pattern(state->m_pattern, beam_state.m_color_map);
+                std::to_string(score_state(state, beam_state.m_background_density, is_directed)));
+        PatternUtils::recolor_pattern(state.m_pattern, beam_state.m_color_map);
     }
 
     std::vector<BoostGraph> result;
-    result.reserve(best_states.size());
-    for (PatternState* state : best_states)
+    result.reserve(best_indices.size());
+    for (const uint32_t state_index : best_indices)
     {
-        result.push_back(std::move(state->m_pattern));
+        result.push_back(std::move(beam_state.m_beam[state_index].m_pattern));
     }
     return result;
 }
@@ -718,11 +656,11 @@ std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(ColoredGraph& sea
 {
     if (search_graph.vertex_count() == 0)
     {
-        throw std::runtime_error("S has no nodes.");
+        throw InvalidArgumentException("S has no nodes.");
     }
     if (background_graph.vertex_count() == 0)
     {
-        throw std::runtime_error("G has no nodes.");
+        throw InvalidArgumentException("G has no nodes.");
     }
 
     const std::chrono::high_resolution_clock::time_point start_time =

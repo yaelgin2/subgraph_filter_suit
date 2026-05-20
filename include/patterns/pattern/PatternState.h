@@ -35,8 +35,11 @@ struct PatternState
     /// Used to map pattern node indices back to S-graph vertices when adding edges.
     std::vector<uint32_t> m_match_path;
 
-    /// Reserved for future use; not currently updated by the finder.
+    /// Cached score computed by prune_beam; valid only when m_score_valid is true.
     double m_beam_score = 0.0;
+
+    /// True when m_beam_score reflects the current state (invalidated by expand_one_state).
+    bool m_score_valid = false;
 
     /** Σ log(p[color(v)]) over all vertices currently in the pattern.
      *  Maintained incrementally in SingleGraphPatternFinder::expand_one_state
