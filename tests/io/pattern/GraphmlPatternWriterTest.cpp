@@ -6,6 +6,7 @@
 #include "GraphmlGraphReader.h"
 #include "ILogger.h"
 #include "LoggerHandler.h"
+
 #include <boost/graph/adjacency_list.hpp>
 #include <cstdint>
 #include <filesystem>
