@@ -50,11 +50,12 @@ SingleGraphPatternFinder::SingleGraphPatternFinder(ColoredGraph background_graph
 
 double SingleGraphPatternFinder::score_state(const PatternState& state) const
 {
-    const uint32_t vertex_count = boost::num_vertices(state.m_pattern);
+    const uint32_t vertex_count = static_cast<uint32_t>(boost::num_vertices(state.m_pattern));
     // BoostGraph stores both directions for undirected edges, so halve the count
     // to get the true undirected edge count passed to PatternScorer.
-    const uint32_t edge_count =
-        m_is_directed ? boost::num_edges(state.m_pattern) : boost::num_edges(state.m_pattern) / 2;
+    const uint32_t edge_count = m_is_directed
+                                    ? static_cast<uint32_t>(boost::num_edges(state.m_pattern))
+                                    : static_cast<uint32_t>(boost::num_edges(state.m_pattern) / 2);
 
     return PatternScorer::score(state.m_pattern_vertex_color_log_prob, edge_count,
                                 m_background_density, vertex_count);
@@ -79,7 +80,7 @@ void SingleGraphPatternFinder::expand_one_state(PatternState& state,
             " current_color_logp=" + std::to_string(state.m_pattern_vertex_color_log_prob));
 
     const uint32_t new_pattern_node =
-        boost::add_vertex(VertexProperties{vertex_color}, state.m_pattern);
+        static_cast<uint32_t>(boost::add_vertex(VertexProperties{vertex_color}, state.m_pattern));
 
     state.m_pattern_vertex_color_log_prob += state.m_hist->log_prob_of_color(vertex_color);
 
