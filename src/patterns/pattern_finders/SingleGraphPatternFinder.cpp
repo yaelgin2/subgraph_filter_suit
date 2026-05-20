@@ -601,7 +601,7 @@ std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(ColoredGraph& sea
         throw InvalidArgumentException("S has no nodes.");
     }
 
-    const std::chrono::high_resolution_clock::time_point start_time =
+    [[maybe_unused]] const std::chrono::high_resolution_clock::time_point start_time =
         std::chrono::high_resolution_clock::now();
 
     SGF_DEBUG_LOG(m_logger, "Initiating beam.");
@@ -616,7 +616,7 @@ std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(ColoredGraph& sea
 
     run_beam_expansion(search_graph, score_threshold);
 
-    const std::chrono::high_resolution_clock::time_point end_time =
+    [[maybe_unused]] const std::chrono::high_resolution_clock::time_point end_time =
         std::chrono::high_resolution_clock::now();
     SGF_DEBUG_LOG(m_logger,
                   "Total pattern finding time: " +
