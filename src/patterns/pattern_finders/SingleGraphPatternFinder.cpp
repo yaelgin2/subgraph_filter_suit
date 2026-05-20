@@ -9,6 +9,7 @@
 #include "PatternState.h"
 #include "PatternUtils.h"
 #include "SingleGraphHistogram.h"
+#include "DebugLog.h"
 
 #include <algorithm>
 #include <chrono>
@@ -26,6 +27,7 @@ namespace sgf
 
 /* ---------- Construction ---------- */
 
+// NOLINTNEXTLINE(readability-function-size)
 SingleGraphPatternFinder::SingleGraphPatternFinder(ColoredGraph background_graph, bool is_directed,
                                                    uint32_t max_active_patterns, double alpha_0,
                                                    double alpha_decay, LoggerHandler logger)
@@ -68,9 +70,7 @@ void SingleGraphPatternFinder::expand_one_state(PatternState& state,
     const uint32_t vertex_color =
         static_cast<uint32_t>(search_graph.get_vertex_color(new_search_vertex));
 
-    m_logger.log(
-        LogLevel::DEBUG,
-        "[EXPAND] selected_vertex=" + std::to_string(new_search_vertex) +
+    SGF_DEBUG_LOG(m_logger, "[EXPAND] selected_vertex=" + std::to_string(new_search_vertex) +
             " color=" + std::to_string(vertex_color) + " current_pattern_size=" +
             std::to_string(boost::num_vertices(state.m_pattern)) + " current_edges=" +
             std::to_string(boost::num_edges(state.m_pattern) / (m_is_directed ? 1U : 2U)) +
@@ -266,8 +266,7 @@ SingleGraphPatternFinder::create_beam_from_seeds(const std::vector<SeedInfo>& se
     std::vector<PatternState> beam;
     for (size_t seed_index = 0; seed_index < seeds.size(); ++seed_index)
     {
-        m_logger.log(LogLevel::DEBUG,
-                     "Seed colour " +
+        SGF_DEBUG_LOG(m_logger, "Seed colour " +
                          std::to_string(m_color_map[seeds[seed_index].m_color_id]) +
                          " (p=" + std::to_string(seeds[seed_index].m_probability) +
                          ")  matches=" + std::to_string(seeds[seed_index].m_vertex_matches.size()) +
@@ -315,21 +314,14 @@ uint32_t SingleGraphPatternFinder::find_gap_cut(
     const std::vector<std::pair<double, uint32_t>>& scored_states)
 {
     const uint32_t state_count = static_cast<uint32_t>(scored_states.size());
-    if (state_count < MIN_STATES_FOR_GAP_PRUNE)
-    {
-        return state_count;
-    }
-
     const uint32_t minimum_keep_count =
         std::max(MIN_STATES_FOR_GAP_PRUNE,
                  static_cast<uint32_t>(std::ceil(state_count * MIN_KEEP_FRACTION)));
-    if (minimum_keep_count >= state_count)
-    {
-        return state_count;
-    }
-
     const double score_range = scored_states.back().first - scored_states.front().first;
-    if (score_range <= 0.0)
+
+    if ((state_count < MIN_STATES_FOR_GAP_PRUNE) || 
+        (minimum_keep_count >= state_count) ||
+        (score_range <= 0.0))
     {
         return state_count;
     }
@@ -383,20 +375,17 @@ std::vector<uint32_t> SingleGraphPatternFinder::select_best_state() const
 
 /* ---------- any_state_below_threshold ---------- */
 
-bool SingleGraphPatternFinder::any_state_below_threshold(double threshold) const
+bool SingleGraphPatternFinder::any_state_below_threshold(const double threshold) const
 {
-    for (const PatternState& state : m_beam)
-    {
+    return std::any_of(m_beam.begin(), m_beam.end(), [this, threshold](const PatternState& state) {
         const double state_score =
             state.m_score_valid ? state.m_beam_score : score_state(state);
         if (state_score < threshold)
         {
-            m_logger.log(LogLevel::DEBUG, "Score " + std::to_string(state_score) + " < threshold " +
-                                              std::to_string(threshold) + " -- stopping.");
             return true;
         }
-    }
-    return false;
+        return false;
+    });
 }
 
 /* ---------- build_initial_beam ---------- */
@@ -557,11 +546,10 @@ void SingleGraphPatternFinder::run_beam_expansion(const ColoredGraph& search_gra
 
     while (iteration < MAX_ITERATIONS && !threshold_reached)
     {
-        m_logger.log(LogLevel::DEBUG, "Attempt expansion.");
+        SGF_DEBUG_LOG(m_logger, "Attempt expansion.");
         if (!expand_beam(search_graph))
         {
-            m_logger.log(LogLevel::DEBUG,
-                         "No more expansions possible at iteration " + std::to_string(iteration));
+            SGF_DEBUG_LOG(m_logger, "No more expansions possible at iteration " + std::to_string(iteration));
             break;
         }
 
@@ -585,8 +573,7 @@ std::vector<BoostGraph> SingleGraphPatternFinder::collect_best_patterns()
     for (const uint32_t state_index : best_indices)
     {
         PatternState& state = m_beam[state_index];
-        m_logger.log(LogLevel::DEBUG,
-                     "Selected pattern with score: " +
+        SGF_DEBUG_LOG(m_logger, "Selected pattern with score: " +
                          std::to_string(score_state(state)));
         PatternUtils::recolor_pattern(state.m_pattern, m_color_map);
     }
@@ -613,7 +600,7 @@ std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(ColoredGraph& sea
     const std::chrono::high_resolution_clock::time_point start_time =
         std::chrono::high_resolution_clock::now();
 
-    m_logger.log(LogLevel::DEBUG, "Initiating beam.");
+    SGF_DEBUG_LOG(m_logger, "Initiating beam.");
     initialise_beam_search(search_graph);
     if (m_beam.empty())
     {
@@ -623,13 +610,11 @@ std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(ColoredGraph& sea
         return {};
     }
 
-    m_logger.log(LogLevel::DEBUG, "Main loop.");
     run_beam_expansion(search_graph, score_threshold);
 
     const std::chrono::high_resolution_clock::time_point end_time =
         std::chrono::high_resolution_clock::now();
-    m_logger.log(LogLevel::DEBUG,
-                 "Total pattern finding time: " +
+   SGF_DEBUG_LOG(m_logger, "Total pattern finding time: " +
                      std::to_string(std::chrono::duration<double>(end_time - start_time).count()) +
                      " seconds");
 

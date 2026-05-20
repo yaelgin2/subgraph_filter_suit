@@ -5,6 +5,7 @@
 #include "Int128.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
+#include "DebugLog.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -87,7 +88,7 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
 
         if (groups_counted % LOG_INTERVAL == 0)
         {
-            m_logger.log(LogLevel::DEBUG, "Counted groups: " + std::to_string(groups_counted));
+            SGF_DEBUG_LOG(m_logger, "Counted groups: " + std::to_string(groups_counted));
         }
         groups_counted++;
     };

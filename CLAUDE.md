@@ -180,6 +180,7 @@ std::shared_ptr<Graph> graph = std::make_shared<Graph>();
 - Prefer range-based `for` loops (`modernize-loop-convert`).
 - Use `override` / `final` on virtual overrides (`modernize-use-override`).
 - Use `std::make_unique` / `std::make_shared` over `new` (`modernize-make-unique`, `modernize-make-shared`).
+- **Prefer `<algorithm>` over hand-written loops** — always use `std::any_of`, `std::all_of`, `std::none_of`, `std::find_if`, `std::count_if`, `std::transform`, `std::accumulate`, etc. instead of equivalent `for` loops. A named algorithm communicates intent more clearly than a loop body.
 
 ### Namespace
 
