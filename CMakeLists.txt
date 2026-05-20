@@ -52,6 +52,7 @@ target_include_directories(subgraph_filter_suite PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/io/graph"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/io/pattern"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/io/cache"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/io/filter"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/logging"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/managers"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/preprocessing"

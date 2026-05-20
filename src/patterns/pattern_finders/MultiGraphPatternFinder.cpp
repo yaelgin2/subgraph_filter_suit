@@ -231,7 +231,7 @@ void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
 }
 
 std::pair<BoostGraph, std::unordered_set<uint32_t>> MultiGraphPatternFinder::finalize_and_return(
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time)
+    [[maybe_unused]] const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time)
 {
     PatternUtils::recolor_pattern(m_pattern, m_color_map);
 
