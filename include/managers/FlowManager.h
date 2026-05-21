@@ -3,6 +3,7 @@
 #include "ColoredGraph.h"
 #include "ICacheIOManager.h"
 #include "IColoredGraphReader.h"
+#include "IFilterOutputManager.h"
 #include "IPatternWriter.h"
 
 #include <memory>
@@ -51,6 +52,15 @@ enum class CacheManagerType
 };
 
 /**
+ * @brief Selects the file format used for the result output.
+ */
+enum class ResultOutputType
+{
+    JSON, ///< Binary format — BinaryCacheIOManager
+    CSV,    ///< CSV format — CSVCacheIOManager
+};
+
+/**
  * @brief Top-level pipeline orchestrator and IO factory.
  *
  * Factory methods create the concrete reader/writer/cache instance
@@ -60,30 +70,6 @@ enum class CacheManagerType
 class FlowManager
 {
 public:
-    /**
-     * @brief Construct a graph reader for the given format.
-     * @param type Desired reader format.
-     * @return Owning pointer to the concrete IColoredGraphReader.
-     */
-    static std::unique_ptr<IColoredGraphReader> make_graph_reader(GraphReaderType type);
-
-    /**
-     * @brief Construct a pattern writer for the given format.
-     * @param type Desired writer format.
-     * @return Owning pointer to the concrete IPatternWriter.
-     */
-    static std::unique_ptr<IPatternWriter> make_pattern_writer(PatternWriterType type);
-
-    /**
-     * @brief Construct a cache manager for the given format.
-     * @param type           Desired cache format.
-     * @param folder         Directory where the cache file will be written.
-     * @param base_filename  File name without extension.
-     * @return Owning pointer to the concrete ICacheIOManager.
-     */
-    static std::unique_ptr<ICacheIOManager> make_cache_manager(CacheManagerType type,
-                                                               const std::string& folder);
-
     /**
      * @brief Run the enumeration preprocessing pipeline.
      * @param input_folder  Directory containing the graph library.
@@ -122,6 +108,27 @@ private:
     static std::string generate_timestamp();
 
     /**
+     * @brief Enumerates @p library using @p factory, reads the precomputed library cache,
+     *        filters each graph against it, and writes one result file per graph.
+     *
+     * @param factory              Preprocessor factory selecting path or motif enumeration.
+     * @param preprocess_manager   Manager that runs enumeration over the library.
+     * @param cache_manager        Cache reader for the precomputed library signatures.
+     * @param cache_path           Base filename passed to ICacheIOManager::read.
+     * @param filter_results_writer Writer for the per-graph filter output.
+     * @param library              Library graphs and their filenames.
+     * @param timestamp            Timestamp suffix appended to each output filename.
+     */
+    static void run_enumeration_filter_stage(
+        const PreprocessorFactory& factory,
+        EnumerationPreprocessManager& preprocess_manager,
+        const ICacheIOManager& cache_manager,
+        const std::string& cache_path,
+        IFilterOutputManager& filter_results_writer,
+        const LibraryData& library,
+        const std::string& timestamp);
+
+    /**
      * @brief Load all graphs from @p path using @p reader_type.
      * @param path        Directory containing the graph files.
      * @param reader_type Format of the graph files.
@@ -129,6 +136,39 @@ private:
      */
     static LibraryData load_library(const std::string& path, const GraphReaderType reader_type,
         const bool is_directed, LoggerHandler logger);
+
+        /**
+     * @brief Construct a graph reader for the given format.
+     * @param type Desired reader format.
+     * @return Owning pointer to the concrete IColoredGraphReader.
+     */
+    static std::unique_ptr<IColoredGraphReader> make_graph_reader(GraphReaderType type);
+
+    /**
+     * @brief Construct a pattern writer for the given format.
+     * @param type Desired writer format.
+     * @return Owning pointer to the concrete IPatternWriter.
+     */
+    static std::unique_ptr<IPatternWriter> make_pattern_writer(PatternWriterType type);
+
+    /**
+     * @brief Construct a cache manager for the given format.
+     * @param type           Desired cache format.
+     * @param folder         Directory where the cache file will be written.
+     * @param base_filename  File name without extension.
+     * @return Owning pointer to the concrete ICacheIOManager.
+     */
+    static std::unique_ptr<ICacheIOManager> make_cache_manager(CacheManagerType type,
+                                                               const std::string& folder);
+
+    /**
+     * @brief Construct a filter results writer for the given format.
+     * @param type   Desired output format.
+     * @param folder Directory where the output file will be written.
+     * @return Owning pointer to the concrete IFilterOutputManager.
+     */
+    static std::unique_ptr<IFilterOutputManager> make_filter_results_writer(ResultOutputType type,
+                                                                             const std::string& folder);
 };
 
 }  // namespace sgf
