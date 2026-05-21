@@ -13,22 +13,13 @@ namespace sgf
 /**
  * @brief Interface for writing pattern graphs.
  *
- * Implementors handle format-specific serialization of a BoostGraph to disk.
- * All I/O errors must be wrapped as SgfException subclasses — no raw standard
- * exceptions may propagate to the caller.
+ * The base class owns directory creation so that concrete implementations only
+ * handle format-specific serialization. write() creates the parent directory
+ * using IOUtils::create_directory_if_needed then delegates to do_write().
  */
 class IPatternWriter
 {
 public:
-    /**
-     * @brief Writes a pattern graph to a file.
-     *
-     * @param graph The pattern graph to serialize.
-     * @param path Destination file path.
-     * @throws SgfPathDoesntExistException if the path cannot be written.
-     */
-    virtual void write(const BoostGraph& graph, const std::string& path) const = 0;
-
     IPatternWriter() = default;
 
     /**
@@ -36,11 +27,34 @@ public:
      */
     virtual ~IPatternWriter() = default;
 
-
     IPatternWriter(const IPatternWriter&) = default;
     IPatternWriter& operator=(const IPatternWriter&) = default;
     IPatternWriter(IPatternWriter&&) = default;
     IPatternWriter& operator=(IPatternWriter&&) = default;
+
+    /**
+     * @brief Creates the parent directory if absent, then writes @p graph to @p path.
+     *
+     * Directory creation is delegated to IOUtils::create_directory_if_needed;
+     * format-specific serialization is delegated to do_write().
+     *
+     * @param graph The pattern graph to serialize.
+     * @param path Destination file path.
+     * @throws SgfPathExistsException if directory creation or file writing fails.
+     */
+    void write(const BoostGraph& graph, const std::string& path) const;
+
+private:
+    /**
+     * @brief Writes @p graph to @p path in the concrete format.
+     *
+     * Called by write() after the parent directory has been created.
+     *
+     * @param graph The pattern graph to serialize.
+     * @param path Destination file path.
+     * @throws SgfPathExistsException if the file cannot be opened or written.
+     */
+    virtual void do_write(const BoostGraph& graph, const std::string& path) const = 0;
 };
 
 }  // namespace sgf

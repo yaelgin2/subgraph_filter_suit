@@ -2,6 +2,7 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
+#include "DebugLog.h"
 #include "GeneralColorHist.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
@@ -197,7 +198,7 @@ void MultiGraphPatternFinder::log_alive_graph_indexes() const
     {
         alive_indices_log += std::to_string(alive_idx) + " ";
     }
-    m_logger.log(LogLevel::DEBUG, "Alive indices: " + alive_indices_log);
+    SGF_DEBUG_LOG(m_logger, "Alive indices: " + alive_indices_log);
 }
 
 void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
@@ -230,16 +231,16 @@ void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
 }
 
 std::pair<BoostGraph, std::unordered_set<uint32_t>> MultiGraphPatternFinder::finalize_and_return(
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time)
+    [[maybe_unused]] const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time)
 {
     PatternUtils::recolor_pattern(m_pattern, m_color_map);
 
-    const std::chrono::time_point<std::chrono::high_resolution_clock> end_time =
+    [[maybe_unused]] const std::chrono::time_point<std::chrono::high_resolution_clock> end_time =
         std::chrono::high_resolution_clock::now();
-    m_logger.log(LogLevel::DEBUG,
-                 "find_pattern completed in " +
-                     std::to_string(std::chrono::duration<double>(end_time - start_time).count()) +
-                     "s");
+    SGF_DEBUG_LOG(m_logger,
+                  "find_pattern completed in " +
+                      std::to_string(std::chrono::duration<double>(end_time - start_time).count()) +
+                      "s");
 
     m_match_trees.clear();
     m_color_map.clear();

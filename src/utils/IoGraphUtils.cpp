@@ -1,7 +1,7 @@
 #include "IoGraphUtils.h"
 
 #include "GraphConstructionException.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -19,7 +19,7 @@ std::ifstream IoGraphUtils::open_file(const std::string& path)
     std::ifstream file(path);
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("cannot open file: " + path);
+        throw SgfPathExistsException("cannot open file: " + path);
     }
     return file;
 }

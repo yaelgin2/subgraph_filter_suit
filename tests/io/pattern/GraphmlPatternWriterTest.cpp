@@ -6,7 +6,6 @@
 #include "GraphmlGraphReader.h"
 #include "ILogger.h"
 #include "LoggerHandler.h"
-#include "SgfPathDoesntExistException.h"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <cstdint>
@@ -349,12 +348,13 @@ TEST_F(GraphmlPatternWriterTest, triangle_all_different_vertex_colors_bidirectio
 // ── Error cases ───────────────────────────────────────────────────────────────
 
 /**
- * @brief Writing to a path whose parent directory does not exist throws
- * SgfPathDoesntExistException.
+ * @brief Writing to a path whose parent directory does not exist creates the directory.
  */
-TEST_F(GraphmlPatternWriterTest, nonexistent_directory_throws_path_doesnt_exist)
+TEST_F(GraphmlPatternWriterTest, write_creates_nonexistent_parent_directory)
 {
     const BoostGraph graph;
-    EXPECT_THROW(m_writer.write(graph, "/no_such_directory_sgf_test/file.graphml"),
-                 SgfPathDoesntExistException);
+    const std::filesystem::path new_dir = m_temp_dir / "new_subdir";
+    const std::string path = (new_dir / "output.graphml").string();
+    EXPECT_NO_THROW(m_writer.write(graph, path));
+    EXPECT_TRUE(std::filesystem::exists(path));
 }

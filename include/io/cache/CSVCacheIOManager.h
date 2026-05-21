@@ -35,7 +35,7 @@ protected:
      *
      * @param data      Enumeration data to serialize.
      * @param full_path Destination file path including the .csv extension.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      */
     void write_to_file(const EnumerationData& data, const std::vector<std::string>& graph_names,
                        const std::string& full_path) const override;
@@ -45,7 +45,7 @@ protected:
      *
      * @param full_path Source file path including the .csv extension.
      * @return Parsed enumeration data.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException if any row contains malformed values.
      */
     std::unordered_map<std::string, EnumerationResult>

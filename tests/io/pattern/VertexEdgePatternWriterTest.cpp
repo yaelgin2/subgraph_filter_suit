@@ -2,7 +2,6 @@
 
 #include "BoostGraph.h"
 #include "IOConstants.h"
-#include "SgfPathDoesntExistException.h"
 
 #include <array>
 #include <boost/graph/adjacency_list.hpp>
@@ -346,12 +345,14 @@ TEST_F(VertexEdgePatternWriterTest, triangle_different_edge_colors_writes_correc
 // ── Error handling ────────────────────────────────────────────────────────────
 
 /**
- * @brief Writing to a path whose parent directory does not exist throws
- * SgfPathDoesntExistException.
+ * @brief Writing to a path whose parent directory does not exist creates the directory.
  */
-TEST_F(VertexEdgePatternWriterTest, bad_path_throws_path_doesnt_exist)
+TEST_F(VertexEdgePatternWriterTest, write_creates_nonexistent_parent_directory)
 {
     const BoostGraph graph;
-    EXPECT_THROW(m_writer.write(graph, "/nonexistent_directory_sgf/graph"),
-                 SgfPathDoesntExistException);
+    const std::filesystem::path new_dir = m_temp_dir / "new_subdir";
+    const std::string base_path = (new_dir / "graph").string();
+    EXPECT_NO_THROW(m_writer.write(graph, base_path));
+    EXPECT_TRUE(std::filesystem::exists(base_path + IOConstants::NODE_LABELS_SUFFIX));
+    EXPECT_TRUE(std::filesystem::exists(base_path + IOConstants::EDGE_SUFFIX));
 }

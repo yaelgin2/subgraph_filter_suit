@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GraphConstructionException.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <cstdint>
 #include <fstream>
@@ -21,7 +21,7 @@ public:
      * @brief Opens a file for reading, throwing if it cannot be opened.
      * @param path Path to the file.
      * @return An open input stream.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      */
     static std::ifstream open_file(const std::string& path);
 

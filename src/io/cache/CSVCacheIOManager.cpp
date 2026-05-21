@@ -4,7 +4,7 @@
 #include "GraphConstructionException.h"
 #include "ICacheIOManager.h"
 #include "Int128.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -85,13 +85,13 @@ void CSVCacheIOManager::write_to_file(const EnumerationData& data,
     std::ofstream file(full_path);
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("Cannot open file for writing: '" + full_path + "'");
+        throw SgfPathExistsException("Cannot open file for writing: '" + full_path + "'");
     }
     write_header(file);
     write_rows(data, graph_names, file);
     if (file.fail())
     {
-        throw SgfPathDoesntExistException("Write error on file: '" + full_path + "'");
+        throw SgfPathExistsException("Write error on file: '" + full_path + "'");
     }
 }
 
@@ -129,7 +129,7 @@ CSVCacheIOManager::read_from_file(const std::string& full_path) const
     std::ifstream file(full_path);
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("Cannot open file for reading: '" + full_path + "'");
+        throw SgfPathExistsException("Cannot open file for reading: '" + full_path + "'");
     }
     try
     {

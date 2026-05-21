@@ -13,6 +13,10 @@ namespace sgf
 
 void IOUtils::create_directory_if_needed(const std::string& folder_path)
 {
+    if (folder_path.empty())
+    {
+        return;
+    }
     std::error_code error_code;
     std::filesystem::create_directories(folder_path, error_code);
     if (error_code)

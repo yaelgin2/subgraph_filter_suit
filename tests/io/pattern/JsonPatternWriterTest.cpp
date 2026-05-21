@@ -2,7 +2,6 @@
 
 #include "BoostGraph.h"
 #include "IOConstants.h"
-#include "SgfPathDoesntExistException.h"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -121,14 +120,15 @@ protected:
 // ── Error path ────────────────────────────────────────────────────────────────
 
 /**
- * @brief Writing to a path whose parent directory does not exist throws
- * SgfPathDoesntExistException.
+ * @brief Writing to a path whose parent directory does not exist creates the directory.
  */
-TEST_F(JsonPatternWriterTest, write_to_nonexistent_directory_throws_path_doesnt_exist)
+TEST_F(JsonPatternWriterTest, write_creates_nonexistent_parent_directory)
 {
     const BoostGraph graph;
-    EXPECT_THROW(m_writer.write(graph, "/no_such_directory_xyz/test.json"),
-                 SgfPathDoesntExistException);
+    const std::filesystem::path new_dir = m_temp_dir / "new_subdir";
+    const std::string path = (new_dir / "output.json").string();
+    EXPECT_NO_THROW(m_writer.write(graph, path));
+    EXPECT_TRUE(std::filesystem::exists(path));
 }
 
 // ── Empty graph ───────────────────────────────────────────────────────────────

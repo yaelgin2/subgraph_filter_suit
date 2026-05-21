@@ -6,7 +6,7 @@
 #include "ILogger.h"
 #include "InvalidArgumentException.h"
 #include "LoggerHandler.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <algorithm>
 #include <gtest/gtest.h>
@@ -65,13 +65,13 @@ protected:
 // ── Invalid path ──────────────────────────────────────────────────────────────
 
 /**
- * @brief Reading a path that does not exist must throw SgfPathDoesntExistException.
+ * @brief Reading a path that does not exist must throw SgfPathExistsException.
  */
 TEST_F(JsonGraphReaderTest, nonexistent_path_throws_path_doesnt_exist)
 {
     EXPECT_THROW(
         m_reader.read(data("does_not_exist.json"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        SgfPathDoesntExistException);
+        SgfPathExistsException);
 }
 
 // ── Parse errors ──────────────────────────────────────────────────────────────
