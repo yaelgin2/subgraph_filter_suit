@@ -1,8 +1,11 @@
 #pragma once
 
 #include "EnumerationPreprocessManager.h"
+#include "IGraphPreprocessor.h"
 
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace sgf
 {
@@ -23,7 +26,7 @@ public:
      * @param folder        Directory where the cache file will be written.
      * @param base_filename File name without extension (e.g. "motif_cache").
      */
-    ICacheIOManager(std::string folder, std::string base_filename);
+    ICacheIOManager(std::string folder);
 
     /**
      * @brief Default virtual destructor.
@@ -38,44 +41,45 @@ public:
     /**
      * @brief Creates the target directory if absent, then writes @p data to the cache file.
      *
-     * The full output path is: @c folder / @c base_filename + "." + get_extension().
-     * Directory creation is delegated to IOUtils::create_directory_if_needed; format-specific
-     * serialization is delegated to write_to_file().
+     * Each entry is stored under the corresponding name from @p graph_names:
+     * the key written to disk for @p data[i] is @p graph_names[i].
+     * @p data and @p graph_names must have the same size.
      *
-     * @param data Enumeration data to persist.
+     * @param data        Enumeration results indexed by library position.
+     * @param graph_names Names aligned with @p data (same size).
      * @throws SgfPathDoesntExistException if directory creation or file writing fails.
      */
-    void write(const EnumerationData& data) const;
+    void write(std::string base_filename, const EnumerationData& data, const std::vector<std::string>& graph_names) const;
 
     /**
      * @brief Reads data from the cache file.
      *
-     * The full input path is: @c folder / @c base_filename + "." + get_extension().
-     * Deserialization is delegated to read_from_file().
-     *
-     * @return Deserialized enumeration data.
+     * @param base_filename File name without extension (e.g. "motif_cache").
+     * @return Map from graph name to its enumeration result.
      * @throws SgfPathDoesntExistException if the file cannot be opened for reading.
      */
-    EnumerationData read() const;
+    std::unordered_map<std::string, EnumerationResult> read(const std::string& base_filename) const;
 
 protected:
     /**
-     * @brief Serializes @p data to @p full_path in the concrete format.
+     * @brief Serializes @p data (paired with @p graph_names) to @p full_path.
      *
-     * @param data      Enumeration data to write.
-     * @param full_path Destination file path including the format extension.
-     * @throws SgfPathDoesntExistException if the file cannot be opened or written.
+     * @param data        Enumeration data to serialize.
+     * @param graph_names Names aligned with @p data.
+     * @param full_path   Destination file path including the format extension.
      */
-    virtual void write_to_file(const EnumerationData& data, const std::string& full_path) const = 0;
+    virtual void write_to_file(const EnumerationData& data,
+                               const std::vector<std::string>& graph_names,
+                               const std::string& full_path) const = 0;
 
     /**
-     * @brief Deserializes data from @p full_path in the concrete format.
+     * @brief Deserializes a name-keyed result map from @p full_path.
      *
      * @param full_path Source file path including the format extension.
-     * @return Deserialized enumeration data.
-     * @throws SgfPathDoesntExistException if the file cannot be opened or read from.
+     * @return Map from graph name to enumeration result.
      */
-    virtual EnumerationData read_from_file(const std::string& full_path) const = 0;
+    virtual std::unordered_map<std::string, EnumerationResult>
+    read_from_file(const std::string& full_path) const = 0;
 
     /**
      * @brief Returns the file extension used by this format, without a leading dot.
@@ -86,14 +90,13 @@ protected:
 
 private:
     std::string m_folder;
-    std::string m_base_filename;
 
     /**
      * @brief Builds the full output path from folder, base filename, and extension.
      *
      * @return Full path string.
      */
-    [[nodiscard]] std::string build_full_path() const;
+    [[nodiscard]] std::string build_full_path(const std::string& base_filename) const;
 };
 
 }  // namespace sgf

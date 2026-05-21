@@ -12,21 +12,18 @@
 
 using namespace sgf;
 
-// ── Empty vector ──────────────────────────────────────────────────────────────
-
 TEST(BinaryCacheIOManagerTest, empty_data_roundtrip)
 {
     TempCacheFile temp{"empty_data", "bin"};
     const BinaryCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const EnumerationData data{};
-    manager.write(data);
+    const std::vector<std::string> names{};
+    manager.write(data, names);
 
-    const EnumerationData result = manager.read();
+    const std::unordered_map<std::string, EnumerationResult> result = manager.read();
     EXPECT_TRUE(result.empty());
 }
-
-// ── One graph, empty map ──────────────────────────────────────────────────────
 
 TEST(BinaryCacheIOManagerTest, single_graph_empty_map_roundtrip)
 {
@@ -34,14 +31,13 @@ TEST(BinaryCacheIOManagerTest, single_graph_empty_map_roundtrip)
     const BinaryCacheIOManager manager{temp.m_folder, temp.m_base_name};
 
     const EnumerationData data{EnumerationResult{}};
-    manager.write(data);
+    const std::vector<std::string> names{"graph_a"};
+    manager.write(data, names);
 
-    const EnumerationData result = manager.read();
+    const std::unordered_map<std::string, EnumerationResult> result = manager.read();
     ASSERT_EQ(result.size(), 1U);
-    EXPECT_TRUE(result[0].empty());
+    EXPECT_TRUE(result.at("graph_a").empty());
 }
-
-// ── Two graphs: first empty, second non-empty ─────────────────────────────────
 
 TEST(BinaryCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
 {
@@ -52,16 +48,15 @@ TEST(BinaryCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
     const uint32_t value = 77U;
 
     const EnumerationData data{EnumerationResult{}, EnumerationResult{{key, value}}};
-    manager.write(data);
+    const std::vector<std::string> names{"graph_a", "graph_b"};
+    manager.write(data, names);
 
-    const EnumerationData result = manager.read();
+    const std::unordered_map<std::string, EnumerationResult> result = manager.read();
     ASSERT_EQ(result.size(), 2U);
-    EXPECT_TRUE(result[0].empty());
-    ASSERT_EQ(result[1].size(), 1U);
-    EXPECT_EQ(result[1].at(key), value);
+    EXPECT_TRUE(result.at("graph_a").empty());
+    ASSERT_EQ(result.at("graph_b").size(), 1U);
+    EXPECT_EQ(result.at("graph_b").at(key), value);
 }
-
-// ── Two graphs: both non-empty ────────────────────────────────────────────────
 
 TEST(BinaryCacheIOManagerTest, two_graphs_both_nonempty_roundtrip)
 {
@@ -79,13 +74,14 @@ TEST(BinaryCacheIOManagerTest, two_graphs_both_nonempty_roundtrip)
         EnumerationResult{{key_a, val_a}, {key_b, val_b}},
         EnumerationResult{{key_c, val_c}},
     };
-    manager.write(data);
+    const std::vector<std::string> names{"graph_a", "graph_b"};
+    manager.write(data, names);
 
-    const EnumerationData result = manager.read();
+    const std::unordered_map<std::string, EnumerationResult> result = manager.read();
     ASSERT_EQ(result.size(), 2U);
-    ASSERT_EQ(result[0].size(), 2U);
-    EXPECT_EQ(result[0].at(key_a), val_a);
-    EXPECT_EQ(result[0].at(key_b), val_b);
-    ASSERT_EQ(result[1].size(), 1U);
-    EXPECT_EQ(result[1].at(key_c), val_c);
+    ASSERT_EQ(result.at("graph_a").size(), 2U);
+    EXPECT_EQ(result.at("graph_a").at(key_a), val_a);
+    EXPECT_EQ(result.at("graph_a").at(key_b), val_b);
+    ASSERT_EQ(result.at("graph_b").size(), 1U);
+    EXPECT_EQ(result.at("graph_b").at(key_c), val_c);
 }
