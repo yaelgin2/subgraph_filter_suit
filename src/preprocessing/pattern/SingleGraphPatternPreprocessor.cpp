@@ -36,7 +36,7 @@ std::vector<SingleGraphPatternResult> SingleGraphPatternPreprocessor::calculate(
             pattern_finder.find_pattern(search_graph, score_threshold);
         for (const BoostGraph& pattern : patterns)
         {
-            result.emplace_back(std::move(pattern), std::vector<uint32_t>{pattern_index});
+            result.emplace_back(pattern, std::vector<uint32_t>{pattern_index});
         }
     }
     return result;
