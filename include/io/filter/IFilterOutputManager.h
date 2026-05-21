@@ -24,7 +24,7 @@ public:
      * @param folder        Directory where the output file will be written.
      * @param base_filename File name without extension (e.g. "filter_results").
      */
-    IFilterOutputManager(std::string folder, std::string base_filename);
+    IFilterOutputManager(std::string folder);
 
     /**
      * @brief Default virtual destructor.
@@ -46,7 +46,7 @@ public:
      * @param results   Filter result per library graph; true = pruned, false = survives.
      * @throws SgfPathExistsException if directory creation or file writing fails.
      */
-    void write(const std::vector<std::string>& filenames, const FilterResult& results) const;
+    void write(std::string base_filename, const std::vector<std::string>& filenames, const FilterResult& results) const;
 
 protected:
     /**
@@ -69,14 +69,14 @@ protected:
 
 private:
     std::string m_folder;
-    std::string m_base_filename;
 
     /**
      * @brief Builds the full output path from folder, base filename, and extension.
      *
+     * @param base_filename File name without extension.
      * @return Full path string.
      */
-    [[nodiscard]] std::string build_full_path() const;
+    [[nodiscard]] std::string build_full_path(const std::string& base_filename) const;
 };
 
 }  // namespace sgf

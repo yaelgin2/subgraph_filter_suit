@@ -28,7 +28,7 @@ public:
      * @param folder        Directory where the output file will be written.
      * @param base_filename File name without extension (e.g. "filter_results").
      */
-    CSVFilterOutputManager(std::string folder, std::string base_filename);
+    CSVFilterOutputManager(std::string folder);
 
     /**
      * @brief Default virtual destructor.

@@ -13,8 +13,8 @@
 namespace sgf
 {
 
-CSVFilterOutputManager::CSVFilterOutputManager(std::string folder, std::string base_filename)
-    : IFilterOutputManager(std::move(folder), std::move(base_filename))
+CSVFilterOutputManager::CSVFilterOutputManager(std::string folder)
+    : IFilterOutputManager(std::move(folder))
 {
 }
 

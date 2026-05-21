@@ -15,8 +15,8 @@
 namespace sgf
 {
 
-JsonFilterOutputManager::JsonFilterOutputManager(std::string folder, std::string base_filename)
-    : IFilterOutputManager(std::move(folder), std::move(base_filename))
+JsonFilterOutputManager::JsonFilterOutputManager(std::string folder)
+    : IFilterOutputManager(std::move(folder))
 {
 }
 
