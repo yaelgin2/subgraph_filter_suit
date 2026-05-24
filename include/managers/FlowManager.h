@@ -72,20 +72,37 @@ class FlowManager
 public:
     /**
      * @brief Run the enumeration preprocessing pipeline.
-     * @param input_folder  Directory containing the graph library.
-     * @param reader_type   Format of the graph files.
-     * @param output_folder Directory to write the enumeration cache.
-     * @param cache_type    Format of the enumeration cache.
+     * @param input_path        Directory containing the graph library.
+     * @param is_directed       Treat graphs as directed.
+     * @param reader_type       Format of the graph files.
+     * @param output_path       Directory where enumeration caches are written.
+     * @param output_type       Format of the enumeration cache.
+     * @param log_file_path     Optional log file path.
+     * @param preprocess_paths  Preprocess path signatures.
+     * @param preprocess_motifs Preprocess motif signatures.
      */
-    static void enumerator_preprocess_run(const std::string& input_path, const bool is_directed, 
-        const GraphReaderType reader_type, std::string& output_path, 
+    static void enumerator_preprocess_run(const std::string& input_path, const bool is_directed,
+        const GraphReaderType reader_type, std::string& output_path,
         CacheManagerType output_type, std::string log_file_path,
         bool preprocess_paths, bool preprocess_motifs);
 
-    /// @brief Run the enumeration filter stage.
+    /**
+     * @brief Run the enumeration filter stage.
+     * @param graph_input_path   Directory containing query graphs.
+     * @param is_directed        Treat graphs as directed.
+     * @param reader_type        Format of the graph files.
+     * @param motif_cache_file   Full path to the motif cache file to read.
+     * @param path_cache_file    Full path to the path cache file to read.
+     * @param cache_reader_type  Format of the cache files.
+     * @param output_folder      Directory for filter result output.
+     * @param output_type        Format of the filter results.
+     * @param log_file_path      Optional log file path.
+     * @param filter_paths       Filter by path signatures.
+     * @param filter_motifs      Filter by motif signatures.
+     */
     static void enumerator_filter_run(const std::string& graph_input_path, const bool is_directed,
-        const GraphReaderType reader_type, 
-        const std::string& cache_path, const CacheManagerType cache_reader_type, 
+        const GraphReaderType reader_type, const std::string& motif_cache_file,
+        const std::string& path_cache_file, const CacheManagerType cache_reader_type,
         std::string& output_folder, ResultOutputType output_type, std::string log_file_path,
         bool filter_paths, bool filter_motifs);
 
@@ -109,7 +126,8 @@ private:
     const std::string& cache_path,
     IFilterOutputManager& filter_results_writer,
     const LibraryData& library,
-    const std::string& timestamp);
+    const std::string& timestamp,
+    LoggerHandler logger);
 
     /**
      * @brief Returns the current local time as a filename-safe string.

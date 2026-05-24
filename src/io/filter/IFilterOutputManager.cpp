@@ -27,8 +27,9 @@ std::string IFilterOutputManager::build_full_path(const std::string& base_filena
 void IFilterOutputManager::write(std::string base_filename, const std::vector<std::string>& filenames,
                                  const FilterResult& results) const
 {
-    IOUtils::create_directory_if_needed(m_folder);
     const std::string full_path = build_full_path(base_filename);
+    IOUtils::create_directory_if_needed(
+        std::filesystem::path(full_path).parent_path().string());
     m_logger.log(LogLevel::INFO, "Writing filter results to '" + full_path + "'");
     write_to_file(filenames, results, full_path);
 }

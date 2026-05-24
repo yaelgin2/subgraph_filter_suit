@@ -3,6 +3,7 @@
 #include "EnumerationPreprocessManager.h"
 #include "FilteringUtils.h"
 #include "IGraphPreprocessor.h"
+#include "LoggerHandler.h"
 
 #include <vector>
 
@@ -26,8 +27,10 @@ public:
      * @brief Constructs the filter with a precomputed library cache.
      * @param library_cache One EnumerationResult per library graph, indexed by
      *                      library position.
+     * @param logger        Optional logger for filter diagnostics.
      */
-    explicit GroupEnumerationGraphFilter(EnumerationResultVector library_cache);
+    GroupEnumerationGraphFilter(EnumerationResultVector library_cache,
+                                LoggerHandler logger = LoggerHandler::null());
 
     ~GroupEnumerationGraphFilter() = default;
 
@@ -51,6 +54,7 @@ public:
 
 private:
     EnumerationResultVector m_library_cache;
+    LoggerHandler m_logger;
 };
 
 }  // namespace sgf

@@ -22,6 +22,7 @@
 
 #include <array>
 #include <ctime>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -122,34 +123,38 @@ void FlowManager::enumerator_preprocess_run(const std::string& input_path, const
 }
 
 void FlowManager::enumerator_filter_run(const std::string& graph_input_path, const bool is_directed,
-    const GraphReaderType reader_type,
-    const std::string& cache_path, const CacheManagerType cache_reader_type,
+    const GraphReaderType reader_type, const std::string& motif_cache_file,
+    const std::string& path_cache_file, const CacheManagerType cache_reader_type,
     std::string& output_folder, ResultOutputType output_type, std::string log_file_path,
     bool filter_paths, bool filter_motifs)
 {
     const LoggerBundle log_bundle(log_file_path);
     LibraryData graphs_to_find_in = load_library(graph_input_path, reader_type, is_directed, log_bundle.handler());
-    std::unique_ptr<ICacheIOManager> cache_manager =
-        make_cache_manager(cache_reader_type, output_folder, log_bundle.handler());
     std::unique_ptr<IFilterOutputManager> filter_results_writer =
         make_filter_results_writer(output_type, output_folder, log_bundle.handler());
     EnumerationPreprocessManager preprocess_manager(graphs_to_find_in.m_library, log_bundle.handler());
     const std::string timestamp = generate_timestamp();
     if (filter_paths)
     {
+        const std::filesystem::path path_file(path_cache_file);
+        std::unique_ptr<ICacheIOManager> path_cache =
+            make_cache_manager(cache_reader_type, path_file.parent_path().string(), log_bundle.handler());
         run_enumeration_filter_stage(
             [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
             { return std::make_unique<PathProcessor>(graph, logger); },
-            preprocess_manager, *cache_manager, cache_path, *filter_results_writer,
-            graphs_to_find_in, timestamp);
+            preprocess_manager, *path_cache, path_file.stem().string(), *filter_results_writer,
+            graphs_to_find_in, timestamp, log_bundle.handler());
     }
     if (filter_motifs)
     {
+        const std::filesystem::path motif_file(motif_cache_file);
+        std::unique_ptr<ICacheIOManager> motif_cache =
+            make_cache_manager(cache_reader_type, motif_file.parent_path().string(), log_bundle.handler());
         run_enumeration_filter_stage(
             [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
             { return std::make_unique<MotifPreprocessor>(graph, logger); },
-            preprocess_manager, *cache_manager, cache_path, *filter_results_writer,
-            graphs_to_find_in, timestamp);
+            preprocess_manager, *motif_cache, motif_file.stem().string(), *filter_results_writer,
+            graphs_to_find_in, timestamp, log_bundle.handler());
     }
 }
 
@@ -185,24 +190,28 @@ void FlowManager::run_enumeration_filter_stage(
     const std::string& cache_path,
     IFilterOutputManager& filter_results_writer,
     const LibraryData& library,
-    const std::string& timestamp)
+    const std::string& timestamp,
+    LoggerHandler logger)
 {
     const EnumerationResultVector graphs_enumeration = preprocess_manager.preprocess(factory);
     const std::unordered_map<std::string, EnumerationResult> library_enumeration =
         cache_manager.read(cache_path);
+    std::vector<std::string> library_graph_names;
     EnumerationResultVector library_enumeration_vector;
-    for(auto & graph_data : library_enumeration)
+    for (const auto& graph_data : library_enumeration)
     {
+        library_graph_names.push_back(graph_data.first);
         library_enumeration_vector.push_back(graph_data.second);
     }
-    GroupEnumerationGraphFilter filter(library_enumeration_vector);
+    GroupEnumerationGraphFilter filter(library_enumeration_vector, std::move(logger));
     for (uint32_t graph_index = 0U;
          graph_index < static_cast<uint32_t>(graphs_enumeration.size()); ++graph_index)
     {
+        logger.log(LogLevel::INFO, "Start filtering in backround graph " + std::to_string(graph_index) + "...");
         const FilterResult filtering_result = filter.filter(graphs_enumeration[graph_index]);
         filter_results_writer.write(
             library.m_graph_names[graph_index] + "_filtering_result_" + timestamp,
-            library.m_graph_names,
+            library_graph_names,
             filtering_result);
     }
 }

@@ -27,7 +27,8 @@ static constexpr const char* KEY_IS_DIRECTED = "is-directed";
 static constexpr const char* KEY_LIBRARY_DIR = "library-dir";
 static constexpr const char* KEY_READER_TYPE = "reader-type";
 static constexpr const char* KEY_CACHE_DIR = "cache-dir";
-static constexpr const char* KEY_CACHE_FILE = "cache-file";
+static constexpr const char* KEY_MOTIF_CACHE_FILE = "motif-cache-file";
+static constexpr const char* KEY_PATH_CACHE_FILE = "path-cache-file";
 static constexpr const char* KEY_CACHE_TYPE = "cache-type";
 static constexpr const char* KEY_LOG_FILE_PATH = "log-file-path";
 static constexpr const char* KEY_GRAPH_DIR = "graph-dir";
@@ -64,7 +65,8 @@ struct PreprocessArgs
  */
 struct FilterArgs
 {
-    std::string m_cache_file;                                    ///< Cache file path to read.
+    std::string m_motif_cache_file;                              ///< Motif cache file path to read.
+    std::string m_path_cache_file;                               ///< Path cache file path to read.
     CacheManagerType m_cache_type{CacheManagerType::BINARY};     ///< Cache format.
     std::string m_graph_dir;                                     ///< Query graphs directory.
     GraphReaderType m_graph_input_type{GraphReaderType::GRAPHML};///< Graph file format.
@@ -124,7 +126,8 @@ po::options_description build_options()
         (KEY_GRAPH_INPUT_TYPE, po::value<std::string>(), "Graph file format: graphml, vertex-edge, json")
         (KEY_RESULT_FOLDER,    po::value<std::string>(), "Directory for filter result output")
         (KEY_RESULT_TYPE,      po::value<std::string>(), "Result format: json, csv")
-        (KEY_CACHE_FILE,       po::value<std::string>(), "Path to the cache file to read");
+        (KEY_MOTIF_CACHE_FILE, po::value<std::string>(), "Full path to the motif cache file (required with --motifs)")
+        (KEY_PATH_CACHE_FILE,  po::value<std::string>(), "Full path to the path cache file (required with --paths)");
 
     po::options_description all_desc("sgf-graph-enumerator options");
     all_desc.add(mode_desc).add(feature_desc).add(common_desc)
@@ -282,7 +285,8 @@ PreprocessArgs parse_preprocess_args(const po::variables_map& vm)
 FilterArgs parse_filter_args(const po::variables_map& vm)
 {
     FilterArgs result;
-    result.m_cache_file       = get_required_string(vm, KEY_CACHE_FILE);
+    result.m_motif_cache_file = get_optional_string(vm, KEY_MOTIF_CACHE_FILE);
+    result.m_path_cache_file  = get_optional_string(vm, KEY_PATH_CACHE_FILE);
     result.m_cache_type       = parse_cache_type(get_required_string(vm, KEY_CACHE_TYPE));
     result.m_graph_dir        = get_required_string(vm, KEY_GRAPH_DIR);
     result.m_graph_input_type = parse_reader_type(get_required_string(vm, KEY_GRAPH_INPUT_TYPE));
@@ -320,7 +324,24 @@ CliArgs parse_cli_args(const po::variables_map& vm)
 // ── Validation ─────────────────────────────────────────────────────────────
 
 /**
- * @brief Validates that at least one mode and one feature flag are set.
+ * @brief Throws if a feature is enabled but its required cache file is empty.
+ * @param enabled    Whether the feature flag is set.
+ * @param path       The cache file path value (empty if not provided).
+ * @param flag_name  CLI flag name shown in the error message.
+ * @throws SgfInvalidArgumentException if enabled and path is empty.
+ */
+void require_cache_file(const bool enabled, const std::string& path, const char* flag_name)
+{
+    if (enabled && path.empty())
+    {
+        throw SgfInvalidArgumentException(
+            std::string("--") + flag_name + " is required when --filter and the feature flag are both set.");
+    }
+}
+
+/**
+ * @brief Validates that at least one mode and one feature flag are set,
+ *        and that required cache files are provided for the filter stage.
  * @param args Parsed CLI arguments.
  * @throws SgfInvalidArgumentException if validation fails.
  */
@@ -339,6 +360,11 @@ void validate_mode_flags(const CliArgs& args)
     {
         throw SgfInvalidArgumentException(
             "At least one of --motifs or --paths must be specified.");
+    }
+    if (args.m_run_filter)
+    {
+        require_cache_file(args.m_use_motifs, args.m_filter.m_motif_cache_file, KEY_MOTIF_CACHE_FILE);
+        require_cache_file(args.m_use_paths,  args.m_filter.m_path_cache_file,  KEY_PATH_CACHE_FILE);
     }
 }
 
@@ -373,7 +399,8 @@ void run_filter(const CliArgs& args)
         args.m_filter.m_graph_dir,
         args.m_is_directed,
         args.m_filter.m_graph_input_type,
-        args.m_filter.m_cache_file,
+        args.m_filter.m_motif_cache_file,
+        args.m_filter.m_path_cache_file,
         args.m_filter.m_cache_type,
         result_folder,
         args.m_filter.m_result_type,
