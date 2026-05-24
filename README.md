@@ -6,18 +6,39 @@ A C++ library for efficient subgraph matching. It preprocesses a library of grap
 
 - CMake 3.16+
 - A C++17-capable compiler (GCC 7+, Clang 5+, or MSVC 19.14+) **built against the same C++ standard library ABI as your Boost installation** — mixing compiler versions (e.g. system GCC and a conda-provided Boost) causes linker errors; see [Compiler/Boost ABI mismatch](#compilerboost-abi-mismatch) below
-- Boost 1.76+ (`graph`, `log`, `log_setup` components)
+- Boost 1.76+ (`graph`, `log`, `log_setup`, `json` components; `program_options` is required only for the CLI tools)
 - Internet access on first build (GTest is fetched automatically via CMake FetchContent)
 
 ## Build
 
+### Library only (no CLI tools)
+
 ```bash
-# Configure — downloads GTest and generates compile_commands.json for IDE tooling
+# Configure with CLI disabled
+cmake -S . -B build -DSGF_BUILD_CLI=OFF
+
+# Build
+cmake --build build --config Release
+```
+
+The library target is `subgraph_filter_suite`. Link against it from your own CMake project with:
+
+```cmake
+find_package(subgraph_filter_suite REQUIRED)
+target_link_libraries(my_target PRIVATE subgraph_filter_suite)
+```
+
+### Library + CLI tools
+
+```bash
+# Configure (CLI is ON by default) — also generates compile_commands.json for IDE tooling
 cmake -S . -B build
 
 # Build (Release)
 cmake --build build --config Release
 ```
+
+This produces the `sgf-graph-enumerator` executable in the `build/` directory in addition to the library.
 
 ### Compiler/Boost ABI mismatch
 
