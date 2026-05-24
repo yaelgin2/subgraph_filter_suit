@@ -61,8 +61,9 @@ public:
      * @param logger           Optional logger; defaults to a no-op handler.
      */
     SingleGraphPatternPreprocessor(std::vector<ColoredGraph>& graph_library, bool is_directed,
-                                   ColoredGraph background_graph, const std::vector<bool>& to_process,
-                                   double score_threshold, SingleGraphFinderConfig config = {},
+                                   ColoredGraph background_graph,
+                                   const std::vector<bool>& to_process, double score_threshold,
+                                   SingleGraphFinderConfig config = {},
                                    LoggerHandler logger = LoggerHandler::null());
 
     /**
@@ -78,7 +79,7 @@ private:
     const bool M_IS_DIRECTED;                    ///< Whether the graphs are directed.
     ColoredGraph m_background_graph;             ///< Null model for pattern scoring.
     const double m_score_threshold;              ///< Beam search score cutoff.
-    const std::vector<bool>& m_to_process;        ///< Indicator vector for which graphs to process.
+    const std::vector<bool>& m_to_process;       ///< Indicator vector for which graphs to process.
     const SingleGraphFinderConfig m_config;      ///< Finder tuning parameters.
     LoggerHandler m_logger;                      ///< Logger for runtime messages.
 };

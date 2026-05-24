@@ -6,16 +6,16 @@
 #include "SingleGraphPatternFinder.h"
 
 #include <cstdint>
+#include <unordered_set>
 #include <utility>
 #include <vector>
-#include <unordered_set>
 
 namespace sgf
 {
 
 SingleGraphPatternPreprocessor::SingleGraphPatternPreprocessor(
-    std::vector<ColoredGraph>& graph_library, const bool is_directed,
-    ColoredGraph background_graph, const std::vector<bool>& to_process, const double score_threshold,
+    std::vector<ColoredGraph>& graph_library, const bool is_directed, ColoredGraph background_graph,
+    const std::vector<bool>& to_process, const double score_threshold,
     const SingleGraphFinderConfig config, LoggerHandler logger)
     : m_graph_library(graph_library)
     , M_IS_DIRECTED(is_directed)

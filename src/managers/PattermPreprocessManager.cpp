@@ -18,8 +18,8 @@ PatternPreprocessManager::PatternPreprocessManager(std::vector<ColoredGraph> lib
 {
 }
 
-std::vector<PatternPreprocessorResult> PatternPreprocessManager::preprocess(
-    const PatternPreprocessorFactory& factory)
+std::vector<PatternPreprocessorResult>
+PatternPreprocessManager::preprocess(const PatternPreprocessorFactory& factory)
 {
     std::unique_ptr<IPatternPreprocessor> preprocessor = factory(m_library, m_logger);
     return preprocessor->calculate();

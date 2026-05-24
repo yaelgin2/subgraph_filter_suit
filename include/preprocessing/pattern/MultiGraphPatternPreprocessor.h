@@ -35,7 +35,8 @@ public:
 
     /**
      * @brief Mine @p m_pattern_number patterns from the library.
-     * @return Vector of mined patterns, each paired with the set of library graph indices it covers.
+     * @return Vector of mined patterns, each paired with the set of library graph indices it
+     * covers.
      */
     std::vector<PatternPreprocessorResult> calculate() override;
 

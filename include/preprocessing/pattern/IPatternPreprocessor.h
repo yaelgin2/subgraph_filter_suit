@@ -11,13 +11,15 @@ namespace sgf
 {
 
 /**
- * @brief Result of one pattern search: the found pattern and the set of library graph indices it covers.
+ * @brief Result of one pattern search: the found pattern and the set of library graph indices it
+ * covers.
  */
 using PatternPreprocessorResult = std::pair<BoostGraph, std::unordered_set<uint32_t>>;
 
 /**
  * @class IPatternPreprocessor
- * @brief Interface for pattern preprocessors that mine representative patterns from a graph library.
+ * @brief Interface for pattern preprocessors that mine representative patterns from a graph
+ * library.
  *
  * Concrete implementations capture their strategy-specific parameters at construction
  * time. Callers invoke calculate() with no arguments and receive a uniform result type
@@ -28,7 +30,8 @@ class IPatternPreprocessor
 public:
     /**
      * @brief Mine patterns from the graph library.
-     * @return Vector of mined patterns, each paired with the set of library graph indices it covers.
+     * @return Vector of mined patterns, each paired with the set of library graph indices it
+     * covers.
      */
     virtual std::vector<PatternPreprocessorResult> calculate() = 0;
 

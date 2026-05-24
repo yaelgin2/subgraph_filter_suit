@@ -251,9 +251,9 @@ TEST(SingleGraphPatternPreprocessorTest, custom_config_does_not_throw)
     constexpr uint32_t SMALL_BEAM = 1U;
     const SingleGraphFinderConfig config{SMALL_BEAM, 0.5, 0.5};
     const std::vector<bool> to_process = make_to_process(graphs.size(), 1U);
-    EXPECT_NO_THROW(
-        SingleGraphPatternPreprocessor(graphs, false, make_path_4(), to_process, NO_THRESHOLD, config)
-            .calculate());
+    EXPECT_NO_THROW(SingleGraphPatternPreprocessor(graphs, false, make_path_4(), to_process,
+                                                   NO_THRESHOLD, config)
+                        .calculate());
 }
 
 /**
