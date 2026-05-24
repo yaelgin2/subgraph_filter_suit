@@ -11,6 +11,7 @@
 #include "VertexEdgeGraphReader.h"
 #include "VertexEdgePatternWriter.h"
 #include "FileLogger.h"
+#include "LoggerBundle.h"
 #include "EnumerationPreprocessManager.h"
 #include "PathProcessor.h"
 #include "MotifPreprocessor.h"
@@ -95,10 +96,9 @@ void FlowManager::enumerator_preprocess_run(const std::string& input_path, const
     CacheManagerType output_type, std::string log_file_path,
     bool preprocess_paths, bool preprocess_motifs)
 {
-    std::shared_ptr<FileLogger> logger = std::make_shared<FileLogger>(log_file_path);
-    LoggerHandler logger_handler(logger);
-    LibraryData library = load_library(input_path, reader_type, is_directed, logger_handler);
-    EnumerationPreprocessManager preprocess_manager(library.m_library, logger_handler);
+    const LoggerBundle log_bundle(log_file_path);
+    LibraryData library = load_library(input_path, reader_type, is_directed, log_bundle.handler());
+    EnumerationPreprocessManager preprocess_manager(library.m_library, log_bundle.handler());
     std::unique_ptr<ICacheIOManager> cache_manager = make_cache_manager(output_type, output_path);
     const std::string timestamp = generate_timestamp();
     if (preprocess_paths)
@@ -120,17 +120,16 @@ void FlowManager::enumerator_preprocess_run(const std::string& input_path, const
 }
 
 void FlowManager::enumerator_filter_run(const std::string& graph_input_path, const bool is_directed,
-    const GraphReaderType reader_type, 
-    const std::string& cache_path, const CacheManagerType cache_reader_type, 
+    const GraphReaderType reader_type,
+    const std::string& cache_path, const CacheManagerType cache_reader_type,
     std::string& output_folder, ResultOutputType output_type, std::string log_file_path,
     bool filter_paths, bool filter_motifs)
 {
-    std::shared_ptr<FileLogger> logger = std::make_shared<FileLogger>(log_file_path);
-    LoggerHandler logger_handler(logger);
-    LibraryData graphs_to_find_in = load_library(graph_input_path, reader_type, is_directed, logger_handler);
+    const LoggerBundle log_bundle(log_file_path);
+    LibraryData graphs_to_find_in = load_library(graph_input_path, reader_type, is_directed, log_bundle.handler());
     std::unique_ptr<ICacheIOManager> cache_manager = make_cache_manager(cache_reader_type, output_folder);
     std::unique_ptr<IFilterOutputManager> filter_results_writer = make_filter_results_writer(output_type, output_folder);
-    EnumerationPreprocessManager preprocess_manager(graphs_to_find_in.m_library, logger_handler);
+    EnumerationPreprocessManager preprocess_manager(graphs_to_find_in.m_library, log_bundle.handler());
     const std::string timestamp = generate_timestamp();
     if (filter_paths)
     {
