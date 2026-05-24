@@ -2,6 +2,7 @@
 
 #include "EnumerationPreprocessManager.h"
 #include "IGraphPreprocessor.h"
+#include "LoggerHandler.h"
 
 #include <string>
 #include <unordered_map>
@@ -21,12 +22,12 @@ class ICacheIOManager
 {
 public:
     /**
-     * @brief Constructs an ICacheIOManager targeting a specific directory and base filename.
+     * @brief Constructs an ICacheIOManager targeting a specific directory.
      *
-     * @param folder        Directory where the cache file will be written.
-     * @param base_filename File name without extension (e.g. "motif_cache").
+     * @param folder  Directory where the cache file will be written.
+     * @param logger  Optional logger for diagnostics.
      */
-    ICacheIOManager(std::string folder);
+    ICacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Default virtual destructor.
@@ -90,6 +91,7 @@ protected:
 
 private:
     std::string m_folder;
+    LoggerHandler m_logger;
 
     /**
      * @brief Builds the full output path from folder, base filename, and extension.

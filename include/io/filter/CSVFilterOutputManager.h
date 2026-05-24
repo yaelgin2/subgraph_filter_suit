@@ -2,6 +2,7 @@
 
 #include "FilteringUtils.h"
 #include "IFilterOutputManager.h"
+#include "LoggerHandler.h"
 
 #include <string>
 #include <vector>
@@ -25,10 +26,10 @@ public:
     /**
      * @brief Constructs a CSVFilterOutputManager.
      *
-     * @param folder        Directory where the output file will be written.
-     * @param base_filename File name without extension (e.g. "filter_results").
+     * @param folder  Directory where the output file will be written.
+     * @param logger  Optional logger for diagnostics.
      */
-    CSVFilterOutputManager(std::string folder);
+    CSVFilterOutputManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Default virtual destructor.

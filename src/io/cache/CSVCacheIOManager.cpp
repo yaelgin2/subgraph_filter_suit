@@ -4,6 +4,7 @@
 #include "GraphConstructionException.h"
 #include "ICacheIOManager.h"
 #include "Int128.h"
+#include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <algorithm>
@@ -21,8 +22,8 @@
 namespace sgf
 {
 
-CSVCacheIOManager::CSVCacheIOManager(std::string folder)
-    : ICacheIOManager(std::move(folder))
+CSVCacheIOManager::CSVCacheIOManager(std::string folder, LoggerHandler logger)
+    : ICacheIOManager(std::move(folder), std::move(logger))
 {
 }
 

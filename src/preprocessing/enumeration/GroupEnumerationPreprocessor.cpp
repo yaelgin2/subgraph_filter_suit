@@ -85,10 +85,6 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
         }
         count += 1U;
 
-        if (groups_counted % LOG_INTERVAL == 0)
-        {
-            SGF_DEBUG_LOG(m_logger, "Counted groups: " + std::to_string(groups_counted));
-        }
         groups_counted++;
     };
 

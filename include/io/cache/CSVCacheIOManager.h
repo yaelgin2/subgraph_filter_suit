@@ -2,6 +2,7 @@
 
 #include "ICacheIOManager.h"
 #include "Int128.h"
+#include "LoggerHandler.h"
 
 #include <fstream>
 #include <string>
@@ -22,12 +23,12 @@ class CSVCacheIOManager : public ICacheIOManager
 {
 public:
     /**
-     * @brief Constructs a CSVCacheIOManager targeting a specific directory and base filename.
+     * @brief Constructs a CSVCacheIOManager targeting a specific directory.
      *
-     * @param folder        Directory of the CSV file.
-     * @param base_filename File name without extension.
+     * @param folder  Directory of the CSV file.
+     * @param logger  Optional logger for diagnostics.
      */
-    CSVCacheIOManager(std::string folder);
+    CSVCacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
 protected:
     /**

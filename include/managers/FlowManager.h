@@ -145,22 +145,25 @@ private:
 
     /**
      * @brief Construct a cache manager for the given format.
-     * @param type           Desired cache format.
-     * @param folder         Directory where the cache file will be written.
-     * @param base_filename  File name without extension.
+     * @param type    Desired cache format.
+     * @param folder  Directory where the cache file will be written.
+     * @param logger  Logger for read/write diagnostics.
      * @return Owning pointer to the concrete ICacheIOManager.
      */
     static std::unique_ptr<ICacheIOManager> make_cache_manager(CacheManagerType type,
-                                                               const std::string& folder);
+                                                               const std::string& folder,
+                                                               LoggerHandler logger);
 
     /**
      * @brief Construct a filter results writer for the given format.
-     * @param type   Desired output format.
-     * @param folder Directory where the output file will be written.
+     * @param type    Desired output format.
+     * @param folder  Directory where the output file will be written.
+     * @param logger  Logger for write diagnostics.
      * @return Owning pointer to the concrete IFilterOutputManager.
      */
     static std::unique_ptr<IFilterOutputManager> make_filter_results_writer(ResultOutputType type,
-                                                                             const std::string& folder);
+                                                                             const std::string& folder,
+                                                                             LoggerHandler logger);
 };
 
 }  // namespace sgf

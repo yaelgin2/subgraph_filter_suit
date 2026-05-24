@@ -5,6 +5,7 @@
 #include "ICacheIOManager.h"
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
+#include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <array>
@@ -22,8 +23,8 @@
 namespace sgf
 {
 
-BinaryCacheIOManager::BinaryCacheIOManager(std::string folder)
-    : ICacheIOManager(std::move(folder))
+BinaryCacheIOManager::BinaryCacheIOManager(std::string folder, LoggerHandler logger)
+    : ICacheIOManager(std::move(folder), std::move(logger))
 {
 }
 

@@ -62,28 +62,29 @@ std::unique_ptr<IPatternWriter> FlowManager::make_pattern_writer(const PatternWr
 }
 
 std::unique_ptr<ICacheIOManager> FlowManager::make_cache_manager(const CacheManagerType type,
-                                                                  const std::string& folder)
+                                                                  const std::string& folder,
+                                                                  LoggerHandler logger)
 {
     switch (type)
     {
         case CacheManagerType::BINARY:
-            return std::make_unique<BinaryCacheIOManager>(folder);
+            return std::make_unique<BinaryCacheIOManager>(folder, std::move(logger));
         case CacheManagerType::CSV:
-            return std::make_unique<CSVCacheIOManager>(folder);
+            return std::make_unique<CSVCacheIOManager>(folder, std::move(logger));
         default:
             throw InvalidArgumentException("Unknown CacheManagerType.");
     }
 }
 
-std::unique_ptr<IFilterOutputManager> FlowManager::make_filter_results_writer(const ResultOutputType type,
-                                                                  const std::string& folder)
+std::unique_ptr<IFilterOutputManager> FlowManager::make_filter_results_writer(
+    const ResultOutputType type, const std::string& folder, LoggerHandler logger)
 {
     switch (type)
     {
         case ResultOutputType::JSON:
-            return std::make_unique<JsonFilterOutputManager>(folder);
+            return std::make_unique<JsonFilterOutputManager>(folder, std::move(logger));
         case ResultOutputType::CSV:
-            return std::make_unique<CSVFilterOutputManager>(folder);
+            return std::make_unique<CSVFilterOutputManager>(folder, std::move(logger));
         default:
             throw InvalidArgumentException("Unknown CacheManagerType.");
     }
@@ -99,7 +100,8 @@ void FlowManager::enumerator_preprocess_run(const std::string& input_path, const
     const LoggerBundle log_bundle(log_file_path);
     LibraryData library = load_library(input_path, reader_type, is_directed, log_bundle.handler());
     EnumerationPreprocessManager preprocess_manager(library.m_library, log_bundle.handler());
-    std::unique_ptr<ICacheIOManager> cache_manager = make_cache_manager(output_type, output_path);
+    std::unique_ptr<ICacheIOManager> cache_manager =
+        make_cache_manager(output_type, output_path, log_bundle.handler());
     const std::string timestamp = generate_timestamp();
     if (preprocess_paths)
     {
@@ -127,8 +129,10 @@ void FlowManager::enumerator_filter_run(const std::string& graph_input_path, con
 {
     const LoggerBundle log_bundle(log_file_path);
     LibraryData graphs_to_find_in = load_library(graph_input_path, reader_type, is_directed, log_bundle.handler());
-    std::unique_ptr<ICacheIOManager> cache_manager = make_cache_manager(cache_reader_type, output_folder);
-    std::unique_ptr<IFilterOutputManager> filter_results_writer = make_filter_results_writer(output_type, output_folder);
+    std::unique_ptr<ICacheIOManager> cache_manager =
+        make_cache_manager(cache_reader_type, output_folder, log_bundle.handler());
+    std::unique_ptr<IFilterOutputManager> filter_results_writer =
+        make_filter_results_writer(output_type, output_folder, log_bundle.handler());
     EnumerationPreprocessManager preprocess_manager(graphs_to_find_in.m_library, log_bundle.handler());
     const std::string timestamp = generate_timestamp();
     if (filter_paths)
