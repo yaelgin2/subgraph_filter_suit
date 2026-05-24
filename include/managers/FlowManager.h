@@ -83,7 +83,11 @@ public:
         bool preprocess_paths, bool preprocess_motifs);
 
     /// @brief Run the enumeration filter stage.
-    static void enumerator_filter_run();
+    static void enumerator_filter_run(const std::string& graph_input_path, const bool is_directed,
+        const GraphReaderType reader_type, 
+        const std::string& cache_path, const CacheManagerType cache_reader_type, 
+        std::string& output_folder, ResultOutputType output_type, std::string log_file_path,
+        bool filter_paths, bool filter_motifs);
 
     /// @brief Run the pattern preprocessing stage.
     static void pattern_preprocess_run();
@@ -98,6 +102,15 @@ private:
     static constexpr const char* PATH_CACHE_BASE_NAME = "path_cache";
     static constexpr const char* MOTIF_CACHE_BASE_NAME = "motif_cache";
 
+    static void run_enumeration_filter_stage(
+    const PreprocessorFactory& factory,
+    EnumerationPreprocessManager& preprocess_manager,
+    const ICacheIOManager& cache_manager,
+    const std::string& cache_path,
+    IFilterOutputManager& filter_results_writer,
+    const LibraryData& library,
+    const std::string& timestamp);
+
     /**
      * @brief Returns the current local time as a filename-safe string.
      *
@@ -106,27 +119,6 @@ private:
      * @return Timestamp string.
      */
     static std::string generate_timestamp();
-
-    /**
-     * @brief Enumerates @p library using @p factory, reads the precomputed library cache,
-     *        filters each graph against it, and writes one result file per graph.
-     *
-     * @param factory              Preprocessor factory selecting path or motif enumeration.
-     * @param preprocess_manager   Manager that runs enumeration over the library.
-     * @param cache_manager        Cache reader for the precomputed library signatures.
-     * @param cache_path           Base filename passed to ICacheIOManager::read.
-     * @param filter_results_writer Writer for the per-graph filter output.
-     * @param library              Library graphs and their filenames.
-     * @param timestamp            Timestamp suffix appended to each output filename.
-     */
-    static void run_enumeration_filter_stage(
-        const PreprocessorFactory& factory,
-        EnumerationPreprocessManager& preprocess_manager,
-        const ICacheIOManager& cache_manager,
-        const std::string& cache_path,
-        IFilterOutputManager& filter_results_writer,
-        const LibraryData& library,
-        const std::string& timestamp);
 
     /**
      * @brief Load all graphs from @p path using @p reader_type.

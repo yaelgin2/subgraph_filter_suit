@@ -103,7 +103,7 @@ void FlowManager::enumerator_preprocess_run(const std::string& input_path, const
     const std::string timestamp = generate_timestamp();
     if (preprocess_paths)
     {
-        EnumerationData result = preprocess_manager.preprocess(
+        EnumerationResultVector result = preprocess_manager.preprocess(
             [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
             { return std::make_unique<PathProcessor>(graph, logger); });
         cache_manager->write(std::string(PATH_CACHE_BASE_NAME) + "_" + timestamp, result,
@@ -111,7 +111,7 @@ void FlowManager::enumerator_preprocess_run(const std::string& input_path, const
     }
     if (preprocess_motifs)
     {
-        EnumerationData result = preprocess_manager.preprocess(
+        EnumerationResultVector result = preprocess_manager.preprocess(
             [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
             { return std::make_unique<MotifPreprocessor>(graph, logger); });
         cache_manager->write(std::string(MOTIF_CACHE_BASE_NAME) + "_" + timestamp, result,
@@ -119,14 +119,16 @@ void FlowManager::enumerator_preprocess_run(const std::string& input_path, const
     }
 }
 
-void FlowManager::enumerator_filter_run(const std::string& graph_input_path, const bool is_directed, const std::string& cache_path,
-    const CacheManagerType reader_type, std::string& output_folder,
-    ResultOutputType output_type, bool filter_paths, bool filter_motifs)
+void FlowManager::enumerator_filter_run(const std::string& graph_input_path, const bool is_directed,
+    const GraphReaderType reader_type, 
+    const std::string& cache_path, const CacheManagerType cache_reader_type, 
+    std::string& output_folder, ResultOutputType output_type, std::string log_file_path,
+    bool filter_paths, bool filter_motifs)
 {
     std::shared_ptr<FileLogger> logger = std::make_shared<FileLogger>(log_file_path);
     LoggerHandler logger_handler(logger);
-    LibraryData graphs_to_find_in = load_library(input_path, reader_type, is_directed, logger_handler);
-    std::unique_ptr<ICacheIOManager> cache_manager = make_cache_manager(output_type, output_path);
+    LibraryData graphs_to_find_in = load_library(graph_input_path, reader_type, is_directed, logger_handler);
+    std::unique_ptr<ICacheIOManager> cache_manager = make_cache_manager(cache_reader_type, output_folder);
     std::unique_ptr<IFilterOutputManager> filter_results_writer = make_filter_results_writer(output_type, output_folder);
     EnumerationPreprocessManager preprocess_manager(graphs_to_find_in.m_library, logger_handler);
     const std::string timestamp = generate_timestamp();
@@ -182,10 +184,15 @@ void FlowManager::run_enumeration_filter_stage(
     const LibraryData& library,
     const std::string& timestamp)
 {
-    const EnumerationData graphs_enumeration = preprocess_manager.preprocess(factory);
+    const EnumerationResultVector graphs_enumeration = preprocess_manager.preprocess(factory);
     const std::unordered_map<std::string, EnumerationResult> library_enumeration =
         cache_manager.read(cache_path);
-    GroupEnumerationGraphFilter filter(library_enumeration);
+    EnumerationResultVector library_enumeration_vector;
+    for(auto & graph_data : library_enumeration)
+    {
+        library_enumeration_vector.push_back(graph_data.second);
+    }
+    GroupEnumerationGraphFilter filter(library_enumeration_vector);
     for (uint32_t graph_index = 0U;
          graph_index < static_cast<uint32_t>(graphs_enumeration.size()); ++graph_index)
     {
