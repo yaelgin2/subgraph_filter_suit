@@ -1,6 +1,6 @@
 #include "FlowManager.h"
-#include "InvalidArgumentException.h"
 #include "SgfException.h"
+#include "SgfInvalidArgumentException.h"
 
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include <boost/program_options.hpp>
@@ -26,7 +26,8 @@ static constexpr const char* KEY_PATHS = "paths";
 static constexpr const char* KEY_IS_DIRECTED = "is-directed";
 static constexpr const char* KEY_LIBRARY_DIR = "library-dir";
 static constexpr const char* KEY_READER_TYPE = "reader-type";
-static constexpr const char* KEY_CACHE_PATH = "cache-path";
+static constexpr const char* KEY_CACHE_DIR = "cache-dir";
+static constexpr const char* KEY_CACHE_FILE = "cache-file";
 static constexpr const char* KEY_CACHE_TYPE = "cache-type";
 static constexpr const char* KEY_LOG_FILE_PATH = "log-file-path";
 static constexpr const char* KEY_GRAPH_DIR = "graph-dir";
@@ -53,7 +54,7 @@ struct PreprocessArgs
 {
     std::string m_library_dir;                               ///< Graph library directory.
     GraphReaderType m_reader_type{GraphReaderType::GRAPHML}; ///< Graph file format.
-    std::string m_cache_path;                                ///< Cache output directory.
+    std::string m_cache_dir;                                 ///< Cache library output directory.
     CacheManagerType m_cache_type{CacheManagerType::BINARY}; ///< Cache format.
     std::string m_log_file_path;                             ///< Optional log file path.
 };
@@ -63,7 +64,7 @@ struct PreprocessArgs
  */
 struct FilterArgs
 {
-    std::string m_cache_path;                                    ///< Cache input directory.
+    std::string m_cache_file;                                    ///< Cache file path to read.
     CacheManagerType m_cache_type{CacheManagerType::BINARY};     ///< Cache format.
     std::string m_graph_dir;                                     ///< Query graphs directory.
     GraphReaderType m_graph_input_type{GraphReaderType::GRAPHML};///< Graph file format.
@@ -108,21 +109,22 @@ po::options_description build_options()
     po::options_description common_desc("Common flags");
     common_desc.add_options()
         (KEY_IS_DIRECTED,   po::bool_switch(),           "Treat graphs as directed")
-        (KEY_CACHE_PATH,    po::value<std::string>(),    "Cache directory")
         (KEY_CACHE_TYPE,    po::value<std::string>(),    "Cache format: binary, csv")
         (KEY_LOG_FILE_PATH, po::value<std::string>(),    "(optional) Log file path");
 
     po::options_description preprocess_desc("Preprocess flags (required with --preprocess)");
     preprocess_desc.add_options()
         (KEY_LIBRARY_DIR, po::value<std::string>(), "Directory containing the graph library")
-        (KEY_READER_TYPE, po::value<std::string>(), "Graph file format: graphml, vertex-edge, json");
+        (KEY_READER_TYPE, po::value<std::string>(), "Graph file format: graphml, vertex-edge, json")
+        (KEY_CACHE_DIR,   po::value<std::string>(), "Directory where the cache library is written");
 
     po::options_description filter_desc("Filter flags (required with --filter)");
     filter_desc.add_options()
         (KEY_GRAPH_DIR,        po::value<std::string>(), "Directory containing query graphs")
         (KEY_GRAPH_INPUT_TYPE, po::value<std::string>(), "Graph file format: graphml, vertex-edge, json")
         (KEY_RESULT_FOLDER,    po::value<std::string>(), "Directory for filter result output")
-        (KEY_RESULT_TYPE,      po::value<std::string>(), "Result format: json, csv");
+        (KEY_RESULT_TYPE,      po::value<std::string>(), "Result format: json, csv")
+        (KEY_CACHE_FILE,       po::value<std::string>(), "Path to the cache file to read");
 
     po::options_description all_desc("sgf-graph-enumerator options");
     all_desc.add(mode_desc).add(feature_desc).add(common_desc)
@@ -138,7 +140,7 @@ po::options_description build_options()
  * @param argv Argument values from main.
  * @param desc Options descriptor.
  * @return Populated variables_map.
- * @throws InvalidArgumentException on unknown option or bad syntax.
+ * @throws SgfInvalidArgumentException on unknown option or bad syntax.
  */
 po::variables_map parse_args(const int argc, char* argv[], const po::options_description& desc)
 {
@@ -150,7 +152,7 @@ po::variables_map parse_args(const int argc, char* argv[], const po::options_des
     }
     catch (const po::error& ex)
     {
-        throw InvalidArgumentException(ex.what());
+        throw SgfInvalidArgumentException(ex.what());
     }
     return vm;
 }
@@ -160,13 +162,13 @@ po::variables_map parse_args(const int argc, char* argv[], const po::options_des
  * @param vm Parsed variables map.
  * @param key Option key name.
  * @return Non-empty value string.
- * @throws InvalidArgumentException if the option was not provided.
+ * @throws SgfInvalidArgumentException if the option was not provided.
  */
 std::string get_required_string(const po::variables_map& vm, const std::string& key)
 {
     if (vm.count(key) == 0U)
     {
-        throw InvalidArgumentException("Required flag '--" + key + "' is missing.");
+        throw SgfInvalidArgumentException("Required flag '--" + key + "' is missing.");
     }
     return vm.at(key).as<std::string>();
 }
@@ -192,7 +194,7 @@ std::string get_optional_string(const po::variables_map& vm, const std::string& 
  * @brief Parses a graph reader type string.
  * @param type_str One of "graphml", "json", "vertex-edge".
  * @return Corresponding GraphReaderType.
- * @throws InvalidArgumentException for unrecognised values.
+ * @throws SgfInvalidArgumentException for unrecognised values.
  */
 GraphReaderType parse_reader_type(const std::string& type_str)
 {
@@ -208,7 +210,7 @@ GraphReaderType parse_reader_type(const std::string& type_str)
     {
         return GraphReaderType::VERTEX_EDGE;
     }
-    throw InvalidArgumentException(
+    throw SgfInvalidArgumentException(
         "Unknown reader type '" + type_str + "'. Valid values: graphml, json, vertex-edge.");
 }
 
@@ -216,7 +218,7 @@ GraphReaderType parse_reader_type(const std::string& type_str)
  * @brief Parses a cache type string.
  * @param type_str One of "binary", "csv".
  * @return Corresponding CacheManagerType.
- * @throws InvalidArgumentException for unrecognised values.
+ * @throws SgfInvalidArgumentException for unrecognised values.
  */
 CacheManagerType parse_cache_type(const std::string& type_str)
 {
@@ -228,7 +230,7 @@ CacheManagerType parse_cache_type(const std::string& type_str)
     {
         return CacheManagerType::CSV;
     }
-    throw InvalidArgumentException(
+    throw SgfInvalidArgumentException(
         "Unknown cache type '" + type_str + "'. Valid values: binary, csv.");
 }
 
@@ -236,7 +238,7 @@ CacheManagerType parse_cache_type(const std::string& type_str)
  * @brief Parses a result output type string.
  * @param type_str One of "json", "csv".
  * @return Corresponding ResultOutputType.
- * @throws InvalidArgumentException for unrecognised values.
+ * @throws SgfInvalidArgumentException for unrecognised values.
  */
 ResultOutputType parse_result_type(const std::string& type_str)
 {
@@ -248,7 +250,7 @@ ResultOutputType parse_result_type(const std::string& type_str)
     {
         return ResultOutputType::CSV;
     }
-    throw InvalidArgumentException(
+    throw SgfInvalidArgumentException(
         "Unknown result type '" + type_str + "'. Valid values: json, csv.");
 }
 
@@ -258,13 +260,13 @@ ResultOutputType parse_result_type(const std::string& type_str)
  * @brief Populates preprocessing-stage args from the parsed variables map.
  * @param vm Parsed variables map.
  * @return Populated PreprocessArgs.
- * @throws InvalidArgumentException for missing required flags.
+ * @throws SgfInvalidArgumentException for missing required flags.
  */
 PreprocessArgs parse_preprocess_args(const po::variables_map& vm)
 {
     PreprocessArgs result;
     result.m_library_dir = get_required_string(vm, KEY_LIBRARY_DIR);
-    result.m_cache_path  = get_required_string(vm, KEY_CACHE_PATH);
+    result.m_cache_dir   = get_required_string(vm, KEY_CACHE_DIR);
     result.m_reader_type = parse_reader_type(get_required_string(vm, KEY_READER_TYPE));
     result.m_cache_type  = parse_cache_type(get_required_string(vm, KEY_CACHE_TYPE));
     result.m_log_file_path = get_optional_string(vm, KEY_LOG_FILE_PATH);
@@ -275,12 +277,12 @@ PreprocessArgs parse_preprocess_args(const po::variables_map& vm)
  * @brief Populates filter-stage args from the parsed variables map.
  * @param vm Parsed variables map.
  * @return Populated FilterArgs.
- * @throws InvalidArgumentException for missing required flags.
+ * @throws SgfInvalidArgumentException for missing required flags.
  */
 FilterArgs parse_filter_args(const po::variables_map& vm)
 {
     FilterArgs result;
-    result.m_cache_path       = get_required_string(vm, KEY_CACHE_PATH);
+    result.m_cache_file       = get_required_string(vm, KEY_CACHE_FILE);
     result.m_cache_type       = parse_cache_type(get_required_string(vm, KEY_CACHE_TYPE));
     result.m_graph_dir        = get_required_string(vm, KEY_GRAPH_DIR);
     result.m_graph_input_type = parse_reader_type(get_required_string(vm, KEY_GRAPH_INPUT_TYPE));
@@ -294,7 +296,7 @@ FilterArgs parse_filter_args(const po::variables_map& vm)
  * @brief Parses all CLI arguments into a CliArgs struct.
  * @param vm Parsed variables map.
  * @return Populated CliArgs.
- * @throws InvalidArgumentException for missing required stage-specific flags.
+ * @throws SgfInvalidArgumentException for missing required stage-specific flags.
  */
 CliArgs parse_cli_args(const po::variables_map& vm)
 {
@@ -320,18 +322,22 @@ CliArgs parse_cli_args(const po::variables_map& vm)
 /**
  * @brief Validates that at least one mode and one feature flag are set.
  * @param args Parsed CLI arguments.
- * @throws InvalidArgumentException if validation fails.
+ * @throws SgfInvalidArgumentException if validation fails.
  */
 void validate_mode_flags(const CliArgs& args)
 {
+    if (args.m_run_preprocess && args.m_run_filter)
+    {
+        throw SgfInvalidArgumentException("--preprocess and --filter are mutually exclusive.");
+    }
     if (!args.m_run_preprocess && !args.m_run_filter)
     {
-        throw InvalidArgumentException(
+        throw SgfInvalidArgumentException(
             "At least one of --preprocess or --filter must be specified.");
     }
     if (!args.m_use_motifs && !args.m_use_paths)
     {
-        throw InvalidArgumentException(
+        throw SgfInvalidArgumentException(
             "At least one of --motifs or --paths must be specified.");
     }
 }
@@ -344,12 +350,12 @@ void validate_mode_flags(const CliArgs& args)
  */
 void run_preprocess(const CliArgs& args)
 {
-    std::string cache_path = args.m_preprocess.m_cache_path;
+    std::string cache_dir = args.m_preprocess.m_cache_dir;
     FlowManager::enumerator_preprocess_run(
         args.m_preprocess.m_library_dir,
         args.m_is_directed,
         args.m_preprocess.m_reader_type,
-        cache_path,
+        cache_dir,
         args.m_preprocess.m_cache_type,
         args.m_preprocess.m_log_file_path,
         args.m_use_paths,
@@ -367,7 +373,7 @@ void run_filter(const CliArgs& args)
         args.m_filter.m_graph_dir,
         args.m_is_directed,
         args.m_filter.m_graph_input_type,
-        args.m_filter.m_cache_path,
+        args.m_filter.m_cache_file,
         args.m_filter.m_cache_type,
         result_folder,
         args.m_filter.m_result_type,
@@ -426,5 +432,13 @@ int main(int argc, char* argv[])
         std::cout << desc << '\n';
         return 0;
     }
-    return run_pipeline(vm);
+    try
+    {
+        return run_pipeline(vm);
+    }
+    catch (const SgfException& ex)
+    {
+        std::cerr << "Error: " << ex.what() << '\n';
+        return static_cast<int>(static_cast<int32_t>(ex.return_code()));
+    }
 }
