@@ -64,7 +64,7 @@ void CSVCacheIOManager::write_header(std::ofstream& file)
          << CSV_COLUMN_APPEARANCES << "\n";
 }
 
-void CSVCacheIOManager::write_rows(const EnumerationData& data,
+void CSVCacheIOManager::write_rows(const EnumerationResultVector& data,
                                    const std::vector<std::string>& graph_names,
                                    std::ofstream& file)
 {
@@ -78,7 +78,7 @@ void CSVCacheIOManager::write_rows(const EnumerationData& data,
     }
 }
 
-void CSVCacheIOManager::write_to_file(const EnumerationData& data,
+void CSVCacheIOManager::write_to_file(const EnumerationResultVector& data,
                                       const std::vector<std::string>& graph_names,
                                       const std::string& full_path) const
 {

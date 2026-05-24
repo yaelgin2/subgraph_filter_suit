@@ -37,7 +37,7 @@ protected:
      * @param full_path Destination file path including the .csv extension.
      * @throws SgfPathExistsException if the file cannot be opened.
      */
-    void write_to_file(const EnumerationData& data, const std::vector<std::string>& graph_names,
+    void write_to_file(const EnumerationResultVector& data, const std::vector<std::string>& graph_names,
                        const std::string& full_path) const override;
 
     /**
@@ -75,7 +75,7 @@ private:
      * @param graph_names Names aligned with @p data.
      * @param file        Opened output stream.
      */
-    static void write_rows(const EnumerationData& data,
+    static void write_rows(const EnumerationResultVector& data,
                            const std::vector<std::string>& graph_names, std::ofstream& file);
 
     /**
@@ -86,7 +86,7 @@ private:
     static std::string uint128_to_decimal(UInt128 value);
 
     /**
-     * @brief Parses all data rows from @p file into an EnumerationData collection.
+     * @brief Parses all data rows from @p file into an EnumerationResultVector collection.
      * @param file Opened input stream positioned after the header row.
      * @return Parsed enumeration data.
      */

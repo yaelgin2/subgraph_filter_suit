@@ -10,7 +10,7 @@
 namespace sgf
 {
 
-GroupEnumerationGraphFilter::GroupEnumerationGraphFilter(EnumerationData library_cache)
+GroupEnumerationGraphFilter::GroupEnumerationGraphFilter(EnumerationResultVector library_cache)
     : m_library_cache(std::move(library_cache))
 {
 }

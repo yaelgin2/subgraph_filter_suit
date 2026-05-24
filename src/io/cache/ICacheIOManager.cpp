@@ -24,7 +24,7 @@ std::string ICacheIOManager::build_full_path(const std::string& base_filename) c
     return full_path.string();
 }
 
-void ICacheIOManager::write(std::string base_filename, const EnumerationData& data,
+void ICacheIOManager::write(std::string base_filename, const EnumerationResultVector& data,
                             const std::vector<std::string>& graph_names) const
 {
     IOUtils::create_directory_if_needed(m_folder);

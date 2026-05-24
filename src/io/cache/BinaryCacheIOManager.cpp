@@ -163,7 +163,7 @@ void BinaryCacheIOManager::write_string(std::ofstream& output_stream, const std:
     output_stream.write(value.data(), static_cast<std::streamsize>(len));
 }
 
-void BinaryCacheIOManager::write_to_file(const EnumerationData& data,
+void BinaryCacheIOManager::write_to_file(const EnumerationResultVector& data,
                                          const std::vector<std::string>& graph_names,
                                          const std::string& full_path) const
 {

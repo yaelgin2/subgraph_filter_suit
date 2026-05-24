@@ -14,7 +14,7 @@ namespace sgf
  * @class GroupEnumerationGraphFilter
  * @brief Prunes library candidates using motif/path frequency signatures.
  *
- * Holds a precomputed EnumerationData cache (one EnumerationResult per library
+ * Holds a precomputed EnumerationResultVector cache (one EnumerationResult per library
  * graph). filter() exploits the necessary condition: if the query graph has
  * fewer occurrences of any motif than a library graph, the query cannot be
  * isomorphic to that library graph, so it is pruned.
@@ -27,7 +27,7 @@ public:
      * @param library_cache One EnumerationResult per library graph, indexed by
      *                      library position.
      */
-    explicit GroupEnumerationGraphFilter(EnumerationData library_cache);
+    explicit GroupEnumerationGraphFilter(EnumerationResultVector library_cache);
 
     ~GroupEnumerationGraphFilter() = default;
 
@@ -50,7 +50,7 @@ public:
     FilterResult filter(const EnumerationResult& graph_features) const;
 
 private:
-    EnumerationData m_library_cache;
+    EnumerationResultVector m_library_cache;
 };
 
 }  // namespace sgf

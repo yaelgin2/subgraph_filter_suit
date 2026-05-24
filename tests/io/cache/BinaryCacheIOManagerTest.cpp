@@ -17,7 +17,7 @@ TEST(BinaryCacheIOManagerTest, empty_data_roundtrip)
     TempCacheFile temp{"empty_data", "bin"};
     const BinaryCacheIOManager manager{temp.m_folder};
 
-    const EnumerationData data{};
+    const EnumerationResultVector data{};
     const std::vector<std::string> names{};
     manager.write(temp.m_base_name, data, names);
 
@@ -30,7 +30,7 @@ TEST(BinaryCacheIOManagerTest, single_graph_empty_map_roundtrip)
     TempCacheFile temp{"single_empty_map", "bin"};
     const BinaryCacheIOManager manager{temp.m_folder};
 
-    const EnumerationData data{EnumerationResult{}};
+    const EnumerationResultVector data{EnumerationResult{}};
     const std::vector<std::string> names{"graph_a"};
     manager.write(temp.m_base_name, data, names);
 
@@ -47,7 +47,7 @@ TEST(BinaryCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
     const UInt128 key{0xDEADBEEF00000000ULL, 0x00000000CAFEBABEULL};
     const uint32_t value = 77U;
 
-    const EnumerationData data{EnumerationResult{}, EnumerationResult{{key, value}}};
+    const EnumerationResultVector data{EnumerationResult{}, EnumerationResult{{key, value}}};
     const std::vector<std::string> names{"graph_a", "graph_b"};
     manager.write(temp.m_base_name, data, names);
 
@@ -70,7 +70,7 @@ TEST(BinaryCacheIOManagerTest, two_graphs_both_nonempty_roundtrip)
     const UInt128 key_c{0x5555555555555555ULL, 0x6666666666666666ULL};
     const uint32_t val_c = 30U;
 
-    const EnumerationData data{
+    const EnumerationResultVector data{
         EnumerationResult{{key_a, val_a}, {key_b, val_b}},
         EnumerationResult{{key_c, val_c}},
     };
