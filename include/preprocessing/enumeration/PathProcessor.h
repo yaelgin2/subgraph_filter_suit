@@ -148,6 +148,12 @@ private:
     /**
      * @brief Number of edges in each enumerated path.
      */
+    /**
+     * @brief Returns "paths" to label the finished-enumeration log line.
+     * @return The string "paths".
+     */
+    [[nodiscard]] std::string entity_name() const override;
+
     static constexpr uint32_t PATH_EDGE_COUNT = 4U;
 
     /**
