@@ -62,16 +62,16 @@ std::unique_ptr<IPatternWriter> FlowManager::make_pattern_writer(const PatternWr
     }
 }
 
-std::unique_ptr<ICacheIOManager> FlowManager::make_cache_manager(const CacheManagerType type,
+std::shared_ptr<ICacheIOManager> FlowManager::make_cache_manager(const CacheManagerType type,
                                                                   const std::string& folder,
                                                                   LoggerHandler logger)
 {
     switch (type)
     {
         case CacheManagerType::BINARY:
-            return std::make_unique<BinaryCacheIOManager>(folder, std::move(logger));
+            return std::make_shared<BinaryCacheIOManager>(folder, std::move(logger));
         case CacheManagerType::CSV:
-            return std::make_unique<CSVCacheIOManager>(folder, std::move(logger));
+            return std::make_shared<CSVCacheIOManager>(folder, std::move(logger));
         default:
             throw InvalidArgumentException("Unknown CacheManagerType.");
     }
@@ -101,60 +101,86 @@ void FlowManager::enumerator_preprocess_run(const std::string& input_path, const
     const LoggerBundle log_bundle(log_file_path);
     LibraryData library = load_library(input_path, reader_type, is_directed, log_bundle.handler());
     EnumerationPreprocessManager preprocess_manager(library.m_library, log_bundle.handler());
-    std::unique_ptr<ICacheIOManager> cache_manager =
+    std::shared_ptr<ICacheIOManager> cache_manager =
         make_cache_manager(output_type, output_path, log_bundle.handler());
     const std::string timestamp = generate_timestamp();
     if (preprocess_paths)
     {
-        EnumerationResultVector result = preprocess_manager.preprocess(
-            [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
-            { return std::make_unique<PathProcessor>(graph, logger); });
-        cache_manager->write(std::string(PATH_CACHE_BASE_NAME) + "_" + timestamp, result,
-                             library.m_graph_names);
+        get_graph_enumeration(true, std::string(PATH_CACHE_BASE_NAME), cache_manager, preprocess_manager, library, [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
+            { return std::make_unique<PathProcessor>(graph, logger); }, timestamp, log_bundle.handler());
     }
     if (preprocess_motifs)
     {
-        EnumerationResultVector result = preprocess_manager.preprocess(
-            [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
-            { return std::make_unique<MotifPreprocessor>(graph, logger); });
-        cache_manager->write(std::string(MOTIF_CACHE_BASE_NAME) + "_" + timestamp, result,
-                             library.m_graph_names);
+        get_graph_enumeration(true, std::string(MOTIF_CACHE_BASE_NAME), cache_manager, preprocess_manager, library, [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
+            { return std::make_unique<MotifPreprocessor>(graph, logger); }, timestamp, log_bundle.handler());
     }
+}
+
+void FlowManager::enumerate_and_filter(
+    string library_cache_file,
+    const CacheManagerType cache_reader_type,
+    LibraryData& graphs_to_find_in,
+    GraphEnumerationCacheConfig& graph_cache_config,
+    std::string& cache_file_basename,
+    std::shared_ptr<EnumerationPreprocessManager> preprocess_manager,
+    LoggerBundle& log_bundle,
+    std::unique_ptr<IFilterOutputManager>& filter_results_writer,
+    const std::string& timestamp,
+    const PreprocessorFactory& factory)
+{
+        const EnumerationResultVector graph_enumeration;
+        if (graph_cache_config.m_load_cache)
+        {
+            std::tie(graphs_to_find_in.m_graph_names, graph_enumeration) =
+                load_graph_enumeration(cache_reader_type, graph_cache_config.m_graphs_cache_path, log_bundle.handler());
+        }
+        else
+        {
+            graph_enumeration = get_graph_enumeration(
+                false, std::string(cache_file_basename), nullptr, *preprocess_manager, graphs_to_find_in,
+                factory, timestamp, log_bundle.handler());
+        }
+        const std::filesystem::path path_file(library_cache_file);
+        std::shared_ptr<ICacheIOManager> path_cache =
+            make_cache_manager(cache_reader_type, path_file.parent_path().string(), log_bundle.handler());
+        run_enumeration_filter_stage(
+            graph_enumeration, *path_cache, path_file.stem().string(),
+            *filter_results_writer, graphs_to_find_in, timestamp, log_bundle.handler());
 }
 
 void FlowManager::enumerator_filter_run(const std::string& graph_input_path, const bool is_directed,
     const GraphReaderType reader_type, const std::string& motif_cache_file,
     const std::string& path_cache_file, const CacheManagerType cache_reader_type,
     std::string& output_folder, ResultOutputType output_type, std::string log_file_path,
-    bool filter_paths, bool filter_motifs)
+    bool filter_paths, bool filter_motifs,
+    const GraphEnumerationCacheConfig& graph_paths_cache_config,
+    const GraphEnumerationCacheConfig& graph_paths_motifs_config)
 {
     const LoggerBundle log_bundle(log_file_path);
-    LibraryData graphs_to_find_in = load_library(graph_input_path, reader_type, is_directed, log_bundle.handler());
+    LibraryData graphs_to_find_in;
+    std::shared_ptr<EnumerationPreprocessManager> preprocess_manager = nullptr;
+    if (!graph_cache_config.m_load_cache_motifs || !graph_cache_config.m_load_cache_paths)
+    {
+        graphs_to_find_in = load_library(graph_input_path, reader_type, is_directed, log_bundle.handler());
+        preprocess_manager = std::make_unique<EnumerationPreprocessManager>(graphs_to_find_in.m_library, log_bundle.handler());
+    }
     std::unique_ptr<IFilterOutputManager> filter_results_writer =
         make_filter_results_writer(output_type, output_folder, log_bundle.handler());
-    EnumerationPreprocessManager preprocess_manager(graphs_to_find_in.m_library, log_bundle.handler());
+    
     const std::string timestamp = generate_timestamp();
     if (filter_paths)
     {
-        const std::filesystem::path path_file(path_cache_file);
-        std::unique_ptr<ICacheIOManager> path_cache =
-            make_cache_manager(cache_reader_type, path_file.parent_path().string(), log_bundle.handler());
-        run_enumeration_filter_stage(
-            [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
-            { return std::make_unique<PathProcessor>(graph, logger); },
-            preprocess_manager, *path_cache, path_file.stem().string(), *filter_results_writer,
-            graphs_to_find_in, timestamp, log_bundle.handler());
+        enumerate_and_filter(path_cache_file, cache_reader_type, graphs_to_find_in, graph_paths_cache_config,
+            PATH_CACHE_BASE_NAME, preprocess_manager, log_bundle, filter_results_writer, timestamp,
+        [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
+                { return std::make_unique<PathProcessor>(graph, logger); });
     }
     if (filter_motifs)
     {
-        const std::filesystem::path motif_file(motif_cache_file);
-        std::unique_ptr<ICacheIOManager> motif_cache =
-            make_cache_manager(cache_reader_type, motif_file.parent_path().string(), log_bundle.handler());
-        run_enumeration_filter_stage(
-            [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
-            { return std::make_unique<MotifPreprocessor>(graph, logger); },
-            preprocess_manager, *motif_cache, motif_file.stem().string(), *filter_results_writer,
-            graphs_to_find_in, timestamp, log_bundle.handler());
+        enumerate_and_filter(motif_cache_file, cache_reader_type, graphs_to_find_in, graph_paths_motifs_config,
+            MOTIF_CACHE_BASE_NAME, preprocess_manager, log_bundle, filter_results_writer, timestamp,
+        [](const ColoredGraph& graph, LoggerHandler logger) -> std::unique_ptr<IGraphPreprocessor>
+                { return std::make_unique<MotifPreprocessor>(graph, logger); });
     }
 }
 
@@ -182,20 +208,61 @@ std::string FlowManager::generate_timestamp()
     return std::string(buffer.data());
 }
 
+std::pair<std::vector<std::string>, EnumerationResultVector> FlowManager::load_graph_enumeration(
+    CacheManagerType manager_type,
+    const std::string& cache_path,
+    LoggerHandler logger)
+{
+    const std::filesystem::path motif_file(cache_path);
+    std::shared_ptr<ICacheIOManager> cache_manager =
+        make_cache_manager(manager_type, motif_file.parent_path().string(), logger);
+
+    std::unordered_map<std::string, EnumerationResult> result = cache_manager->read(motif_file.stem().string());
+    std::vector<std::string> ordered_graph_names;
+    EnumerationResultVector ordered_enumeration;
+    ordered_graph_names.reserve(result.size());
+    ordered_enumeration.reserve(result.size());
+    for (const auto& [graph_name, enumeration] : result)
+    {
+        ordered_graph_names.push_back(graph_name);
+        ordered_enumeration.push_back(enumeration);
+    }
+    return {ordered_graph_names, ordered_enumeration};
+}
+
+EnumerationResultVector FlowManager::get_graph_enumeration(
+    const bool write_to_cache,
+    std::string cache_base_name,
+    std::shared_ptr<ICacheIOManager> cache_manager,
+    EnumerationPreprocessManager& preprocess_manager,
+    const LibraryData& library,
+    const PreprocessorFactory& factory,
+    const std::string& timestamp,
+    LoggerHandler logger)
+{
+    EnumerationResultVector result = preprocess_manager.preprocess(factory);
+    if (write_to_cache)
+    {
+        if (std::shared_ptr<ICacheIOManager> cache_manager_shared = cache_manager.lock())
+        {
+            cache_manager_shared->write(std::string(cache_base_name) + "_" + timestamp, result,
+                             library.m_graph_names);
+        }
+    }
+    return result;
+}
 
 void FlowManager::run_enumeration_filter_stage(
-    const PreprocessorFactory& factory,
-    EnumerationPreprocessManager& preprocess_manager,
-    const ICacheIOManager& cache_manager,
-    const std::string& cache_path,
+    const EnumerationResultVector& graphs_enumeration,
+    const ICacheIOManager& lib_cache_manager,
+    const std::string& lib_cache_path,
     IFilterOutputManager& filter_results_writer,
     const LibraryData& library,
     const std::string& timestamp,
     LoggerHandler logger)
 {
-    const EnumerationResultVector graphs_enumeration = preprocess_manager.preprocess(factory);
     const std::unordered_map<std::string, EnumerationResult> library_enumeration =
-        cache_manager.read(cache_path);
+        lib_cache_manager.read(lib_cache_path);
     std::vector<std::string> library_graph_names;
     EnumerationResultVector library_enumeration_vector;
     for (const auto& graph_data : library_enumeration)

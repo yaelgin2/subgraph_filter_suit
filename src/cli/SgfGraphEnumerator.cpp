@@ -33,8 +33,12 @@ static constexpr const char* KEY_CACHE_TYPE = "cache-type";
 static constexpr const char* KEY_LOG_FILE_PATH = "log-file-path";
 static constexpr const char* KEY_GRAPH_DIR = "graph-dir";
 static constexpr const char* KEY_GRAPH_INPUT_TYPE = "graph-input-type";
-static constexpr const char* KEY_RESULT_FOLDER = "result-folder";
-static constexpr const char* KEY_RESULT_TYPE = "result-type";
+static constexpr const char* KEY_RESULT_FOLDER       = "result-folder";
+static constexpr const char* KEY_RESULT_TYPE         = "result-type";
+static constexpr const char* KEY_CACHE_ENUMERATION         = "cache-enumeration";
+static constexpr const char* KEY_GRAPH_CACHE_DIR           = "graph-cache-dir";
+static constexpr const char* KEY_LOAD_MOTIF_GRAPH_CACHE    = "load-motif-graph-cache";
+static constexpr const char* KEY_LOAD_PATH_GRAPH_CACHE     = "load-path-graph-cache";
 
 // ── Reader/cache/result type string constants ──────────────────────────────
 
@@ -73,6 +77,10 @@ struct FilterArgs
     std::string m_result_folder;                                 ///< Results output directory.
     ResultOutputType m_result_type{ResultOutputType::JSON};      ///< Results format.
     std::string m_log_file_path;                                 ///< Optional log file path.
+    bool m_cache_graph_enumeration{false};                       ///< Cache query graph enumeration after computing.
+    std::string m_graph_cache_dir;                               ///< Directory for graph enumeration cache (required with --cache-enumeration).
+    std::string m_load_motif_graph_cache_path;                   ///< Path to existing motif graph enumeration cache; empty = compute fresh.
+    std::string m_load_path_graph_cache_path;                    ///< Path to existing path graph enumeration cache; empty = compute fresh.
 };
 
 /**
@@ -126,8 +134,21 @@ po::options_description build_options()
         (KEY_GRAPH_INPUT_TYPE, po::value<std::string>(), "Graph file format: graphml, vertex-edge, json")
         (KEY_RESULT_FOLDER,    po::value<std::string>(), "Directory for filter result output")
         (KEY_RESULT_TYPE,      po::value<std::string>(), "Result format: json, csv")
-        (KEY_MOTIF_CACHE_FILE, po::value<std::string>(), "Full path to the motif cache file (required with --motifs)")
-        (KEY_PATH_CACHE_FILE,  po::value<std::string>(), "Full path to the path cache file (required with --paths)");
+        (KEY_MOTIF_CACHE_FILE,    po::value<std::string>(), "Full path to the motif cache file (required with --motifs)")
+        (KEY_PATH_CACHE_FILE,     po::value<std::string>(), "Full path to the path cache file (required with --paths)")
+        (KEY_CACHE_ENUMERATION,        po::bool_switch(),
+            "Cache the query graph enumeration to --graph-cache-dir using --cache-type format after computing it. "
+            "Cannot be combined with --load-motif-graph-cache or --load-path-graph-cache.")
+        (KEY_GRAPH_CACHE_DIR,          po::value<std::string>(),
+            "Directory where the query graph enumeration cache is written (required with --cache-enumeration).")
+        (KEY_LOAD_MOTIF_GRAPH_CACHE,   po::value<std::string>(),
+            "Full path to an existing motif graph enumeration cache to load instead of computing. "
+            "Format must match --cache-type. Graph names must match those in --graph-dir. "
+            "Required when --motifs is active and loading from cache. Cannot be combined with --cache-enumeration.")
+        (KEY_LOAD_PATH_GRAPH_CACHE,    po::value<std::string>(),
+            "Full path to an existing path graph enumeration cache to load instead of computing. "
+            "Format must match --cache-type. Graph names must match those in --graph-dir. "
+            "Required when --paths is active and loading from cache. Cannot be combined with --cache-enumeration.");
 
     po::options_description all_desc("sgf-graph-enumerator options");
     all_desc.add(mode_desc).add(feature_desc).add(common_desc)
@@ -292,7 +313,11 @@ FilterArgs parse_filter_args(const po::variables_map& vm)
     result.m_graph_input_type = parse_reader_type(get_required_string(vm, KEY_GRAPH_INPUT_TYPE));
     result.m_result_folder    = get_required_string(vm, KEY_RESULT_FOLDER);
     result.m_result_type      = parse_result_type(get_required_string(vm, KEY_RESULT_TYPE));
-    result.m_log_file_path    = get_optional_string(vm, KEY_LOG_FILE_PATH);
+    result.m_log_file_path             = get_optional_string(vm, KEY_LOG_FILE_PATH);
+    result.m_cache_graph_enumeration   = vm.at(KEY_CACHE_ENUMERATION).as<bool>();
+    result.m_graph_cache_dir           = get_optional_string(vm, KEY_GRAPH_CACHE_DIR);
+    result.m_load_motif_graph_cache_path = get_optional_string(vm, KEY_LOAD_MOTIF_GRAPH_CACHE);
+    result.m_load_path_graph_cache_path  = get_optional_string(vm, KEY_LOAD_PATH_GRAPH_CACHE);
     return result;
 }
 
@@ -340,6 +365,34 @@ void require_cache_file(const bool enabled, const std::string& path, const char*
 }
 
 /**
+ * @brief Validates filter-specific flag combinations.
+ * @param filter     Parsed filter arguments.
+ * @param use_motifs Whether --motifs was specified.
+ * @param use_paths  Whether --paths was specified.
+ * @throws SgfInvalidArgumentException if validation fails.
+ */
+void validate_filter_args(const FilterArgs& filter, const bool use_motifs, const bool use_paths)
+{
+    require_cache_file(use_motifs, filter.m_motif_cache_file, KEY_MOTIF_CACHE_FILE);
+    require_cache_file(use_paths,  filter.m_path_cache_file,  KEY_PATH_CACHE_FILE);
+    if (filter.m_cache_graph_enumeration && filter.m_graph_cache_dir.empty())
+    {
+        throw SgfInvalidArgumentException(
+            "--graph-cache-dir is required when --cache-enumeration is set.");
+    }
+    if (filter.m_cache_graph_enumeration && !filter.m_load_motif_graph_cache_path.empty())
+    {
+        throw SgfInvalidArgumentException(
+            "--cache-enumeration and --load-motif-graph-cache are mutually exclusive.");
+    }
+    if (filter.m_cache_graph_enumeration && !filter.m_load_path_graph_cache_path.empty())
+    {
+        throw SgfInvalidArgumentException(
+            "--cache-enumeration and --load-path-graph-cache are mutually exclusive.");
+    }
+}
+
+/**
  * @brief Validates that at least one mode and one feature flag are set,
  *        and that required cache files are provided for the filter stage.
  * @param args Parsed CLI arguments.
@@ -363,8 +416,7 @@ void validate_mode_flags(const CliArgs& args)
     }
     if (args.m_run_filter)
     {
-        require_cache_file(args.m_use_motifs, args.m_filter.m_motif_cache_file, KEY_MOTIF_CACHE_FILE);
-        require_cache_file(args.m_use_paths,  args.m_filter.m_path_cache_file,  KEY_PATH_CACHE_FILE);
+        validate_filter_args(args.m_filter, args.m_use_motifs, args.m_use_paths);
     }
 }
 
@@ -395,6 +447,12 @@ void run_preprocess(const CliArgs& args)
 void run_filter(const CliArgs& args)
 {
     std::string result_folder = args.m_filter.m_result_folder;
+    const GraphEnumerationCacheConfig cache_config{
+        args.m_filter.m_cache_graph_enumeration,
+        args.m_filter.m_graph_cache_dir,
+        args.m_filter.m_load_motif_graph_cache_path,
+        args.m_filter.m_load_path_graph_cache_path
+    };
     FlowManager::enumerator_filter_run(
         args.m_filter.m_graph_dir,
         args.m_is_directed,
@@ -406,7 +464,8 @@ void run_filter(const CliArgs& args)
         args.m_filter.m_result_type,
         args.m_filter.m_log_file_path,
         args.m_use_paths,
-        args.m_use_motifs);
+        args.m_use_motifs,
+        cache_config);
 }
 
 /**
