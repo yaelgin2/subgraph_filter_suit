@@ -39,6 +39,14 @@ public:
      * @brief Virtual destructor.
      */
     virtual ~IPatternPreprocessor() = default;
+
+    IPatternPreprocessor(const IPatternPreprocessor&) = delete;
+    IPatternPreprocessor& operator=(const IPatternPreprocessor&) = delete;
+    IPatternPreprocessor(IPatternPreprocessor&&) = delete;
+    IPatternPreprocessor& operator=(IPatternPreprocessor&&) = delete;
+
+protected:
+    IPatternPreprocessor() = default;
 };
 
 }  // namespace sgf
