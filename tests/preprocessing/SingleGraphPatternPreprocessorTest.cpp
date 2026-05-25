@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <gtest/gtest.h>
+#include <unordered_set>
 #include <vector>
 
 using namespace sgf;
@@ -46,29 +47,39 @@ ColoredGraph make_path_5()
 }
 
 /**
+ * @brief Build a to_process vector of size @p total with the first @p count entries true.
+ */
+std::vector<bool> make_to_process(const std::size_t total, const uint32_t count)
+{
+    std::vector<bool> to_process(total, false);
+    const std::size_t limit = std::min(static_cast<std::size_t>(count), total);
+    std::fill_n(to_process.begin(), limit, true);
+    return to_process;
+}
+
+/**
  * @brief Return true if @p results contains at least one entry with source index @p index.
  */
-bool has_source_index(const std::vector<SingleGraphPatternResult>& results, const uint32_t index)
+bool has_source_index(const std::vector<PatternPreprocessorResult>& results, const uint32_t index)
 {
     return std::any_of(results.cbegin(), results.cend(),
-                       [index](const SingleGraphPatternResult& result)
+                       [index](const PatternPreprocessorResult& result)
                        {
-                           const std::vector<uint32_t>& indices = result.second;
-                           return std::find(indices.cbegin(), indices.cend(), index) !=
-                                  indices.cend();
+                           const std::unordered_set<uint32_t>& indices = result.second;
+                           return indices.count(index) > 0U;
                        });
 }
 
 /**
  * @brief Return true if every source index in @p results is less than @p upper_bound.
  */
-bool all_indices_in_range(const std::vector<SingleGraphPatternResult>& results,
+bool all_indices_in_range(const std::vector<PatternPreprocessorResult>& results,
                           const uint32_t upper_bound)
 {
     return std::all_of(results.cbegin(), results.cend(),
-                       [upper_bound](const SingleGraphPatternResult& result)
+                       [upper_bound](const PatternPreprocessorResult& result)
                        {
-                           const std::vector<uint32_t>& indices = result.second;
+                           const std::unordered_set<uint32_t>& indices = result.second;
                            return std::all_of(indices.cbegin(), indices.cend(),
                                               [upper_bound](const uint32_t idx)
                                               {
@@ -88,9 +99,10 @@ TEST(SingleGraphPatternPreprocessorTest, empty_background_graph_throws)
 {
     std::vector<ColoredGraph> graphs;
     graphs.push_back(make_path_4());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
-    EXPECT_THROW(preprocessor.calculate(make_empty_graph(), 1U, NO_THRESHOLD),
-                 InvalidArgumentException);
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 1U);
+    SingleGraphPatternPreprocessor preprocessor(graphs, false, make_empty_graph(), to_process,
+                                                NO_THRESHOLD);
+    EXPECT_THROW(preprocessor.calculate(), InvalidArgumentException);
 }
 
 /**
@@ -100,8 +112,10 @@ TEST(SingleGraphPatternPreprocessorTest, empty_library_graph_throws)
 {
     std::vector<ColoredGraph> graphs;
     graphs.push_back(make_empty_graph());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
-    EXPECT_THROW(preprocessor.calculate(make_path_4(), 1U, NO_THRESHOLD), InvalidArgumentException);
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 1U);
+    SingleGraphPatternPreprocessor preprocessor(graphs, false, make_path_4(), to_process,
+                                                NO_THRESHOLD);
+    EXPECT_THROW(preprocessor.calculate(), InvalidArgumentException);
 }
 
 /**
@@ -111,9 +125,10 @@ TEST(SingleGraphPatternPreprocessorTest, zero_pattern_number_returns_empty)
 {
     std::vector<ColoredGraph> graphs;
     graphs.push_back(make_path_4());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
-    const std::vector<SingleGraphPatternResult> results =
-        preprocessor.calculate(make_path_4(), 0U, NO_THRESHOLD);
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 0U);
+    SingleGraphPatternPreprocessor preprocessor(graphs, false, make_path_4(), to_process,
+                                                NO_THRESHOLD);
+    const std::vector<PatternPreprocessorResult> results = preprocessor.calculate();
     EXPECT_TRUE(results.empty());
 }
 
@@ -126,9 +141,10 @@ TEST(SingleGraphPatternPreprocessorTest, one_graph_results_carry_index_zero)
 {
     std::vector<ColoredGraph> graphs;
     graphs.push_back(make_path_4());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
-    const std::vector<SingleGraphPatternResult> results =
-        preprocessor.calculate(make_path_4(), 1U, NO_THRESHOLD);
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 1U);
+    SingleGraphPatternPreprocessor preprocessor(graphs, false, make_path_4(), to_process,
+                                                NO_THRESHOLD);
+    const std::vector<PatternPreprocessorResult> results = preprocessor.calculate();
     ASSERT_FALSE(results.empty());
     EXPECT_TRUE(has_source_index(results, 0U));
     EXPECT_TRUE(all_indices_in_range(results, 1U));
@@ -141,9 +157,10 @@ TEST(SingleGraphPatternPreprocessorTest, one_graph_no_indices_above_zero)
 {
     std::vector<ColoredGraph> graphs;
     graphs.push_back(make_path_4());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
-    const std::vector<SingleGraphPatternResult> results =
-        preprocessor.calculate(make_path_4(), 1U, NO_THRESHOLD);
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 1U);
+    SingleGraphPatternPreprocessor preprocessor(graphs, false, make_path_4(), to_process,
+                                                NO_THRESHOLD);
+    const std::vector<PatternPreprocessorResult> results = preprocessor.calculate();
     EXPECT_TRUE(all_indices_in_range(results, 1U));
 }
 
@@ -157,9 +174,10 @@ TEST(SingleGraphPatternPreprocessorTest, pattern_number_limits_graphs_processed)
     std::vector<ColoredGraph> graphs;
     graphs.push_back(make_path_4());
     graphs.push_back(make_path_5());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
-    const std::vector<SingleGraphPatternResult> results =
-        preprocessor.calculate(make_path_4(), 1U, NO_THRESHOLD);
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 1U);
+    SingleGraphPatternPreprocessor preprocessor(graphs, false, make_path_4(), to_process,
+                                                NO_THRESHOLD);
+    const std::vector<PatternPreprocessorResult> results = preprocessor.calculate();
     ASSERT_FALSE(results.empty());
     EXPECT_TRUE(has_source_index(results, 0U));
     EXPECT_TRUE(all_indices_in_range(results, 1U));
@@ -173,9 +191,10 @@ TEST(SingleGraphPatternPreprocessorTest, two_graphs_both_indices_present)
     std::vector<ColoredGraph> graphs;
     graphs.push_back(make_path_4());
     graphs.push_back(make_path_4());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
-    const std::vector<SingleGraphPatternResult> results =
-        preprocessor.calculate(make_path_4(), 2U, NO_THRESHOLD);
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 2U);
+    SingleGraphPatternPreprocessor preprocessor(graphs, false, make_path_4(), to_process,
+                                                NO_THRESHOLD);
+    const std::vector<PatternPreprocessorResult> results = preprocessor.calculate();
     ASSERT_FALSE(results.empty());
     EXPECT_TRUE(has_source_index(results, 0U));
     EXPECT_TRUE(has_source_index(results, 1U));
@@ -193,9 +212,10 @@ TEST(SingleGraphPatternPreprocessorTest, three_graphs_all_indices_present)
     graphs.push_back(make_path_4());
     graphs.push_back(make_path_4());
     graphs.push_back(make_path_4());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
-    const std::vector<SingleGraphPatternResult> results =
-        preprocessor.calculate(make_path_4(), 3U, NO_THRESHOLD);
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 3U);
+    SingleGraphPatternPreprocessor preprocessor(graphs, false, make_path_4(), to_process,
+                                                NO_THRESHOLD);
+    const std::vector<PatternPreprocessorResult> results = preprocessor.calculate();
     ASSERT_FALSE(results.empty());
     EXPECT_TRUE(has_source_index(results, 0U));
     EXPECT_TRUE(has_source_index(results, 1U));
@@ -212,9 +232,10 @@ TEST(SingleGraphPatternPreprocessorTest, three_graphs_partial_processing)
     graphs.push_back(make_path_4());
     graphs.push_back(make_path_4());
     graphs.push_back(make_path_4());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
-    const std::vector<SingleGraphPatternResult> results =
-        preprocessor.calculate(make_path_4(), 2U, NO_THRESHOLD);
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 2U);
+    SingleGraphPatternPreprocessor preprocessor(graphs, false, make_path_4(), to_process,
+                                                NO_THRESHOLD);
+    const std::vector<PatternPreprocessorResult> results = preprocessor.calculate();
     EXPECT_TRUE(all_indices_in_range(results, 2U));
 }
 
@@ -227,10 +248,12 @@ TEST(SingleGraphPatternPreprocessorTest, custom_config_does_not_throw)
 {
     std::vector<ColoredGraph> graphs;
     graphs.push_back(make_path_4());
-    SingleGraphPatternPreprocessor preprocessor(graphs, false);
     constexpr uint32_t SMALL_BEAM = 1U;
     const SingleGraphFinderConfig config{SMALL_BEAM, 0.5, 0.5};
-    EXPECT_NO_THROW(preprocessor.calculate(make_path_4(), 1U, NO_THRESHOLD, config));
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 1U);
+    EXPECT_NO_THROW(SingleGraphPatternPreprocessor(graphs, false, make_path_4(), to_process,
+                                                   NO_THRESHOLD, config)
+                        .calculate());
 }
 
 /**
@@ -240,14 +263,16 @@ TEST(SingleGraphPatternPreprocessorTest, default_config_matches_explicit_default
 {
     std::vector<ColoredGraph> graphs;
     graphs.push_back(make_path_4());
+    const std::vector<bool> to_process = make_to_process(graphs.size(), 1U);
 
-    SingleGraphPatternPreprocessor preprocessor_default(graphs, false);
-    SingleGraphPatternPreprocessor preprocessor_explicit(graphs, false);
+    SingleGraphPatternPreprocessor preprocessor_default(graphs, false, make_path_4(), to_process,
+                                                        NO_THRESHOLD);
+    SingleGraphPatternPreprocessor preprocessor_explicit(graphs, false, make_path_4(), to_process,
+                                                         NO_THRESHOLD, SingleGraphFinderConfig{});
 
-    const std::vector<SingleGraphPatternResult> results_default =
-        preprocessor_default.calculate(make_path_4(), 1U, NO_THRESHOLD);
-    const std::vector<SingleGraphPatternResult> results_explicit =
-        preprocessor_explicit.calculate(make_path_4(), 1U, NO_THRESHOLD, SingleGraphFinderConfig{});
+    const std::vector<PatternPreprocessorResult> results_default = preprocessor_default.calculate();
+    const std::vector<PatternPreprocessorResult> results_explicit =
+        preprocessor_explicit.calculate();
 
     EXPECT_EQ(results_default.size(), results_explicit.size());
 }
