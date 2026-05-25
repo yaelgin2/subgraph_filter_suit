@@ -27,27 +27,27 @@ namespace sgf
  * Each match is written to the output stream as a space-separated list of
  * "graph_vertex:subgraph_vertex" pairs, followed by a newline.
  */
-class LineGraphSearcher
+class SubgraphSearcher
 {
 public:
     /**
-     * @brief Constructs a LineGraphSearcher.
+     * @brief Constructs a SubgraphSearcher.
      * @param policy     Vertex ordering heuristic for the search.
      * @param is_directed Whether the graphs are directed.
      * @param is_induced  Whether to enforce induced-subgraph semantics.
      * @param output     Stream to which matches are written.
      */
-    LineGraphSearcher(PriorPolicy policy, bool is_directed, bool is_induced, std::ostream& output);
+    SubgraphSearcher(PriorPolicy policy, bool is_directed, bool is_induced, std::ostream& output);
 
-    LineGraphSearcher(const LineGraphSearcher&) = delete;
-    LineGraphSearcher& operator=(const LineGraphSearcher&) = delete;
-    LineGraphSearcher(LineGraphSearcher&&) = delete;
-    LineGraphSearcher& operator=(LineGraphSearcher&&) = delete;
+    SubgraphSearcher(const SubgraphSearcher&) = delete;
+    SubgraphSearcher& operator=(const SubgraphSearcher&) = delete;
+    SubgraphSearcher(SubgraphSearcher&&) = delete;
+    SubgraphSearcher& operator=(SubgraphSearcher&&) = delete;
 
     /**
      * @brief Default destructor.
      */
-    ~LineGraphSearcher() = default;
+    ~SubgraphSearcher() = default;
 
     /**
      * @brief Finds all subgraph isomorphisms of @p subgraph in @p graph.
@@ -71,10 +71,6 @@ public:
      * @param policy   Which prior to compute.
      * @return Map from vertex ID to prior score.
      */
-    std::unordered_map<uint32_t, float> calculate_prior(const ColoredGraph& subgraph,
-                                                        const ColoredGraph& graph,
-                                                        PriorPolicy policy) const;
-
 private:
     using VertexSet = std::unordered_set<uint32_t>;
     using RestrictionMap = std::unordered_map<uint32_t, VertexSet>;
@@ -115,6 +111,16 @@ private:
     static void join_all(std::vector<std::thread>& threads);
 
     /**
+     * @brief Computes the prior-score map for a given policy.
+     * @param subgraph The pattern graph.
+     * @param graph    The host graph.
+     * @param policy   Which prior to compute.
+     * @return Map from vertex ID to prior score.
+     */
+    PriorMap calculate_prior(const ColoredGraph& subgraph, const ColoredGraph& graph,
+                             PriorPolicy policy) const;
+
+    /**
      * @brief Builds a prior map using second-degree scores from @p target.
      * @param target The graph whose vertices are scored.
      * @return Prior map from vertex ID to second-degree score.
@@ -127,6 +133,16 @@ private:
      * @return Prior map from vertex ID to degree score.
      */
     PriorMap prior_first_degree(const ColoredGraph& target) const;
+
+    /**
+     * @brief Computes the restriction score for the GRAPH_DEGREE_SQUARED policy.
+     * @param restrictions Current restriction map.
+     * @param prior        Prior score map.
+     * @param vertex       Subgraph vertex to score.
+     * @return Negative sum of prior scores of candidates in the restriction set.
+     */
+    static float score_graph_degree_squared(const RestrictionMap& restrictions,
+                                            const PriorMap& prior, uint32_t vertex);
 
     /**
      * @brief Computes the sum of neighbour degrees for @p vertex in @p graph.
@@ -304,9 +320,10 @@ private:
      * @param graph_vertex     The currently matched graph vertex.
      * @return The initial candidate set.
      */
-    VertexSet compute_new_restriction_directed(const SearchContext& context,
-                                               uint32_t subgraph_neighbor, uint32_t subgraph_vertex,
-                                               uint32_t graph_vertex) const;
+    static VertexSet compute_new_restriction_directed(const SearchContext& context,
+                                                      uint32_t subgraph_neighbor,
+                                                      uint32_t subgraph_vertex,
+                                                      uint32_t graph_vertex);
 
     /**
      * @brief Computes the initial restriction set for a newly constrained

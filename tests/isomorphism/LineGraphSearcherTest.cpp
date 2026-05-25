@@ -1,4 +1,4 @@
-#include "LineGraphSearcher.h"
+#include "SubgraphSearcher.h"
 
 #include "ColoredGraph.h"
 #include "PriorPolicy.h"
@@ -101,11 +101,11 @@ uint64_t count_matches(const std::string& text)
  * @brief SUBGRAPH_DEGREE_SQUARED gives each vertex a score equal to the sum of
  *        its neighbours' degrees (second-order degree in the subgraph).
  */
-TEST(LineGraphSearcherTest, prior_subgraph_degree_squared_triangle)
+TEST(SubgraphSearcherTest, prior_subgraph_degree_squared_triangle)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
     std::ostringstream oss;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE_SQUARED, false, false, oss};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE_SQUARED, false, false, oss};
     const std::unordered_map<uint32_t, float> prior =
         searcher.calculate_prior(triangle, triangle, PriorPolicy::SUBGRAPH_DEGREE_SQUARED);
     // Each vertex has 2 neighbours each of degree 2; score = 2+2 = 4
@@ -119,11 +119,11 @@ TEST(LineGraphSearcherTest, prior_subgraph_degree_squared_triangle)
 /**
  * @brief SUBGRAPH_DEGREE gives each vertex its own degree as the prior score.
  */
-TEST(LineGraphSearcherTest, prior_subgraph_degree_path)
+TEST(SubgraphSearcherTest, prior_subgraph_degree_path)
 {
     const ColoredGraph path = make_path_graph(3U);
     std::ostringstream oss;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, oss};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, oss};
     const std::unordered_map<uint32_t, float> prior =
         searcher.calculate_prior(path, path, PriorPolicy::SUBGRAPH_DEGREE);
     // Vertex 0 and 2 have degree 1; vertex 1 has degree 2
@@ -135,11 +135,11 @@ TEST(LineGraphSearcherTest, prior_subgraph_degree_path)
 /**
  * @brief CONSTANT and RANDOM policies return an empty prior map.
  */
-TEST(LineGraphSearcherTest, prior_empty_for_constant_and_random)
+TEST(SubgraphSearcherTest, prior_empty_for_constant_and_random)
 {
     const ColoredGraph graph = make_complete_graph(3U);
     std::ostringstream oss;
-    const LineGraphSearcher searcher{PriorPolicy::CONSTANT, false, false, oss};
+    const SubgraphSearcher searcher{PriorPolicy::CONSTANT, false, false, oss};
     const std::unordered_map<uint32_t, float> constant_prior =
         searcher.calculate_prior(graph, graph, PriorPolicy::CONSTANT);
     EXPECT_TRUE(constant_prior.empty());
@@ -155,14 +155,14 @@ TEST(LineGraphSearcherTest, prior_empty_for_constant_and_random)
  * @brief Searching for a single vertex (subgraph size 1) in a graph of N
  *        vertices finds exactly N matches when colours agree.
  */
-TEST(LineGraphSearcherTest, find_all_single_vertex_subgraph)
+TEST(SubgraphSearcherTest, find_all_single_vertex_subgraph)
 {
     const ColoredGraph graph = make_complete_graph(4U);
     const std::vector<uint32_t> single_color{0U};
     std::vector<std::pair<uint32_t, uint32_t>> no_edges;
     ColoredGraph subgraph{1U, no_edges, single_color};
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
     const uint64_t matches = searcher.find_all(graph, subgraph);
     EXPECT_EQ(matches, 4ULL);
 }
@@ -171,12 +171,12 @@ TEST(LineGraphSearcherTest, find_all_single_vertex_subgraph)
  * @brief A single-edge subgraph in K3 (triangle) has 6 matches: 3 edges × 2
  *        orderings.
  */
-TEST(LineGraphSearcherTest, find_all_edge_in_triangle)
+TEST(SubgraphSearcherTest, find_all_edge_in_triangle)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
     const ColoredGraph edge_sub = make_single_edge(0U);
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
     const uint64_t matches = searcher.find_all(triangle, edge_sub);
     EXPECT_EQ(matches, 6ULL);
     EXPECT_EQ(count_matches(output.str()), 6ULL);
@@ -186,11 +186,11 @@ TEST(LineGraphSearcherTest, find_all_edge_in_triangle)
  * @brief Searching for K3 (triangle) inside K3 finds exactly 6 matches (3!
  *        automorphisms of the triangle).
  */
-TEST(LineGraphSearcherTest, find_all_triangle_in_triangle)
+TEST(SubgraphSearcherTest, find_all_triangle_in_triangle)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
     const uint64_t matches = searcher.find_all(triangle, triangle);
     EXPECT_EQ(matches, 6ULL);
 }
@@ -198,12 +198,12 @@ TEST(LineGraphSearcherTest, find_all_triangle_in_triangle)
 /**
  * @brief Searching for K4 (4-clique) inside K3 finds 0 matches.
  */
-TEST(LineGraphSearcherTest, find_all_k4_in_k3_is_zero)
+TEST(SubgraphSearcherTest, find_all_k4_in_k3_is_zero)
 {
     const ColoredGraph k3 = make_complete_graph(3U);
     const ColoredGraph k4 = make_complete_graph(4U);
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
     const uint64_t matches = searcher.find_all(k3, k4);
     EXPECT_EQ(matches, 0ULL);
 }
@@ -212,12 +212,12 @@ TEST(LineGraphSearcherTest, find_all_k4_in_k3_is_zero)
  * @brief Color mismatch: a subgraph vertex with color 1 finds no matches in a
  *        graph where all vertices have color 0.
  */
-TEST(LineGraphSearcherTest, find_all_color_mismatch_is_zero)
+TEST(SubgraphSearcherTest, find_all_color_mismatch_is_zero)
 {
     const ColoredGraph graph = make_complete_graph(3U);
     const ColoredGraph mismatch_sub = make_single_edge(1U);
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
     const uint64_t matches = searcher.find_all(graph, mismatch_sub);
     EXPECT_EQ(matches, 0ULL);
 }
@@ -228,7 +228,7 @@ TEST(LineGraphSearcherTest, find_all_color_mismatch_is_zero)
  * @brief All non-COMBINED policies should yield the same match count for the
  *        triangle-in-triangle case.
  */
-TEST(LineGraphSearcherTest, find_all_all_policies_same_count)
+TEST(SubgraphSearcherTest, find_all_all_policies_same_count)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
     constexpr uint64_t EXPECTED = 6ULL;
@@ -238,7 +238,7 @@ TEST(LineGraphSearcherTest, find_all_all_policies_same_count)
     for (const PriorPolicy policy : policies)
     {
         std::ostringstream output;
-        const LineGraphSearcher searcher{policy, false, false, output};
+        const SubgraphSearcher searcher{policy, false, false, output};
         EXPECT_EQ(searcher.find_all(triangle, triangle), EXPECTED)
             << "policy " << static_cast<uint32_t>(policy);
     }
@@ -250,12 +250,12 @@ TEST(LineGraphSearcherTest, find_all_all_policies_same_count)
  * @brief A directed single-edge subgraph (0→1) in a directed graph with only
  *        one edge (0→1) finds exactly 1 match.
  */
-TEST(LineGraphSearcherTest, find_all_directed_single_edge_one_match)
+TEST(SubgraphSearcherTest, find_all_directed_single_edge_one_match)
 {
     const ColoredGraph directed_graph = make_directed_single_edge();
     const ColoredGraph directed_sub = make_directed_single_edge();
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false, output};
     const uint64_t matches = searcher.find_all(directed_graph, directed_sub);
     EXPECT_EQ(matches, 1ULL);
 }
@@ -265,7 +265,7 @@ TEST(LineGraphSearcherTest, find_all_directed_single_edge_one_match)
  *        isomorphism with a directed single-edge subgraph (0→1). An undirected
  *        single-edge graph with the same topology would give 2 (both orderings).
  */
-TEST(LineGraphSearcherTest, find_all_directed_one_match_vs_undirected_two)
+TEST(SubgraphSearcherTest, find_all_directed_one_match_vs_undirected_two)
 {
     const ColoredGraph directed_graph = make_directed_single_edge();
     const ColoredGraph undirected_graph = make_single_edge(0U);
@@ -273,11 +273,11 @@ TEST(LineGraphSearcherTest, find_all_directed_one_match_vs_undirected_two)
     const ColoredGraph undirected_sub = make_single_edge(0U);
 
     std::ostringstream dir_out;
-    const LineGraphSearcher dir_searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false, dir_out};
+    const SubgraphSearcher dir_searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false, dir_out};
     EXPECT_EQ(dir_searcher.find_all(directed_graph, directed_sub), 1ULL);
 
     std::ostringstream undir_out;
-    const LineGraphSearcher undir_searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, undir_out};
+    const SubgraphSearcher undir_searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, undir_out};
     EXPECT_EQ(undir_searcher.find_all(undirected_graph, undirected_sub), 2ULL);
 }
 
@@ -288,12 +288,12 @@ TEST(LineGraphSearcherTest, find_all_directed_one_match_vs_undirected_two)
  *        "extra" edges to block any assignment since the subgraph uses only the
  *        immediate endpoints.
  */
-TEST(LineGraphSearcherTest, find_all_induced_edge_in_triangle)
+TEST(SubgraphSearcherTest, find_all_induced_edge_in_triangle)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
     const ColoredGraph edge_sub = make_single_edge(0U);
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, true, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, true, output};
     const uint64_t matches = searcher.find_all(triangle, edge_sub);
     // Induced: every graph-neighbor of v_g that is already matched must be a subgraph-neighbor.
     // The two matched vertices have each other as a common neighbor that's already matched,
@@ -305,11 +305,11 @@ TEST(LineGraphSearcherTest, find_all_induced_edge_in_triangle)
  * @brief Induced triangle-in-triangle finds 6 matches (same as non-induced
  *        since the subgraph is the full K3).
  */
-TEST(LineGraphSearcherTest, find_all_induced_triangle_in_triangle)
+TEST(SubgraphSearcherTest, find_all_induced_triangle_in_triangle)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, true, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, true, output};
     const uint64_t matches = searcher.find_all(triangle, triangle);
     EXPECT_EQ(matches, 6ULL);
 }
@@ -319,13 +319,13 @@ TEST(LineGraphSearcherTest, find_all_induced_triangle_in_triangle)
 /**
  * @brief Searching in an empty host graph (0 vertices) returns 0 matches.
  */
-TEST(LineGraphSearcherTest, find_all_empty_host_graph)
+TEST(SubgraphSearcherTest, find_all_empty_host_graph)
 {
     std::vector<std::pair<uint32_t, uint32_t>> no_edges;
     const ColoredGraph empty_graph{0U, no_edges, {}};
     const ColoredGraph edge_sub = make_single_edge(0U);
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
     EXPECT_EQ(searcher.find_all(empty_graph, edge_sub), 0ULL);
 }
 
@@ -337,7 +337,7 @@ TEST(LineGraphSearcherTest, find_all_empty_host_graph)
  *        non-induced case, giving 2 matches. Induced adds no extra constraint
  *        here since each endpoint has at most one already-matched neighbor.
  */
-TEST(LineGraphSearcherTest, find_all_directed_induced_path_matches)
+TEST(SubgraphSearcherTest, find_all_directed_induced_path_matches)
 {
     // Build directed path 0→1→2
     std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {1U, 2U}};
@@ -346,11 +346,11 @@ TEST(LineGraphSearcherTest, find_all_directed_induced_path_matches)
     const ColoredGraph dir_edge = make_directed_single_edge();
 
     std::ostringstream non_induced_out;
-    const LineGraphSearcher non_induced{PriorPolicy::SUBGRAPH_DEGREE, true, false, non_induced_out};
+    const SubgraphSearcher non_induced{PriorPolicy::SUBGRAPH_DEGREE, true, false, non_induced_out};
     EXPECT_EQ(non_induced.find_all(dir_path, dir_edge), 2ULL);
 
     std::ostringstream induced_out;
-    const LineGraphSearcher induced{PriorPolicy::SUBGRAPH_DEGREE, true, true, induced_out};
+    const SubgraphSearcher induced{PriorPolicy::SUBGRAPH_DEGREE, true, true, induced_out};
     EXPECT_EQ(induced.find_all(dir_path, dir_edge), 2ULL);
 }
 
@@ -359,7 +359,7 @@ TEST(LineGraphSearcherTest, find_all_directed_induced_path_matches)
  *        is a directed path (0→1, 1→2). The two-cycle requires both a→b and
  *        b→a edges; no such pair exists in the path, so matches = 0.
  */
-TEST(LineGraphSearcherTest, find_all_directed_induced_two_cycle_no_match_in_path)
+TEST(SubgraphSearcherTest, find_all_directed_induced_two_cycle_no_match_in_path)
 {
     std::vector<std::pair<uint32_t, uint32_t>> path_edges{{0U, 1U}, {1U, 2U}};
     const std::vector<uint32_t> path_colors{0U, 0U, 0U};
@@ -370,7 +370,7 @@ TEST(LineGraphSearcherTest, find_all_directed_induced_two_cycle_no_match_in_path
     const ColoredGraph two_cycle{2U, cycle_edges, cycle_colors, true};
 
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, true, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, true, output};
     EXPECT_EQ(searcher.find_all(dir_path, two_cycle), 0ULL);
 }
 
@@ -384,12 +384,12 @@ TEST(LineGraphSearcherTest, find_all_directed_induced_two_cycle_no_match_in_path
  * b-c edges, a≠c) number: 4 choices for middle * 3*2 for ends = 24. But
  * a-c must NOT be an edge for induced, yet for non-induced all 24 are valid.
  */
-TEST(LineGraphSearcherTest, find_all_path3_in_k4_non_induced)
+TEST(SubgraphSearcherTest, find_all_path3_in_k4_non_induced)
 {
     const ColoredGraph k4 = make_complete_graph(4U);
     const ColoredGraph path3 = make_path_graph(3U);
     std::ostringstream output;
-    const LineGraphSearcher searcher{PriorPolicy::CONSTANT, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::CONSTANT, false, false, output};
     const uint64_t matches = searcher.find_all(k4, path3);
     EXPECT_EQ(matches, 24ULL);
 }
