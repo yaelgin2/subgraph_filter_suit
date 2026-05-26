@@ -2,6 +2,7 @@
 
 #include "FilteringUtils.h"
 #include "IFilterOutputManager.h"
+#include "LoggerHandler.h"
 
 #include <string>
 #include <vector>
@@ -24,10 +25,11 @@ public:
     /**
      * @brief Constructs a JsonFilterOutputManager.
      *
-     * @param folder        Directory where the output file will be written.
-     * @param base_filename File name without extension (e.g. "filter_results").
+     * @param folder  Directory where the output file will be written.
+     * @param logger  Optional logger for diagnostics.
      */
-    JsonFilterOutputManager(std::string folder, std::string base_filename);
+    explicit JsonFilterOutputManager(std::string folder,
+                                     LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Default virtual destructor.

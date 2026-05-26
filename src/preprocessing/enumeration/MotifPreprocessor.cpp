@@ -11,6 +11,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -598,6 +599,11 @@ uint32_t MotifPreprocessor::compute_motif_descriptor(
         }
     }
     return motif_descriptor;
+}
+
+std::string MotifPreprocessor::entity_name() const
+{
+    return "motifs";
 }
 
 }  // namespace sgf

@@ -2,6 +2,7 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
+#include "LoggerHandler.h"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <cstdint>
@@ -38,11 +39,13 @@ public:
      * Directory creation is delegated to IOUtils::create_directory_if_needed;
      * format-specific serialization is delegated to do_write().
      *
-     * @param graph The pattern graph to serialize.
-     * @param path Destination file path.
+     * @param graph  The pattern graph to serialize.
+     * @param path   Destination file path.
+     * @param logger Optional logger for diagnostics.
      * @throws SgfPathExistsException if directory creation or file writing fails.
      */
-    void write(const BoostGraph& graph, const std::string& path) const;
+    void write(const BoostGraph& graph, const std::string& path,
+               const LoggerHandler& logger = LoggerHandler::null()) const;
 
 private:
     /**

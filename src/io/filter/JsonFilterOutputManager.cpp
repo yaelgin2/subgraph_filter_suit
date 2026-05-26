@@ -2,6 +2,7 @@
 
 #include "FilteringUtils.h"
 #include "IFilterOutputManager.h"
+#include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <boost/json/object.hpp>
@@ -15,8 +16,8 @@
 namespace sgf
 {
 
-JsonFilterOutputManager::JsonFilterOutputManager(std::string folder, std::string base_filename)
-    : IFilterOutputManager(std::move(folder), std::move(base_filename))
+JsonFilterOutputManager::JsonFilterOutputManager(std::string folder, LoggerHandler logger)
+    : IFilterOutputManager(std::move(folder), std::move(logger))
 {
 }
 

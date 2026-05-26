@@ -148,6 +148,12 @@ private:
     /**
      * @brief Number of edges in each enumerated path.
      */
+    /**
+     * @brief Returns "paths" to label the finished-enumeration log line.
+     * @return The string "paths".
+     */
+    [[nodiscard]] std::string entity_name() const override;
+
     static constexpr uint32_t PATH_EDGE_COUNT = 4U;
 
     /**
@@ -177,7 +183,7 @@ private:
          * @brief Edge traversal direction for depth-2 expansion (false = outgoing,
          * true = incoming).
          */
-        bool m_direction;
+        bool m_direction{false};
     };
 
     /**

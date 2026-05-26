@@ -2,9 +2,12 @@
 
 #include "ICacheIOManager.h"
 #include "Int128.h"
+#include "LoggerHandler.h"
 
 #include <fstream>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace sgf
 {
@@ -20,12 +23,12 @@ class CSVCacheIOManager : public ICacheIOManager
 {
 public:
     /**
-     * @brief Constructs a CSVCacheIOManager targeting a specific directory and base filename.
+     * @brief Constructs a CSVCacheIOManager targeting a specific directory.
      *
-     * @param folder        Directory of the CSV file.
-     * @param base_filename File name without extension.
+     * @param folder  Directory of the CSV file.
+     * @param logger  Optional logger for diagnostics.
      */
-    CSVCacheIOManager(std::string folder, std::string base_filename);
+    explicit CSVCacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
 protected:
     /**
@@ -35,7 +38,9 @@ protected:
      * @param full_path Destination file path including the .csv extension.
      * @throws SgfPathExistsException if the file cannot be opened.
      */
-    void write_to_file(const EnumerationData& data, const std::string& full_path) const override;
+    void write_to_file(const EnumerationResultVector& data,
+                       const std::vector<std::string>& graph_names,
+                       const std::string& full_path) const override;
 
     /**
      * @brief Reads enumeration data from a CSV file at @p full_path.
@@ -45,7 +50,8 @@ protected:
      * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException if any row contains malformed values.
      */
-    EnumerationData read_from_file(const std::string& full_path) const override;
+    std::unordered_map<std::string, EnumerationResult>
+    read_from_file(const std::string& full_path) const override;
 
     /**
      * @brief Returns the CSV file extension.
@@ -54,10 +60,9 @@ protected:
     [[nodiscard]] std::string get_extension() const override;
 
 private:
-    static constexpr const char* CSV_COLUMN_GRAPH_INDEX = "graph_index";
+    static constexpr const char* CSV_COLUMN_GRAPH_NAME = "graph_name";
     static constexpr const char* CSV_COLUMN_MOTIF_NUMBER = "motif_number";
     static constexpr const char* CSV_COLUMN_APPEARANCES = "appearances";
-    static constexpr size_t MAX_GRAPH_INDEX = 1'000'000U;
 
     /**
      * @brief Writes the CSV header row to @p file.
@@ -68,10 +73,12 @@ private:
     /**
      * @brief Writes one CSV row per (graph, motif) pair to @p file.
      *
-     * @param data Enumeration data indexed by graph position.
-     * @param file Opened output stream.
+     * @param data        Enumeration data indexed by position.
+     * @param graph_names Names aligned with @p data.
+     * @param file        Opened output stream.
      */
-    static void write_rows(const EnumerationData& data, std::ofstream& file);
+    static void write_rows(const EnumerationResultVector& data,
+                           const std::vector<std::string>& graph_names, std::ofstream& file);
 
     /**
      * @brief Converts a UInt128 to its decimal string representation.
@@ -81,11 +88,11 @@ private:
     static std::string uint128_to_decimal(UInt128 value);
 
     /**
-     * @brief Parses all data rows from @p file into an EnumerationData collection.
+     * @brief Parses all data rows from @p file into an EnumerationResultVector collection.
      * @param file Opened input stream positioned after the header row.
      * @return Parsed enumeration data.
      */
-    static EnumerationData parse_file(std::ifstream& file);
+    static std::unordered_map<std::string, EnumerationResult> parse_file(std::ifstream& file);
 
     /**
      * @brief Parses one CSV @p line and inserts the entry into @p data.
@@ -96,7 +103,8 @@ private:
      * @param data Collection to insert the parsed entry into.
      * @throws GraphConstructionException if graph_index exceeds MAX_GRAPH_INDEX.
      */
-    static void insert_row(const std::string& line, EnumerationData& data);
+    static void insert_row(const std::string& line,
+                           std::unordered_map<std::string, EnumerationResult>& data);
 
     /**
      * @brief Converts a decimal string to a UInt128 value.
