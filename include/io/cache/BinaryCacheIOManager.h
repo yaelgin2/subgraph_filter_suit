@@ -2,6 +2,7 @@
 
 #include "ICacheIOManager.h"
 #include "Int128.h"
+#include "LoggerHandler.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -28,10 +29,10 @@ public:
     /**
      * @brief Constructs a BinaryCacheIOManager.
      *
-     * @param folder        Directory where the binary file will be written.
-     * @param base_filename File name without extension.
+     * @param folder  Directory where the binary file will be written.
+     * @param logger  Optional logger for diagnostics.
      */
-    BinaryCacheIOManager(std::string folder);
+    explicit BinaryCacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
 protected:
     /**
@@ -41,7 +42,8 @@ protected:
      * @param full_path Destination file path including the .bin extension.
      * @throws SgfPathExistsException if the file cannot be opened or written.
      */
-    void write_to_file(const EnumerationData& data, const std::vector<std::string>& graph_names,
+    void write_to_file(const EnumerationResultVector& data,
+                       const std::vector<std::string>& graph_names,
                        const std::string& full_path) const override;
 
     /**

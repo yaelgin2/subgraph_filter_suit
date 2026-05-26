@@ -5,6 +5,7 @@
 #include "ICacheIOManager.h"
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
+#include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <array>
@@ -22,8 +23,8 @@
 namespace sgf
 {
 
-BinaryCacheIOManager::BinaryCacheIOManager(std::string folder)
-    : ICacheIOManager(std::move(folder))
+BinaryCacheIOManager::BinaryCacheIOManager(std::string folder, LoggerHandler logger)
+    : ICacheIOManager(std::move(folder), std::move(logger))
 {
 }
 
@@ -130,8 +131,7 @@ void BinaryCacheIOManager::write_string(std::ofstream& output_stream, const std:
     const size_t len = value.size();
     if (len <= MSGPACK_FIXSTR_MAX_LEN)
     {
-        const char header =
-            static_cast<char>(MSGPACK_FIXSTR_BASE | static_cast<uint8_t>(len));
+        const char header = static_cast<char>(MSGPACK_FIXSTR_BASE | static_cast<uint8_t>(len));
         output_stream.write(&header, SINGLE_BYTE);
     }
     else if (len <= UINT8_MAX)
@@ -163,7 +163,7 @@ void BinaryCacheIOManager::write_string(std::ofstream& output_stream, const std:
     output_stream.write(value.data(), static_cast<std::streamsize>(len));
 }
 
-void BinaryCacheIOManager::write_to_file(const EnumerationData& data,
+void BinaryCacheIOManager::write_to_file(const EnumerationResultVector& data,
                                          const std::vector<std::string>& graph_names,
                                          const std::string& full_path) const
 {

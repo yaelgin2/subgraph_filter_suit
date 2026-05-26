@@ -2,6 +2,7 @@
 
 #include "FilteringUtils.h"
 #include "IFilterOutputManager.h"
+#include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <cstddef>
@@ -13,8 +14,8 @@
 namespace sgf
 {
 
-CSVFilterOutputManager::CSVFilterOutputManager(std::string folder)
-    : IFilterOutputManager(std::move(folder))
+CSVFilterOutputManager::CSVFilterOutputManager(std::string folder, LoggerHandler logger)
+    : IFilterOutputManager(std::move(folder), std::move(logger))
 {
 }
 

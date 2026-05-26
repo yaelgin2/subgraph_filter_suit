@@ -1,7 +1,6 @@
 #include "GroupEnumerationPreprocessor.h"
 
 #include "ColoredGraph.h"
-#include "DebugLog.h"
 #include "EnumerationOverflowException.h"
 #include "Int128.h"
 #include "LogLevel.h"
@@ -64,7 +63,6 @@ void GroupEnumerationPreprocessor::sort_nodes()
 
 std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor::calculate()
 {
-    m_logger.log(LogLevel::INFO, "Starting graph enumeration calculation.");
     std::unordered_map<UInt128, uint32_t, UInt128Hash> motif_count;
 
     std::vector<std::vector<bool>> graph_adjacency_matrix;
@@ -86,15 +84,12 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
         }
         count += 1U;
 
-        if (groups_counted % LOG_INTERVAL == 0)
-        {
-            SGF_DEBUG_LOG(m_logger, "Counted groups: " + std::to_string(groups_counted));
-        }
         groups_counted++;
     };
 
     stream_groups_to_counter(graph_adjacency_matrix, count_group);
-    m_logger.log(LogLevel::INFO, "Finished graph enumeration calculation.");
+    m_logger.log(LogLevel::INFO, "Finished enumerating " + std::to_string(groups_counted) + " " +
+                                     entity_name() + ".");
     return motif_count;
 }
 

@@ -144,6 +144,12 @@ private:
      * @param graph_adjacency_matrix Dense boolean adjacency matrix of the full graph.
      * @return Integer whose bits encode edge presence, MSB = first pair read.
      */
+    /**
+     * @brief Returns "motifs" to label the finished-enumeration log line.
+     * @return The string "motifs".
+     */
+    [[nodiscard]] std::string entity_name() const override;
+
     uint32_t
     compute_motif_descriptor(const std::vector<uint32_t>& group,
                              const std::vector<std::vector<bool>>& graph_adjacency_matrix) const;

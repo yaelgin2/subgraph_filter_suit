@@ -2,6 +2,7 @@
 
 #include "EnumerationPreprocessManager.h"
 #include "IGraphPreprocessor.h"
+#include "LoggerHandler.h"
 
 #include <string>
 #include <unordered_map>
@@ -21,12 +22,12 @@ class ICacheIOManager
 {
 public:
     /**
-     * @brief Constructs an ICacheIOManager targeting a specific directory and base filename.
+     * @brief Constructs an ICacheIOManager targeting a specific directory.
      *
-     * @param folder        Directory where the cache file will be written.
-     * @param base_filename File name without extension (e.g. "motif_cache").
+     * @param folder  Directory where the cache file will be written.
+     * @param logger  Optional logger for diagnostics.
      */
-    ICacheIOManager(std::string folder);
+    explicit ICacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Default virtual destructor.
@@ -49,7 +50,8 @@ public:
      * @param graph_names Names aligned with @p data (same size).
      * @throws SgfPathDoesntExistException if directory creation or file writing fails.
      */
-    void write(std::string base_filename, const EnumerationData& data, const std::vector<std::string>& graph_names) const;
+    void write(const std::string& base_filename, const EnumerationResultVector& data,
+               const std::vector<std::string>& graph_names) const;
 
     /**
      * @brief Reads data from the cache file.
@@ -68,7 +70,7 @@ protected:
      * @param graph_names Names aligned with @p data.
      * @param full_path   Destination file path including the format extension.
      */
-    virtual void write_to_file(const EnumerationData& data,
+    virtual void write_to_file(const EnumerationResultVector& data,
                                const std::vector<std::string>& graph_names,
                                const std::string& full_path) const = 0;
 
@@ -90,6 +92,7 @@ protected:
 
 private:
     std::string m_folder;
+    LoggerHandler m_logger;
 
     /**
      * @brief Builds the full output path from folder, base filename, and extension.

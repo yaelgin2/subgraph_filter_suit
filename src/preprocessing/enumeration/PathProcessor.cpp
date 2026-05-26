@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -238,6 +239,11 @@ uint32_t PathProcessor::compute_motif_descriptor(const PathInformation& first_pa
         }
     }
     return motif_descriptor;
+}
+
+std::string PathProcessor::entity_name() const
+{
+    return "paths";
 }
 
 }  // namespace sgf

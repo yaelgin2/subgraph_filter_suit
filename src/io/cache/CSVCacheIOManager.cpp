@@ -3,7 +3,9 @@
 #include "EnumerationPreprocessManager.h"
 #include "GraphConstructionException.h"
 #include "ICacheIOManager.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
+#include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <algorithm>
@@ -21,8 +23,8 @@
 namespace sgf
 {
 
-CSVCacheIOManager::CSVCacheIOManager(std::string folder)
-    : ICacheIOManager(std::move(folder))
+CSVCacheIOManager::CSVCacheIOManager(std::string folder, LoggerHandler logger)
+    : ICacheIOManager(std::move(folder), std::move(logger))
 {
 }
 
@@ -60,13 +62,12 @@ UInt128 CSVCacheIOManager::decimal_to_uint128(const std::string& decimal_str)
 
 void CSVCacheIOManager::write_header(std::ofstream& file)
 {
-    file << CSV_COLUMN_GRAPH_NAME << "," << CSV_COLUMN_MOTIF_NUMBER << ","
-         << CSV_COLUMN_APPEARANCES << "\n";
+    file << CSV_COLUMN_GRAPH_NAME << "," << CSV_COLUMN_MOTIF_NUMBER << "," << CSV_COLUMN_APPEARANCES
+         << "\n";
 }
 
-void CSVCacheIOManager::write_rows(const EnumerationData& data,
-                                   const std::vector<std::string>& graph_names,
-                                   std::ofstream& file)
+void CSVCacheIOManager::write_rows(const EnumerationResultVector& data,
+                                   const std::vector<std::string>& graph_names, std::ofstream& file)
 {
     for (size_t graph_index = 0U; graph_index < data.size(); ++graph_index)
     {
@@ -78,7 +79,7 @@ void CSVCacheIOManager::write_rows(const EnumerationData& data,
     }
 }
 
-void CSVCacheIOManager::write_to_file(const EnumerationData& data,
+void CSVCacheIOManager::write_to_file(const EnumerationResultVector& data,
                                       const std::vector<std::string>& graph_names,
                                       const std::string& full_path) const
 {

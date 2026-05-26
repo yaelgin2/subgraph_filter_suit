@@ -3,6 +3,7 @@
 #include "EnumerationPreprocessManager.h"
 #include "FilteringUtils.h"
 #include "IGraphPreprocessor.h"
+#include "LoggerHandler.h"
 
 #include <vector>
 
@@ -14,7 +15,7 @@ namespace sgf
  * @class GroupEnumerationGraphFilter
  * @brief Prunes library candidates using motif/path frequency signatures.
  *
- * Holds a precomputed EnumerationData cache (one EnumerationResult per library
+ * Holds a precomputed EnumerationResultVector cache (one EnumerationResult per library
  * graph). filter() exploits the necessary condition: if the query graph has
  * fewer occurrences of any motif than a library graph, the query cannot be
  * isomorphic to that library graph, so it is pruned.
@@ -26,8 +27,10 @@ public:
      * @brief Constructs the filter with a precomputed library cache.
      * @param library_cache One EnumerationResult per library graph, indexed by
      *                      library position.
+     * @param logger        Optional logger for filter diagnostics.
      */
-    explicit GroupEnumerationGraphFilter(EnumerationData library_cache);
+    explicit GroupEnumerationGraphFilter(EnumerationResultVector library_cache,
+                                         LoggerHandler logger = LoggerHandler::null());
 
     ~GroupEnumerationGraphFilter() = default;
 
@@ -50,7 +53,8 @@ public:
     FilterResult filter(const EnumerationResult& graph_features) const;
 
 private:
-    EnumerationData m_library_cache;
+    EnumerationResultVector m_library_cache;
+    LoggerHandler m_logger;
 };
 
 }  // namespace sgf

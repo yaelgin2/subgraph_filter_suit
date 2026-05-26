@@ -38,6 +38,8 @@ find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup json)
 
 # ── Sources ───────────────────────────────────────────────────────────────────
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/**/*.cpp)
+# Exclude the CLI directory so the library remains usable without the CLI tools.
+list(FILTER SOURCES EXCLUDE REGEX ".*/cli/.*")
 add_library(subgraph_filter_suite ${SOURCES})
 
 # ── Include paths ─────────────────────────────────────────────────────────────
@@ -76,7 +78,7 @@ target_link_libraries(subgraph_filter_suite PUBLIC
 
 # Mark Boost headers as system includes so compilers suppress third-party warnings.
 # This removes the need for the GCC-only -Wno-maybe-uninitialized workaround.
-foreach(_boost_target Boost::graph Boost::log Boost::log_setup Boost::json)
+foreach(_boost_target Boost::graph Boost::log Boost::log_setup Boost::json Boost::program_options)
     if(TARGET ${_boost_target})
         get_target_property(_boost_incs ${_boost_target} INTERFACE_INCLUDE_DIRECTORIES)
         if(_boost_incs)
@@ -97,6 +99,29 @@ target_compile_options(subgraph_filter_suite PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
 )
+
+# ── CLI tools ─────────────────────────────────────────────────────────────────
+# Set SGF_BUILD_CLI=OFF at configure time to build only the library.
+option(SGF_BUILD_CLI "Build the sgf-graph-enumerator CLI tool" ON)
+if(SGF_BUILD_CLI)
+    find_package(Boost 1.76 REQUIRED COMPONENTS program_options)
+    add_executable(sgf-graph-enumerator
+        src/cli/SgfGraphEnumerator.cpp
+        src/cli/argument_parsers/SgfGraphEnumeratorArgumentParser.cpp
+    )
+    target_include_directories(sgf-graph-enumerator PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/cli/argument_parsers"
+    )
+    target_link_libraries(sgf-graph-enumerator PRIVATE
+        subgraph_filter_suite
+        Boost::program_options
+    )
+    target_compile_options(sgf-graph-enumerator PRIVATE
+        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
+        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
+    )
+endif()
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 enable_testing()

@@ -27,9 +27,9 @@ struct LibraryData
  */
 enum class GraphReaderType
 {
-    GRAPHML,     ///< GraphML (.graphml) — GraphmlGraphReader
-    JSON,        ///< JSON (.json) — JsonGraphReader
-    VERTEX_EDGE, ///< Paired .vertex_indices/.edges files — VertexEdgeGraphReader
+    GRAPHML,      ///< GraphML (.graphml) — GraphmlGraphReader
+    JSON,         ///< JSON (.json) — JsonGraphReader
+    VERTEX_EDGE,  ///< Paired .vertex_indices/.edges files — VertexEdgeGraphReader
 };
 
 /**
@@ -37,9 +37,9 @@ enum class GraphReaderType
  */
 enum class PatternWriterType
 {
-    GRAPHML,     ///< GraphML (.graphml) — GraphmlPatternWriter
-    JSON,        ///< JSON (.json) — JsonPatternWriter
-    VERTEX_EDGE, ///< Paired vertex/edge files — VertexEdgePatternWriter
+    GRAPHML,      ///< GraphML (.graphml) — GraphmlPatternWriter
+    JSON,         ///< JSON (.json) — JsonPatternWriter
+    VERTEX_EDGE,  ///< Paired vertex/edge files — VertexEdgePatternWriter
 };
 
 /**
@@ -47,8 +47,8 @@ enum class PatternWriterType
  */
 enum class CacheManagerType
 {
-    BINARY, ///< Binary format — BinaryCacheIOManager
-    CSV,    ///< CSV format — CSVCacheIOManager
+    BINARY,  ///< Binary format — BinaryCacheIOManager
+    CSV,     ///< CSV format — CSVCacheIOManager
 };
 
 /**
@@ -56,8 +56,22 @@ enum class CacheManagerType
  */
 enum class ResultOutputType
 {
-    JSON, ///< Binary format — BinaryCacheIOManager
-    CSV,    ///< CSV format — CSVCacheIOManager
+    JSON,  ///< Binary format — BinaryCacheIOManager
+    CSV,   ///< CSV format — CSVCacheIOManager
+};
+
+/**
+ * @brief Options controlling query graph enumeration caching in the filter stage.
+ */
+struct GraphEnumerationCacheConfig
+{
+    bool m_cache_enumeration{false};  ///< Write computed enumeration to cache after computing.
+    std::string
+        m_graph_cache_dir;  ///< Directory for cache (required when m_cache_enumeration is true).
+    std::string
+        m_graphs_motif_cache_path;  ///< Full path to existing motif cache; empty = compute fresh.
+    std::string
+        m_graphs_path_cache_path;  ///< Full path to existing path cache; empty = compute fresh.
 };
 
 /**
@@ -72,18 +86,42 @@ class FlowManager
 public:
     /**
      * @brief Run the enumeration preprocessing pipeline.
-     * @param input_folder  Directory containing the graph library.
-     * @param reader_type   Format of the graph files.
-     * @param output_folder Directory to write the enumeration cache.
-     * @param cache_type    Format of the enumeration cache.
+     * @param input_path        Directory containing the graph library.
+     * @param is_directed       Treat graphs as directed.
+     * @param reader_type       Format of the graph files.
+     * @param output_path       Directory where enumeration caches are written.
+     * @param output_type       Format of the enumeration cache.
+     * @param log_file_path     Optional log file path.
+     * @param preprocess_paths  Preprocess path signatures.
+     * @param preprocess_motifs Preprocess motif signatures.
      */
-    static void enumerator_preprocess_run(const std::string& input_path, const bool is_directed, 
-        const GraphReaderType reader_type, std::string& output_path, 
-        CacheManagerType output_type, std::string log_file_path,
-        bool preprocess_paths, bool preprocess_motifs);
+    static void enumerator_preprocess_run(const std::string& input_path, bool is_directed,
+                                          GraphReaderType reader_type, std::string& output_path,
+                                          CacheManagerType output_type,
+                                          const std::string& log_file_path, bool preprocess_paths,
+                                          bool preprocess_motifs);
 
-    /// @brief Run the enumeration filter stage.
-    static void enumerator_filter_run();
+    /**
+     * @brief Run the enumeration filter stage.
+     * @param graph_input_path   Directory containing query graphs.
+     * @param is_directed        Treat graphs as directed.
+     * @param reader_type        Format of the graph files.
+     * @param motif_cache_file   Full path to the motif cache file to read.
+     * @param path_cache_file    Full path to the path cache file to read.
+     * @param cache_reader_type  Format of the cache files.
+     * @param output_folder      Directory for filter result output.
+     * @param output_type        Format of the filter results.
+     * @param log_file_path      Optional log file path.
+     * @param filter_paths       Filter by path signatures.
+     * @param filter_motifs      Filter by motif signatures.
+     */
+    static void
+    enumerator_filter_run(const std::string& graph_input_path, bool is_directed,
+                          GraphReaderType reader_type, const std::string& motif_cache_file,
+                          const std::string& path_cache_file, CacheManagerType cache_reader_type,
+                          std::string& output_folder, ResultOutputType output_type,
+                          const std::string& log_file_path, bool filter_paths, bool filter_motifs,
+                          const GraphEnumerationCacheConfig& graph_cache_config);
 
     /// @brief Run the pattern preprocessing stage.
     static void pattern_preprocess_run();
@@ -99,6 +137,48 @@ private:
     static constexpr const char* MOTIF_CACHE_BASE_NAME = "motif_cache";
 
     /**
+     * @brief Loads query graph enumeration from a cache file in the order
+     *        returned by the cache, paired with the graph names.
+     *
+     * @param cache_manager  Cache manager pointing at the cache directory.
+     * @param cache_path     Base filename (stem) of the cache file to read.
+     * @return Pair of (graph names, enumerations) in cache-file order.
+     */
+    static std::pair<std::vector<std::string>, EnumerationResultVector>
+    load_graph_enumeration(CacheManagerType manager_type, const std::string& cache_path,
+                           LoggerHandler logger);
+
+    /**
+     * @brief Computes or loads the query graph enumeration for the filter stage.
+     *
+     * If @p load_from_cache is true, delegates to load_graph_enumeration.
+     * Otherwise computes via @p preprocess_manager; when @p write_to_cache is
+     * true the result is also written through @p cache_manager.
+     *
+     * @param write_to_cache     Persist computed enumeration to cache.
+     * @param cache_base_name    Stem used for the cache file.
+     * @param cache_manager      Cache manager (required when loading or writing).
+     * @param preprocess_manager Used for fresh computation.
+     * @param library            Provides graph names and library graphs.
+     * @param factory            Creates the feature-specific preprocessor.
+     * @param timestamp          Appended to cache_base_name when writing.
+     * @param logger             Logger for diagnostics.
+     * @return Pair of (graph names, enumerations).
+     */
+    static EnumerationResultVector
+    get_graph_enumeration(bool write_to_cache, const std::string& cache_base_name,
+                          const std::shared_ptr<ICacheIOManager>& cache_manager,
+                          EnumerationPreprocessManager& preprocess_manager,
+                          const LibraryData& library, const PreprocessorFactory& factory,
+                          const std::string& timestamp);
+
+    static void run_enumeration_filter_stage(
+        const std::string& result_file_base_name, const EnumerationResultVector& graphs_enumeration,
+        const ICacheIOManager& lib_cache_manager, const std::string& lib_cache_path,
+        IFilterOutputManager& filter_results_writer, const LibraryData& library,
+        const std::string& timestamp, const LoggerHandler& logger);
+
+    /**
      * @brief Returns the current local time as a filename-safe string.
      *
      * Format: YYYY-MM-DD_HH-MM-SS
@@ -108,36 +188,15 @@ private:
     static std::string generate_timestamp();
 
     /**
-     * @brief Enumerates @p library using @p factory, reads the precomputed library cache,
-     *        filters each graph against it, and writes one result file per graph.
-     *
-     * @param factory              Preprocessor factory selecting path or motif enumeration.
-     * @param preprocess_manager   Manager that runs enumeration over the library.
-     * @param cache_manager        Cache reader for the precomputed library signatures.
-     * @param cache_path           Base filename passed to ICacheIOManager::read.
-     * @param filter_results_writer Writer for the per-graph filter output.
-     * @param library              Library graphs and their filenames.
-     * @param timestamp            Timestamp suffix appended to each output filename.
-     */
-    static void run_enumeration_filter_stage(
-        const PreprocessorFactory& factory,
-        EnumerationPreprocessManager& preprocess_manager,
-        const ICacheIOManager& cache_manager,
-        const std::string& cache_path,
-        IFilterOutputManager& filter_results_writer,
-        const LibraryData& library,
-        const std::string& timestamp);
-
-    /**
      * @brief Load all graphs from @p path using @p reader_type.
      * @param path        Directory containing the graph files.
      * @param reader_type Format of the graph files.
      * @return Loaded library data.
      */
-    static LibraryData load_library(const std::string& path, const GraphReaderType reader_type,
-        const bool is_directed, LoggerHandler logger);
+    static LibraryData load_library(const std::string& path, GraphReaderType reader_type,
+                                    bool is_directed, const LoggerHandler& logger);
 
-        /**
+    /**
      * @brief Construct a graph reader for the given format.
      * @param type Desired reader format.
      * @return Owning pointer to the concrete IColoredGraphReader.
@@ -153,22 +212,52 @@ private:
 
     /**
      * @brief Construct a cache manager for the given format.
-     * @param type           Desired cache format.
-     * @param folder         Directory where the cache file will be written.
-     * @param base_filename  File name without extension.
+     * @param type    Desired cache format.
+     * @param folder  Directory where the cache file will be written.
+     * @param logger  Logger for read/write diagnostics.
      * @return Owning pointer to the concrete ICacheIOManager.
      */
-    static std::unique_ptr<ICacheIOManager> make_cache_manager(CacheManagerType type,
-                                                               const std::string& folder);
+    static std::shared_ptr<ICacheIOManager>
+    make_cache_manager(CacheManagerType type, const std::string& folder, LoggerHandler logger);
 
     /**
      * @brief Construct a filter results writer for the given format.
-     * @param type   Desired output format.
-     * @param folder Directory where the output file will be written.
+     * @param type    Desired output format.
+     * @param folder  Directory where the output file will be written.
+     * @param logger  Logger for write diagnostics.
      * @return Owning pointer to the concrete IFilterOutputManager.
      */
-    static std::unique_ptr<IFilterOutputManager> make_filter_results_writer(ResultOutputType type,
-                                                                             const std::string& folder);
+    static std::unique_ptr<IFilterOutputManager>
+    make_filter_results_writer(ResultOutputType type, const std::string& folder,
+                               LoggerHandler logger);
+
+    /**
+     * @brief Loads or computes graph enumeration for one stage, then runs the filter.
+     *
+     * @param library_cache_file   Full path to the library enumeration cache.
+     * @param load_graph_cache     When true, loads query graph enumeration from cache.
+     * @param graphs_cache_path    Path to the query graph cache (used when load_graph_cache is
+     * true).
+     * @param cache_base_name      Cache stem used when computing (e.g. "path_cache").
+     * @param factory              Creates the stage-specific preprocessor.
+     * @param cache_reader_type    Cache file format.
+     * @param graphs_to_find_in    Query graph data; m_graph_names may be updated from cache.
+     * @param preprocess_manager   Used to compute enumeration; must be non-null when
+     * load_graph_cache is false.
+     * @param filter_results_writer Output manager for filter results.
+     * @param timestamp            Timestamp string used in output file names.
+     * @param logger               Logger for diagnostics.
+     */
+    static void
+    enumerate_and_filter(const std::string& library_cache_file, bool load_graph_cache,
+                         const std::string& graphs_cache_path,
+                         const std::string& run_type_file_base_name,
+                         const PreprocessorFactory& factory, CacheManagerType cache_reader_type,
+                         const std::shared_ptr<ICacheIOManager>& graphs_cache_manager,
+                         LibraryData& graphs_to_find_in,
+                         const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
+                         IFilterOutputManager& filter_results_writer, const std::string& timestamp,
+                         const LoggerHandler& logger);
 };
 
 }  // namespace sgf

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FilteringUtils.h"
+#include "LoggerHandler.h"
 
 #include <string>
 #include <vector>
@@ -9,7 +10,7 @@ namespace sgf
 {
 
 /**
- * @brief Interface for writing filter results paired with library graph filenames.
+ * @brief Interface for reading and writing filter results paired with library graph filenames.
  *
  * Subclasses implement format-specific serialization (e.g. JSON, CSV).
  * The base class owns path construction and directory creation so that concrete
@@ -19,12 +20,12 @@ class IFilterOutputManager
 {
 public:
     /**
-     * @brief Constructs an IFilterOutputManager targeting a directory and base filename.
+     * @brief Constructs an IFilterOutputManager targeting a directory.
      *
-     * @param folder        Directory where the output file will be written.
-     * @param base_filename File name without extension (e.g. "filter_results").
+     * @param folder  Directory where the output file will be written.
+     * @param logger  Optional logger for diagnostics.
      */
-    IFilterOutputManager(std::string folder);
+    explicit IFilterOutputManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Default virtual destructor.
@@ -46,7 +47,8 @@ public:
      * @param results   Filter result per library graph; true = pruned, false = survives.
      * @throws SgfPathExistsException if directory creation or file writing fails.
      */
-    void write(std::string base_filename, const std::vector<std::string>& filenames, const FilterResult& results) const;
+    void write(const std::string& base_filename, const std::vector<std::string>& filenames,
+               const FilterResult& results) const;
 
 protected:
     /**
@@ -69,6 +71,7 @@ protected:
 
 private:
     std::string m_folder;
+    LoggerHandler m_logger;
 
     /**
      * @brief Builds the full output path from folder, base filename, and extension.

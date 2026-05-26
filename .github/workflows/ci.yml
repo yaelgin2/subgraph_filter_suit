@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: [develop]
+    branches: [main, develop]
 
 jobs:
   build-and-test:
@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake clang-tidy-17 clang-format-17 \
-            libboost-graph-dev libboost-log-dev libboost-json-dev
+            libboost-graph-dev libboost-log-dev libboost-json-dev libboost-program-options-dev
 
       - name: Add MinGW-w64 to PATH (Windows)
         if: runner.os == 'Windows'
@@ -38,9 +38,7 @@ jobs:
 
       - name: Install CMake (Windows, if not pre-installed)
         if: runner.os == 'Windows' && steps.check_cmake.outcome == 'failure'
-        uses: jwlawson/actions-setup-cmake@v2
-        with:
-          cmake-version: '3.x'
+        uses: lukka/get-cmake@latest
 
       - name: Enable vcpkg binary caching (Windows)
         if: runner.os == 'Windows'
@@ -58,7 +56,8 @@ jobs:
           vcpkg install `
             boost-graph:x64-mingw-dynamic `
             boost-log:x64-mingw-dynamic `
-            boost-json:x64-mingw-dynamic
+            boost-json:x64-mingw-dynamic `
+            boost-program-options:x64-mingw-dynamic
         shell: pwsh
 
       - name: Configure (Linux)
@@ -107,7 +106,7 @@ jobs:
 
       - name: Install Boost via vcpkg (MSVC x64)
         run: |
-          vcpkg install boost-graph:x64-windows boost-log:x64-windows boost-json:x64-windows
+          vcpkg install boost-graph:x64-windows boost-log:x64-windows boost-json:x64-windows boost-program-options:x64-windows
           echo "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
         shell: pwsh
 
