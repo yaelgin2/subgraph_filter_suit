@@ -1,6 +1,9 @@
 #include "MotifDagExpander.h"
 
+#include "Constants.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
+#include "MotifDag.h"
 
 #include <array>
 #include <cstdint>
@@ -22,7 +25,7 @@ MotifDagExpander::extract_colors(const uint32_t colors_bits)
     for (uint32_t index = 0U; index < SgfConstants::MOTIF_SIZE; ++index)
     {
         const uint32_t shift = BITS_PER_BYTE * (SgfConstants::MOTIF_SIZE - 1U - index);
-        color_array[index] = (colors_bits >> shift) & BYTE_MASK;
+        color_array.at(index) = (colors_bits >> shift) & BYTE_MASK;
     }
     return color_array;
 }
@@ -34,8 +37,8 @@ uint32_t MotifDagExpander::apply_permutation(
     uint32_t color_perm = 0U;
     for (uint32_t index = 0U; index < SgfConstants::MOTIF_SIZE; ++index)
     {
-        color_perm += color_array[index]
-                      << ((SgfConstants::MOTIF_SIZE - 1U - permutation[index]) * BITS_PER_BYTE);
+        color_perm += color_array.at(index)
+                      << ((SgfConstants::MOTIF_SIZE - 1U - permutation.at(index)) * BITS_PER_BYTE);
     }
     return color_perm;
 }

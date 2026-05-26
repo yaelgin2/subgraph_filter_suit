@@ -71,9 +71,9 @@ private:
      * @param permutation Permutation indices from a DAG edge.
      * @return Repacked color bits after applying the permutation.
      */
-    static uint32_t apply_permutation(
-        const std::array<uint32_t, SgfConstants::MOTIF_SIZE>& color_array,
-        const DagPermutation& permutation);
+    static uint32_t
+    apply_permutation(const std::array<uint32_t, SgfConstants::MOTIF_SIZE>& color_array,
+                      const DagPermutation& permutation);
 
     /**
      * @brief Process one motif key: follow all DAG out-edges and accumulate sub-motif counts.
