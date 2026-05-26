@@ -253,7 +253,7 @@ std::string FlowManager::generate_timestamp()
 #ifdef _WIN32
     localtime_s(&local_time, &now);
 #else
-    localtime_r(&now, &local_time);
+    localtime_r(&now, &local_time);  // NOLINT(misc-include-cleaner)
 #endif
     constexpr size_t timestamp_buffer_size = 20U;
     std::array<char, timestamp_buffer_size> buffer{};
