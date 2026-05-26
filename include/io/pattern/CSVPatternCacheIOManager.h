@@ -42,7 +42,7 @@ public:
      * @param writer  Writer used to serialize each pattern graph.
      */
     CSVPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                              std::unique_ptr<IPatternWriter> writer);
+                              std::shared_ptr<IPatternWriter> writer);
 
     /**
      * @brief Default virtual destructor.

@@ -5,6 +5,7 @@
 #include "IColoredGraphReader.h"
 #include "IFilterIOManager.h"
 #include "IPatternWriter.h"
+#include "SingleGraphPatternPreprocessor.h"
 
 #include <memory>
 #include <string>
@@ -127,10 +128,16 @@ public:
     static void pattern_preprocess_run(const std::string& input_path, bool is_directed,
                                        GraphReaderType reader_type, std::string& output_path,
                                        PatternWriterType output_type,
-                                       const std::string& log_file_path, uint32_t preprocess_multigraph,
-                                       bool preprocess_singlegraph_results_file, int64_t preprocess_singlegraph,
-                                       std::string background_graph_path, double score_threshold,
-                                        const SingleGraphFinderConfig config);
+                                       const std::string& log_file_path,
+                                       uint32_t preprocess_multigraph,
+                                       uint32_t multigraph_alive_percent,
+                                       bool preprocess_singlegraph_results_file,
+                                       const std::string& results_file_path,
+                                       int64_t preprocess_singlegraph,
+                                       ResultOutputType results_file_type,
+                                       const std::string& background_graph_path,
+                                       double score_threshold,
+                                       const SingleGraphFinderConfig& config);
 
     /// @brief Run the pattern filter stage.
     static void pattern_filter_run();
@@ -194,6 +201,17 @@ private:
     static std::string generate_timestamp();
 
     /**
+     * @brief Converts a filter map (filename → pruned) to a to_process vector indexed by library.
+     *
+     * @param graph_names  Ordered list of graph names from the library.
+     * @param filter_map   Map from graph filename stem to pruned flag (true = pruned).
+     * @return Vector of bools (true = should process = not pruned), in graph_names order.
+     */
+    static std::vector<bool>
+    build_to_process(const std::vector<std::string>& graph_names,
+                     const std::unordered_map<std::string, bool>& filter_map);
+
+    /**
      * @brief Load all graphs from @p path using @p reader_type.
      * @param path        Directory containing the graph files.
      * @param reader_type Format of the graph files.
@@ -214,7 +232,7 @@ private:
      * @param type Desired writer format.
      * @return Owning pointer to the concrete IPatternWriter.
      */
-    static std::unique_ptr<IPatternWriter> make_pattern_writer(PatternWriterType type);
+    static std::shared_ptr<IPatternWriter> make_pattern_writer(PatternWriterType type);
 
     /**
      * @brief Construct a cache manager for the given format.

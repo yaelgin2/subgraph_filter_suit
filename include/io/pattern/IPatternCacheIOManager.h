@@ -45,7 +45,7 @@ public:
      * @param writer  Writer used to serialize each pattern graph.
      */
     IPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                           std::unique_ptr<IPatternWriter> writer);
+                           std::shared_ptr<IPatternWriter> writer);
 
     /**
      * @brief Default virtual destructor.
@@ -108,7 +108,7 @@ protected:
 private:
     std::string m_folder;
     LoggerHandler m_logger;
-    std::unique_ptr<IPatternWriter> m_writer;
+    std::shared_ptr<IPatternWriter> m_writer;
 
     [[nodiscard]] std::string build_pattern_base_name(uint32_t index,
                                                        const std::string& timestamp) const;

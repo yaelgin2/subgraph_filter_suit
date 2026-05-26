@@ -17,7 +17,7 @@ namespace sgf
 {
 
 IPatternCacheIOManager::IPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                                               std::unique_ptr<IPatternWriter> writer)
+                                               std::shared_ptr<IPatternWriter> writer)
     : m_folder(std::move(folder))
     , m_logger(std::move(logger))
     , m_writer(std::move(writer))
