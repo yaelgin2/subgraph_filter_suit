@@ -15,17 +15,17 @@ namespace sgf
 enum class PriorPolicy : uint32_t
 {
     /** Score = sum of neighbour degrees in the subgraph (second-order degree). */
-    SUBGRAPH_DEGREE_SQUARED = 0U,
+    SUBGRAPH_DEGREE_SQUARED,
     /** Score = negated sum of candidate degrees in the host graph. */
-    GRAPH_DEGREE_SQUARED = 1U,
+    GRAPH_DEGREE_SQUARED,
     /** Score = negated restriction-set size (choose most constrained). */
-    CONSTANT = 2U,
+    CONSTANT,
     /** Score = uniform random value. */
-    RANDOM = 3U,
+    RANDOM,
     /** Score = degree in the subgraph. */
-    SUBGRAPH_DEGREE = 4U,
+    SUBGRAPH_DEGREE,
     /** Runs SUBGRAPH_DEGREE_SQUARED and SUBGRAPH_DEGREE in parallel. */
-    COMBINED = 5U,
+    COMBINED,
 };
 
 }  // namespace sgf

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <cstdint>
 #include <string>
 #include <tuple>
@@ -317,6 +318,20 @@ uint32_t ColoredGraph::get_edge_color_at(const std::vector<uint32_t>::const_iter
 bool ColoredGraph::is_directed() const
 {
     return m_directed;
+}
+
+uint32_t ColoredGraph::out_degree(const uint32_t vertex) const
+{
+    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
+        range = get_neighbours(vertex, false);
+    return static_cast<uint32_t>(std::distance(range.first, range.second));
+}
+
+uint32_t ColoredGraph::in_degree(const uint32_t vertex) const
+{
+    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
+        range = get_neighbours(vertex, true);
+    return static_cast<uint32_t>(std::distance(range.first, range.second));
 }
 
 }  // namespace sgf

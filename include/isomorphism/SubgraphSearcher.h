@@ -125,14 +125,14 @@ private:
      * @param target The graph whose vertices are scored.
      * @return Prior map from vertex ID to second-degree score.
      */
-    PriorMap prior_second_degree(const ColoredGraph& target) const;
+    PriorMap calculate_prior_second_degree(const ColoredGraph& target) const;
 
     /**
      * @brief Builds a prior map using first-degree (adjacency count) scores from @p target.
      * @param target The graph whose vertices are scored.
      * @return Prior map from vertex ID to degree score.
      */
-    PriorMap prior_first_degree(const ColoredGraph& target) const;
+    PriorMap calculate_prior_first_degree(const ColoredGraph& target) const;
 
     /**
      * @brief Computes the restriction score for the GRAPH_DEGREE_SQUARED policy.
@@ -154,23 +154,7 @@ private:
      * @param vertex The vertex whose second-order degree is computed.
      * @return Sum of neighbour degrees.
      */
-    float vertex_second_degree(const ColoredGraph& graph, uint32_t vertex) const;
-
-    /**
-     * @brief Returns the out-degree (or total degree for undirected) of @p vertex.
-     * @param graph  The graph to query.
-     * @param vertex The vertex to measure.
-     * @return Number of out-edges.
-     */
-    static uint32_t out_degree(const ColoredGraph& graph, uint32_t vertex);
-
-    /**
-     * @brief Returns the in-degree of @p vertex in a directed graph.
-     * @param graph  The directed graph to query.
-     * @param vertex The vertex to measure.
-     * @return Number of in-edges.
-     */
-    static uint32_t in_degree(const ColoredGraph& graph, uint32_t vertex);
+    uint64_t score_second_degree_vertices(const ColoredGraph& graph, uint32_t vertex) const;
 
     /**
      * @brief Scores @p vertex for choose_next / choose_start under the active policy.
