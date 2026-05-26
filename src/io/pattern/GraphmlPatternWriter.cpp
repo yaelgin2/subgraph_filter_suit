@@ -27,6 +27,11 @@
 namespace sgf
 {
 
+std::string GraphmlPatternWriter::get_file_extension() const
+{
+    return "graphml";
+}
+
 void GraphmlPatternWriter::build_vertices(const BoostGraph& graph,
                                           IOConstants::GraphmlDirectedBoostGraph& out)
 {

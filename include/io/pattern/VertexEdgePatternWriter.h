@@ -37,6 +37,17 @@ public:
      */
     VertexEdgePatternWriter() = default;
 
+    /**
+     * @brief Returns an empty string because this writer appends its own suffixes.
+     *
+     * The VertexEdge format writes two files: base_path.node_labels and
+     * base_path.edges. The caller should pass a bare base path; this method
+     * signals that no additional extension is prepended.
+     *
+     * @return Empty string.
+     */
+    [[nodiscard]] std::string get_file_extension() const override;
+
 private:
     /**
      * @brief Writes @p graph to @p path.node_labels and @p path.edge.
