@@ -50,7 +50,8 @@ public:
      * @param graph_names Names aligned with @p data (same size).
      * @throws SgfPathDoesntExistException if directory creation or file writing fails.
      */
-    void write(std::string base_filename, const EnumerationResultVector& data, const std::vector<std::string>& graph_names) const;
+    void write(std::string base_filename, const EnumerationResultVector& data,
+               const std::vector<std::string>& graph_names) const;
 
     /**
      * @brief Reads data from the cache file.

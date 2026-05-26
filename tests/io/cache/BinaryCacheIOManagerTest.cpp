@@ -21,7 +21,8 @@ TEST(BinaryCacheIOManagerTest, empty_data_roundtrip)
     const std::vector<std::string> names{};
     manager.write(temp.m_base_name, data, names);
 
-    const std::unordered_map<std::string, EnumerationResult> result = manager.read(temp.m_base_name);
+    const std::unordered_map<std::string, EnumerationResult> result =
+        manager.read(temp.m_base_name);
     EXPECT_TRUE(result.empty());
 }
 
@@ -34,7 +35,8 @@ TEST(BinaryCacheIOManagerTest, single_graph_empty_map_roundtrip)
     const std::vector<std::string> names{"graph_a"};
     manager.write(temp.m_base_name, data, names);
 
-    const std::unordered_map<std::string, EnumerationResult> result = manager.read(temp.m_base_name);
+    const std::unordered_map<std::string, EnumerationResult> result =
+        manager.read(temp.m_base_name);
     ASSERT_EQ(result.size(), 1U);
     EXPECT_TRUE(result.at("graph_a").empty());
 }
@@ -51,7 +53,8 @@ TEST(BinaryCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
     const std::vector<std::string> names{"graph_a", "graph_b"};
     manager.write(temp.m_base_name, data, names);
 
-    const std::unordered_map<std::string, EnumerationResult> result = manager.read(temp.m_base_name);
+    const std::unordered_map<std::string, EnumerationResult> result =
+        manager.read(temp.m_base_name);
     ASSERT_EQ(result.size(), 2U);
     EXPECT_TRUE(result.at("graph_a").empty());
     ASSERT_EQ(result.at("graph_b").size(), 1U);
@@ -77,7 +80,8 @@ TEST(BinaryCacheIOManagerTest, two_graphs_both_nonempty_roundtrip)
     const std::vector<std::string> names{"graph_a", "graph_b"};
     manager.write(temp.m_base_name, data, names);
 
-    const std::unordered_map<std::string, EnumerationResult> result = manager.read(temp.m_base_name);
+    const std::unordered_map<std::string, EnumerationResult> result =
+        manager.read(temp.m_base_name);
     ASSERT_EQ(result.size(), 2U);
     ASSERT_EQ(result.at("graph_a").size(), 2U);
     EXPECT_EQ(result.at("graph_a").at(key_a), val_a);

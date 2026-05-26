@@ -15,7 +15,8 @@ namespace sgf
 
 GroupEnumerationGraphFilter::GroupEnumerationGraphFilter(EnumerationResultVector library_cache,
                                                          LoggerHandler logger)
-    : m_library_cache(std::move(library_cache)), m_logger(std::move(logger))
+    : m_library_cache(std::move(library_cache))
+    , m_logger(std::move(logger))
 {
 }
 
@@ -25,7 +26,8 @@ FilterResult GroupEnumerationGraphFilter::filter(const EnumerationResult& graph_
     for (uint32_t library_graph_index = 0; library_graph_index < m_library_cache.size();
          ++library_graph_index)
     {
-        m_logger.log(LogLevel::INFO, "Filtering against library graph " + std::to_string(library_graph_index));
+        m_logger.log(LogLevel::INFO,
+                     "Filtering against library graph " + std::to_string(library_graph_index));
         for (auto [motif_key, motif_appearences] : m_library_cache[library_graph_index])
         {
             const EnumerationResult::const_iterator graph_feature_appearences_iter =
@@ -40,8 +42,10 @@ FilterResult GroupEnumerationGraphFilter::filter(const EnumerationResult& graph_
                 break;
             }
         }
-        m_logger.log(LogLevel::INFO, "Library graph " + std::to_string(library_graph_index) +
-                                     (can_graph_be_filtered[library_graph_index] ? " can be filtered." : " survives."));
+        m_logger.log(
+            LogLevel::INFO,
+            "Library graph " + std::to_string(library_graph_index) +
+                (can_graph_be_filtered[library_graph_index] ? " can be filtered." : " survives."));
     }
     return can_graph_be_filtered;
 }

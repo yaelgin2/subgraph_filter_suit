@@ -198,7 +198,7 @@ TEST_F(GroupEnumerationGraphFilterTest,
        two_graphs_first_filterable_all_smaller_second_not_all_equal)
 {
     EnumerationResultVector library = {make_result({{key(1U), 5U}, {key(2U), 4U}}),
-                               make_result({{key(1U), 2U}, {key(2U), 2U}})};
+                                       make_result({{key(1U), 2U}, {key(2U), 2U}})};
     GroupEnumerationGraphFilter filter_obj(std::move(library));
 
     const EnumerationResult query = make_result({{key(1U), 2U}, {key(2U), 2U}});
@@ -214,7 +214,7 @@ TEST_F(GroupEnumerationGraphFilterTest,
        two_graphs_first_not_filterable_some_larger_second_filterable_one_smaller)
 {
     EnumerationResultVector library = {make_result({{key(1U), 2U}, {key(2U), 1U}}),
-                               make_result({{key(1U), 2U}, {key(2U), 5U}})};
+                                       make_result({{key(1U), 2U}, {key(2U), 5U}})};
     GroupEnumerationGraphFilter filter_obj(std::move(library));
 
     const EnumerationResult query = make_result({{key(1U), 2U}, {key(2U), 3U}});
@@ -232,8 +232,8 @@ TEST_F(GroupEnumerationGraphFilterTest, three_graphs_mixed_key_presence_and_coun
     // Graph 1: all equal → not filterable
     // Graph 2: all larger → not filterable
     EnumerationResultVector library = {make_result({{key(3U), 1U}}),
-                               make_result({{key(1U), 2U}, {key(2U), 2U}}),
-                               make_result({{key(1U), 1U}, {key(2U), 1U}})};
+                                       make_result({{key(1U), 2U}, {key(2U), 2U}}),
+                                       make_result({{key(1U), 1U}, {key(2U), 1U}})};
     GroupEnumerationGraphFilter filter_obj(std::move(library));
 
     const EnumerationResult query = make_result({{key(1U), 2U}, {key(2U), 2U}});
@@ -253,8 +253,8 @@ TEST_F(GroupEnumerationGraphFilterTest, four_graphs_all_scenarios_covered)
     // Graph 2: all equal → not filterable
     // Graph 3: all smaller → filterable
     EnumerationResultVector library = {make_result({{key(1U), 3U}, {key(2U), 3U}, {key(3U), 3U}}),
-                               make_result({}), make_result({{key(1U), 2U}, {key(2U), 1U}}),
-                               make_result({{key(1U), 9U}, {key(2U), 9U}})};
+                                       make_result({}), make_result({{key(1U), 2U}, {key(2U), 1U}}),
+                                       make_result({{key(1U), 9U}, {key(2U), 9U}})};
     GroupEnumerationGraphFilter filter_obj(std::move(library));
 
     const EnumerationResult query = make_result({{key(1U), 2U}, {key(2U), 1U}, {key(3U), 3U}});

@@ -21,7 +21,8 @@ TEST(CSVCacheIOManagerTest, empty_data_roundtrip)
     const std::vector<std::string> names{};
     manager.write(temp.m_base_name, data, names);
 
-    const std::unordered_map<std::string, EnumerationResult> result = manager.read(temp.m_base_name);
+    const std::unordered_map<std::string, EnumerationResult> result =
+        manager.read(temp.m_base_name);
     EXPECT_TRUE(result.empty());
 }
 
@@ -38,7 +39,8 @@ TEST(CSVCacheIOManagerTest, single_graph_empty_map_reads_back_as_empty)
     const std::vector<std::string> names{"graph_a"};
     manager.write(temp.m_base_name, data, names);
 
-    const std::unordered_map<std::string, EnumerationResult> result = manager.read(temp.m_base_name);
+    const std::unordered_map<std::string, EnumerationResult> result =
+        manager.read(temp.m_base_name);
     EXPECT_TRUE(result.empty());
 }
 
@@ -54,7 +56,8 @@ TEST(CSVCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
     const std::vector<std::string> names{"graph_a", "graph_b"};
     manager.write(temp.m_base_name, data, names);
 
-    const std::unordered_map<std::string, EnumerationResult> result = manager.read(temp.m_base_name);
+    const std::unordered_map<std::string, EnumerationResult> result =
+        manager.read(temp.m_base_name);
     ASSERT_EQ(result.size(), 1U);
     ASSERT_EQ(result.at("graph_b").size(), 1U);
     EXPECT_EQ(result.at("graph_b").at(key), value);
@@ -79,7 +82,8 @@ TEST(CSVCacheIOManagerTest, two_graphs_both_nonempty_roundtrip)
     const std::vector<std::string> names{"graph_a", "graph_b"};
     manager.write(temp.m_base_name, data, names);
 
-    const std::unordered_map<std::string, EnumerationResult> result = manager.read(temp.m_base_name);
+    const std::unordered_map<std::string, EnumerationResult> result =
+        manager.read(temp.m_base_name);
     ASSERT_EQ(result.size(), 2U);
     ASSERT_EQ(result.at("graph_a").size(), 2U);
     EXPECT_EQ(result.at("graph_a").at(key_a), val_a);

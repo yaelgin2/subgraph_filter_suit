@@ -14,7 +14,8 @@ namespace sgf
 {
 
 ICacheIOManager::ICacheIOManager(std::string folder, LoggerHandler logger)
-    : m_folder(std::move(folder)), m_logger(std::move(logger))
+    : m_folder(std::move(folder))
+    , m_logger(std::move(logger))
 {
 }
 

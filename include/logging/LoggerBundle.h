@@ -44,8 +44,8 @@ public:
     [[nodiscard]] LoggerHandler handler() const;
 
 private:
-    std::shared_ptr<FileLogger> m_logger; ///< Owned logger; null when no log path was given.
-    LoggerHandler m_handler;              ///< Handler wrapping m_logger.
+    std::shared_ptr<FileLogger> m_logger;  ///< Owned logger; null when no log path was given.
+    LoggerHandler m_handler;               ///< Handler wrapping m_logger.
 };
 
 }  // namespace sgf

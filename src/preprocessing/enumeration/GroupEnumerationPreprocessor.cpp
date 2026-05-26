@@ -89,8 +89,8 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
     };
 
     stream_groups_to_counter(graph_adjacency_matrix, count_group);
-    m_logger.log(LogLevel::INFO,
-        "Finished enumerating " + std::to_string(groups_counted) + " " + entity_name() + ".");
+    m_logger.log(LogLevel::INFO, "Finished enumerating " + std::to_string(groups_counted) + " " +
+                                     entity_name() + ".");
     return motif_count;
 }
 

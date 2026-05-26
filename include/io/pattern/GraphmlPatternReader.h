@@ -42,8 +42,7 @@ private:
      * @return Intermediate Boost graph with string color properties.
      * @throws GraphConstructionException if the file cannot be opened or parsed.
      */
-    static IOConstants::GraphmlDirectedBoostGraph
-    read_into_string_graph(const std::string& path);
+    static IOConstants::GraphmlDirectedBoostGraph read_into_string_graph(const std::string& path);
 
     /**
      * @brief Converts a string-color intermediate graph to a BoostGraph.
@@ -52,8 +51,8 @@ private:
      * @return BoostGraph with uint32_t colors.
      * @throws GraphConstructionException if any color string is not a valid integer.
      */
-    static BoostGraph convert_to_boost_graph(
-        const IOConstants::GraphmlDirectedBoostGraph& string_graph);
+    static BoostGraph
+    convert_to_boost_graph(const IOConstants::GraphmlDirectedBoostGraph& string_graph);
 };
 
 }  // namespace sgf

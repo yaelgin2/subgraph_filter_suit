@@ -21,7 +21,8 @@ EnumerationPreprocessManager::EnumerationPreprocessManager(std::vector<ColoredGr
 {
 }
 
-EnumerationResultVector EnumerationPreprocessManager::preprocess(const PreprocessorFactory& factory) const
+EnumerationResultVector
+EnumerationPreprocessManager::preprocess(const PreprocessorFactory& factory) const
 {
     EnumerationResultVector results;
     results.reserve(m_library.size());

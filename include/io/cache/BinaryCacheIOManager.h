@@ -42,7 +42,8 @@ protected:
      * @param full_path Destination file path including the .bin extension.
      * @throws SgfPathExistsException if the file cannot be opened or written.
      */
-    void write_to_file(const EnumerationResultVector& data, const std::vector<std::string>& graph_names,
+    void write_to_file(const EnumerationResultVector& data,
+                       const std::vector<std::string>& graph_names,
                        const std::string& full_path) const override;
 
     /**

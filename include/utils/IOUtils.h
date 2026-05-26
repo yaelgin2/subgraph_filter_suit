@@ -30,7 +30,8 @@ public:
      *
      * @param directory_path Path of the directory to scan.
      * @return Absolute paths of every regular file found, in filesystem order.
-     * @throws SgfPathDoesntExistException if @p directory_path does not exist or is not a directory.
+     * @throws SgfPathDoesntExistException if @p directory_path does not exist or is not a
+     * directory.
      */
     static std::vector<std::string> get_files_in_directory(const std::string& directory_path);
 };
