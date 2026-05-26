@@ -38,9 +38,7 @@ jobs:
 
       - name: Install CMake (Windows, if not pre-installed)
         if: runner.os == 'Windows' && steps.check_cmake.outcome == 'failure'
-        uses: jwlawson/actions-setup-cmake@v2
-        with:
-          cmake-version: '3.x'
+        uses: lukka/get-cmake@latest
 
       - name: Enable vcpkg binary caching (Windows)
         if: runner.os == 'Windows'
