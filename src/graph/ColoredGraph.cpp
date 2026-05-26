@@ -269,6 +269,16 @@ uint32_t ColoredGraph::edge_count() const
     return m_edge_count;
 }
 
+uint32_t ColoredGraph::get_neighbour_count(const uint32_t vertex, bool is_reversed) const
+{
+    std::vector<uint32_t> neighbour_indeces =
+        is_reversed && m_directed ? m_reversed_index_of_neighbours : m_index_of_neighbours;
+    const uint32_t end_neighbour = vertex + 1U < neighbour_indeces.size()
+                                       ? neighbour_indeces.at(vertex + 1U)
+                                       : static_cast<uint32_t>(m_neighbours.size());
+    return end_neighbour - neighbour_indeces.at(vertex);
+}
+
 uint32_t ColoredGraph::get_vertex_color(uint32_t vertex) const
 {
     return m_colors.at(vertex);

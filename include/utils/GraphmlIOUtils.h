@@ -14,18 +14,10 @@ class GraphmlUtils
 {
 public:
     /**
-     * @brief Opens a file for reading.
-     * @param path Path to the file.
-     * @return An open input stream.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
-     */
-    static std::ifstream open_file(const std::string& path);
-
-    /**
      * @brief Opens a file for writing.
      * @param path Destination file path.
      * @return An open output stream.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      */
     static std::ofstream open_output_file(const std::string& path);
 
@@ -36,7 +28,7 @@ public:
      *
      * @param path Path to the GraphML file.
      * @return True if the graph is directed or no @c edgedefault was found.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      */
     static bool detect_is_directed(const std::string& path);
 

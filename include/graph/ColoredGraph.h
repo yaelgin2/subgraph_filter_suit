@@ -124,6 +124,25 @@ public:
     uint32_t edge_count() const;
 
     /**
+     * @brief Returns the number of neighbours of @p vertex in O(1).
+     *
+     * Reads directly from the CSR index array. For undirected graphs and the
+     * forward direction of directed graphs:
+     * @code
+     * m_index_of_neighbours[vertex + 1] - m_index_of_neighbours[vertex]
+     * @endcode
+     * For the last vertex, where @c vertex+1 would be out of bounds, the total
+     * neighbour array size is used as the end position instead.
+     *
+     * @param vertex The vertex to query.
+     * @param is_reversed If true and the graph is directed, return the in-degree
+     *                    (neighbours in the reversed adjacency list) instead of
+     *                    the out-degree. Has no effect on undirected graphs.
+     * @return Number of neighbours (out-degree, or in-degree when @p is_reversed is true).
+     */
+    uint32_t get_neighbour_count(uint32_t vertex, bool is_reversed) const;
+
+    /**
      * @brief Returns the color label of @p vertex.
      * @param vertex The vertex to query.
      * @return The vertex color label.

@@ -14,3 +14,4 @@ dependencies:
   - clangxx=17
   - clang-tools=17
   - boost>=1.76           # Boost::log and Boost::log_setup
+  - gtest

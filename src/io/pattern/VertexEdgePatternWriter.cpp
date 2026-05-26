@@ -10,9 +10,9 @@
 #include <cstdint>
 #include <fstream>
 #include <string>
+#include <tuple>
 
 namespace sgf
-
 {
 
 void VertexEdgePatternWriter::write_node_labels(const BoostGraph& graph,
@@ -31,16 +31,23 @@ void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph, const std
 {
     std::ofstream file =
         VertexEdgeUtils::open_file_for_writing(base_path + IOConstants::EDGE_SUFFIX);
-    for (const boost::graph_traits<BoostGraph>::edge_descriptor& edge :
-         boost::make_iterator_range(boost::edges(graph)))
+    const boost::graph_traits<BoostGraph>::vertices_size_type vertex_count =
+        boost::num_vertices(graph);
+    for (uint32_t src = 0; src < static_cast<uint32_t>(vertex_count); ++src)
     {
-        file << static_cast<uint32_t>(boost::source(edge, graph)) << ' '
-             << static_cast<uint32_t>(boost::target(edge, graph)) << ' ' << graph[edge].m_color
-             << '\n';
+        boost::graph_traits<BoostGraph>::out_edge_iterator first;
+        boost::graph_traits<BoostGraph>::out_edge_iterator last;
+        std::tie(first, last) = boost::out_edges(src, graph);
+        for (boost::graph_traits<BoostGraph>::out_edge_iterator it = first; it != last; ++it)
+        {
+            const boost::graph_traits<BoostGraph>::edge_descriptor edge = *it;
+            const uint32_t dst = static_cast<uint32_t>(boost::target(edge, graph));
+            file << src << ' ' << dst << ' ' << graph[edge].m_color << '\n';
+        }
     }
 }
 
-void VertexEdgePatternWriter::write(const BoostGraph& graph, const std::string& path) const
+void VertexEdgePatternWriter::do_write(const BoostGraph& graph, const std::string& path) const
 {
     write_node_labels(graph, path);
     write_edge_file(graph, path);
