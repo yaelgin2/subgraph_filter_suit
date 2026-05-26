@@ -154,7 +154,7 @@ private:
      * @param vertex The vertex whose second-order degree is computed.
      * @return Sum of neighbour degrees.
      */
-    float vertex_second_degree(const ColoredGraph& graph, uint32_t vertex) const;
+    uint64_t vertex_second_degree(const ColoredGraph& graph, uint32_t vertex) const;
 
     /**
      * @brief Returns the out-degree (or total degree for undirected) of @p vertex.
