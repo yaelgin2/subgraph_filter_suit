@@ -6,6 +6,7 @@
 #include "IFilterOutputManager.h"
 #include "IPatternWriter.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -114,6 +115,7 @@ public:
      * @param log_file_path      Optional log file path.
      * @param filter_paths       Filter by path signatures.
      * @param filter_motifs      Filter by motif signatures.
+     * @param induced            Expand query graph motif counts via inclusion DAG before filtering.
      */
     static void
     enumerator_filter_run(const std::string& graph_input_path, bool is_directed,
@@ -121,7 +123,7 @@ public:
                           const std::string& path_cache_file, CacheManagerType cache_reader_type,
                           std::string& output_folder, ResultOutputType output_type,
                           const std::string& log_file_path, bool filter_paths, bool filter_motifs,
-                          const GraphEnumerationCacheConfig& graph_cache_config);
+                          const GraphEnumerationCacheConfig& graph_cache_config, bool induced);
 
     /// @brief Run the pattern preprocessing stage.
     static void pattern_preprocess_run();
@@ -135,6 +137,14 @@ public:
 private:
     static constexpr const char* PATH_CACHE_BASE_NAME = "path_cache";
     static constexpr const char* MOTIF_CACHE_BASE_NAME = "motif_cache";
+
+    /**
+     * @brief Optional post-processing step applied to query graph enumeration results.
+     *
+     * Called with the full EnumerationResultVector after enumeration is computed or
+     * loaded. Pass a no-op lambda when no post-processing is needed.
+     */
+    using EnumerationTransformer = std::function<void(EnumerationResultVector&)>;
 
     /**
      * @brief Loads query graph enumeration from a cache file in the order
@@ -247,6 +257,7 @@ private:
      * @param filter_results_writer Output manager for filter results.
      * @param timestamp            Timestamp string used in output file names.
      * @param logger               Logger for diagnostics.
+     * @param post_process         Applied to the enumeration vector before filtering.
      */
     static void
     enumerate_and_filter(const std::string& library_cache_file, bool load_graph_cache,
@@ -257,7 +268,7 @@ private:
                          LibraryData& graphs_to_find_in,
                          const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
                          IFilterOutputManager& filter_results_writer, const std::string& timestamp,
-                         const LoggerHandler& logger);
+                         const LoggerHandler& logger, const EnumerationTransformer& post_process);
 };
 
 }  // namespace sgf

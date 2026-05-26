@@ -48,6 +48,8 @@ po::options_description SgfGraphEnumeratorArgumentParser::build_options()
 
     po::options_description common_desc("Common flags");
     common_desc.add_options()(KEY_IS_DIRECTED, po::bool_switch(), "Treat graphs as directed")(
+        KEY_INDUCED, po::bool_switch(),
+        "Expand induced motif counts via inclusion DAG before filtering")(
         KEY_CACHE_TYPE, po::value<std::string>(), "Cache format: binary, csv")(
         KEY_LOG_FILE_PATH, po::value<std::string>(), "(optional) Log file path");
 
@@ -123,6 +125,7 @@ CliArgs SgfGraphEnumeratorArgumentParser::build_cli_args(const po::variables_map
     result.m_use_motifs = variables_map.at(KEY_MOTIFS).as<bool>();
     result.m_use_paths = variables_map.at(KEY_PATHS).as<bool>();
     result.m_is_directed = variables_map.at(KEY_IS_DIRECTED).as<bool>();
+    result.m_induced = variables_map.at(KEY_INDUCED).as<bool>();
     if (result.m_run_preprocess)
     {
         result.m_preprocess = parse_preprocess_args(variables_map);
