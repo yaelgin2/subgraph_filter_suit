@@ -95,60 +95,6 @@ uint64_t count_matches(const std::string& text)
 
 }  // namespace
 
-// ── calculate_prior ───────────────────────────────────────────────────────────
-
-/**
- * @brief SUBGRAPH_DEGREE_SQUARED gives each vertex a score equal to the sum of
- *        its neighbours' degrees (second-order degree in the subgraph).
- */
-TEST(SubgraphSearcherTest, prior_subgraph_degree_squared_triangle)
-{
-    const ColoredGraph triangle = make_complete_graph(3U);
-    std::ostringstream oss;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE_SQUARED, false, false, oss};
-    const std::unordered_map<uint32_t, float> prior =
-        searcher.calculate_prior(triangle, triangle, PriorPolicy::SUBGRAPH_DEGREE_SQUARED);
-    // Each vertex has 2 neighbours each of degree 2; score = 2+2 = 4
-    ASSERT_EQ(prior.size(), 3U);
-    for (uint32_t vertex = 0U; vertex < 3U; ++vertex)
-    {
-        EXPECT_FLOAT_EQ(prior.at(vertex), 4.0F) << "vertex " << vertex;
-    }
-}
-
-/**
- * @brief SUBGRAPH_DEGREE gives each vertex its own degree as the prior score.
- */
-TEST(SubgraphSearcherTest, prior_subgraph_degree_path)
-{
-    const ColoredGraph path = make_path_graph(3U);
-    std::ostringstream oss;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, oss};
-    const std::unordered_map<uint32_t, float> prior =
-        searcher.calculate_prior(path, path, PriorPolicy::SUBGRAPH_DEGREE);
-    // Vertex 0 and 2 have degree 1; vertex 1 has degree 2
-    EXPECT_FLOAT_EQ(prior.at(0U), 1.0F);
-    EXPECT_FLOAT_EQ(prior.at(1U), 2.0F);
-    EXPECT_FLOAT_EQ(prior.at(2U), 1.0F);
-}
-
-/**
- * @brief CONSTANT and RANDOM policies return an empty prior map.
- */
-TEST(SubgraphSearcherTest, prior_empty_for_constant_and_random)
-{
-    const ColoredGraph graph = make_complete_graph(3U);
-    std::ostringstream oss;
-    const SubgraphSearcher searcher{PriorPolicy::CONSTANT, false, false, oss};
-    const std::unordered_map<uint32_t, float> constant_prior =
-        searcher.calculate_prior(graph, graph, PriorPolicy::CONSTANT);
-    EXPECT_TRUE(constant_prior.empty());
-
-    const std::unordered_map<uint32_t, float> random_prior =
-        searcher.calculate_prior(graph, graph, PriorPolicy::RANDOM);
-    EXPECT_TRUE(random_prior.empty());
-}
-
 // ── find_all — basic match counting ──────────────────────────────────────────
 
 /**

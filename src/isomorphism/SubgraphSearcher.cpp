@@ -66,24 +66,14 @@ void SubgraphSearcher::join_all(std::vector<std::thread>& threads)
 uint64_t SubgraphSearcher::score_second_degree_vertices(const ColoredGraph& graph,
                                                         const uint32_t vertex) const
 {
+    const VertexSet neighbors = all_adjacent(graph, vertex);
     uint64_t score = 0ULL;
-    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-        out_range = graph.get_neighbours(vertex, false);
-    for (std::vector<uint32_t>::const_iterator neighbours_iter = out_range.first; neighbours_iter != out_range.second; ++neighbours_iter)
+    for (const uint32_t neighbor : neighbors)
     {
-        score += graph.out_degree(*neighbours_iter);
+        score += graph.out_degree(neighbor);
         if (m_directed)
         {
-            score += graph.in_degree(*neighbours_iter);
-        }
-    }
-    if (m_directed)
-    {
-        const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-            in_range = graph.get_neighbours(vertex, true);
-        for (std::vector<uint32_t>::const_iterator in_iter = in_range.first; in_iter != in_range.second; ++in_iter)
-        {
-            score += graph.out_degree(*in_iter) + graph.in_degree(*in_iter);
+            score += graph.in_degree(neighbor);
         }
     }
     return score;
@@ -105,8 +95,7 @@ SubgraphSearcher::PriorMap SubgraphSearcher::calculate_prior_first_degree(const 
     PriorMap prior;
     for (uint32_t vertex = 0; vertex < target.vertex_count(); ++vertex)
     {
-        const uint32_t degree = target.out_degree(vertex) + (m_directed ? target.in_degree(vertex) : 0U);
-        prior[vertex] = static_cast<float>(degree);
+        prior[vertex] = static_cast<float>(all_adjacent(target, vertex).size());
     }
     return prior;
 }
