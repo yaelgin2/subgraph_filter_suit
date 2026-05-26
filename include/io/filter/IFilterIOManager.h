@@ -4,6 +4,7 @@
 #include "LoggerHandler.h"
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace sgf
@@ -16,26 +17,26 @@ namespace sgf
  * The base class owns path construction and directory creation so that concrete
  * implementations only need to handle the byte-level encoding.
  */
-class IFilterOutputManager
+class IFilterIOManager
 {
 public:
     /**
-     * @brief Constructs an IFilterOutputManager targeting a directory.
+     * @brief Constructs an IFilterIOManager targeting a directory.
      *
      * @param folder  Directory where the output file will be written.
      * @param logger  Optional logger for diagnostics.
      */
-    explicit IFilterOutputManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
+    explicit IFilterIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Default virtual destructor.
      */
-    virtual ~IFilterOutputManager() = default;
+    virtual ~IFilterIOManager() = default;
 
-    IFilterOutputManager(const IFilterOutputManager&) = default;
-    IFilterOutputManager& operator=(const IFilterOutputManager&) = default;
-    IFilterOutputManager(IFilterOutputManager&&) = default;
-    IFilterOutputManager& operator=(IFilterOutputManager&&) = default;
+    IFilterIOManager(const IFilterIOManager&) = default;
+    IFilterIOManager& operator=(const IFilterIOManager&) = default;
+    IFilterIOManager(IFilterIOManager&&) = default;
+    IFilterIOManager& operator=(IFilterIOManager&&) = default;
 
     /**
      * @brief Creates the target directory if absent, then writes filter results to file.
@@ -43,12 +44,23 @@ public:
      * The full output path is: @c folder / @c base_filename + "." + get_extension().
      * Each entry pairs @p filenames[i] with @p results[i].
      *
-     * @param filenames Library graph filenames, one per library graph.
-     * @param results   Filter result per library graph; true = pruned, false = survives.
+     * @param base_filename Stem of the output file (no extension).
+     * @param filenames     Library graph filenames, one per library graph.
+     * @param results       Filter result per library graph; true = pruned, false = survives.
      * @throws SgfPathExistsException if directory creation or file writing fails.
      */
     void write(const std::string& base_filename, const std::vector<std::string>& filenames,
                const FilterResult& results) const;
+
+    /**
+     * @brief Reads filter results from the file written by a previous write() call.
+     *
+     * @param base_filename Stem of the file to read (no extension).
+     * @return Map from library graph filename to its filter result (true = pruned).
+     * @throws SgfPathExistsException if the file cannot be opened.
+     * @throws GraphConstructionException if the file content is malformed.
+     */
+    std::unordered_map<std::string, bool> read(const std::string& base_filename) const;
 
 protected:
     /**
@@ -60,7 +72,19 @@ protected:
      * @throws SgfPathExistsException if the file cannot be opened or written.
      */
     virtual void write_to_file(const std::vector<std::string>& filenames,
-                               const FilterResult& results, const std::string& full_path) const = 0;
+                               const FilterResult& results,
+                               const std::string& full_path) const = 0;
+
+    /**
+     * @brief Deserializes filter results from @p full_path in the concrete format.
+     *
+     * @param full_path Source file path including the format extension.
+     * @return Map from library graph filename to its filter result.
+     * @throws SgfPathExistsException if the file cannot be opened.
+     * @throws GraphConstructionException if the file content is malformed.
+     */
+    virtual std::unordered_map<std::string, bool>
+    read_from_file(const std::string& full_path) const = 0;
 
     /**
      * @brief Returns the file extension used by this format, without a leading dot.
