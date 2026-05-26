@@ -106,7 +106,7 @@ bool findSubgraph(const Graph& graph, const Graph& query);
 
 All code must compile cleanly under MSVC (CI runs the `build-and-test-msvc` job). MSVC promotes several warnings to errors that GCC/Clang allow implicitly:
 
-- **No implicit narrowing conversions** — MSVC C4267/C4244 are errors. Any conversion that may lose data (e.g. `size_t` → `uint32_t`, `double` → `float`) must use an explicit `static_cast`. Never rely on implicit truncation.
+- **No implicit narrowing conversions** — MSVC C4267/C4244 are errors. Any conversion that may lose data (e.g. `size_t` → `uint32_t`, `double` → `double`) must use an explicit `static_cast`. Never rely on implicit truncation.
 - **No signed/unsigned comparison without a cast** — use `static_cast` to align types before comparing.
 
 When mixing types (e.g. a `BoostGraph::vertex_descriptor` / `size_t` value passed to a function expecting `uint32_t`), always cast at the call site:

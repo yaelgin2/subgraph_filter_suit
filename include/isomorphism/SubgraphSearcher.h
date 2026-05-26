@@ -74,7 +74,7 @@ public:
 private:
     using VertexSet = std::unordered_set<uint32_t>;
     using RestrictionMap = std::unordered_map<uint32_t, VertexSet>;
-    using PriorMap = std::unordered_map<uint32_t, float>;
+    using PriorMap = std::unordered_map<uint32_t, double>;
     using PathMap = std::unordered_map<uint32_t, uint32_t>;
 
     /**
@@ -102,7 +102,7 @@ private:
 
     static constexpr uint32_t INVALID_VERTEX_ID = std::numeric_limits<uint32_t>::max();
     static constexpr uint32_t BATCH_SIZE = 512U;
-    static constexpr float NEGATIVE_INFINITY = -std::numeric_limits<float>::infinity();
+    static constexpr double NEGATIVE_INFINITY = -std::numeric_limits<double>::infinity();
 
     /**
      * @brief Joins and clears a thread vector.
@@ -141,8 +141,8 @@ private:
      * @param vertex       Subgraph vertex to score.
      * @return Negative sum of prior scores of candidates in the restriction set.
      */
-    static float score_graph_degree_squared(const RestrictionMap& restrictions,
-                                            const PriorMap& prior, uint32_t vertex);
+    static double score_graph_degree_squared(const RestrictionMap& restrictions,
+                                             const PriorMap& prior, uint32_t vertex);
 
     /**
      * @brief Computes the sum of neighbour degrees for @p vertex in @p graph.
@@ -163,8 +163,8 @@ private:
      * @param vertex       Subgraph vertex to score.
      * @return Score; higher means chosen earlier.
      */
-    float restriction_score(const RestrictionMap& restrictions, const PriorMap& prior,
-                            uint32_t vertex) const;
+    double restriction_score(const RestrictionMap& restrictions, const PriorMap& prior,
+                             uint32_t vertex) const;
 
     /**
      * @brief Selects the first subgraph vertex to match.
