@@ -2,7 +2,7 @@
 
 #include "BinaryCacheIOManager.h"
 #include "CSVCacheIOManager.h"
-#include "CSVFilterOutputManager.h"
+#include "CSVFilterIOManager.h"
 #include "ColoredGraph.h"
 #include "EnumerationPreprocessManager.h"
 #include "FilteringUtils.h"
@@ -10,21 +10,23 @@
 #include "GraphmlPatternWriter.h"
 #include "GroupEnumerationGraphFilter.h"
 #include "IColoredGraphReader.h"
-#include "IFilterOutputManager.h"
+#include "IFilterIOManager.h"
 #include "IGraphPreprocessor.h"
 #include "IOUtils.h"
 #include "IPatternWriter.h"
 #include "InvalidArgumentException.h"
-#include "JsonFilterOutputManager.h"
+#include "JsonFilterIOManager.h"
 #include "JsonGraphReader.h"
 #include "JsonPatternWriter.h"
 #include "LogLevel.h"
 #include "LoggerBundle.h"
 #include "LoggerHandler.h"
+#include "PattermPreprocessManager.h"
 #include "MotifPreprocessor.h"
 #include "PathProcessor.h"
 #include "VertexEdgeGraphReader.h"
 #include "VertexEdgePatternWriter.h"
+#include "CSVPatternCacheIOManager.h"
 
 #include <ICacheIOManager.h>
 #include <array>
@@ -88,16 +90,16 @@ std::shared_ptr<ICacheIOManager> FlowManager::make_cache_manager(const CacheMana
     }
 }
 
-std::unique_ptr<IFilterOutputManager>
-FlowManager::make_filter_results_writer(const ResultOutputType type, const std::string& folder,
+std::unique_ptr<IFilterIOManager>
+FlowManager::make_filter_results_io_manager(const ResultOutputType type, const std::string& folder,
                                         LoggerHandler logger)
 {
     switch (type)
     {
     case ResultOutputType::JSON:
-        return std::make_unique<JsonFilterOutputManager>(folder, std::move(logger));
+        return std::make_unique<JsonFilterIOManager>(folder, std::move(logger));
     case ResultOutputType::CSV:
-        return std::make_unique<CSVFilterOutputManager>(folder, std::move(logger));
+        return std::make_unique<CSVFilterIOManager>(folder, std::move(logger));
     default:
         throw InvalidArgumentException("Unknown CacheManagerType.");
     }
@@ -150,7 +152,7 @@ void FlowManager::enumerate_and_filter(
     const PreprocessorFactory& factory, const CacheManagerType cache_reader_type,
     const std::shared_ptr<ICacheIOManager>& graphs_cache_manager, LibraryData& graphs_to_find_in,
     const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
-    IFilterOutputManager& filter_results_writer, const std::string& timestamp,
+    IFilterIOManager& filter_results_writer, const std::string& timestamp,
     const LoggerHandler& logger)
 {
     EnumerationResultVector graph_enumeration;
@@ -195,8 +197,8 @@ void FlowManager::enumerator_filter_run(
         preprocess_manager = std::make_unique<EnumerationPreprocessManager>(
             graphs_to_find_in.m_library, log_bundle.handler());
     }
-    std::unique_ptr<IFilterOutputManager> filter_results_writer =
-        make_filter_results_writer(output_type, output_folder, log_bundle.handler());
+    std::unique_ptr<IFilterIOManager> filter_results_writer =
+        make_filter_results_io_manager(output_type, output_folder, log_bundle.handler());
     const std::string timestamp = generate_timestamp();
     std::shared_ptr<ICacheIOManager> graphs_cache_manager = nullptr;
     if (graph_cache_config.m_cache_enumeration)
@@ -232,8 +234,67 @@ void FlowManager::enumerator_filter_run(
     }
 }
 
-void FlowManager::pattern_preprocess_run()
+void FlowManager::pattern_preprocess_run(const std::string& input_path, bool is_directed,
+                                       GraphReaderType reader_type, std::string& output_path,
+                                       PatternWriterType output_type,
+                                       const std::string& log_file_path, uint32_t preprocess_multigraph,
+                                       bool preprocess_singlegraph_results_file, const std::string& results_file_path,
+                                        int64_t preprocess_singlegraph, ResultsFileType results_file_type,
+                                       std::string background_graph_path, double score_threshold,
+                                        const SingleGraphFinderConfig config)
 {
+    const LoggerBundle log_bundle(log_file_path);
+    const LibraryData library =
+        load_library(input_path, reader_type, is_directed, log_bundle.handler());
+    std::shared_ptr<IPatternWriter> pattern_writer = make_pattern_writer(output_type);
+    const std::string timestamp = generate_timestamp();
+    PatternPreprocessManager preprocess_manager(library.m_library, log_bundle.handler());
+    if (preprocess_multigraph > 0)
+    {
+        const std::vector<PatternPreprocessorResult> multigraph_results =
+            preprocess_manager.preprocess([preprocess_multigraph](const ColoredGraph& graph,
+                                                                const LoggerHandler& logger)
+                                            -> std::unique_ptr<IPatternPreprocessor>
+            {
+                return std::make_unique<MultigraphPatternPreprocessor>(graph, preprocess_multigraph,
+                                                                       logger);
+            });
+        CSVPatternCacheIOManager multigraph_cache_manager(output_path, log_bundle.handler(), pattern_writer);
+        multigraph_cache_manager.write(multigraph_results, timestamp);
+    }
+    if (preprocess_singlegraph != -1)
+    {
+        std::vector<bool> to_process(library.m_library.size(), false);
+        to_process[preprocess_singlegraph] = true;
+        const std::vector<PatternPreprocessorResult> singlegraph_results =
+            preprocess_manager.preprocess([preprocess_singlegraph](const ColoredGraph& graph,
+                                                                  const LoggerHandler& logger)
+                                            -> std::unique_ptr<IPatternPreprocessor>
+            {
+                return std::make_unique<SingleGraphPatternPreprocessor>(library.m_library, is_directed, background_graph,
+                    to_process, score_threshold, config, logger);
+            });
+        CSVPatternCacheIOManager singlegraph_cache_manager(output_path, log_bundle.handler(), pattern_writer);
+        singlegraph_cache_manager.write(singlegraph_results, timestamp);
+    }
+    if (preprocess_singlegraph_results_file)
+    {
+        std::unique_ptr<IColoredGraphReader> reader = make_graph_reader(reader_type);
+        const ColoredGraph background_graph = reader->read(background_graph_path, is_directed, log_bundle.handler());
+        std::unique_ptr<FilterIOManager> result_reader = make_filter_results_io_manager(results_file_type);
+        std::vector<bool> to_process - result_reader->read(results_file_path, library.m_graph_names);
+        
+        const std::vector<PatternPreprocessorResult> singlegraph_results =
+            preprocess_manager.preprocess([&preprocess_singlegraph, &to_process](const ColoredGraph& graph,
+                                                                  const LoggerHandler& logger)
+                                            -> std::unique_ptr<IPatternPreprocessor>
+            {
+                return std::make_unique<SingleGraphPatternPreprocessor>(library.m_library, is_directed, background_graph,
+                    to_process, score_threshold, config, logger);
+            });
+        CSVPatternCacheIOManager singlegraph_cache_manager(output_path, log_bundle.handler(), pattern_writer);
+        singlegraph_cache_manager.write(singlegraph_results, timestamp);
+    }
 }
 
 void FlowManager::pattern_filter_run()
@@ -304,7 +365,7 @@ FlowManager::get_graph_enumeration(const bool write_to_cache, const std::string&
 void FlowManager::run_enumeration_filter_stage(
     const std::string& result_file_base_name, const EnumerationResultVector& graphs_enumeration,
     const ICacheIOManager& lib_cache_manager, const std::string& lib_cache_path,
-    IFilterOutputManager& filter_results_writer, const LibraryData& library,
+    IFilterIOManager& filter_results_writer, const LibraryData& library,
     const std::string& timestamp, const LoggerHandler& logger)
 {
     const std::unordered_map<std::string, EnumerationResult> library_enumeration =

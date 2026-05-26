@@ -3,7 +3,7 @@
 #include "ColoredGraph.h"
 #include "ICacheIOManager.h"
 #include "IColoredGraphReader.h"
-#include "IFilterOutputManager.h"
+#include "IFilterIOManager.h"
 #include "IPatternWriter.h"
 
 #include <memory>
@@ -124,7 +124,11 @@ public:
                           const GraphEnumerationCacheConfig& graph_cache_config);
 
     /// @brief Run the pattern preprocessing stage.
-    static void pattern_preprocess_run();
+    static void pattern_preprocess_run(const std::string& input_path, bool is_directed,
+                                       GraphReaderType reader_type, std::string& output_path,
+                                       PatternWriterType output_type,
+                                       const std::string& log_file_path, uint32_t preprocess_multigraph,
+                                       bool preprocess_singlegraph_results_file, int64_t preprocess_singlegraph);
 
     /// @brief Run the pattern filter stage.
     static void pattern_filter_run();
@@ -175,7 +179,7 @@ private:
     static void run_enumeration_filter_stage(
         const std::string& result_file_base_name, const EnumerationResultVector& graphs_enumeration,
         const ICacheIOManager& lib_cache_manager, const std::string& lib_cache_path,
-        IFilterOutputManager& filter_results_writer, const LibraryData& library,
+        IFilterIOManager& filter_results_writer, const LibraryData& library,
         const std::string& timestamp, const LoggerHandler& logger);
 
     /**
@@ -225,10 +229,10 @@ private:
      * @param type    Desired output format.
      * @param folder  Directory where the output file will be written.
      * @param logger  Logger for write diagnostics.
-     * @return Owning pointer to the concrete IFilterOutputManager.
+     * @return Owning pointer to the concrete IFilterIOManager.
      */
-    static std::unique_ptr<IFilterOutputManager>
-    make_filter_results_writer(ResultOutputType type, const std::string& folder,
+    static std::unique_ptr<IFilterIOManager>
+    make_filter_results_io_manager(ResultOutputType type, const std::string& folder,
                                LoggerHandler logger);
 
     /**
@@ -256,7 +260,7 @@ private:
                          const std::shared_ptr<ICacheIOManager>& graphs_cache_manager,
                          LibraryData& graphs_to_find_in,
                          const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
-                         IFilterOutputManager& filter_results_writer, const std::string& timestamp,
+                         IFilterIOManager& filter_results_writer, const std::string& timestamp,
                          const LoggerHandler& logger);
 };
 

@@ -20,7 +20,7 @@ namespace sgf
 {
 
 CSVPatternCacheIOManager::CSVPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                                                    std::unique_ptr<IPatternWriter> writer)
+                                                    std::shared_ptr<IPatternWriter> writer)
     : IPatternCacheIOManager(std::move(folder), std::move(logger), std::move(writer))
 {
 }
