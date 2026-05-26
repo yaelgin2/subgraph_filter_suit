@@ -34,7 +34,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Boost ─────────────────────────────────────────────────────────────────────
-find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup json program_options)
+find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup json)
 
 # ── Sources ───────────────────────────────────────────────────────────────────
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/**/*.cpp)
@@ -104,6 +104,7 @@ target_compile_options(subgraph_filter_suite PRIVATE
 # Set SGF_BUILD_CLI=OFF at configure time to build only the library.
 option(SGF_BUILD_CLI "Build the sgf-graph-enumerator CLI tool" ON)
 if(SGF_BUILD_CLI)
+    find_package(Boost 1.76 REQUIRED COMPONENTS program_options)
     add_executable(sgf-graph-enumerator
         src/cli/SgfGraphEnumerator.cpp
         src/cli/argument_parsers/SgfGraphEnumeratorArgumentParser.cpp
