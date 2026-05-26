@@ -1,6 +1,7 @@
 #include "SubgraphSearcher.h"
 
 #include "ColoredGraph.h"
+#include "MatchFoundException.h"
 #include "PriorPolicy.h"
 
 #include <atomic>
@@ -236,12 +237,11 @@ uint32_t SubgraphSearcher::choose_next(const RestrictionMap& restrictions, const
     return find_unchosen_vertex(subgraph, chosen);
 }
 
-bool SubgraphSearcher::is_induced_valid_undirected(const SearchContext& context,
-                                                   const uint32_t graph_vertex,
-                                                   const uint32_t subgraph_vertex)
+bool SubgraphSearcher::check_induced(const SearchContext& context, const uint32_t graph_vertex,
+                                     const uint32_t subgraph_vertex, const bool reversed)
 {
     const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-        neighbours_range = context.m_graph.get_neighbours(graph_vertex);
+        neighbours_range = context.m_graph.get_neighbours(graph_vertex, reversed);
     for (std::vector<uint32_t>::const_iterator neighbours_iter = neighbours_range.first;
          neighbours_iter != neighbours_range.second; ++neighbours_iter)
     {
@@ -250,49 +250,10 @@ bool SubgraphSearcher::is_induced_valid_undirected(const SearchContext& context,
         {
             continue;
         }
-        if (!context.m_subgraph.is_edge(subgraph_vertex, path_it->second))
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool SubgraphSearcher::check_out_induced(const SearchContext& context, const uint32_t graph_vertex,
-                                         const uint32_t subgraph_vertex)
-{
-    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-        neighbours_range = context.m_graph.get_neighbours(graph_vertex, false);
-    for (std::vector<uint32_t>::const_iterator neighbours_iter = neighbours_range.first;
-         neighbours_iter != neighbours_range.second; ++neighbours_iter)
-    {
-        const PathMap::const_iterator path_it = context.m_path.find(*neighbours_iter);
-        if (path_it == context.m_path.end())
-        {
-            continue;
-        }
-        if (!context.m_subgraph.is_edge(subgraph_vertex, path_it->second))
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool SubgraphSearcher::check_in_induced(const SearchContext& context, const uint32_t graph_vertex,
-                                        const uint32_t subgraph_vertex)
-{
-    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-        neighbours_range = context.m_graph.get_neighbours(graph_vertex, true);
-    for (std::vector<uint32_t>::const_iterator neighbours_iter = neighbours_range.first;
-         neighbours_iter != neighbours_range.second; ++neighbours_iter)
-    {
-        const PathMap::const_iterator path_it = context.m_path.find(*neighbours_iter);
-        if (path_it == context.m_path.end())
-        {
-            continue;
-        }
-        if (!context.m_subgraph.is_edge(path_it->second, subgraph_vertex))
+        const bool edge_exists = reversed
+                                     ? context.m_subgraph.is_edge(path_it->second, subgraph_vertex)
+                                     : context.m_subgraph.is_edge(subgraph_vertex, path_it->second);
+        if (!edge_exists)
         {
             return false;
         }
@@ -305,10 +266,10 @@ bool SubgraphSearcher::is_induced_valid(const SearchContext& context, const uint
 {
     if (m_directed)
     {
-        return check_out_induced(context, graph_vertex, subgraph_vertex) &&
-               check_in_induced(context, graph_vertex, subgraph_vertex);
+        return check_induced(context, graph_vertex, subgraph_vertex, false) &&
+               check_induced(context, graph_vertex, subgraph_vertex, true);
     }
-    return is_induced_valid_undirected(context, graph_vertex, subgraph_vertex);
+    return check_induced(context, graph_vertex, subgraph_vertex, false);
 }
 
 void SubgraphSearcher::write_match(SearchContext& context, const uint32_t graph_vertex,
@@ -325,16 +286,21 @@ void SubgraphSearcher::write_match(SearchContext& context, const uint32_t graph_
     context.m_path.erase(graph_vertex);
     const std::lock_guard<std::mutex> lock{m_output_mutex};
     m_output << oss.str() << "\n";
+    if (context.m_stop_after_first)
+    {
+        throw MatchFoundException{};
+    }
 }
 
 SubgraphSearcher::VertexSet SubgraphSearcher::colored_neighborhood(const ColoredGraph& graph,
                                                                    const uint32_t vertex,
                                                                    const uint32_t color,
-                                                                   const uint32_t min_degree)
+                                                                   const uint32_t min_degree,
+                                                                   const bool reversed)
 {
     VertexSet result;
     const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-        neighbours_range = graph.get_neighbours(vertex);
+        neighbours_range = graph.get_neighbours(vertex, reversed);
     for (std::vector<uint32_t>::const_iterator neighbours_iter = neighbours_range.first;
          neighbours_iter != neighbours_range.second; ++neighbours_iter)
     {
@@ -343,55 +309,8 @@ SubgraphSearcher::VertexSet SubgraphSearcher::colored_neighborhood(const Colored
         {
             continue;
         }
-        if (graph.out_degree(neighbor) >= min_degree)
-        {
-            result.insert(neighbor);
-        }
-    }
-    return result;
-}
-
-SubgraphSearcher::VertexSet SubgraphSearcher::colored_neighborhood_out(const ColoredGraph& graph,
-                                                                       const uint32_t vertex,
-                                                                       const uint32_t color,
-                                                                       const uint32_t min_degree)
-{
-    VertexSet result;
-    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-        neighbours_range = graph.get_neighbours(vertex, false);
-    for (std::vector<uint32_t>::const_iterator neighbours_iter = neighbours_range.first;
-         neighbours_iter != neighbours_range.second; ++neighbours_iter)
-    {
-        const uint32_t neighbor = *neighbours_iter;
-        if (graph.get_vertex_color(neighbor) != color)
-        {
-            continue;
-        }
-        if (graph.out_degree(neighbor) >= min_degree)
-        {
-            result.insert(neighbor);
-        }
-    }
-    return result;
-}
-
-SubgraphSearcher::VertexSet SubgraphSearcher::colored_neighborhood_in(const ColoredGraph& graph,
-                                                                      const uint32_t vertex,
-                                                                      const uint32_t color,
-                                                                      const uint32_t min_degree)
-{
-    VertexSet result;
-    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-        neighbours_range = graph.get_neighbours(vertex, true);
-    for (std::vector<uint32_t>::const_iterator neighbours_iter = neighbours_range.first;
-         neighbours_iter != neighbours_range.second; ++neighbours_iter)
-    {
-        const uint32_t neighbor = *neighbours_iter;
-        if (graph.get_vertex_color(neighbor) != color)
-        {
-            continue;
-        }
-        if (graph.in_degree(neighbor) >= min_degree)
+        const uint32_t degree = reversed ? graph.in_degree(neighbor) : graph.out_degree(neighbor);
+        if (degree >= min_degree)
         {
             result.insert(neighbor);
         }
@@ -405,7 +324,7 @@ SubgraphSearcher::VertexSet SubgraphSearcher::intersect_neighborhoods(const Colo
                                                                       const uint32_t min_deg_out,
                                                                       const uint32_t min_deg_in)
 {
-    const VertexSet out_set = colored_neighborhood_out(graph, vertex, color, min_deg_out);
+    const VertexSet out_set = colored_neighborhood(graph, vertex, color, min_deg_out, false);
     VertexSet result;
     const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
         in_range = graph.get_neighbours(vertex, true);
@@ -438,13 +357,13 @@ SubgraphSearcher::VertexSet SubgraphSearcher::compute_new_restriction_directed(
     const uint32_t color = context.m_subgraph.get_vertex_color(subgraph_neighbor);
     if (has_out_edge && !has_in_edge)
     {
-        return colored_neighborhood_out(context.m_graph, graph_vertex, color,
-                                        context.m_subgraph.out_degree(subgraph_neighbor));
+        return colored_neighborhood(context.m_graph, graph_vertex, color,
+                                    context.m_subgraph.out_degree(subgraph_neighbor), false);
     }
     if (has_in_edge && !has_out_edge)
     {
-        return colored_neighborhood_in(context.m_graph, graph_vertex, color,
-                                       context.m_subgraph.in_degree(subgraph_neighbor));
+        return colored_neighborhood(context.m_graph, graph_vertex, color,
+                                    context.m_subgraph.in_degree(subgraph_neighbor), true);
     }
     return intersect_neighborhoods(context.m_graph, graph_vertex, color,
                                    context.m_subgraph.out_degree(subgraph_neighbor),
@@ -462,112 +381,88 @@ SubgraphSearcher::VertexSet SubgraphSearcher::compute_new_restriction(
     }
     const uint32_t color = context.m_subgraph.get_vertex_color(subgraph_neighbor);
     const uint32_t min_deg = context.m_subgraph.out_degree(subgraph_neighbor);
-    return colored_neighborhood(context.m_graph, graph_vertex, color, min_deg);
+    return colored_neighborhood(context.m_graph, graph_vertex, color, min_deg, false);
 }
 
 void SubgraphSearcher::apply_removal(const VertexSet& to_remove, VertexSet& restriction,
-                                     VertexSet& inverse_entry)
+                                     VertexSet& inverse_restrictions_entry)
 {
     for (const auto& candidate : to_remove)
     {
-        inverse_entry.insert(candidate);
+        inverse_restrictions_entry.insert(candidate);
         restriction.erase(candidate);
     }
 }
 
-void SubgraphSearcher::remove_non_out_neighbors(const ColoredGraph& graph,
-                                                const uint32_t graph_vertex, VertexSet& restriction,
-                                                VertexSet& inverse_entry)
+void SubgraphSearcher::remove_non_neighbors(const ColoredGraph& graph, const uint32_t graph_vertex,
+                                            VertexSet& restriction,
+                                            VertexSet& inverse_restrictions_entry,
+                                            const bool reversed)
 {
     VertexSet to_remove;
     for (const auto& candidate : restriction)
     {
-        if (!graph.is_edge(graph_vertex, candidate))
+        const bool edge_exists = reversed ? graph.is_edge(candidate, graph_vertex)
+                                          : graph.is_edge(graph_vertex, candidate);
+        if (!edge_exists)
         {
             to_remove.insert(candidate);
         }
     }
-    apply_removal(to_remove, restriction, inverse_entry);
-}
-
-void SubgraphSearcher::remove_non_in_neighbors(const ColoredGraph& graph,
-                                               const uint32_t graph_vertex, VertexSet& restriction,
-                                               VertexSet& inverse_entry)
-{
-    VertexSet to_remove;
-    for (const auto& candidate : restriction)
-    {
-        if (!graph.is_edge(candidate, graph_vertex))
-        {
-            to_remove.insert(candidate);
-        }
-    }
-    apply_removal(to_remove, restriction, inverse_entry);
-}
-
-void SubgraphSearcher::filter_restriction_undirected(const ColoredGraph& graph,
-                                                     const uint32_t graph_vertex,
-                                                     VertexSet& restriction,
-                                                     VertexSet& inverse_entry)
-{
-    VertexSet to_remove;
-    for (const auto& candidate : restriction)
-    {
-        if (!graph.is_edge(graph_vertex, candidate))
-        {
-            to_remove.insert(candidate);
-        }
-    }
-    apply_removal(to_remove, restriction, inverse_entry);
+    apply_removal(to_remove, restriction, inverse_restrictions_entry);
 }
 
 void SubgraphSearcher::filter_restriction_directed(const SearchContext& context,
                                                    const FilterParams& params,
-                                                   VertexSet& restriction, VertexSet& inverse_entry)
+                                                   VertexSet& restriction,
+                                                   VertexSet& inverse_restrictions_entry)
 {
     if (context.m_subgraph.is_edge(params.m_subgraph_vertex, params.m_subgraph_neighbor))
     {
-        remove_non_out_neighbors(context.m_graph, params.m_graph_vertex, restriction,
-                                 inverse_entry);
+        remove_non_neighbors(context.m_graph, params.m_graph_vertex, restriction,
+                             inverse_restrictions_entry, false);
     }
     if (context.m_subgraph.is_edge(params.m_subgraph_neighbor, params.m_subgraph_vertex))
     {
-        remove_non_in_neighbors(context.m_graph, params.m_graph_vertex, restriction, inverse_entry);
+        remove_non_neighbors(context.m_graph, params.m_graph_vertex, restriction,
+                             inverse_restrictions_entry, true);
     }
 }
 
 void SubgraphSearcher::filter_restriction(const SearchContext& context, const FilterParams& params,
-                                          VertexSet& restriction, VertexSet& inverse_entry) const
+                                          VertexSet& restriction,
+                                          VertexSet& inverse_restrictions_entry) const
 {
     if (m_directed)
     {
-        filter_restriction_directed(context, params, restriction, inverse_entry);
+        filter_restriction_directed(context, params, restriction, inverse_restrictions_entry);
         return;
     }
-    filter_restriction_undirected(context.m_graph, params.m_graph_vertex, restriction,
-                                  inverse_entry);
+    remove_non_neighbors(context.m_graph, params.m_graph_vertex, restriction,
+                         inverse_restrictions_entry, false);
 }
 
 void SubgraphSearcher::update_restriction_entry(SearchContext& context, const FilterParams& params,
-                                                RestrictionMap& inverse, bool& is_empty) const
+                                                RestrictionMap& inverse,
+                                                bool& any_candidate_set_empty) const
 {
     const uint32_t neighbor = params.m_subgraph_neighbor;
     const bool was_new = context.m_restrictions.count(neighbor) == 0U;
     VertexSet& restriction = context.m_restrictions[neighbor];
-    VertexSet& inverse_entry = inverse[neighbor];
+    VertexSet& inverse_restrictions_entry = inverse[neighbor];
     if (was_new)
     {
-        inverse_entry.insert(INVALID_VERTEX_ID);
+        inverse_restrictions_entry.insert(INVALID_VERTEX_ID);
         restriction = compute_new_restriction(context, neighbor, params.m_subgraph_vertex,
                                               params.m_graph_vertex);
     }
     else
     {
-        filter_restriction(context, params, restriction, inverse_entry);
+        filter_restriction(context, params, restriction, inverse_restrictions_entry);
     }
     if (restriction.empty())
     {
-        is_empty = true;
+        any_candidate_set_empty = true;
     }
 }
 
@@ -601,18 +496,35 @@ SubgraphSearcher::update_restrictions(SearchContext& context, const uint32_t gra
                                       const uint32_t subgraph_vertex) const
 {
     RestrictionMap inverse;
-    bool is_empty = false;
-    const VertexSet neighbors = all_adjacent(context.m_subgraph, subgraph_vertex);
-    for (const auto& neighbor : neighbors)
+    bool any_candidate_set_empty = false;
+    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
+        out_range = context.m_subgraph.get_neighbours(subgraph_vertex, false);
+    for (std::vector<uint32_t>::const_iterator out_neighbor_it = out_range.first;
+         out_neighbor_it != out_range.second; ++out_neighbor_it)
     {
-        if (context.m_chosen.count(neighbor) != 0U)
+        if (context.m_chosen.count(*out_neighbor_it) == 0U)
         {
-            continue;
+            const FilterParams params{*out_neighbor_it, subgraph_vertex, graph_vertex};
+            update_restriction_entry(context, params, inverse, any_candidate_set_empty);
         }
-        const FilterParams params{neighbor, subgraph_vertex, graph_vertex};
-        update_restriction_entry(context, params, inverse, is_empty);
     }
-    return {std::move(inverse), is_empty};
+    if (m_directed)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            in_range = context.m_subgraph.get_neighbours(subgraph_vertex, true);
+        for (std::vector<uint32_t>::const_iterator in_neighbor_it = in_range.first;
+             in_neighbor_it != in_range.second; ++in_neighbor_it)
+        {
+            if (context.m_chosen.count(*in_neighbor_it) == 0U &&
+                inverse.count(*in_neighbor_it) == 0U)
+            {
+                const FilterParams params{*in_neighbor_it, subgraph_vertex, graph_vertex};
+                update_restriction_entry(context, params, inverse, any_candidate_set_empty);
+            }
+        }
+    }
+    return {std::move(inverse), any_candidate_set_empty};
 }
 
 void SubgraphSearcher::restore_restrictions(SearchContext& context, RestrictionMap& inverse)
@@ -657,18 +569,19 @@ uint64_t SubgraphSearcher::recurse_candidates(SearchContext& context,
         return 0ULL;
     }
     const VertexSet candidates = context.m_restrictions.at(next_vertex);
-    uint64_t count = 0ULL;
+    uint64_t count_matches = 0ULL;
     for (const auto& candidate : candidates)
     {
-        count += recursion_search(context, candidate, next_vertex);
+        count_matches += recursion_search(context, candidate, next_vertex);
     }
-    return count;
+    return count_matches;
 }
 
 //  NOLINTNEXTLINE(misc-no-recursion)
-uint64_t SubgraphSearcher::expand_if_feasible(SearchContext& context, const bool is_empty) const
+uint64_t SubgraphSearcher::expand_if_feasible(SearchContext& context,
+                                              const bool any_candidate_set_empty) const
 {
-    if (is_empty)
+    if (any_candidate_set_empty)
     {
         return 0ULL;
     }
@@ -683,10 +596,15 @@ uint64_t SubgraphSearcher::expand_search(SearchContext& context, const uint32_t 
 {
     context.m_path[graph_vertex] = subgraph_vertex;
     context.m_chosen.insert(subgraph_vertex);
+
+    // Remove subgraph_vertex's own restriction (it is now matched) and propagate
+    // the new assignment to neighbours, narrowing their candidate sets.
     VertexSet saved = save_and_remove_restriction(context, subgraph_vertex);
     std::pair<RestrictionMap, bool> update_result =
         update_restrictions(context, graph_vertex, subgraph_vertex);
     update_result.first[subgraph_vertex] = std::move(saved);
+
+    // Recurse, then roll back all changes for backtracking.
     const uint64_t match_count = expand_if_feasible(context, update_result.second);
     restore_restrictions(context, update_result.first);
     context.m_chosen.erase(subgraph_vertex);
@@ -698,6 +616,10 @@ uint64_t SubgraphSearcher::expand_search(SearchContext& context, const uint32_t 
 uint64_t SubgraphSearcher::recursion_search(SearchContext& context, const uint32_t graph_vertex,
                                             const uint32_t subgraph_vertex) const
 {
+    if (m_stop.load(std::memory_order_relaxed))
+    {
+        return 0ULL;
+    }
     if (context.m_path.count(graph_vertex) != 0U)
     {
         return 0ULL;
@@ -714,8 +636,10 @@ uint64_t SubgraphSearcher::recursion_search(SearchContext& context, const uint32
     return expand_search(context, graph_vertex, subgraph_vertex);
 }
 
-uint64_t SubgraphSearcher::find_all(const ColoredGraph& graph, const ColoredGraph& subgraph) const
+uint64_t SubgraphSearcher::find_all(const ColoredGraph& graph, const ColoredGraph& subgraph,
+                                    const bool stop_after_first) const
 {
+    m_stop = false;
     const PriorMap prior = calculate_prior(subgraph, graph, m_policy);
     const uint32_t start_vertex = choose_start(subgraph, prior);
     const uint32_t start_color = subgraph.get_vertex_color(start_vertex);
@@ -723,15 +647,27 @@ uint64_t SubgraphSearcher::find_all(const ColoredGraph& graph, const ColoredGrap
     std::vector<std::thread> threads;
     for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
     {
+        if (stop_after_first && m_stop)
+        {
+            break;
+        }
         if (graph.get_vertex_color(vertex) != start_color)
         {
             continue;
         }
         threads.emplace_back(
-            [this, &graph, &subgraph, &prior, &counter, vertex, start_vertex]()
+            [this, &graph, &subgraph, &prior, &counter, stop_after_first, vertex, start_vertex]()
             {
-                SearchContext ctx{graph, subgraph, prior, {}, {}, {}};
-                counter.fetch_add(recursion_search(ctx, vertex, start_vertex));
+                SearchContext ctx{graph, subgraph, prior, {}, {}, {}, stop_after_first};
+                try
+                {
+                    counter.fetch_add(recursion_search(ctx, vertex, start_vertex));
+                }
+                catch (const MatchFoundException&)
+                {
+                    m_stop = true;
+                    counter.fetch_add(1ULL);
+                }
             });
         if (threads.size() >= BATCH_SIZE)
         {

@@ -50,12 +50,14 @@ public:
     ~SubgraphSearcher() = default;
 
     /**
-     * @brief Finds all subgraph isomorphisms of @p subgraph in @p graph.
-     * @param graph    The host graph to search in.
-     * @param subgraph The pattern graph to search for.
-     * @return Total number of matches found.
+     * @brief Finds subgraph isomorphisms of @p subgraph in @p graph.
+     * @param graph            The host graph to search in.
+     * @param subgraph         The pattern graph to search for.
+     * @param stop_after_first If true, stop as soon as the first match is found.
+     * @return Total number of matches found (at most 1 when @p stop_after_first is true).
      */
-    uint64_t find_all(const ColoredGraph& graph, const ColoredGraph& subgraph) const;
+    uint64_t find_all(const ColoredGraph& graph, const ColoredGraph& subgraph,
+                      bool stop_after_first = false) const;
 
     /**
      * @brief Computes the prior-score map for a given policy.
@@ -88,6 +90,7 @@ private:
         RestrictionMap m_restrictions;
         PathMap m_path;
         VertexSet m_chosen;
+        bool m_stop_after_first;
     };
 
     /**
@@ -194,34 +197,20 @@ private:
     static uint32_t find_unchosen_vertex(const ColoredGraph& subgraph, const VertexSet& chosen);
 
     /**
-     * @brief Checks induced-subgraph constraints for undirected graphs.
-     * @param context       Current search context.
-     * @param graph_vertex  Candidate graph vertex being assigned.
-     * @param subgraph_vertex The subgraph vertex it is assigned to.
-     * @return True if induced constraint is satisfied.
-     */
-    static bool is_induced_valid_undirected(const SearchContext& context, uint32_t graph_vertex,
-                                            uint32_t subgraph_vertex);
-
-    /**
-     * @brief Checks induced-subgraph constraints for out-edges in a directed graph.
+     * @brief Checks induced-subgraph constraints for one edge direction.
+     *
+     * When @p reversed is false, iterates out-neighbours of @p graph_vertex and
+     * verifies a forward subgraph edge exists. When @p reversed is true, iterates
+     * in-neighbours and verifies a reverse subgraph edge exists.
+     *
      * @param context         Current search context.
      * @param graph_vertex    Candidate graph vertex being assigned.
      * @param subgraph_vertex The subgraph vertex it is assigned to.
-     * @return True if out-edge induced constraint is satisfied.
+     * @param reversed        If true, check in-edges; otherwise out-edges.
+     * @return True if induced constraint is satisfied for that direction.
      */
-    static bool check_out_induced(const SearchContext& context, uint32_t graph_vertex,
-                                  uint32_t subgraph_vertex);
-
-    /**
-     * @brief Checks induced-subgraph constraints for in-edges in a directed graph.
-     * @param context         Current search context.
-     * @param graph_vertex    Candidate graph vertex being assigned.
-     * @param subgraph_vertex The subgraph vertex it is assigned to.
-     * @return True if in-edge induced constraint is satisfied.
-     */
-    static bool check_in_induced(const SearchContext& context, uint32_t graph_vertex,
-                                 uint32_t subgraph_vertex);
+    static bool check_induced(const SearchContext& context, uint32_t graph_vertex,
+                              uint32_t subgraph_vertex, bool reversed);
 
     /**
      * @brief Dispatches to directed or undirected induced validity check.
@@ -246,40 +235,20 @@ private:
     void write_match(SearchContext& context, uint32_t graph_vertex, uint32_t subgraph_vertex) const;
 
     /**
-     * @brief Collects neighbours of @p vertex in @p graph with @p color and
-     *        out-degree >= @p min_degree (undirected neighbourhood).
+     * @brief Collects neighbours of @p vertex with @p color and degree >= @p min_degree.
+     *
+     * When @p reversed is false, iterates out-neighbours and checks out-degree.
+     * When @p reversed is true, iterates in-neighbours and checks in-degree.
+     *
      * @param graph      Host graph to query.
      * @param vertex     Centre vertex.
      * @param color      Required vertex color.
      * @param min_degree Minimum degree of accepted neighbours.
+     * @param reversed   If true, use in-neighbours and in-degree; otherwise out.
      * @return Set of qualifying neighbour IDs.
      */
     static VertexSet colored_neighborhood(const ColoredGraph& graph, uint32_t vertex,
-                                          uint32_t color, uint32_t min_degree);
-
-    /**
-     * @brief Collects out-neighbours of @p vertex with @p color and out-degree
-     *        >= @p min_degree.
-     * @param graph      Host graph to query.
-     * @param vertex     Centre vertex.
-     * @param color      Required vertex color.
-     * @param min_degree Minimum out-degree of accepted neighbours.
-     * @return Set of qualifying out-neighbour IDs.
-     */
-    static VertexSet colored_neighborhood_out(const ColoredGraph& graph, uint32_t vertex,
-                                              uint32_t color, uint32_t min_degree);
-
-    /**
-     * @brief Collects in-neighbours of @p vertex with @p color and in-degree
-     *        >= @p min_degree.
-     * @param graph      Host graph to query.
-     * @param vertex     Centre vertex.
-     * @param color      Required vertex color.
-     * @param min_degree Minimum in-degree of accepted neighbours.
-     * @return Set of qualifying in-neighbour IDs.
-     */
-    static VertexSet colored_neighborhood_in(const ColoredGraph& graph, uint32_t vertex,
-                                             uint32_t color, uint32_t min_degree);
+                                          uint32_t color, uint32_t min_degree, bool reversed);
 
     /**
      * @brief Returns vertices that are both in the out-neighbourhood and the
@@ -322,68 +291,53 @@ private:
                                       uint32_t subgraph_vertex, uint32_t graph_vertex) const;
 
     /**
-     * @brief Removes from @p restriction candidates that are not neighbours of
-     *        @p graph_vertex, recording removals in @p inverse_entry.
-     * @param graph        Host graph.
-     * @param graph_vertex The currently matched graph vertex.
-     * @param restriction  Candidate set to filter (modified in place).
-     * @param inverse_entry Records removed candidates for rollback.
-     */
-    static void filter_restriction_undirected(const ColoredGraph& graph, uint32_t graph_vertex,
-                                              VertexSet& restriction, VertexSet& inverse_entry);
-
-    /**
      * @brief Removes candidates from a directed restriction that violate
      *        out-edge or in-edge constraints imposed by the current match.
      * @param context      Current search context.
      * @param params       Grouped filter parameters.
      * @param restriction  Candidate set to filter (modified in place).
-     * @param inverse_entry Records removed candidates for rollback.
+     * @param inverse_restrictions_entry Records removed candidates for rollback.
      */
     static void filter_restriction_directed(const SearchContext& context,
                                             const FilterParams& params, VertexSet& restriction,
-                                            VertexSet& inverse_entry);
+                                            VertexSet& inverse_restrictions_entry);
 
     /**
      * @brief Dispatches to directed or undirected restriction filtering.
      * @param context      Current search context.
      * @param params       Grouped filter parameters.
      * @param restriction  Candidate set to filter (modified in place).
-     * @param inverse_entry Records removed candidates for rollback.
+     * @param inverse_restrictions_entry Records removed candidates for rollback.
      */
     void filter_restriction(const SearchContext& context, const FilterParams& params,
-                            VertexSet& restriction, VertexSet& inverse_entry) const;
+                            VertexSet& restriction, VertexSet& inverse_restrictions_entry) const;
 
     /**
-     * @brief Removes candidates from @p restriction not reachable via out-edges
-     *        from @p graph_vertex, storing removals in @p inverse_entry.
+     * @brief Removes candidates from @p restriction that lack an edge to/from
+     *        @p graph_vertex in the given direction, recording removals in @p
+     * inverse_restrictions_entry.
+     *
+     * When @p reversed is false, checks is_edge(graph_vertex, candidate) — out-direction.
+     * When @p reversed is true, checks is_edge(candidate, graph_vertex) — in-direction.
+     *
      * @param graph        Host graph.
      * @param graph_vertex Centre graph vertex.
      * @param restriction  Candidate set to filter.
-     * @param inverse_entry Rollback store.
+     * @param inverse_restrictions_entry Rollback store.
+     * @param reversed     If true, filter by in-edges; otherwise out-edges.
      */
-    static void remove_non_out_neighbors(const ColoredGraph& graph, uint32_t graph_vertex,
-                                         VertexSet& restriction, VertexSet& inverse_entry);
+    static void remove_non_neighbors(const ColoredGraph& graph, uint32_t graph_vertex,
+                                     VertexSet& restriction, VertexSet& inverse_restrictions_entry,
+                                     bool reversed);
 
     /**
-     * @brief Removes candidates from @p restriction that have no in-edge to
-     *        @p graph_vertex, storing removals in @p inverse_entry.
-     * @param graph        Host graph.
-     * @param graph_vertex Centre graph vertex.
-     * @param restriction  Candidate set to filter.
-     * @param inverse_entry Rollback store.
-     */
-    static void remove_non_in_neighbors(const ColoredGraph& graph, uint32_t graph_vertex,
-                                        VertexSet& restriction, VertexSet& inverse_entry);
-
-    /**
-     * @brief Moves @p to_remove entries from @p restriction into @p inverse_entry.
+     * @brief Moves @p to_remove entries from @p restriction into @p inverse_restrictions_entry.
      * @param to_remove    Vertices to remove.
      * @param restriction  Source set (modified in place).
-     * @param inverse_entry Destination rollback set.
+     * @param inverse_restrictions_entry Destination rollback set.
      */
     static void apply_removal(const VertexSet& to_remove, VertexSet& restriction,
-                              VertexSet& inverse_entry);
+                              VertexSet& inverse_restrictions_entry);
 
     /**
      * @brief Collects all vertices adjacent to @p vertex via any edge direction.
@@ -419,10 +373,10 @@ private:
      * @param context    Search context.
      * @param params     Grouped filter parameters (neighbor ID in params.subgraph_neighbor).
      * @param inverse    Inverse map being built.
-     * @param is_empty   Set to true if the restriction becomes empty.
+     * @param any_candidate_set_empty   Set to true if the restriction becomes empty.
      */
     void update_restriction_entry(SearchContext& context, const FilterParams& params,
-                                  RestrictionMap& inverse, bool& is_empty) const;
+                                  RestrictionMap& inverse, bool& any_candidate_set_empty) const;
 
     /**
      * @brief Rolls back restrictions to their pre-update state.
@@ -450,10 +404,10 @@ private:
     /**
      * @brief Continues the search after restrictions have been updated.
      * @param context  Search context.
-     * @param is_empty True if any restriction became empty (prune immediately).
+     * @param any_candidate_set_empty True if any restriction became empty (prune immediately).
      * @return Total matches found in this branch.
      */
-    uint64_t expand_if_feasible(SearchContext& context, bool is_empty) const;
+    uint64_t expand_if_feasible(SearchContext& context, bool any_candidate_set_empty) const;
 
     /**
      * @brief Expands the search from the current partial match.
@@ -468,10 +422,18 @@ private:
     /**
      * @brief Core backtracking routine — tries matching @p graph_vertex to
      *        @p subgraph_vertex and recurses.
+     *
+     * Returns 0 immediately if the assignment is invalid (graph vertex already
+     * used, induced constraint violated, or early-stop flag set). Returns 1 when
+     * this assignment completes the last unmatched subgraph vertex. Otherwise
+     * recurses and returns the total count of complete matches found in the
+     * subtree rooted at this assignment.
+     *
      * @param context         Per-thread search state.
      * @param graph_vertex    Candidate graph vertex to match.
      * @param subgraph_vertex Target subgraph vertex.
-     * @return Number of complete matches found in this subtree.
+     * @return 0 if invalid or no matches; 1 if this completes a match;
+     *         sum of matches found across all deeper recursive calls otherwise.
      */
     uint64_t recursion_search(SearchContext& context, uint32_t graph_vertex,
                               uint32_t subgraph_vertex) const;
@@ -481,6 +443,7 @@ private:
     bool m_induced;
     std::ostream& m_output;
     mutable std::mutex m_output_mutex;
+    mutable std::atomic<bool> m_stop{false};
 };
 
 }  // namespace sgf
