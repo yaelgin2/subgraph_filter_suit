@@ -1,9 +1,10 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "IPatternPreprocessor.h"
 #include "LoggerHandler.h"
-#include "MultiGraphPatternFinder.h"
 
+#include <cstdint>
 #include <vector>
 
 namespace sgf
@@ -17,29 +18,33 @@ namespace sgf
  * common across the graph library. The resulting patterns are used downstream
  * by the pattern filtering stage to eliminate unlikely subgraph candidates.
  */
-class MultiGraphPatternPreprocessor
+class MultiGraphPatternPreprocessor : public IPatternPreprocessor
 {
 public:
     /**
      * @brief Construct a preprocessor for a given graph library.
-     * @param graph_library Non-owning reference to the library of graphs to mine patterns from.
-     * @param is_directed True if the graphs are directed.
-     * @param logger Optional logger; defaults to a no-op handler.
+     * @param graph_library  Non-owning reference to the library of graphs to mine patterns from.
+     * @param is_directed    True if the graphs are directed.
+     * @param pattern_number Number of patterns to extract.
+     * @param alive_precent  Minimum fraction of graphs (0–100) a pattern must appear in.
+     * @param logger         Optional logger; defaults to a no-op handler.
      */
     MultiGraphPatternPreprocessor(std::vector<ColoredGraph>& graph_library, bool is_directed,
+                                  uint32_t pattern_number, uint32_t alive_precent,
                                   LoggerHandler logger = LoggerHandler::null());
 
     /**
-     * @brief Mine a fixed number of patterns from the library.
-     * @param pattern_number Number of patterns to extract.
-     * @param alive_precent Minimum fraction of graphs (0–100) a pattern must appear in.
-     * @return Vector of mined patterns, each paired with the set of graph indices it covers.
+     * @brief Mine @p m_pattern_number patterns from the library.
+     * @return Vector of mined patterns, each paired with the set of library graph indices it
+     * covers.
      */
-    std::vector<MultiGraphPatternResult> calculate(uint32_t pattern_number, uint32_t alive_precent);
+    std::vector<PatternPreprocessorResult> calculate() override;
 
 private:
     std::vector<ColoredGraph>& m_graph_library;  ///< Library of graphs to mine.
     const bool M_IS_DIRECTED;                    ///< Whether graphs are directed.
+    const uint32_t M_PATTERN_NUMBER;             ///< Number of patterns to extract.
+    const uint32_t M_ALIVE_PRECENT;              ///< Minimum coverage fraction (0–100).
     LoggerHandler m_logger;                      ///< Logger for runtime messages.
 };
 
