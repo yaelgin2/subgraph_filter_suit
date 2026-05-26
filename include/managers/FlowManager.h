@@ -128,7 +128,9 @@ public:
                                        GraphReaderType reader_type, std::string& output_path,
                                        PatternWriterType output_type,
                                        const std::string& log_file_path, uint32_t preprocess_multigraph,
-                                       bool preprocess_singlegraph_results_file, int64_t preprocess_singlegraph);
+                                       bool preprocess_singlegraph_results_file, int64_t preprocess_singlegraph,
+                                       std::string background_graph_path, double score_threshold,
+                                        const SingleGraphFinderConfig config);
 
     /// @brief Run the pattern filter stage.
     static void pattern_filter_run();
