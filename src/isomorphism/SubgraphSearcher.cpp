@@ -1,15 +1,18 @@
 #include "SubgraphSearcher.h"
 
 #include "ColoredGraph.h"
+#include "LogLevel.h"
+#include "LoggerHandler.h"
 #include "MatchFoundException.h"
+#include "MatchOutputWriter.h"
 #include "PriorPolicy.h"
 
 #include <atomic>
 #include <cstdint>
-#include <mutex>
-#include <ostream>
+#include <memory>
 #include <random>
 #include <sstream>
+#include <string>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -47,11 +50,14 @@ uint32_t random_vertex(const uint32_t count)
 }  // namespace
 
 SubgraphSearcher::SubgraphSearcher(const PriorPolicy policy, const bool is_directed,
-                                   const bool is_induced, std::ostream& output)
+                                   const bool is_induced,
+                                   std::unique_ptr<MatchOutputWriter> match_writer,
+                                   LoggerHandler logger)
     : m_policy(policy)
     , m_directed(is_directed)
     , m_induced(is_induced)
-    , m_output(output)
+    , m_match_writer(std::move(match_writer))
+    , m_logger(std::move(logger))
 {
 }
 
@@ -284,8 +290,7 @@ void SubgraphSearcher::write_match(SearchContext& context, const uint32_t graph_
     }
     oss << "}";
     context.m_path.erase(graph_vertex);
-    const std::lock_guard<std::mutex> lock{m_output_mutex};
-    m_output << oss.str() << "\n";
+    m_match_writer->write_match(oss.str());
     if (context.m_stop_after_first)
     {
         throw MatchFoundException{};
@@ -616,6 +621,13 @@ uint64_t SubgraphSearcher::expand_search(SearchContext& context, const uint32_t 
 uint64_t SubgraphSearcher::recursion_search(SearchContext& context, const uint32_t graph_vertex,
                                             const uint32_t subgraph_vertex) const
 {
+    if (!m_logger.is_null())
+    {
+        const uint32_t depth = static_cast<uint32_t>(context.m_chosen.size());
+        m_logger.log(LogLevel::TRACE, "depth=" + std::to_string(depth) +
+                                          " graph_vertex=" + std::to_string(graph_vertex) +
+                                          " subgraph_vertex=" + std::to_string(subgraph_vertex));
+    }
     if (m_stop.load(std::memory_order_relaxed))
     {
         return 0ULL;

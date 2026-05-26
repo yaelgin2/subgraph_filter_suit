@@ -1,13 +1,15 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "LoggerHandler.h"
+#include "MatchOutputWriter.h"
 #include "PriorPolicy.h"
 
 #include <atomic>
 #include <cstdint>
 #include <limits>
-#include <mutex>
-#include <ostream>
+#include <memory>
+#include <string>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -32,12 +34,14 @@ class SubgraphSearcher
 public:
     /**
      * @brief Constructs a SubgraphSearcher.
-     * @param policy     Vertex ordering heuristic for the search.
-     * @param is_directed Whether the graphs are directed.
-     * @param is_induced  Whether to enforce induced-subgraph semantics.
-     * @param output     Stream to which matches are written.
+     * @param policy       Vertex ordering heuristic for the search.
+     * @param is_directed  Whether the graphs are directed.
+     * @param is_induced   Whether to enforce induced-subgraph semantics.
+     * @param match_writer Owns and writes all match output.
+     * @param logger       Logger for search diagnostics (depth, vertex pairs).
      */
-    SubgraphSearcher(PriorPolicy policy, bool is_directed, bool is_induced, std::ostream& output);
+    SubgraphSearcher(PriorPolicy policy, bool is_directed, bool is_induced,
+                     std::unique_ptr<MatchOutputWriter> match_writer, LoggerHandler logger);
 
     SubgraphSearcher(const SubgraphSearcher&) = delete;
     SubgraphSearcher& operator=(const SubgraphSearcher&) = delete;
@@ -441,8 +445,8 @@ private:
     PriorPolicy m_policy;
     bool m_directed;
     bool m_induced;
-    std::ostream& m_output;
-    mutable std::mutex m_output_mutex;
+    std::unique_ptr<MatchOutputWriter> m_match_writer;
+    LoggerHandler m_logger;
     mutable std::atomic<bool> m_stop{false};
 };
 

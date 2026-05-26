@@ -1,11 +1,14 @@
 #include "SubgraphSearcher.h"
 
 #include "ColoredGraph.h"
+#include "LoggerHandler.h"
+#include "MatchOutputWriter.h"
 #include "PriorPolicy.h"
 
 #include <cstdint>
 #include <gtest/gtest.h>
-#include <sstream>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -76,6 +79,42 @@ ColoredGraph make_directed_single_edge()
 }
 
 /**
+ * @brief MatchOutputWriter that captures written matches into an in-memory string.
+ *
+ * Used in tests to inspect match output without touching the filesystem.
+ */
+class StringMatchOutputWriter : public MatchOutputWriter
+{
+public:
+    StringMatchOutputWriter() = default;
+
+    /**
+     * @brief Appends @p match and a newline to the internal capture buffer.
+     * @param match Formatted match string.
+     */
+    void write_match(const std::string& match)
+    {
+        const std::lock_guard<std::mutex> lock{m_capture_mutex};
+        m_captured += match;
+        m_captured += "\n";
+    }
+
+    /**
+     * @brief Returns the full captured output.
+     * @return All match lines concatenated.
+     */
+    [[nodiscard]] std::string captured() const
+    {
+        const std::lock_guard<std::mutex> lock{m_capture_mutex};
+        return m_captured;
+    }
+
+private:
+    std::string m_captured;
+    mutable std::mutex m_capture_mutex;
+};
+
+/**
  * @brief Counts newlines in @p text as a proxy for match count.
  * @param text Output string from the searcher.
  * @return Number of matches (newlines).
@@ -93,6 +132,15 @@ uint64_t count_matches(const std::string& text)
     return count;
 }
 
+/**
+ * @brief Creates a null MatchOutputWriter for tests that only check match count.
+ * @return unique_ptr to a StringMatchOutputWriter (output ignored).
+ */
+std::unique_ptr<MatchOutputWriter> make_null_writer()
+{
+    return std::make_unique<StringMatchOutputWriter>();
+}
+
 }  // namespace
 
 // ── find_all — basic match counting ──────────────────────────────────────────
@@ -107,8 +155,8 @@ TEST(SubgraphSearcherTest, find_all_single_vertex_subgraph)
     const std::vector<uint32_t> single_color{0U};
     std::vector<std::pair<uint32_t, uint32_t>> no_edges;
     ColoredGraph subgraph{1U, no_edges, single_color};
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, make_null_writer(),
+                                    LoggerHandler::null()};
     const uint64_t matches = searcher.find_all(graph, subgraph);
     EXPECT_EQ(matches, 4ULL);
 }
@@ -121,11 +169,13 @@ TEST(SubgraphSearcherTest, find_all_edge_in_triangle)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
     const ColoredGraph edge_sub = make_single_edge(0U);
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    std::unique_ptr<StringMatchOutputWriter> writer = std::make_unique<StringMatchOutputWriter>();
+    StringMatchOutputWriter* capture = writer.get();
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, std::move(writer),
+                                    LoggerHandler::null()};
     const uint64_t matches = searcher.find_all(triangle, edge_sub);
     EXPECT_EQ(matches, 6ULL);
-    EXPECT_EQ(count_matches(output.str()), 6ULL);
+    EXPECT_EQ(count_matches(capture->captured()), 6ULL);
 }
 
 /**
@@ -135,8 +185,8 @@ TEST(SubgraphSearcherTest, find_all_edge_in_triangle)
 TEST(SubgraphSearcherTest, find_all_triangle_in_triangle)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, make_null_writer(),
+                                    LoggerHandler::null()};
     const uint64_t matches = searcher.find_all(triangle, triangle);
     EXPECT_EQ(matches, 6ULL);
 }
@@ -148,8 +198,8 @@ TEST(SubgraphSearcherTest, find_all_k4_in_k3_is_zero)
 {
     const ColoredGraph k3 = make_complete_graph(3U);
     const ColoredGraph k4 = make_complete_graph(4U);
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, make_null_writer(),
+                                    LoggerHandler::null()};
     const uint64_t matches = searcher.find_all(k3, k4);
     EXPECT_EQ(matches, 0ULL);
 }
@@ -162,8 +212,8 @@ TEST(SubgraphSearcherTest, find_all_color_mismatch_is_zero)
 {
     const ColoredGraph graph = make_complete_graph(3U);
     const ColoredGraph mismatch_sub = make_single_edge(1U);
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, make_null_writer(),
+                                    LoggerHandler::null()};
     const uint64_t matches = searcher.find_all(graph, mismatch_sub);
     EXPECT_EQ(matches, 0ULL);
 }
@@ -183,8 +233,8 @@ TEST(SubgraphSearcherTest, find_all_all_policies_same_count)
         PriorPolicy::CONSTANT, PriorPolicy::RANDOM, PriorPolicy::SUBGRAPH_DEGREE};
     for (const PriorPolicy policy : policies)
     {
-        std::ostringstream output;
-        const SubgraphSearcher searcher{policy, false, false, output};
+        const SubgraphSearcher searcher{policy, false, false, make_null_writer(),
+                                        LoggerHandler::null()};
         EXPECT_EQ(searcher.find_all(triangle, triangle), EXPECTED)
             << "policy " << static_cast<uint32_t>(policy);
     }
@@ -200,8 +250,8 @@ TEST(SubgraphSearcherTest, find_all_directed_single_edge_one_match)
 {
     const ColoredGraph directed_graph = make_directed_single_edge();
     const ColoredGraph directed_sub = make_directed_single_edge();
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false, make_null_writer(),
+                                    LoggerHandler::null()};
     const uint64_t matches = searcher.find_all(directed_graph, directed_sub);
     EXPECT_EQ(matches, 1ULL);
 }
@@ -218,12 +268,12 @@ TEST(SubgraphSearcherTest, find_all_directed_one_match_vs_undirected_two)
     const ColoredGraph directed_sub = make_directed_single_edge();
     const ColoredGraph undirected_sub = make_single_edge(0U);
 
-    std::ostringstream dir_out;
-    const SubgraphSearcher dir_searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false, dir_out};
+    const SubgraphSearcher dir_searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false,
+                                        make_null_writer(), LoggerHandler::null()};
     EXPECT_EQ(dir_searcher.find_all(directed_graph, directed_sub), 1ULL);
 
-    std::ostringstream undir_out;
-    const SubgraphSearcher undir_searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, undir_out};
+    const SubgraphSearcher undir_searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false,
+                                          make_null_writer(), LoggerHandler::null()};
     EXPECT_EQ(undir_searcher.find_all(undirected_graph, undirected_sub), 2ULL);
 }
 
@@ -238,8 +288,8 @@ TEST(SubgraphSearcherTest, find_all_induced_edge_in_triangle)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
     const ColoredGraph edge_sub = make_single_edge(0U);
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, true, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, true, make_null_writer(),
+                                    LoggerHandler::null()};
     const uint64_t matches = searcher.find_all(triangle, edge_sub);
     // Induced: every graph-neighbor of v_g that is already matched must be a subgraph-neighbor.
     // The two matched vertices have each other as a common neighbor that's already matched,
@@ -254,8 +304,8 @@ TEST(SubgraphSearcherTest, find_all_induced_edge_in_triangle)
 TEST(SubgraphSearcherTest, find_all_induced_triangle_in_triangle)
 {
     const ColoredGraph triangle = make_complete_graph(3U);
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, true, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, true, make_null_writer(),
+                                    LoggerHandler::null()};
     const uint64_t matches = searcher.find_all(triangle, triangle);
     EXPECT_EQ(matches, 6ULL);
 }
@@ -270,8 +320,8 @@ TEST(SubgraphSearcherTest, find_all_empty_host_graph)
     std::vector<std::pair<uint32_t, uint32_t>> no_edges;
     const ColoredGraph empty_graph{0U, no_edges, {}};
     const ColoredGraph edge_sub = make_single_edge(0U);
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false, make_null_writer(),
+                                    LoggerHandler::null()};
     EXPECT_EQ(searcher.find_all(empty_graph, edge_sub), 0ULL);
 }
 
@@ -291,12 +341,12 @@ TEST(SubgraphSearcherTest, find_all_directed_induced_path_matches)
     const ColoredGraph dir_path{3U, edges, colors, true};
     const ColoredGraph dir_edge = make_directed_single_edge();
 
-    std::ostringstream non_induced_out;
-    const SubgraphSearcher non_induced{PriorPolicy::SUBGRAPH_DEGREE, true, false, non_induced_out};
+    const SubgraphSearcher non_induced{PriorPolicy::SUBGRAPH_DEGREE, true, false,
+                                       make_null_writer(), LoggerHandler::null()};
     EXPECT_EQ(non_induced.find_all(dir_path, dir_edge), 2ULL);
 
-    std::ostringstream induced_out;
-    const SubgraphSearcher induced{PriorPolicy::SUBGRAPH_DEGREE, true, true, induced_out};
+    const SubgraphSearcher induced{PriorPolicy::SUBGRAPH_DEGREE, true, true, make_null_writer(),
+                                   LoggerHandler::null()};
     EXPECT_EQ(induced.find_all(dir_path, dir_edge), 2ULL);
 }
 
@@ -315,8 +365,8 @@ TEST(SubgraphSearcherTest, find_all_directed_induced_two_cycle_no_match_in_path)
     const std::vector<uint32_t> cycle_colors{0U, 0U};
     const ColoredGraph two_cycle{2U, cycle_edges, cycle_colors, true};
 
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, true, output};
+    const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, true, make_null_writer(),
+                                    LoggerHandler::null()};
     EXPECT_EQ(searcher.find_all(dir_path, two_cycle), 0ULL);
 }
 
@@ -334,8 +384,8 @@ TEST(SubgraphSearcherTest, find_all_path3_in_k4_non_induced)
 {
     const ColoredGraph k4 = make_complete_graph(4U);
     const ColoredGraph path3 = make_path_graph(3U);
-    std::ostringstream output;
-    const SubgraphSearcher searcher{PriorPolicy::CONSTANT, false, false, output};
+    const SubgraphSearcher searcher{PriorPolicy::CONSTANT, false, false, make_null_writer(),
+                                    LoggerHandler::null()};
     const uint64_t matches = searcher.find_all(k4, path3);
     EXPECT_EQ(matches, 24ULL);
 }
