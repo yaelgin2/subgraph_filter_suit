@@ -3,9 +3,7 @@
 #include "FlowManager.h"
 
 // NOLINTNEXTLINE(misc-include-cleaner)
-#include <boost/program_options/options_description.hpp>
-// NOLINTNEXTLINE(misc-include-cleaner)
-#include <boost/program_options/variables_map.hpp>
+#include <boost/program_options.hpp>
 #include <optional>
 #include <string>
 
@@ -29,16 +27,16 @@ struct PreprocessArgs
  */
 struct FilterArgs
 {
-    std::string m_motif_cache_file;                               ///< Motif cache file path.
-    std::string m_path_cache_file;                                ///< Path cache file path.
-    CacheManagerType m_cache_type{CacheManagerType::BINARY};      ///< Cache format.
-    std::string m_graph_dir;                                      ///< Query graphs directory.
-    GraphReaderType m_graph_input_type{GraphReaderType::GRAPHML}; ///< Graph file format.
-    std::string m_result_folder;                                  ///< Results output directory.
+    std::string m_motif_cache_file;                                ///< Motif cache file path.
+    std::string m_path_cache_file;                                 ///< Path cache file path.
+    CacheManagerType m_cache_type{CacheManagerType::BINARY};       ///< Cache format.
+    std::string m_graph_dir;                                       ///< Query graphs directory.
+    GraphReaderType m_graph_input_type{GraphReaderType::GRAPHML};  ///< Graph file format.
+    std::string m_result_folder;                                   ///< Results output directory.
     ResultOutputType m_result_type{ResultOutputType::JSON};        ///< Results format.
-    std::string m_log_file_path;                                  ///< Optional log file path.
-    bool m_cache_graph_enumeration{false};  ///< Cache query graph enumeration after computing.
-    std::string m_graph_cache_dir;          ///< Directory for enumeration cache.
+    std::string m_log_file_path;                                   ///< Optional log file path.
+    bool m_cache_graph_enumeration{false};      ///< Cache query graph enumeration after computing.
+    std::string m_graph_cache_dir;              ///< Directory for enumeration cache.
     std::string m_load_motif_graph_cache_path;  ///< Existing motif cache path; empty = compute.
     std::string m_load_path_graph_cache_path;   ///< Existing path cache path; empty = compute.
 };
@@ -118,6 +116,18 @@ private:
     static boost::program_options::options_description build_options();
 
     /**
+     * @brief Builds the options descriptor for preprocessing-stage flags.
+     * @return options_description for --library-dir, --reader-type, --cache-dir.
+     */
+    static boost::program_options::options_description build_preprocess_options();
+
+    /**
+     * @brief Builds the options descriptor for filter-stage flags.
+     * @return options_description for all --filter related flags.
+     */
+    static boost::program_options::options_description build_filter_options();
+
+    /**
      * @brief Parses argc/argv via Boost.PO, wrapping any parse error.
      * @param argc Argument count.
      * @param argv Argument values.
@@ -126,8 +136,7 @@ private:
      * @throws SgfInvalidArgumentException on unknown option or bad syntax.
      */
     static boost::program_options::variables_map
-    parse_raw(int argc, char* argv[],
-              const boost::program_options::options_description& desc);
+    parse_raw(int argc, char* argv[], const boost::program_options::options_description& desc);
 
     /**
      * @brief Constructs a CliArgs from the parsed variables map.
@@ -142,8 +151,7 @@ private:
      * @return Populated PreprocessArgs.
      * @throws SgfInvalidArgumentException for missing required flags.
      */
-    static PreprocessArgs
-    parse_preprocess_args(const boost::program_options::variables_map& vm);
+    static PreprocessArgs parse_preprocess_args(const boost::program_options::variables_map& vm);
 
     /**
      * @brief Populates filter-stage args from the parsed map.
@@ -161,6 +169,20 @@ private:
     static void validate_mode_flags(const CliArgs& args);
 
     /**
+     * @brief Validates that exactly one of --preprocess / --filter is set.
+     * @param args Parsed CLI arguments.
+     * @throws SgfInvalidArgumentException if validation fails.
+     */
+    static void validate_mode_selection(const CliArgs& args);
+
+    /**
+     * @brief Validates that at least one of --motifs / --paths is set.
+     * @param args Parsed CLI arguments.
+     * @throws SgfInvalidArgumentException if validation fails.
+     */
+    static void validate_feature_selection(const CliArgs& args);
+
+    /**
      * @brief Validates filter-specific flag combinations.
      * @param filter     Parsed filter arguments.
      * @param use_motifs Whether --motifs was specified.
@@ -169,6 +191,13 @@ private:
      */
     static void validate_filter_args(const FilterArgs& filter, const bool use_motifs,
                                      const bool use_paths);
+
+    /**
+     * @brief Validates that --cache-enumeration flags are mutually consistent.
+     * @param filter Parsed filter arguments.
+     * @throws SgfInvalidArgumentException if validation fails.
+     */
+    static void validate_cache_enumeration_flags(const FilterArgs& filter);
 
     /**
      * @brief Throws if a feature is enabled but its required cache file is empty.

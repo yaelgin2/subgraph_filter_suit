@@ -29,8 +29,8 @@ public:
      *                      library position.
      * @param logger        Optional logger for filter diagnostics.
      */
-    GroupEnumerationGraphFilter(EnumerationResultVector library_cache,
-                                LoggerHandler logger = LoggerHandler::null());
+    explicit GroupEnumerationGraphFilter(EnumerationResultVector library_cache,
+                                         LoggerHandler logger = LoggerHandler::null());
 
     ~GroupEnumerationGraphFilter() = default;
 

@@ -1,5 +1,11 @@
 #include "LoggerBundle.h"
 
+#include "FileLogger.h"
+#include "LoggerHandler.h"
+
+#include <memory>
+#include <string>
+
 namespace sgf
 {
 

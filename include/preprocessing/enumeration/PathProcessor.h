@@ -183,7 +183,7 @@ private:
          * @brief Edge traversal direction for depth-2 expansion (false = outgoing,
          * true = incoming).
          */
-        bool m_direction;
+        bool m_direction{false};
     };
 
     /**

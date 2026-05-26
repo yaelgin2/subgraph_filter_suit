@@ -95,10 +95,10 @@ public:
      * @param preprocess_paths  Preprocess path signatures.
      * @param preprocess_motifs Preprocess motif signatures.
      */
-    static void enumerator_preprocess_run(const std::string& input_path, const bool is_directed,
-                                          const GraphReaderType reader_type,
-                                          std::string& output_path, CacheManagerType output_type,
-                                          std::string log_file_path, bool preprocess_paths,
+    static void enumerator_preprocess_run(const std::string& input_path, bool is_directed,
+                                          GraphReaderType reader_type, std::string& output_path,
+                                          CacheManagerType output_type,
+                                          const std::string& log_file_path, bool preprocess_paths,
                                           bool preprocess_motifs);
 
     /**
@@ -115,15 +115,13 @@ public:
      * @param filter_paths       Filter by path signatures.
      * @param filter_motifs      Filter by motif signatures.
      */
-    static void enumerator_filter_run(const std::string& graph_input_path, const bool is_directed,
-                                      const GraphReaderType reader_type,
-                                      const std::string& motif_cache_file,
-                                      const std::string& path_cache_file,
-                                      const CacheManagerType cache_reader_type,
-                                      std::string& output_folder, ResultOutputType output_type,
-                                      std::string log_file_path, bool filter_paths,
-                                      bool filter_motifs,
-                                      const GraphEnumerationCacheConfig& graph_cache_config);
+    static void
+    enumerator_filter_run(const std::string& graph_input_path, bool is_directed,
+                          GraphReaderType reader_type, const std::string& motif_cache_file,
+                          const std::string& path_cache_file, CacheManagerType cache_reader_type,
+                          std::string& output_folder, ResultOutputType output_type,
+                          const std::string& log_file_path, bool filter_paths, bool filter_motifs,
+                          const GraphEnumerationCacheConfig& graph_cache_config);
 
     /// @brief Run the pattern preprocessing stage.
     static void pattern_preprocess_run();
@@ -168,19 +166,17 @@ private:
      * @return Pair of (graph names, enumerations).
      */
     static EnumerationResultVector
-    get_graph_enumeration(const bool write_to_cache, std::string cache_base_name,
-                          std::shared_ptr<ICacheIOManager> cache_manager,
+    get_graph_enumeration(bool write_to_cache, const std::string& cache_base_name,
+                          const std::shared_ptr<ICacheIOManager>& cache_manager,
                           EnumerationPreprocessManager& preprocess_manager,
                           const LibraryData& library, const PreprocessorFactory& factory,
                           const std::string& timestamp);
 
-    static void run_enumeration_filter_stage(const std::string& result_file_base_name,
-                                             const EnumerationResultVector& graphs_enumeration,
-                                             const ICacheIOManager& lib_cache_manager,
-                                             const std::string& lib_cache_path,
-                                             IFilterOutputManager& filter_results_writer,
-                                             const LibraryData& library,
-                                             const std::string& timestamp, LoggerHandler logger);
+    static void run_enumeration_filter_stage(
+        const std::string& result_file_base_name, const EnumerationResultVector& graphs_enumeration,
+        const ICacheIOManager& lib_cache_manager, const std::string& lib_cache_path,
+        IFilterOutputManager& filter_results_writer, const LibraryData& library,
+        const std::string& timestamp, const LoggerHandler& logger);
 
     /**
      * @brief Returns the current local time as a filename-safe string.
@@ -197,8 +193,8 @@ private:
      * @param reader_type Format of the graph files.
      * @return Loaded library data.
      */
-    static LibraryData load_library(const std::string& path, const GraphReaderType reader_type,
-                                    const bool is_directed, LoggerHandler logger);
+    static LibraryData load_library(const std::string& path, GraphReaderType reader_type,
+                                    bool is_directed, const LoggerHandler& logger);
 
     /**
      * @brief Construct a graph reader for the given format.
@@ -253,13 +249,13 @@ private:
      * @param logger               Logger for diagnostics.
      */
     static void
-    enumerate_and_filter(const std::string& library_cache_file, const bool load_graph_cache,
+    enumerate_and_filter(const std::string& library_cache_file, bool load_graph_cache,
                          const std::string& graphs_cache_path, const std::string& cache_base_name,
-                         const PreprocessorFactory& factory,
-                         const CacheManagerType cache_reader_type, LibraryData& graphs_to_find_in,
+                         const PreprocessorFactory& factory, CacheManagerType cache_reader_type,
+                         LibraryData& graphs_to_find_in,
                          const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
                          IFilterOutputManager& filter_results_writer, const std::string& timestamp,
-                         LoggerHandler logger);
+                         const LoggerHandler& logger);
 };
 
 }  // namespace sgf

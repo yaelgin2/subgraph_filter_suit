@@ -31,8 +31,7 @@ void run_filter(const CliArgs& args)
     std::string result_folder = args.m_filter.m_result_folder;
     const GraphEnumerationCacheConfig cache_config{
         args.m_filter.m_cache_graph_enumeration, args.m_filter.m_graph_cache_dir,
-        args.m_filter.m_load_motif_graph_cache_path,
-        args.m_filter.m_load_path_graph_cache_path};
+        args.m_filter.m_load_motif_graph_cache_path, args.m_filter.m_load_path_graph_cache_path};
     FlowManager::enumerator_filter_run(
         args.m_filter.m_graph_dir, args.m_is_directed, args.m_filter.m_graph_input_type,
         args.m_filter.m_motif_cache_file, args.m_filter.m_path_cache_file,
@@ -50,8 +49,7 @@ int run_pipeline(const int argc, char* argv[])
 {
     try
     {
-        const std::optional<CliArgs> cli_args =
-            SgfGraphEnumeratorArgumentParser::parse(argc, argv);
+        const std::optional<CliArgs> cli_args = SgfGraphEnumeratorArgumentParser::parse(argc, argv);
         if (!cli_args.has_value())
         {
             return 0;
