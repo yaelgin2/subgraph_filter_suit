@@ -106,7 +106,7 @@ bool findSubgraph(const Graph& graph, const Graph& query);
 
 All code must compile cleanly under MSVC (CI runs the `build-and-test-msvc` job). MSVC promotes several warnings to errors that GCC/Clang allow implicitly:
 
-- **No implicit narrowing conversions** — MSVC C4267/C4244 are errors. Any conversion that may lose data (e.g. `size_t` → `uint32_t`, `double` → `float`) must use an explicit `static_cast`. Never rely on implicit truncation.
+- **No implicit narrowing conversions** — MSVC C4267/C4244 are errors. Any conversion that may lose data (e.g. `size_t` → `uint32_t`, `double` → `double`) must use an explicit `static_cast`. Never rely on implicit truncation.
 - **No signed/unsigned comparison without a cast** — use `static_cast` to align types before comparing.
 
 When mixing types (e.g. a `BoostGraph::vertex_descriptor` / `size_t` value passed to a function expecting `uint32_t`), always cast at the call site:
@@ -237,6 +237,7 @@ Each concrete exception class defines a **unique** `return_code()` used by CLI t
 | `InvalidArgumentException` | `include/exceptions/InvalidArgumentException.h` | 2 |
 | `GraphConstructionException` | `include/exceptions/GraphConstructionException.h` | 3 |
 | `EnumerationOverflowException` | `include/exceptions/EnumerationOverflowException.h` | 6 |
+| `MatchFoundException` | `include/exceptions/MatchFoundException.h` | 11 |
 
 When adding a new exception type, add it to this table and do not reuse an existing return code.
 
@@ -364,7 +365,7 @@ GitHub Actions (`.github/workflows/ci.yml`, on `develop` branch) runs on Linux a
 run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
 # clang-tidy step — add -p:
-run: find . -name '*.cpp' -not -path './build/*' | xargs clang-tidy -p build/
+run: find src -name '*.cpp' -not -path './build/*' | xargs clang-tidy -p build/
 ```
 
 Both `.clang-format` and `.clang-tidy` are picked up automatically by the tools — no extra flags needed to point at them.

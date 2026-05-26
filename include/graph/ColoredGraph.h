@@ -196,6 +196,20 @@ public:
      */
     bool is_directed() const;
 
+    /**
+     * @brief Returns the out-degree (or total degree for undirected) of @p vertex.
+     * @param vertex The vertex to measure.
+     * @return Number of out-edges.
+     */
+    uint32_t out_degree(uint32_t vertex) const;
+
+    /**
+     * @brief Returns the in-degree of @p vertex.
+     * @param vertex The vertex to measure.
+     * @return Number of in-edges (equals out_degree for undirected graphs).
+     */
+    uint32_t in_degree(uint32_t vertex) const;
+
 private:
     static constexpr uint32_t UNDIRECTED_EDGE_FACTOR = 2U;
 
