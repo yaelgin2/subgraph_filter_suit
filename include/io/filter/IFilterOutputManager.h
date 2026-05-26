@@ -47,7 +47,7 @@ public:
      * @param results   Filter result per library graph; true = pruned, false = survives.
      * @throws SgfPathExistsException if directory creation or file writing fails.
      */
-    void write(std::string base_filename, const std::vector<std::string>& filenames,
+    void write(const std::string& base_filename, const std::vector<std::string>& filenames,
                const FilterResult& results) const;
 
 protected:

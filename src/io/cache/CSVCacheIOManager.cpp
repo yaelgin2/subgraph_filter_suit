@@ -3,6 +3,7 @@
 #include "EnumerationPreprocessManager.h"
 #include "GraphConstructionException.h"
 #include "ICacheIOManager.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
 #include "LoggerHandler.h"
 #include "SgfPathExistsException.h"

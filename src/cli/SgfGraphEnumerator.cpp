@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <iostream>
 #include <optional>
+#include <string>
 
 namespace sgf
 {
@@ -45,6 +46,7 @@ void run_filter(const CliArgs& args)
  * @param argv Argument values from main.
  * @return 0 on success, non-zero on failure.
  */
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 int run_pipeline(const int argc, char* argv[])
 {
     try
@@ -73,7 +75,7 @@ int run_pipeline(const int argc, char* argv[])
 
 }  // namespace sgf
 
-// NOLINTNEXTLINE(bugprone-exception-escape)
+// NOLINTNEXTLINE(bugprone-exception-escape,cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 int main(const int argc, char* argv[])
 {
     return sgf::run_pipeline(argc, argv);

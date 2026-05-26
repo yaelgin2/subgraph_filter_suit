@@ -1,9 +1,15 @@
 #include "SgfGraphEnumeratorArgumentParser.h"
 
+#include "FlowManager.h"
 #include "SgfInvalidArgumentException.h"
 
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include <boost/program_options.hpp>
+#include <boost/program_options/errors.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <boost/program_options/value_semantic.hpp>
+#include <boost/program_options/variables_map.hpp>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -13,17 +19,18 @@ namespace po = boost::program_options;
 namespace sgf
 {
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 std::optional<CliArgs> SgfGraphEnumeratorArgumentParser::parse(const int argc, char* argv[])
 {
     const po::options_description desc = build_options();
-    const po::variables_map vm = parse_raw(argc, argv, desc);
-    const bool show_help = (vm.count(KEY_HELP) != 0U) || (argc == 1);
+    const po::variables_map variables_map = parse_raw(argc, argv, desc);
+    const bool show_help = (variables_map.count(KEY_HELP) != 0U) || (argc == 1);
     if (show_help)
     {
         std::cout << desc << '\n';
         return std::nullopt;
     }
-    const CliArgs cli_args = build_cli_args(vm);
+    CliArgs cli_args = build_cli_args(variables_map);
     validate_mode_flags(cli_args);
     return cli_args;
 }
@@ -91,67 +98,73 @@ po::options_description SgfGraphEnumeratorArgumentParser::build_filter_options()
     return desc;
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 po::variables_map SgfGraphEnumeratorArgumentParser::parse_raw(const int argc, char* argv[],
                                                               const po::options_description& desc)
 {
-    po::variables_map vm;
+    po::variables_map variables_map;
     try
     {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
-        po::notify(vm);
+        po::store(po::parse_command_line(argc, argv, desc), variables_map);
+        po::notify(variables_map);
     }
     catch (const po::error& ex)
     {
         throw SgfInvalidArgumentException(ex.what());
     }
-    return vm;
+    return variables_map;
 }
 
-CliArgs SgfGraphEnumeratorArgumentParser::build_cli_args(const po::variables_map& vm)
+CliArgs SgfGraphEnumeratorArgumentParser::build_cli_args(const po::variables_map& variables_map)
 {
     CliArgs result;
-    result.m_run_preprocess = vm.at(KEY_PREPROCESS).as<bool>();
-    result.m_run_filter = vm.at(KEY_FILTER).as<bool>();
-    result.m_use_motifs = vm.at(KEY_MOTIFS).as<bool>();
-    result.m_use_paths = vm.at(KEY_PATHS).as<bool>();
-    result.m_is_directed = vm.at(KEY_IS_DIRECTED).as<bool>();
+    result.m_run_preprocess = variables_map.at(KEY_PREPROCESS).as<bool>();
+    result.m_run_filter = variables_map.at(KEY_FILTER).as<bool>();
+    result.m_use_motifs = variables_map.at(KEY_MOTIFS).as<bool>();
+    result.m_use_paths = variables_map.at(KEY_PATHS).as<bool>();
+    result.m_is_directed = variables_map.at(KEY_IS_DIRECTED).as<bool>();
     if (result.m_run_preprocess)
     {
-        result.m_preprocess = parse_preprocess_args(vm);
+        result.m_preprocess = parse_preprocess_args(variables_map);
     }
     if (result.m_run_filter)
     {
-        result.m_filter = parse_filter_args(vm);
+        result.m_filter = parse_filter_args(variables_map);
     }
     return result;
 }
 
-PreprocessArgs SgfGraphEnumeratorArgumentParser::parse_preprocess_args(const po::variables_map& vm)
+PreprocessArgs
+SgfGraphEnumeratorArgumentParser::parse_preprocess_args(const po::variables_map& variables_map)
 {
     PreprocessArgs result;
-    result.m_library_dir = get_required_string(vm, KEY_LIBRARY_DIR);
-    result.m_cache_dir = get_required_string(vm, KEY_CACHE_DIR);
-    result.m_reader_type = parse_reader_type(get_required_string(vm, KEY_READER_TYPE));
-    result.m_cache_type = parse_cache_type(get_required_string(vm, KEY_CACHE_TYPE));
-    result.m_log_file_path = get_optional_string(vm, KEY_LOG_FILE_PATH);
+    result.m_library_dir = get_required_string(variables_map, KEY_LIBRARY_DIR);
+    result.m_cache_dir = get_required_string(variables_map, KEY_CACHE_DIR);
+    result.m_reader_type = parse_reader_type(get_required_string(variables_map, KEY_READER_TYPE));
+    result.m_cache_type = parse_cache_type(get_required_string(variables_map, KEY_CACHE_TYPE));
+    result.m_log_file_path = get_optional_string(variables_map, KEY_LOG_FILE_PATH);
     return result;
 }
 
-FilterArgs SgfGraphEnumeratorArgumentParser::parse_filter_args(const po::variables_map& vm)
+FilterArgs
+SgfGraphEnumeratorArgumentParser::parse_filter_args(const po::variables_map& variables_map)
 {
     FilterArgs result;
-    result.m_motif_cache_file = get_optional_string(vm, KEY_MOTIF_CACHE_FILE);
-    result.m_path_cache_file = get_optional_string(vm, KEY_PATH_CACHE_FILE);
-    result.m_cache_type = parse_cache_type(get_required_string(vm, KEY_CACHE_TYPE));
-    result.m_graph_dir = get_required_string(vm, KEY_GRAPH_DIR);
-    result.m_graph_input_type = parse_reader_type(get_required_string(vm, KEY_GRAPH_INPUT_TYPE));
-    result.m_result_folder = get_required_string(vm, KEY_RESULT_FOLDER);
-    result.m_result_type = parse_result_type(get_required_string(vm, KEY_RESULT_TYPE));
-    result.m_log_file_path = get_optional_string(vm, KEY_LOG_FILE_PATH);
-    result.m_cache_graph_enumeration = vm.at(KEY_CACHE_ENUMERATION).as<bool>();
-    result.m_graph_cache_dir = get_optional_string(vm, KEY_GRAPH_CACHE_DIR);
-    result.m_load_motif_graph_cache_path = get_optional_string(vm, KEY_LOAD_MOTIF_GRAPH_CACHE);
-    result.m_load_path_graph_cache_path = get_optional_string(vm, KEY_LOAD_PATH_GRAPH_CACHE);
+    result.m_motif_cache_file = get_optional_string(variables_map, KEY_MOTIF_CACHE_FILE);
+    result.m_path_cache_file = get_optional_string(variables_map, KEY_PATH_CACHE_FILE);
+    result.m_cache_type = parse_cache_type(get_required_string(variables_map, KEY_CACHE_TYPE));
+    result.m_graph_dir = get_required_string(variables_map, KEY_GRAPH_DIR);
+    result.m_graph_input_type =
+        parse_reader_type(get_required_string(variables_map, KEY_GRAPH_INPUT_TYPE));
+    result.m_result_folder = get_required_string(variables_map, KEY_RESULT_FOLDER);
+    result.m_result_type = parse_result_type(get_required_string(variables_map, KEY_RESULT_TYPE));
+    result.m_log_file_path = get_optional_string(variables_map, KEY_LOG_FILE_PATH);
+    result.m_cache_graph_enumeration = variables_map.at(KEY_CACHE_ENUMERATION).as<bool>();
+    result.m_graph_cache_dir = get_optional_string(variables_map, KEY_GRAPH_CACHE_DIR);
+    result.m_load_motif_graph_cache_path =
+        get_optional_string(variables_map, KEY_LOAD_MOTIF_GRAPH_CACHE);
+    result.m_load_path_graph_cache_path =
+        get_optional_string(variables_map, KEY_LOAD_PATH_GRAPH_CACHE);
     return result;
 }
 
@@ -230,24 +243,26 @@ void SgfGraphEnumeratorArgumentParser::require_cache_file(const bool enabled,
     }
 }
 
-std::string SgfGraphEnumeratorArgumentParser::get_required_string(const po::variables_map& vm,
-                                                                  const std::string& key)
+std::string
+SgfGraphEnumeratorArgumentParser::get_required_string(const po::variables_map& variables_map,
+                                                      const std::string& key)
 {
-    if (vm.count(key) == 0U)
+    if (variables_map.count(key) == 0U)
     {
         throw SgfInvalidArgumentException("Required flag '--" + key + "' is missing.");
     }
-    return vm.at(key).as<std::string>();
+    return variables_map.at(key).as<std::string>();
 }
 
-std::string SgfGraphEnumeratorArgumentParser::get_optional_string(const po::variables_map& vm,
-                                                                  const std::string& key)
+std::string
+SgfGraphEnumeratorArgumentParser::get_optional_string(const po::variables_map& variables_map,
+                                                      const std::string& key)
 {
-    if (vm.count(key) == 0U)
+    if (variables_map.count(key) == 0U)
     {
         return {};
     }
-    return vm.at(key).as<std::string>();
+    return variables_map.at(key).as<std::string>();
 }
 
 GraphReaderType SgfGraphEnumeratorArgumentParser::parse_reader_type(const std::string& type_str)

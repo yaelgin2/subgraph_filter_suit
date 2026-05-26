@@ -76,6 +76,7 @@ public:
      * @return Validated CliArgs, or std::nullopt if help was displayed.
      * @throws SgfInvalidArgumentException on invalid or missing arguments.
      */
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
     static std::optional<CliArgs> parse(int argc, char* argv[]);
 
 private:
@@ -135,31 +136,34 @@ private:
      * @return Populated variables_map.
      * @throws SgfInvalidArgumentException on unknown option or bad syntax.
      */
+    // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
     static boost::program_options::variables_map
     parse_raw(int argc, char* argv[], const boost::program_options::options_description& desc);
+    // NOLINTEND(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 
     /**
      * @brief Constructs a CliArgs from the parsed variables map.
-     * @param vm Parsed variables map.
+     * @param variables_map Parsed variables map.
      * @return Populated CliArgs.
      */
-    static CliArgs build_cli_args(const boost::program_options::variables_map& vm);
+    static CliArgs build_cli_args(const boost::program_options::variables_map& variables_map);
 
     /**
      * @brief Populates preprocessing-stage args from the parsed map.
-     * @param vm Parsed variables map.
+     * @param variables_map Parsed variables map.
      * @return Populated PreprocessArgs.
      * @throws SgfInvalidArgumentException for missing required flags.
      */
-    static PreprocessArgs parse_preprocess_args(const boost::program_options::variables_map& vm);
+    static PreprocessArgs
+    parse_preprocess_args(const boost::program_options::variables_map& variables_map);
 
     /**
      * @brief Populates filter-stage args from the parsed map.
-     * @param vm Parsed variables map.
+     * @param variables_map Parsed variables map.
      * @return Populated FilterArgs.
      * @throws SgfInvalidArgumentException for missing required flags.
      */
-    static FilterArgs parse_filter_args(const boost::program_options::variables_map& vm);
+    static FilterArgs parse_filter_args(const boost::program_options::variables_map& variables_map);
 
     /**
      * @brief Validates that mode/feature flags are consistent.
@@ -189,8 +193,7 @@ private:
      * @param use_paths  Whether --paths was specified.
      * @throws SgfInvalidArgumentException if validation fails.
      */
-    static void validate_filter_args(const FilterArgs& filter, const bool use_motifs,
-                                     const bool use_paths);
+    static void validate_filter_args(const FilterArgs& filter, bool use_motifs, bool use_paths);
 
     /**
      * @brief Validates that --cache-enumeration flags are mutually consistent.
@@ -206,27 +209,28 @@ private:
      * @param flag_name CLI flag name shown in the error message.
      * @throws SgfInvalidArgumentException if enabled and path is empty.
      */
-    static void require_cache_file(const bool enabled, const std::string& path,
-                                   const char* flag_name);
+    static void require_cache_file(bool enabled, const std::string& path, const char* flag_name);
 
     /**
      * @brief Returns the string value of a required option, throwing if absent.
-     * @param vm  Parsed variables map.
+     * @param variables_map Parsed variables map.
      * @param key Option key name.
      * @return Non-empty value string.
      * @throws SgfInvalidArgumentException if the option was not provided.
      */
-    static std::string get_required_string(const boost::program_options::variables_map& vm,
-                                           const std::string& key);
+    static std::string
+    get_required_string(const boost::program_options::variables_map& variables_map,
+                        const std::string& key);
 
     /**
      * @brief Returns the string value of an optional option, or empty string.
-     * @param vm  Parsed variables map.
+     * @param variables_map Parsed variables map.
      * @param key Option key name.
      * @return Value string, or empty if not provided.
      */
-    static std::string get_optional_string(const boost::program_options::variables_map& vm,
-                                           const std::string& key);
+    static std::string
+    get_optional_string(const boost::program_options::variables_map& variables_map,
+                        const std::string& key);
 
     /**
      * @brief Parses a graph reader type string.

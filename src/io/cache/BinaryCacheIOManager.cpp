@@ -9,7 +9,6 @@
 #include "SgfPathExistsException.h"
 
 #include <array>
-#include <climits>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>

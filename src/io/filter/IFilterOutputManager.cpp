@@ -3,6 +3,7 @@
 #include "FilteringUtils.h"
 #include "IOUtils.h"
 #include "LogLevel.h"
+#include "LoggerHandler.h"
 
 #include <filesystem>
 #include <string>
@@ -25,7 +26,7 @@ std::string IFilterOutputManager::build_full_path(const std::string& base_filena
     return full_path.string();
 }
 
-void IFilterOutputManager::write(std::string base_filename,
+void IFilterOutputManager::write(const std::string& base_filename,
                                  const std::vector<std::string>& filenames,
                                  const FilterResult& results) const
 {

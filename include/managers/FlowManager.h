@@ -250,8 +250,10 @@ private:
      */
     static void
     enumerate_and_filter(const std::string& library_cache_file, bool load_graph_cache,
-                         const std::string& graphs_cache_path, const std::string& cache_base_name,
+                         const std::string& graphs_cache_path,
+                         const std::string& run_type_file_base_name,
                          const PreprocessorFactory& factory, CacheManagerType cache_reader_type,
+                         const std::shared_ptr<ICacheIOManager>& graphs_cache_manager,
                          LibraryData& graphs_to_find_in,
                          const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
                          IFilterOutputManager& filter_results_writer, const std::string& timestamp,
