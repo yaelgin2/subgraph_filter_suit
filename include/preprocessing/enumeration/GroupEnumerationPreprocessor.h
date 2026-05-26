@@ -7,6 +7,7 @@
 #include "LoggerHandler.h"
 
 #include <cstdint>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -159,6 +160,16 @@ private:
      *
      * @param adjacency_matrix Output matrix to populate.
      */
+    /**
+     * @brief Returns the human-readable name of the entity type being enumerated.
+     *
+     * Used by calculate() to produce the "Finished enumerating N <entity_name>" log line.
+     * Derived classes return "motifs", "paths", etc.
+     *
+     * @return Entity name string, e.g. "motifs" or "paths".
+     */
+    [[nodiscard]] virtual std::string entity_name() const = 0;
+
     void graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix) const;
 
     /**

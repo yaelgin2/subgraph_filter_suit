@@ -2,6 +2,8 @@
 
 #include "FilteringUtils.h"
 #include "IOUtils.h"
+#include "LogLevel.h"
+#include "LoggerHandler.h"
 
 #include <filesystem>
 #include <string>
@@ -11,24 +13,27 @@
 namespace sgf
 {
 
-IFilterOutputManager::IFilterOutputManager(std::string folder, std::string base_filename)
+IFilterOutputManager::IFilterOutputManager(std::string folder, LoggerHandler logger)
     : m_folder(std::move(folder))
-    , m_base_filename(std::move(base_filename))
+    , m_logger(std::move(logger))
 {
 }
 
-std::string IFilterOutputManager::build_full_path() const
+std::string IFilterOutputManager::build_full_path(const std::string& base_filename) const
 {
     const std::filesystem::path full_path =
-        std::filesystem::path(m_folder) / (m_base_filename + "." + get_extension());
+        std::filesystem::path(m_folder) / (base_filename + "." + get_extension());
     return full_path.string();
 }
 
-void IFilterOutputManager::write(const std::vector<std::string>& filenames,
+void IFilterOutputManager::write(const std::string& base_filename,
+                                 const std::vector<std::string>& filenames,
                                  const FilterResult& results) const
 {
-    IOUtils::create_directory_if_needed(m_folder);
-    write_to_file(filenames, results, build_full_path());
+    const std::string full_path = build_full_path(base_filename);
+    IOUtils::create_directory_if_needed(std::filesystem::path(full_path).parent_path().string());
+    m_logger.log(LogLevel::INFO, "Writing filter results to '" + full_path + "'");
+    write_to_file(filenames, results, full_path);
 }
 
 }  // namespace sgf

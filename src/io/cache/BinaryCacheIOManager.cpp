@@ -5,6 +5,7 @@
 #include "ICacheIOManager.h"
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
+#include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <array>
@@ -14,13 +15,15 @@
 #include <ios>
 #include <new>
 #include <string>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace sgf
 {
 
-BinaryCacheIOManager::BinaryCacheIOManager(std::string folder, std::string base_filename)
-    : ICacheIOManager(std::move(folder), std::move(base_filename))
+BinaryCacheIOManager::BinaryCacheIOManager(std::string folder, LoggerHandler logger)
+    : ICacheIOManager(std::move(folder), std::move(logger))
 {
 }
 
@@ -122,7 +125,45 @@ void BinaryCacheIOManager::write_graph_result(std::ofstream& output_stream,
     }
 }
 
-void BinaryCacheIOManager::write_to_file(const EnumerationData& data,
+void BinaryCacheIOManager::write_string(std::ofstream& output_stream, const std::string& value)
+{
+    const size_t len = value.size();
+    if (len <= MSGPACK_FIXSTR_MAX_LEN)
+    {
+        const char header = static_cast<char>(MSGPACK_FIXSTR_BASE | static_cast<uint8_t>(len));
+        output_stream.write(&header, SINGLE_BYTE);
+    }
+    else if (len <= UINT8_MAX)
+    {
+        const std::array<char, 2> bytes = {static_cast<char>(MSGPACK_STR8_FORMAT),
+                                           static_cast<char>(static_cast<uint8_t>(len))};
+        output_stream.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+    }
+    else if (len <= UINT16_MAX)
+    {
+        const uint16_t len16 = static_cast<uint16_t>(len);
+        const std::array<char, 3> bytes = {
+            static_cast<char>(MSGPACK_STR16_FORMAT),
+            static_cast<char>(static_cast<uint8_t>(len16 >> SHIFT_8)),
+            static_cast<char>(static_cast<uint8_t>(len16 & BYTE_MASK))};
+        output_stream.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+    }
+    else
+    {
+        const uint32_t len32 = static_cast<uint32_t>(len);
+        const std::array<char, 5> bytes = {
+            static_cast<char>(MSGPACK_STR32_FORMAT),
+            static_cast<char>(static_cast<uint8_t>((len32 >> SHIFT_24) & BYTE_MASK)),
+            static_cast<char>(static_cast<uint8_t>((len32 >> SHIFT_16) & BYTE_MASK)),
+            static_cast<char>(static_cast<uint8_t>((len32 >> SHIFT_8) & BYTE_MASK)),
+            static_cast<char>(static_cast<uint8_t>(len32 & BYTE_MASK))};
+        output_stream.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+    }
+    output_stream.write(value.data(), static_cast<std::streamsize>(len));
+}
+
+void BinaryCacheIOManager::write_to_file(const EnumerationResultVector& data,
+                                         const std::vector<std::string>& graph_names,
                                          const std::string& full_path) const
 {
     std::ofstream file(full_path, std::ios::binary);
@@ -130,10 +171,11 @@ void BinaryCacheIOManager::write_to_file(const EnumerationData& data,
     {
         throw SgfPathExistsException("Cannot open file for writing: '" + full_path + "'");
     }
-    write_array_header(file, data.size());
-    for (const auto& result : data)
+    write_map_header(file, data.size());
+    for (size_t graph_index = 0U; graph_index < data.size(); ++graph_index)
     {
-        write_graph_result(file, result);
+        write_string(file, graph_names[graph_index]);
+        write_graph_result(file, data[graph_index]);
     }
     if (file.fail())
     {
@@ -265,23 +307,56 @@ EnumerationResult BinaryCacheIOManager::read_graph_result(std::ifstream& input_s
     return result;
 }
 
-EnumerationData BinaryCacheIOManager::parse_binary(std::ifstream& input_stream)
+std::string BinaryCacheIOManager::read_string(std::ifstream& input_stream)
 {
-    const size_t graph_count = read_array_header(input_stream);
+    const uint8_t format_byte = read_byte(input_stream);
+    size_t len = 0U;
+    if ((format_byte & MSGPACK_FIXSTR_PREFIX_MASK) == MSGPACK_FIXSTR_BASE)
+    {
+        len = static_cast<size_t>(format_byte & MSGPACK_FIXSTR_LEN_MASK);
+    }
+    else if (format_byte == MSGPACK_STR8_FORMAT)
+    {
+        len = static_cast<size_t>(read_byte(input_stream));
+    }
+    else if (format_byte == MSGPACK_STR16_FORMAT)
+    {
+        len = read_be_uint16_size(input_stream);
+    }
+    else if (format_byte == MSGPACK_STR32_FORMAT)
+    {
+        len = read_be_uint32_size(input_stream);
+    }
+    else
+    {
+        throw GraphConstructionException("Expected string format byte in binary cache file");
+    }
+    std::string result(len, '\0');
+    input_stream.read(result.data(), static_cast<std::streamsize>(len));
+    check_read_stream(input_stream);
+    return result;
+}
+
+std::unordered_map<std::string, EnumerationResult>
+BinaryCacheIOManager::parse_binary(std::ifstream& input_stream)
+{
+    const size_t graph_count = read_map_header(input_stream);
     if (graph_count > MAX_GRAPH_COUNT)
     {
         throw GraphConstructionException("Graph count exceeds maximum in binary cache file");
     }
-    EnumerationData data;
+    std::unordered_map<std::string, EnumerationResult> data;
     data.reserve(graph_count);
     for (size_t graph_idx = 0; graph_idx < graph_count; ++graph_idx)
     {
-        data.push_back(read_graph_result(input_stream));
+        std::string name = read_string(input_stream);
+        data.emplace(std::move(name), read_graph_result(input_stream));
     }
     return data;
 }
 
-EnumerationData BinaryCacheIOManager::read_from_file(const std::string& full_path) const
+std::unordered_map<std::string, EnumerationResult>
+BinaryCacheIOManager::read_from_file(const std::string& full_path) const
 {
     std::ifstream file(full_path, std::ios::binary);
     if (!file.is_open())

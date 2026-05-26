@@ -3,7 +3,9 @@
 #include "EnumerationPreprocessManager.h"
 #include "GraphConstructionException.h"
 #include "ICacheIOManager.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
+#include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <algorithm>
@@ -14,13 +16,15 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace sgf
 {
 
-CSVCacheIOManager::CSVCacheIOManager(std::string folder, std::string base_filename)
-    : ICacheIOManager(std::move(folder), std::move(base_filename))
+CSVCacheIOManager::CSVCacheIOManager(std::string folder, LoggerHandler logger)
+    : ICacheIOManager(std::move(folder), std::move(logger))
 {
 }
 
@@ -58,23 +62,25 @@ UInt128 CSVCacheIOManager::decimal_to_uint128(const std::string& decimal_str)
 
 void CSVCacheIOManager::write_header(std::ofstream& file)
 {
-    file << CSV_COLUMN_GRAPH_INDEX << "," << CSV_COLUMN_MOTIF_NUMBER << ","
-         << CSV_COLUMN_APPEARANCES << "\n";
+    file << CSV_COLUMN_GRAPH_NAME << "," << CSV_COLUMN_MOTIF_NUMBER << "," << CSV_COLUMN_APPEARANCES
+         << "\n";
 }
 
-void CSVCacheIOManager::write_rows(const EnumerationData& data, std::ofstream& file)
+void CSVCacheIOManager::write_rows(const EnumerationResultVector& data,
+                                   const std::vector<std::string>& graph_names, std::ofstream& file)
 {
     for (size_t graph_index = 0U; graph_index < data.size(); ++graph_index)
     {
         for (const auto& entry : data[graph_index])
         {
-            file << graph_index << "," << uint128_to_decimal(entry.first) << "," << entry.second
-                 << "\n";
+            file << graph_names[graph_index] << "," << uint128_to_decimal(entry.first) << ","
+                 << entry.second << "\n";
         }
     }
 }
 
-void CSVCacheIOManager::write_to_file(const EnumerationData& data,
+void CSVCacheIOManager::write_to_file(const EnumerationResultVector& data,
+                                      const std::vector<std::string>& graph_names,
                                       const std::string& full_path) const
 {
     std::ofstream file(full_path);
@@ -83,39 +89,32 @@ void CSVCacheIOManager::write_to_file(const EnumerationData& data,
         throw SgfPathExistsException("Cannot open file for writing: '" + full_path + "'");
     }
     write_header(file);
-    write_rows(data, file);
+    write_rows(data, graph_names, file);
     if (file.fail())
     {
         throw SgfPathExistsException("Write error on file: '" + full_path + "'");
     }
 }
 
-void CSVCacheIOManager::insert_row(const std::string& line, EnumerationData& data)
+void CSVCacheIOManager::insert_row(const std::string& line,
+                                   std::unordered_map<std::string, EnumerationResult>& data)
 {
     std::istringstream stream(line);
-    std::string graph_idx_str;
+    std::string graph_name;
     std::string motif_str;
     std::string appearances_str;
-    std::getline(stream, graph_idx_str, ',');
+    std::getline(stream, graph_name, ',');
     std::getline(stream, motif_str, ',');
     std::getline(stream, appearances_str);
-    const size_t graph_index = std::stoull(graph_idx_str);
-    if (graph_index > MAX_GRAPH_INDEX)
-    {
-        throw GraphConstructionException("graph_index exceeds maximum allowed value in CSV cache");
-    }
     const UInt128 motif_key = decimal_to_uint128(motif_str);
     const uint32_t appearances = static_cast<uint32_t>(std::stoul(appearances_str));
-    if (data.size() <= graph_index)
-    {
-        data.resize(graph_index + 1U);
-    }
-    data[graph_index][motif_key] = appearances;
+    data[graph_name][motif_key] = appearances;
 }
 
-EnumerationData CSVCacheIOManager::parse_file(std::ifstream& file)
+std::unordered_map<std::string, EnumerationResult>
+CSVCacheIOManager::parse_file(std::ifstream& file)
 {
-    EnumerationData result;
+    std::unordered_map<std::string, EnumerationResult> result;
     std::string line;
     std::getline(file, line);  // discard header row
     while (std::getline(file, line))
@@ -125,7 +124,8 @@ EnumerationData CSVCacheIOManager::parse_file(std::ifstream& file)
     return result;
 }
 
-EnumerationData CSVCacheIOManager::read_from_file(const std::string& full_path) const
+std::unordered_map<std::string, EnumerationResult>
+CSVCacheIOManager::read_from_file(const std::string& full_path) const
 {
     std::ifstream file(full_path);
     if (!file.is_open())

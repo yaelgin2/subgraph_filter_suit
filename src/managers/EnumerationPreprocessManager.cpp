@@ -21,9 +21,10 @@ EnumerationPreprocessManager::EnumerationPreprocessManager(std::vector<ColoredGr
 {
 }
 
-EnumerationData EnumerationPreprocessManager::preprocess(const PreprocessorFactory& factory) const
+EnumerationResultVector
+EnumerationPreprocessManager::preprocess(const PreprocessorFactory& factory) const
 {
-    EnumerationData results;
+    EnumerationResultVector results;
     results.reserve(m_library.size());
     for (size_t graph_index = 0U; graph_index < m_library.size(); ++graph_index)
     {
