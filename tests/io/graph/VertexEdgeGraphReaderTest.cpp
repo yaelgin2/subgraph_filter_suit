@@ -6,7 +6,7 @@
 #include "ILogger.h"
 #include "InvalidArgumentException.h"
 #include "LoggerHandler.h"
-#include "SgfPathDoesntExistException.h"
+#include "SgfPathExistsException.h"
 
 #include <algorithm>
 #include <gtest/gtest.h>
@@ -39,39 +39,65 @@ protected:
         return std::string(VERTEX_EDGE_TEST_DATA_DIR) + "/" + stem;
     }
 
+    /**
+     * @brief Returns the first vertex in @p graph whose out-degree equals @p target_degree.
+     *
+     * Records a test failure and returns @p graph.vertex_count() as a sentinel if no
+     * such vertex exists.
+     *
+     * @param graph The graph to search.
+     * @param target_degree The out-degree to match.
+     * @return Index of the matching vertex, or graph.vertex_count() if not found.
+     */
+    static uint32_t find_by_out_degree(const ColoredGraph& graph, const uint32_t target_degree)
+    {
+        for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
+        {
+            const std::pair<std::vector<uint32_t>::const_iterator,
+                            std::vector<uint32_t>::const_iterator>
+                nbrs = graph.get_neighbours(vertex);
+            if (static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second)) == target_degree)
+            {
+                return vertex;
+            }
+        }
+        ADD_FAILURE() << "no vertex with out-degree " << target_degree;
+        return graph.vertex_count();
+    }
+
     VertexEdgeGraphReader m_reader;
 };
 
 // ── Path errors ───────────────────────────────────────────────────────────────
 
 /**
- * @brief Reading a base path where both files do not exist must throw SgfPathDoesntExistException.
+ * @brief Reading a base path where both files do not exist must throw SgfPathExistsException.
  */
 TEST_F(VertexEdgeGraphReaderTest, nonexistent_path_throws_path_doesnt_exist)
 {
     EXPECT_THROW(
         m_reader.read(data("does_not_exist"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        SgfPathDoesntExistException);
+        SgfPathExistsException);
 }
 
 /**
- * @brief Missing .vertex_indices file (with .edges present) must throw SgfPathDoesntExistException.
+ * @brief Missing .vertex_indices file (with .edges present) must throw SgfPathExistsException.
  */
 TEST_F(VertexEdgeGraphReaderTest, missing_vertex_file_throws_path_doesnt_exist)
 {
     EXPECT_THROW(
         m_reader.read(data("missing_vertex_file"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        SgfPathDoesntExistException);
+        SgfPathExistsException);
 }
 
 /**
- * @brief Missing .edges file (with .vertex_indices present) must throw SgfPathDoesntExistException.
+ * @brief Missing .edges file (with .vertex_indices present) must throw SgfPathExistsException.
  */
 TEST_F(VertexEdgeGraphReaderTest, missing_edge_file_throws_path_doesnt_exist)
 {
     EXPECT_THROW(
         m_reader.read(data("missing_edge_file"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-        SgfPathDoesntExistException);
+        SgfPathExistsException);
 }
 
 // ── Malformed vertex file ─────────────────────────────────────────────────────
@@ -375,31 +401,12 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_same_vertex_color_directed)
     EXPECT_TRUE(graph.is_directed());
     EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(1));
     EXPECT_EQ(graph.get_vertex_color(0), graph.get_vertex_color(2));
-    uint32_t source = 3U;
-    uint32_t middle = 3U;
-    uint32_t sink = 3U;
-    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
-    {
-        const std::pair<std::vector<uint32_t>::const_iterator,
-                        std::vector<uint32_t>::const_iterator>
-            nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
-        if (out_deg == 2U)
-        {
-            source = v;
-        }
-        else if (out_deg == 1U)
-        {
-            middle = v;
-        }
-        else
-        {
-            sink = v;
-        }
-    }
-    ASSERT_NE(source, 3U);
-    ASSERT_NE(middle, 3U);
-    ASSERT_NE(sink, 3U);
+    const uint32_t source = find_by_out_degree(graph, 2U);
+    const uint32_t middle = find_by_out_degree(graph, 1U);
+    const uint32_t sink = find_by_out_degree(graph, 0U);
+    ASSERT_NE(source, graph.vertex_count());
+    ASSERT_NE(middle, graph.vertex_count());
+    ASSERT_NE(sink, graph.vertex_count());
     assert_neighbours(graph, source, {std::min(middle, sink), std::max(middle, sink)});
     assert_neighbours(graph, middle, {sink});
     assert_neighbours(graph, sink, {});
@@ -421,31 +428,12 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_diff_vertex_colors_directed)
     EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(1));
     EXPECT_NE(graph.get_vertex_color(0), graph.get_vertex_color(2));
     EXPECT_NE(graph.get_vertex_color(1), graph.get_vertex_color(2));
-    uint32_t source = 3U;
-    uint32_t middle = 3U;
-    uint32_t sink = 3U;
-    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
-    {
-        const std::pair<std::vector<uint32_t>::const_iterator,
-                        std::vector<uint32_t>::const_iterator>
-            nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
-        if (out_deg == 2U)
-        {
-            source = v;
-        }
-        else if (out_deg == 1U)
-        {
-            middle = v;
-        }
-        else
-        {
-            sink = v;
-        }
-    }
-    ASSERT_NE(source, 3U);
-    ASSERT_NE(middle, 3U);
-    ASSERT_NE(sink, 3U);
+    const uint32_t source = find_by_out_degree(graph, 2U);
+    const uint32_t middle = find_by_out_degree(graph, 1U);
+    const uint32_t sink = find_by_out_degree(graph, 0U);
+    ASSERT_NE(source, graph.vertex_count());
+    ASSERT_NE(middle, graph.vertex_count());
+    ASSERT_NE(sink, graph.vertex_count());
     assert_neighbours(graph, source, {std::min(middle, sink), std::max(middle, sink)});
     assert_neighbours(graph, middle, {sink});
     assert_neighbours(graph, sink, {});
@@ -472,31 +460,12 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_two_same_vertex_color_directed)
     std::sort(cols.begin(), cols.end());
     EXPECT_NE(cols[0], cols[2]);
     EXPECT_TRUE(cols[0] == cols[1] || cols[1] == cols[2]);
-    uint32_t source = 3U;
-    uint32_t middle = 3U;
-    uint32_t sink = 3U;
-    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
-    {
-        const std::pair<std::vector<uint32_t>::const_iterator,
-                        std::vector<uint32_t>::const_iterator>
-            nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
-        if (out_deg == 2U)
-        {
-            source = v;
-        }
-        else if (out_deg == 1U)
-        {
-            middle = v;
-        }
-        else
-        {
-            sink = v;
-        }
-    }
-    ASSERT_NE(source, 3U);
-    ASSERT_NE(middle, 3U);
-    ASSERT_NE(sink, 3U);
+    const uint32_t source = find_by_out_degree(graph, 2U);
+    const uint32_t middle = find_by_out_degree(graph, 1U);
+    const uint32_t sink = find_by_out_degree(graph, 0U);
+    ASSERT_NE(source, graph.vertex_count());
+    ASSERT_NE(middle, graph.vertex_count());
+    ASSERT_NE(sink, graph.vertex_count());
     assert_neighbours(graph, source, {std::min(middle, sink), std::max(middle, sink)});
     assert_neighbours(graph, middle, {sink});
     assert_neighbours(graph, sink, {});
@@ -784,31 +753,12 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_all_edges_same_color_directed)
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_TRUE(graph.is_edges_colored());
-    uint32_t source = 3U;
-    uint32_t middle = 3U;
-    uint32_t sink = 3U;
-    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
-    {
-        const std::pair<std::vector<uint32_t>::const_iterator,
-                        std::vector<uint32_t>::const_iterator>
-            nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
-        if (out_deg == 2U)
-        {
-            source = v;
-        }
-        else if (out_deg == 1U)
-        {
-            middle = v;
-        }
-        else
-        {
-            sink = v;
-        }
-    }
-    ASSERT_NE(source, 3U);
-    ASSERT_NE(middle, 3U);
-    ASSERT_NE(sink, 3U);
+    const uint32_t source = find_by_out_degree(graph, 2U);
+    const uint32_t middle = find_by_out_degree(graph, 1U);
+    const uint32_t sink = find_by_out_degree(graph, 0U);
+    ASSERT_NE(source, graph.vertex_count());
+    ASSERT_NE(middle, graph.vertex_count());
+    ASSERT_NE(sink, graph.vertex_count());
     assert_neighbours(graph, source, {std::min(middle, sink), std::max(middle, sink)});
     assert_neighbours(graph, middle, {sink});
     EXPECT_EQ(graph.get_edge_color(source, middle), graph.get_edge_color(source, sink));
@@ -828,31 +778,12 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_all_edges_diff_colors_directed)
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_TRUE(graph.is_edges_colored());
-    uint32_t source = 3U;
-    uint32_t middle = 3U;
-    uint32_t sink = 3U;
-    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
-    {
-        const std::pair<std::vector<uint32_t>::const_iterator,
-                        std::vector<uint32_t>::const_iterator>
-            nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
-        if (out_deg == 2U)
-        {
-            source = v;
-        }
-        else if (out_deg == 1U)
-        {
-            middle = v;
-        }
-        else
-        {
-            sink = v;
-        }
-    }
-    ASSERT_NE(source, 3U);
-    ASSERT_NE(middle, 3U);
-    ASSERT_NE(sink, 3U);
+    const uint32_t source = find_by_out_degree(graph, 2U);
+    const uint32_t middle = find_by_out_degree(graph, 1U);
+    const uint32_t sink = find_by_out_degree(graph, 0U);
+    ASSERT_NE(source, graph.vertex_count());
+    ASSERT_NE(middle, graph.vertex_count());
+    ASSERT_NE(sink, graph.vertex_count());
     EXPECT_NE(graph.get_edge_color(source, middle), graph.get_edge_color(middle, sink));
     EXPECT_NE(graph.get_edge_color(middle, sink), graph.get_edge_color(source, sink));
     EXPECT_NE(graph.get_edge_color(source, sink), graph.get_edge_color(source, middle));
@@ -872,31 +803,12 @@ TEST_F(VertexEdgeGraphReaderTest, triangle_two_edges_same_color_directed)
     EXPECT_EQ(graph.edge_count(), 3U);
     EXPECT_TRUE(graph.is_directed());
     EXPECT_TRUE(graph.is_edges_colored());
-    uint32_t source = 3U;
-    uint32_t middle = 3U;
-    uint32_t sink = 3U;
-    for (uint32_t v = 0; v < graph.vertex_count(); ++v)
-    {
-        const std::pair<std::vector<uint32_t>::const_iterator,
-                        std::vector<uint32_t>::const_iterator>
-            nbrs = graph.get_neighbours(v);
-        const uint32_t out_deg = static_cast<uint32_t>(std::distance(nbrs.first, nbrs.second));
-        if (out_deg == 2U)
-        {
-            source = v;
-        }
-        else if (out_deg == 1U)
-        {
-            middle = v;
-        }
-        else
-        {
-            sink = v;
-        }
-    }
-    ASSERT_NE(source, 3U);
-    ASSERT_NE(middle, 3U);
-    ASSERT_NE(sink, 3U);
+    const uint32_t source = find_by_out_degree(graph, 2U);
+    const uint32_t middle = find_by_out_degree(graph, 1U);
+    const uint32_t sink = find_by_out_degree(graph, 0U);
+    ASSERT_NE(source, graph.vertex_count());
+    ASSERT_NE(middle, graph.vertex_count());
+    ASSERT_NE(sink, graph.vertex_count());
     EXPECT_EQ(graph.get_edge_color(source, middle), graph.get_edge_color(middle, sink));
     EXPECT_NE(graph.get_edge_color(source, sink), graph.get_edge_color(middle, sink));
 }

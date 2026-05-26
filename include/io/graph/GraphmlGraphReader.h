@@ -38,7 +38,7 @@ public:
      * @param is_directed Whether to build a directed ColoredGraph.
      * @param logger Optional logger for warnings and the color map. May be expired.
      * @return The parsed ColoredGraph.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException if the file is malformed, contains
      *         too many distinct color values, or an undirected file is requested
      *         as directed.
@@ -58,13 +58,12 @@ private:
                                                            const std::exception& exc);
 
     /**
-     * @brief Detects whether a GraphML file declares directed edges.
-     *
-     * Scans the file for the @c edgedefault attribute. If not found, defaults
-     * to directed.
+     * @brief Reads a GraphML file into a Boost graph, populating vertex and edge color properties.
      *
      * @param path Path to the GraphML file.
-     * @param boost_graph Graph to populate.
+     * @param boost_graph Output graph to populate. Must be default-constructed.
+     * @throws SgfPathExistsException if the file cannot be opened.
+     * @throws GraphConstructionException on malformed XML or parse errors.
      */
     template <typename GraphType>
     static void read_graphml_from_file_into_boost_graph(const std::string& path,

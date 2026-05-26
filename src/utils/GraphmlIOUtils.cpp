@@ -1,7 +1,8 @@
 #include "GraphmlIOUtils.h"
 
 #include "GraphConstructionException.h"
-#include "SgfPathDoesntExistException.h"
+#include "IoGraphUtils.h"
+#include "SgfPathExistsException.h"
 
 #include <exception>
 #include <fstream>
@@ -10,29 +11,19 @@
 namespace sgf
 {
 
-std::ifstream GraphmlUtils::open_file(const std::string& path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        throw SgfPathDoesntExistException("cannot open file: " + path);
-    }
-    return file;
-}
-
 std::ofstream GraphmlUtils::open_output_file(const std::string& path)
 {
     std::ofstream file(path);
     if (!file.is_open())
     {
-        throw SgfPathDoesntExistException("cannot open file for writing: " + path);
+        throw SgfPathExistsException("cannot open file for writing: " + path);
     }
     return file;
 }
 
 bool GraphmlUtils::detect_is_directed(const std::string& path)
 {
-    std::ifstream file = open_file(path);
+    std::ifstream file = IoGraphUtils::open_file(path);
     // NOLINTNEXTLINE(misc-const-correctness) -- std::getline writes to line
     std::string line;
     while (std::getline(file, line))

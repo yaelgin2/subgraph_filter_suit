@@ -15,23 +15,26 @@ namespace sgf
 class GraphmlPatternWriter : public IPatternWriter
 {
 public:
+private:
     /**
-     * @brief Writes a BoostGraph to a GraphML file.
+     * @brief Writes @p graph to @p path in GraphML format.
      *
      * @param graph Input graph.
      * @param path Output file path.
      */
-    void write(const BoostGraph& graph, const std::string& path) const override;
-
-private:
+    void do_write(const BoostGraph& graph, const std::string& path) const override;
     /**
-     * @brief Builds vertex entries for GraphML output graph.
+     * @brief Copies all vertices and their color properties from @p graph into @p out.
+     * @param graph Source BoostGraph.
+     * @param out Destination GraphML-compatible Boost graph; must already be empty.
      */
     static void build_vertices(const BoostGraph& graph,
                                IOConstants::GraphmlDirectedBoostGraph& out);
 
     /**
-     * @brief Builds edge entries for GraphML output graph.
+     * @brief Copies all edges and their color properties from @p graph into @p out.
+     * @param graph Source BoostGraph.
+     * @param out Destination GraphML-compatible Boost graph; vertices must already be populated.
      */
     static void build_edges(const BoostGraph& graph, IOConstants::GraphmlDirectedBoostGraph& out);
 };

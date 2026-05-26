@@ -52,7 +52,7 @@ public:
      * @param is_directed Whether to build a directed ColoredGraph.
      * @param logger Optional logger for diagnostics. May be expired.
      * @return The parsed ColoredGraph.
-     * @throws SgfPathDoesntExistException if either file cannot be opened.
+     * @throws SgfPathExistsException if either file cannot be opened.
      * @throws GraphConstructionException if either file is malformed, a vertex
      *         ID is duplicated, edge colors are mixed, or a link references an
      *         unknown vertex ID.
@@ -99,7 +99,7 @@ private:
      *
      * @param vertices_path Path to the .vertex_indices file.
      * @return Map from original vertex ID to its color label.
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException if any line is malformed or a vertex
      *         ID appears more than once.
      */
@@ -157,7 +157,7 @@ private:
      * @param consecutive_index_by_original_id Map from original vertex ID to consecutive index.
      * @return EdgeData with exactly one of colored or uncolored populated (both empty
      *         if the file has no edges).
-     * @throws SgfPathDoesntExistException if the file cannot be opened.
+     * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException if any line is malformed, references
      *         an unknown vertex ID, or edge colors are mixed.
      */
