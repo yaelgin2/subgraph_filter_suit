@@ -104,7 +104,13 @@ target_compile_options(subgraph_filter_suite PRIVATE
 # Set SGF_BUILD_CLI=OFF at configure time to build only the library.
 option(SGF_BUILD_CLI "Build the sgf-graph-enumerator CLI tool" ON)
 if(SGF_BUILD_CLI)
-    add_executable(sgf-graph-enumerator src/cli/SgfGraphEnumerator.cpp)
+    add_executable(sgf-graph-enumerator
+        src/cli/SgfGraphEnumerator.cpp
+        src/cli/argument_parsers/SgfGraphEnumeratorArgumentParser.cpp
+    )
+    target_include_directories(sgf-graph-enumerator PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/cli/argument_parsers"
+    )
     target_link_libraries(sgf-graph-enumerator PRIVATE
         subgraph_filter_suite
         Boost::program_options
