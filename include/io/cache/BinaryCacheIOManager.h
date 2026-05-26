@@ -32,7 +32,7 @@ public:
      * @param folder  Directory where the binary file will be written.
      * @param logger  Optional logger for diagnostics.
      */
-    BinaryCacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
+    explicit BinaryCacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
 protected:
     /**

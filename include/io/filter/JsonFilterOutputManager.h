@@ -28,7 +28,7 @@ public:
      * @param folder  Directory where the output file will be written.
      * @param logger  Optional logger for diagnostics.
      */
-    JsonFilterOutputManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
+    explicit JsonFilterOutputManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Default virtual destructor.

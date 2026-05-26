@@ -27,7 +27,7 @@ public:
      * @param folder  Directory where the cache file will be written.
      * @param logger  Optional logger for diagnostics.
      */
-    ICacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
+    explicit ICacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Default virtual destructor.

@@ -29,7 +29,7 @@ public:
      * @param folder  Directory where the output file will be written.
      * @param logger  Optional logger for diagnostics.
      */
-    CSVFilterOutputManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
+    explicit CSVFilterOutputManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Default virtual destructor.

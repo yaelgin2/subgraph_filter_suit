@@ -28,7 +28,7 @@ public:
      * @param folder  Directory of the CSV file.
      * @param logger  Optional logger for diagnostics.
      */
-    CSVCacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
+    explicit CSVCacheIOManager(std::string folder, LoggerHandler logger = LoggerHandler::null());
 
 protected:
     /**
