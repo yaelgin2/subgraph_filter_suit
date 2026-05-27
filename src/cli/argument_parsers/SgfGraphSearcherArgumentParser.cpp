@@ -23,7 +23,7 @@ namespace sgf
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays)
 std::optional<GraphSearcherArgs>
 SgfGraphSearcherArgumentParser::parse(const int argc,
-                                      char* argv[])  // NOLINT(modernize-avoid-c-arrays)
+                                      char* argv[])  // NOLINT(modernize-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays)
 {
     const po::options_description desc = build_options();
     const po::variables_map variables_map = parse_raw(argc, argv, desc);
