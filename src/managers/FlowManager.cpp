@@ -162,7 +162,7 @@ std::unordered_map<std::string, FilterResult> FlowManager::enumerate_and_filter(
     const PreprocessorFactory& factory, const CacheManagerType cache_reader_type,
     const std::shared_ptr<ICacheIOManager>& graphs_cache_manager, LibraryData& graphs_to_find_in,
     const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
-    IFilterOutputManager& filter_results_writer, const std::string& timestamp,
+    IFilterIOManager& filter_results_writer, const std::string& timestamp,
     const LoggerHandler& logger, const EnumerationTransformer& post_process)
 {
     EnumerationResultVector graph_enumeration;
@@ -237,7 +237,7 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
                 return std::make_unique<PathProcessor>(graph, logger);
             },
             cache_reader_type, graphs_cache_manager, graphs_to_find_in, preprocess_manager,
-            *filter_results_writer, timestamp, log_bundle.handler()));
+            *filter_results_writer, timestamp, log_bundle.handler(), no_op));
     }
     if (filter_motifs)
     {

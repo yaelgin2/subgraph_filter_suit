@@ -293,7 +293,7 @@ private:
                          const std::shared_ptr<ICacheIOManager>& graphs_cache_manager,
                          LibraryData& graphs_to_find_in,
                          const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
-                         IFilterOutputManager& filter_results_writer, const std::string& timestamp,
+                         IFilterIOManager& filter_results_writer, const std::string& timestamp,
                          const LoggerHandler& logger, const EnumerationTransformer& post_process);
 };
 
