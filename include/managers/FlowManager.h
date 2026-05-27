@@ -5,8 +5,8 @@
 #include "IColoredGraphReader.h"
 #include "IFilterIOManager.h"
 #include "IPatternWriter.h"
-#include "SingleGraphPatternPreprocessor.h"
 #include "PriorPolicy.h"
+#include "SingleGraphPatternPreprocessor.h"
 
 #include <memory>
 #include <string>
@@ -97,11 +97,11 @@ public:
      * @param preprocess_paths  Preprocess path signatures.
      * @param preprocess_motifs Preprocess motif signatures.
      */
-    static std::vector<EnumerationResultVector> enumerator_preprocess_run(const std::string& input_path, bool is_directed,
-                                          GraphReaderType reader_type, std::string& output_path,
-                                          CacheManagerType output_type,
-                                          const std::string& log_file_path, bool preprocess_paths,
-                                          bool preprocess_motifs);
+    static std::vector<EnumerationResultVector>
+    enumerator_preprocess_run(const std::string& input_path, bool is_directed,
+                              GraphReaderType reader_type, std::string& output_path,
+                              CacheManagerType output_type, const std::string& log_file_path,
+                              bool preprocess_paths, bool preprocess_motifs);
 
     /**
      * @brief Run the enumeration filter stage.
@@ -139,10 +139,13 @@ public:
     static void pattern_filter_run();
 
     /// @brief Run the exact subgraph isomorphism stage.
-    static uint64_t subgraph_isomorphism_run(const std::string& subgraph_path, const std::string& background_graph_path, GraphReaderType reader_type,
-                                      bool is_output, std::string& output_path,
-                                      bool is_directed, bool is_induced, PriorPolicy policy, bool stop_on_first_match, 
-                                      const std::string& log_file_path);
+    static uint64_t subgraph_isomorphism_run(const std::string& subgraph_path,
+                                             const std::string& background_graph_path,
+                                             GraphReaderType reader_type, bool is_output,
+                                             std::string& output_path, bool is_directed,
+                                             bool is_induced, PriorPolicy policy,
+                                             bool stop_on_first_match,
+                                             const std::string& log_file_path);
 
 private:
     static constexpr const char* PATH_CACHE_BASE_NAME = "path_cache";
