@@ -25,6 +25,7 @@
 #include "LoggerBundle.h"
 #include "LoggerHandler.h"
 #include "MatchOutputWriter.h"
+#include "MotifDagExpander.h"
 #include "MotifPreprocessor.h"
 #include "MultiGraphPatternPreprocessor.h"
 #include "PathProcessor.h"
@@ -33,9 +34,11 @@
 #include "SingleGraphPatternPreprocessor.h"
 #include "SubgraphSearcher.h"
 #include "VertexEdgeGraphReader.h"
+#include "PatternGraphFilter.h"
 #include "VertexEdgePatternWriter.h"
 
 #include <ICacheIOManager.h>
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <ctime>
@@ -45,6 +48,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -162,7 +166,7 @@ std::unordered_map<std::string, FilterResult> FlowManager::enumerate_and_filter(
     const std::shared_ptr<ICacheIOManager>& graphs_cache_manager, LibraryData& graphs_to_find_in,
     const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
     IFilterIOManager& filter_results_writer, const std::string& timestamp,
-    const LoggerHandler& logger)
+    const LoggerHandler& logger, const EnumerationTransformer& post_process)
 {
     EnumerationResultVector graph_enumeration;
     if (load_graph_cache)
@@ -176,6 +180,7 @@ std::unordered_map<std::string, FilterResult> FlowManager::enumerate_and_filter(
             graphs_cache_manager != nullptr, run_type_file_base_name, graphs_cache_manager,
             *preprocess_manager, graphs_to_find_in, factory, timestamp);
     }
+    post_process(graph_enumeration);
     const std::filesystem::path lib_cache(library_cache_file);
     const std::shared_ptr<ICacheIOManager> lib_cache_manager =
         make_cache_manager(cache_reader_type, lib_cache.parent_path().string(), logger);
@@ -190,7 +195,8 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
     const std::string& motif_cache_file, const std::string& path_cache_file,
     const CacheManagerType cache_reader_type, std::string& output_folder,
     ResultOutputType output_type, const std::string& log_file_path, bool filter_paths,
-    bool filter_motifs, const GraphEnumerationCacheConfig& graph_cache_config)
+    bool filter_motifs, const GraphEnumerationCacheConfig& graph_cache_config,
+    const bool non_induced)
 {
     const LoggerBundle log_bundle(log_file_path);
     LibraryData graphs_to_find_in;
@@ -216,6 +222,12 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
             cache_reader_type, graph_cache_config.m_graph_cache_dir, log_bundle.handler());
     }
     std::vector<std::unordered_map<std::string, FilterResult>> filter_results;
+    const EnumerationTransformer no_op = [](EnumerationResultVector&)
+    {
+    };
+    const MotifDagExpander::GraphType dag_type = is_directed
+                                                     ? MotifDagExpander::GraphType::DIRECTED
+                                                     : MotifDagExpander::GraphType::UNDIRECTED;
     if (filter_paths)
     {
 
@@ -228,10 +240,21 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
                 return std::make_unique<PathProcessor>(graph, logger);
             },
             cache_reader_type, graphs_cache_manager, graphs_to_find_in, preprocess_manager,
-            *filter_results_writer, timestamp, log_bundle.handler()));
+            *filter_results_writer, timestamp, log_bundle.handler(), no_op));
     }
     if (filter_motifs)
     {
+        const EnumerationTransformer motif_transform =
+            non_induced ? EnumerationTransformer(
+                              [dag_type](EnumerationResultVector& enumeration)
+                              {
+                                  const MotifDagExpander expander(dag_type);
+                                  for (auto& result : enumeration)
+                                  {
+                                      result = expander.expand(std::move(result));
+                                  }
+                              })
+                        : no_op;
         filter_results.push_back(enumerate_and_filter(
             motif_cache_file, !graph_cache_config.m_graphs_motif_cache_path.empty(),
             graph_cache_config.m_graphs_motif_cache_path, std::string(MOTIF_CACHE_BASE_NAME),
@@ -241,7 +264,7 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
                 return std::make_unique<MotifPreprocessor>(graph, logger);
             },
             cache_reader_type, graphs_cache_manager, graphs_to_find_in, preprocess_manager,
-            *filter_results_writer, timestamp, log_bundle.handler()));
+            *filter_results_writer, timestamp, log_bundle.handler(), motif_transform));
     }
     return filter_results;
 }
