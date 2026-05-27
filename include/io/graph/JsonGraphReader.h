@@ -51,7 +51,7 @@ public:
      *         references an unknown node ID.
      */
     ColoredGraph read(const std::string& path, bool is_directed,
-                     const LoggerHandler& logger) const override;
+                      const LoggerHandler& logger) const override;
 
 private:
     /**

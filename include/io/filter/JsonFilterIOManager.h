@@ -80,7 +80,7 @@ private:
      * @return JSON object mapping filename → result.
      */
     static boost::json::object build_json_object(const std::vector<std::string>& filenames,
-                                                  const FilterResult& results);
+                                                 const FilterResult& results);
 
     /**
      * @brief Serializes @p json_obj and writes it to @p full_path.
@@ -90,7 +90,7 @@ private:
      * @throws SgfPathExistsException if the file cannot be opened or written.
      */
     static void write_json_to_file(const boost::json::object& json_obj,
-                                    const std::string& full_path);
+                                   const std::string& full_path);
 
     /**
      * @brief Parses a JSON object from @p full_path into a filename→result map.

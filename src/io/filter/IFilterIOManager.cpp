@@ -37,8 +37,7 @@ void IFilterIOManager::write(const std::string& base_filename,
     write_to_file(filenames, results, full_path);
 }
 
-std::unordered_map<std::string, bool>
-IFilterIOManager::read(const std::string& base_filename) const
+std::unordered_map<std::string, bool> IFilterIOManager::read(const std::string& base_filename) const
 {
     const std::string full_path = build_full_path(base_filename);
     m_logger.log(LogLevel::INFO, "Reading filter results from '" + full_path + "'");

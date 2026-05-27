@@ -42,7 +42,7 @@ public:
      * @param writer  Writer used to serialize each pattern graph.
      */
     CSVPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                              std::shared_ptr<IPatternWriter> writer);
+                             std::shared_ptr<IPatternWriter> writer);
 
     /**
      * @brief Default virtual destructor.
@@ -63,7 +63,7 @@ protected:
      * @throws SgfPathExistsException if the file cannot be opened or written.
      */
     void write_mapping_to_file(const PatternMapping& mapping,
-                                const std::string& full_path) const override;
+                               const std::string& full_path) const override;
 
     /**
      * @brief Reads a PatternMapping from the CSV file at @p full_path.

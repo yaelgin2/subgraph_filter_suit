@@ -34,8 +34,9 @@ std::string JsonFilterIOManager::get_extension() const
     return "json";
 }
 
-boost::json::object JsonFilterIOManager::build_json_object(const std::vector<std::string>& filenames,
-                                                            const FilterResult& results)
+boost::json::object
+JsonFilterIOManager::build_json_object(const std::vector<std::string>& filenames,
+                                       const FilterResult& results)
 {
     boost::json::object json_obj;
     for (size_t idx = 0U; idx < filenames.size(); ++idx)
@@ -46,7 +47,7 @@ boost::json::object JsonFilterIOManager::build_json_object(const std::vector<std
 }
 
 void JsonFilterIOManager::write_json_to_file(const boost::json::object& json_obj,
-                                              const std::string& full_path)
+                                             const std::string& full_path)
 {
     std::ofstream file(full_path);
     if (!file.is_open())
@@ -101,8 +102,8 @@ JsonFilterIOManager::read_from_file(const std::string& full_path) const
     }
     catch (const std::bad_alloc&)
     {
-        throw GraphConstructionException(
-            "Memory allocation failed reading JSON filter results: '" + full_path + "'");
+        throw GraphConstructionException("Memory allocation failed reading JSON filter results: '" +
+                                         full_path + "'");
     }
     catch (const std::invalid_argument& ex)
     {
@@ -110,8 +111,8 @@ JsonFilterIOManager::read_from_file(const std::string& full_path) const
     }
     catch (const boost::system::system_error& ex)
     {
-        throw GraphConstructionException("Failed to parse JSON in '" + full_path + "': " +
-                                         ex.what());
+        throw GraphConstructionException("Failed to parse JSON in '" + full_path +
+                                         "': " + ex.what());
     }
 }
 

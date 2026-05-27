@@ -4,14 +4,13 @@
 #include "IPatternPreprocessor.h"
 #include "IPatternWriter.h"
 #include "LogLevel.h"
+#include "LoggerHandler.h"
 
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
-#include <vector>
 
 namespace sgf
 {
@@ -25,13 +24,13 @@ IPatternCacheIOManager::IPatternCacheIOManager(std::string folder, LoggerHandler
 }
 
 std::string IPatternCacheIOManager::build_pattern_base_name(const uint32_t index,
-                                                             const std::string& timestamp) const
+                                                            const std::string& timestamp)
 {
     return "pattern_" + std::to_string(index) + "_" + timestamp;
 }
 
 std::string IPatternCacheIOManager::build_pattern_full_path(const uint32_t index,
-                                                             const std::string& timestamp) const
+                                                            const std::string& timestamp) const
 {
     const std::string base_name = build_pattern_base_name(index, timestamp);
     const std::string ext = m_writer->get_file_extension();
@@ -46,9 +45,9 @@ std::string IPatternCacheIOManager::build_mapping_path(const std::string& timest
 }
 
 void IPatternCacheIOManager::write_single_pattern(const PatternPreprocessorResult& result,
-                                                   const uint32_t index,
-                                                   const std::string& timestamp,
-                                                   PatternMapping& mapping) const
+                                                  const uint32_t index,
+                                                  const std::string& timestamp,
+                                                  PatternMapping& mapping) const
 {
     const std::string pattern_path = build_pattern_full_path(index, timestamp);
     m_writer->write(result.first, pattern_path, m_logger);

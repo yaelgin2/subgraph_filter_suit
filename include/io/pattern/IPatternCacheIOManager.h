@@ -110,13 +110,13 @@ private:
     LoggerHandler m_logger;
     std::shared_ptr<IPatternWriter> m_writer;
 
-    [[nodiscard]] std::string build_pattern_base_name(uint32_t index,
-                                                       const std::string& timestamp) const;
+    [[nodiscard]] static std::string build_pattern_base_name(uint32_t index,
+                                                             const std::string& timestamp);
     [[nodiscard]] std::string build_pattern_full_path(uint32_t index,
-                                                       const std::string& timestamp) const;
+                                                      const std::string& timestamp) const;
     [[nodiscard]] std::string build_mapping_path(const std::string& timestamp) const;
     void write_single_pattern(const PatternPreprocessorResult& result, uint32_t index,
-                               const std::string& timestamp, PatternMapping& mapping) const;
+                              const std::string& timestamp, PatternMapping& mapping) const;
 };
 
 }  // namespace sgf

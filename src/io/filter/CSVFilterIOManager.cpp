@@ -84,8 +84,8 @@ CSVFilterIOManager::read_from_file(const std::string& full_path) const
     }
     catch (const std::bad_alloc&)
     {
-        throw GraphConstructionException(
-            "Memory allocation failed reading CSV filter results: '" + full_path + "'");
+        throw GraphConstructionException("Memory allocation failed reading CSV filter results: '" +
+                                         full_path + "'");
     }
     catch (const std::invalid_argument& ex)
     {

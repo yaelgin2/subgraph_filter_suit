@@ -72,8 +72,7 @@ protected:
      * @throws SgfPathExistsException if the file cannot be opened or written.
      */
     virtual void write_to_file(const std::vector<std::string>& filenames,
-                               const FilterResult& results,
-                               const std::string& full_path) const = 0;
+                               const FilterResult& results, const std::string& full_path) const = 0;
 
     /**
      * @brief Deserializes filter results from @p full_path in the concrete format.

@@ -125,19 +125,14 @@ public:
                           const GraphEnumerationCacheConfig& graph_cache_config);
 
     /// @brief Run the pattern preprocessing stage.
-    static void pattern_preprocess_run(const std::string& input_path, bool is_directed,
-                                       GraphReaderType reader_type, std::string& output_path,
-                                       PatternWriterType output_type,
-                                       const std::string& log_file_path,
-                                       uint32_t preprocess_multigraph,
-                                       uint32_t multigraph_alive_percent,
-                                       bool preprocess_singlegraph_results_file,
-                                       const std::string& results_file_path,
-                                       int64_t preprocess_singlegraph,
-                                       ResultOutputType results_file_type,
-                                       const std::string& background_graph_path,
-                                       double score_threshold,
-                                       const SingleGraphFinderConfig& config);
+    static void pattern_preprocess_run(
+        const std::string& input_path, bool is_directed, GraphReaderType reader_type,
+        std::string& output_path, PatternWriterType output_type, const std::string& log_file_path,
+        uint32_t preprocess_multigraph, uint32_t multigraph_alive_percent,
+        bool preprocess_singlegraph_results_file, const std::string& results_file_path,
+        int64_t preprocess_singlegraph, ResultOutputType results_file_type,
+        const std::string& background_graph_path, double score_threshold,
+        const SingleGraphFinderConfig& config);
 
     /// @brief Run the pattern filter stage.
     static void pattern_filter_run();
@@ -253,7 +248,7 @@ private:
      */
     static std::unique_ptr<IFilterIOManager>
     make_filter_results_io_manager(ResultOutputType type, const std::string& folder,
-                               LoggerHandler logger);
+                                   LoggerHandler logger);
 
     /**
      * @brief Loads or computes graph enumeration for one stage, then runs the filter.

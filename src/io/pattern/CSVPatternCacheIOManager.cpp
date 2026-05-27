@@ -2,6 +2,7 @@
 
 #include "GraphConstructionException.h"
 #include "IPatternCacheIOManager.h"
+#include "IPatternWriter.h"
 #include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
@@ -13,14 +14,13 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
 namespace sgf
 {
 
 CSVPatternCacheIOManager::CSVPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                                                    std::shared_ptr<IPatternWriter> writer)
+                                                   std::shared_ptr<IPatternWriter> writer)
     : IPatternCacheIOManager(std::move(folder), std::move(logger), std::move(writer))
 {
 }
@@ -47,7 +47,7 @@ void CSVPatternCacheIOManager::write_rows(const PatternMapping& mapping, std::of
 }
 
 void CSVPatternCacheIOManager::write_mapping_to_file(const PatternMapping& mapping,
-                                                      const std::string& full_path) const
+                                                     const std::string& full_path) const
 {
     std::ofstream file(full_path);
     if (!file.is_open())
@@ -98,8 +98,8 @@ PatternMapping CSVPatternCacheIOManager::read_mapping_from_file(const std::strin
     }
     catch (const std::bad_alloc&)
     {
-        throw GraphConstructionException(
-            "Memory allocation failed reading CSV pattern index: '" + full_path + "'");
+        throw GraphConstructionException("Memory allocation failed reading CSV pattern index: '" +
+                                         full_path + "'");
     }
     catch (const std::invalid_argument& ex)
     {
