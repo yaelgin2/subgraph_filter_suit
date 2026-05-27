@@ -247,7 +247,7 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
 }
 
 // NOLINTNEXTLINE(readability-function-size)
-void FlowManager::pattern_preprocess_run(
+std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const std::string& input_path, const bool is_directed, GraphReaderType reader_type,
     std::string& output_path, const PatternWriterType output_type, const std::string& log_file_path,
     const uint32_t preprocess_multigraph, const uint32_t multigraph_alive_percent,
@@ -256,6 +256,7 @@ void FlowManager::pattern_preprocess_run(
     const std::string& background_graph_path, const double score_threshold,
     const SingleGraphFinderConfig& config)
 {
+    std::vector<PatternPreprocessorResult> result;
     const LoggerBundle log_bundle(log_file_path);
     const LibraryData library =
         load_library(input_path, reader_type, is_directed, log_bundle.handler());
@@ -273,9 +274,9 @@ void FlowManager::pattern_preprocess_run(
                     library_ref, is_directed, preprocess_multigraph, multigraph_alive_percent,
                     std::move(logger));
             });
-        const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler(),
-                                                     pattern_writer);
-        cache_manager.write(multigraph_results, timestamp);
+        result.insert(result.end(), multigraph_results.begin(), multigraph_results.end());
+        const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
+        cache_manager.write(multigraph_results, timestamp, pattern_writer);
     }
     const bool need_background =
         preprocess_singlegraph != -1 || preprocess_singlegraph_results_file;
@@ -291,7 +292,7 @@ void FlowManager::pattern_preprocess_run(
         std::vector<bool> to_process(library.m_library.size(), false);
         to_process[static_cast<size_t>(preprocess_singlegraph)] = true;
         const ColoredGraph& background = *background_graph_opt;
-        const PatternOutput results = preprocess_manager.preprocess(
+        const PatternOutput single_graph_results = preprocess_manager.preprocess(
             [is_directed, &background, &to_process, score_threshold,
              &config](std::vector<ColoredGraph>& library_ref,
                       LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
@@ -300,9 +301,9 @@ void FlowManager::pattern_preprocess_run(
                     library_ref, is_directed, background, to_process, score_threshold, config,
                     std::move(logger));
             });
-        const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler(),
-                                                     pattern_writer);
-        cache_manager.write(results, timestamp);
+        result.insert(result.end(), single_graph_results.begin(), single_graph_results.end());
+        const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
+        cache_manager.write(single_graph_results, timestamp, pattern_writer);
     }
     if (preprocess_singlegraph_results_file && background_graph_opt.has_value())
     {
@@ -313,7 +314,7 @@ void FlowManager::pattern_preprocess_run(
             result_reader->read(results_path.stem().string());
         std::vector<bool> to_process = build_to_process(library.m_graph_names, filter_map);
         const ColoredGraph& background = *background_graph_opt;
-        const PatternOutput results = preprocess_manager.preprocess(
+        const PatternOutput single_graph_results = preprocess_manager.preprocess(
             [is_directed, &background, &to_process, score_threshold,
              &config](std::vector<ColoredGraph>& library_ref,
                       LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
@@ -322,10 +323,11 @@ void FlowManager::pattern_preprocess_run(
                     library_ref, is_directed, background, to_process, score_threshold, config,
                     std::move(logger));
             });
-        const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler(),
-                                                     pattern_writer);
-        cache_manager.write(results, timestamp);
+        const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
+        cache_manager.write(single_graph_results, timestamp, pattern_writer);
+        result.insert(result.end(), single_graph_results.begin(), single_graph_results.end());
     }
+    return result;
 }
 
 void FlowManager::pattern_filter_run()

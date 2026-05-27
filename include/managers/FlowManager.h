@@ -126,7 +126,7 @@ public:
                           const GraphEnumerationCacheConfig& graph_cache_config);
 
     /// @brief Run the pattern preprocessing stage.
-    static void pattern_preprocess_run(
+    static std::vector<PatternPreprocessorResult> pattern_preprocess_run(
         const std::string& input_path, bool is_directed, GraphReaderType reader_type,
         std::string& output_path, PatternWriterType output_type, const std::string& log_file_path,
         uint32_t preprocess_multigraph, uint32_t multigraph_alive_percent,
@@ -136,7 +136,11 @@ public:
         const SingleGraphFinderConfig& config);
 
     /// @brief Run the pattern filter stage.
-    static void pattern_filter_run();
+    static std::vector<std::unordered_map<std::string, FilterResult>> pattern_filter_run(
+        const std::string& pattern_to_filter_cache, PatternWriterType pattern_type, const std::string& background_graph_path, GraphReaderType reader_type,
+        bool is_directed, std::string& output_path, ResultOutputType output_type,
+        const std::string& log_file_path, PriorPolicy prior_policy, bool is_induced
+    );
 
     /// @brief Run the exact subgraph isomorphism stage.
     static uint64_t subgraph_isomorphism_run(const std::string& subgraph_path,
