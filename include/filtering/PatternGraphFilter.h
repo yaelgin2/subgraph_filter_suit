@@ -1,9 +1,9 @@
 #pragma once
 
-#include "PatternPreprocessManager.h"
 #include "FilteringUtils.h"
 #include "IPatternPreprocessor.h"
 #include "LoggerHandler.h"
+#include "PatternPreprocessManager.h"
 #include "PriorPolicy.h"
 
 #include <vector>
@@ -32,7 +32,7 @@ public:
      * @param logger        Optional logger for filter diagnostics.
      */
     explicit PatternGraphFilter(std::vector<ColoredGraphPatternResult> library_cache,
-                                         LoggerHandler logger = LoggerHandler::null());
+                                LoggerHandler logger = LoggerHandler::null());
 
     ~PatternGraphFilter() = default;
 
