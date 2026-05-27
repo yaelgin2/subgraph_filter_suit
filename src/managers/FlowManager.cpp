@@ -29,7 +29,7 @@
 #include "MotifPreprocessor.h"
 #include "MultiGraphPatternPreprocessor.h"
 #include "PathProcessor.h"
-#include "PattermPreprocessManager.h"
+#include "PatternPreprocessManager.h"
 #include "PriorPolicy.h"
 #include "SingleGraphPatternPreprocessor.h"
 #include "SubgraphSearcher.h"
