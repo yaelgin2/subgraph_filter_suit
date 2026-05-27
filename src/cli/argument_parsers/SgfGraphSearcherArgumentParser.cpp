@@ -20,9 +20,10 @@ namespace po = boost::program_options;
 namespace sgf
 {
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-std::optional<GraphSearcherArgs> SgfGraphSearcherArgumentParser::parse(const int argc,
-                                                                        char* argv[])
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays)
+std::optional<GraphSearcherArgs>
+SgfGraphSearcherArgumentParser::parse(const int argc,
+                                      char* argv[])  // NOLINT(modernize-avoid-c-arrays)
 {
     const po::options_description desc = build_options();
     const po::variables_map variables_map = parse_raw(argc, argv, desc);
@@ -39,9 +40,9 @@ po::options_description SgfGraphSearcherArgumentParser::build_options()
 {
     po::options_description desc("sgf-graph-searcher options");
     desc.add_options()("help,h", "Print this help message")(
-        KEY_SUBGRAPH_PATH, po::value<std::string>(), "Path to the subgraph file (required)")(
-        KEY_BACKGROUND_PATH, po::value<std::string>(),
-        "Path to the background graph file (required)")(
+        KEY_SUBGRAPH_PATH, po::value<std::string>(),
+        "Path to the subgraph file (required)")(KEY_BACKGROUND_PATH, po::value<std::string>(),
+                                                "Path to the background graph file (required)")(
         KEY_READER_TYPE, po::value<std::string>(),
         "Graph file format: graphml, json, vertex-edge (required)")(
         KEY_IS_DIRECTED, po::bool_switch(), "Treat graphs as directed")(
@@ -72,8 +73,7 @@ po::variables_map SgfGraphSearcherArgumentParser::parse_raw(const int argc, char
     return variables_map;
 }
 
-GraphSearcherArgs
-SgfGraphSearcherArgumentParser::build_args(const po::variables_map& variables_map)
+GraphSearcherArgs SgfGraphSearcherArgumentParser::build_args(const po::variables_map& variables_map)
 {
     GraphSearcherArgs result;
     result.m_subgraph_path = get_required_string(variables_map, KEY_SUBGRAPH_PATH);
@@ -89,8 +89,9 @@ SgfGraphSearcherArgumentParser::build_args(const po::variables_map& variables_ma
     return result;
 }
 
-std::string SgfGraphSearcherArgumentParser::get_required_string(
-    const po::variables_map& variables_map, const std::string& key)
+std::string
+SgfGraphSearcherArgumentParser::get_required_string(const po::variables_map& variables_map,
+                                                    const std::string& key)
 {
     if (variables_map.count(key) == 0U)
     {
@@ -99,8 +100,9 @@ std::string SgfGraphSearcherArgumentParser::get_required_string(
     return variables_map.at(key).as<std::string>();
 }
 
-std::string SgfGraphSearcherArgumentParser::get_optional_string(
-    const po::variables_map& variables_map, const std::string& key)
+std::string
+SgfGraphSearcherArgumentParser::get_optional_string(const po::variables_map& variables_map,
+                                                    const std::string& key)
 {
     if (variables_map.count(key) == 0U)
     {
@@ -127,6 +129,7 @@ GraphReaderType SgfGraphSearcherArgumentParser::parse_reader_type(const std::str
                                       "'. Valid values: graphml, json, vertex-edge.");
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 PriorPolicy SgfGraphSearcherArgumentParser::parse_prior_policy(const std::string& policy_str)
 {
     if (policy_str == POLICY_SUBGRAPH_DEGREE_SQUARED)

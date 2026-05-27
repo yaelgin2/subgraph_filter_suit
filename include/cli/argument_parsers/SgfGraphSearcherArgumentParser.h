@@ -16,15 +16,15 @@ namespace sgf
  */
 struct GraphSearcherArgs
 {
-    std::string m_subgraph_path;                                ///< Path to subgraph file.
-    std::string m_background_path;                              ///< Path to background graph file.
-    GraphReaderType m_reader_type{GraphReaderType::GRAPHML};    ///< Graph file format.
-    bool m_is_directed{false};                                  ///< Treat graphs as directed.
-    bool m_is_induced{false};                                   ///< Search for induced subgraph.
-    PriorPolicy m_prior_policy{PriorPolicy::SUBGRAPH_DEGREE};   ///< Vertex ordering heuristic.
-    bool m_stop_on_first_match{false};                          ///< Stop after first match found.
-    std::string m_output_path;                                  ///< Optional output file path.
-    std::string m_log_file_path;                                ///< Optional log file path.
+    std::string m_subgraph_path;                               ///< Path to subgraph file.
+    std::string m_background_path;                             ///< Path to background graph file.
+    GraphReaderType m_reader_type{GraphReaderType::GRAPHML};   ///< Graph file format.
+    bool m_is_directed{false};                                 ///< Treat graphs as directed.
+    bool m_is_induced{false};                                  ///< Search for induced subgraph.
+    PriorPolicy m_prior_policy{PriorPolicy::SUBGRAPH_DEGREE};  ///< Vertex ordering heuristic.
+    bool m_stop_on_first_match{false};                         ///< Stop after first match found.
+    std::string m_output_path;                                 ///< Optional output file path.
+    std::string m_log_file_path;                               ///< Optional log file path.
 };
 
 /**
@@ -99,8 +99,7 @@ private:
      * @return Populated GraphSearcherArgs.
      * @throws SgfInvalidArgumentException for missing required flags.
      */
-    static GraphSearcherArgs
-    build_args(const boost::program_options::variables_map& variables_map);
+    static GraphSearcherArgs build_args(const boost::program_options::variables_map& variables_map);
 
     /**
      * @brief Returns the string value of a required option, throwing if absent.
