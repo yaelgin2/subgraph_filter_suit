@@ -96,7 +96,7 @@ public:
      * @param preprocess_paths  Preprocess path signatures.
      * @param preprocess_motifs Preprocess motif signatures.
      */
-    static void enumerator_preprocess_run(const std::string& input_path, bool is_directed,
+    static std::vector<EnumerationResultVector> enumerator_preprocess_run(const std::string& input_path, bool is_directed,
                                           GraphReaderType reader_type, std::string& output_path,
                                           CacheManagerType output_type,
                                           const std::string& log_file_path, bool preprocess_paths,
@@ -116,7 +116,7 @@ public:
      * @param filter_paths       Filter by path signatures.
      * @param filter_motifs      Filter by motif signatures.
      */
-    static void
+    static std::vector<std::unordered_map<std::string, FilterResult>>
     enumerator_filter_run(const std::string& graph_input_path, bool is_directed,
                           GraphReaderType reader_type, const std::string& motif_cache_file,
                           const std::string& path_cache_file, CacheManagerType cache_reader_type,
@@ -138,7 +138,10 @@ public:
     static void pattern_filter_run();
 
     /// @brief Run the exact subgraph isomorphism stage.
-    static void subgraph_isomorphism_run();
+    static uint64_t subgraph_isomorphism_run(const std::string& subgraph_path, const std::string& background_graph_path, GraphReaderType reader_type,
+                                      bool is_output, std::string& output_path,
+                                      bool is_directed, bool is_induced, bool stop_on_first_match, 
+                                      const std::string& log_file_path);
 
 private:
     static constexpr const char* PATH_CACHE_BASE_NAME = "path_cache";
@@ -180,7 +183,7 @@ private:
                           const LibraryData& library, const PreprocessorFactory& factory,
                           const std::string& timestamp);
 
-    static void run_enumeration_filter_stage(
+    static std::unordered_map<std::string, FilterResult> run_enumeration_filter_stage(
         const std::string& result_file_base_name, const EnumerationResultVector& graphs_enumeration,
         const ICacheIOManager& lib_cache_manager, const std::string& lib_cache_path,
         IFilterIOManager& filter_results_writer, const LibraryData& library,
@@ -267,7 +270,7 @@ private:
      * @param timestamp            Timestamp string used in output file names.
      * @param logger               Logger for diagnostics.
      */
-    static void
+    static std::unordered_map<std::string, FilterResult>
     enumerate_and_filter(const std::string& library_cache_file, bool load_graph_cache,
                          const std::string& graphs_cache_path,
                          const std::string& run_type_file_base_name,
