@@ -23,6 +23,7 @@ enum class SgfReturnCode : int32_t
     PATTERN_ERROR = 8,
     ADD_NODE_ERROR = 9,
     DELETE_NODE_ERROR = 10,
+    MATCH_FOUND = 11,
 };
 
 }  // namespace sgf
