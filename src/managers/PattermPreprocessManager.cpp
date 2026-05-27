@@ -1,4 +1,4 @@
-#include "PattermPreprocessManager.h"
+#include "PatternPreprocessManager.h"
 
 #include "ColoredGraph.h"
 #include "IPatternPreprocessor.h"

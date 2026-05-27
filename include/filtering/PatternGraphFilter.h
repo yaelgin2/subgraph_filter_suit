@@ -4,12 +4,14 @@
 #include "FilteringUtils.h"
 #include "IPatternPreprocessor.h"
 #include "LoggerHandler.h"
+#include "PriorPolicy.h"
 
 #include <vector>
 
 namespace sgf
 {
 
+using ColoredGraphPatternResult = std::pair<ColoredGraph, std::unordered_set<uint32_t>>;
 
 /**
  * @class PatternGraphFilter
@@ -29,7 +31,7 @@ public:
      *                      library position.
      * @param logger        Optional logger for filter diagnostics.
      */
-    explicit PatternGraphFilter(std::vector<PatternPreprocessorResult> library_cache,
+    explicit PatternGraphFilter(std::vector<ColoredGraphPatternResult> library_cache,
                                          LoggerHandler logger = LoggerHandler::null());
 
     ~PatternGraphFilter() = default;
@@ -50,10 +52,10 @@ public:
      * @return FilterResult of size equal to the library: true = pruned,
      *         false = survives.
      */
-    FilterResult filter(const ColoredGraph& graph) const;
+    FilterResult filter(const ColoredGraph& graph, bool is_induced, PriorPolicy prior_policy) const;
 
 private:
-    std::vector<PatternPreprocessorResult> m_library_cache;
+    std::vector<ColoredGraphPatternResult> m_library_cache;
     LoggerHandler m_logger;
 };
 
