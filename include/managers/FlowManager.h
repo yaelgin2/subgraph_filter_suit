@@ -6,6 +6,7 @@
 #include "IFilterIOManager.h"
 #include "IPatternWriter.h"
 #include "SingleGraphPatternPreprocessor.h"
+#include "PriorPolicy.h"
 
 #include <memory>
 #include <string>
@@ -140,7 +141,7 @@ public:
     /// @brief Run the exact subgraph isomorphism stage.
     static uint64_t subgraph_isomorphism_run(const std::string& subgraph_path, const std::string& background_graph_path, GraphReaderType reader_type,
                                       bool is_output, std::string& output_path,
-                                      bool is_directed, bool is_induced, bool stop_on_first_match, 
+                                      bool is_directed, bool is_induced, PriorPolicy policy, bool stop_on_first_match, 
                                       const std::string& log_file_path);
 
 private:

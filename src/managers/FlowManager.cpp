@@ -11,6 +11,7 @@
 #include "GraphmlPatternWriter.h"
 #include "GroupEnumerationGraphFilter.h"
 #include "IColoredGraphReader.h"
+#include "SubgraphSearcher.h"
 #include "IFilterIOManager.h"
 #include "IGraphPreprocessor.h"
 #include "IOUtils.h"
@@ -29,6 +30,7 @@
 #include "PathProcessor.h"
 #include "PattermPreprocessManager.h"
 #include "SingleGraphPatternPreprocessor.h"
+#include "PriorPolicy.h"
 #include "VertexEdgeGraphReader.h"
 #include "VertexEdgePatternWriter.h"
 
@@ -333,10 +335,23 @@ void FlowManager::pattern_filter_run()
 uint64_t FlowManager::subgraph_isomorphism_run(const std::string& subgraph_path,
      const std::string& background_graph_path, GraphReaderType reader_type,
                                       bool is_output, std::string& output_path,
-                                      bool is_directed, bool is_induced, bool stop_on_first_match, 
+                                      bool is_directed, bool is_induced, PriorPolicy policy, bool stop_on_first_match, 
                                       const std::string& log_file_path)
 {
-
+    const LoggerBundle log_bundle(log_file_path);
+    const std::unique_ptr<IColoredGraphReader> reader = make_graph_reader(reader_type);
+    const ColoredGraph subgraph =
+        reader->read(subgraph_path, is_directed, log_bundle.handler());
+    const ColoredGraph background =
+        reader->read(background_graph_path, is_directed, log_bundle.handler());
+    std::unique_ptr<MatchOutputWriter> match_writer = nullptr;
+    if (is_output)
+    {
+        match_writer = std::make_unique<MatchOutputWriter>(output_path);
+    }  
+    SubgraphSearcher seracher(policy, is_directed, is_induced, std::move(match_writer), log_bundle.handler());
+    const uint64_t match_count = seracher.find_all(background, subgraph, stop_on_first_match);
+    return match_count;
 }
 
 /* ---------- Private helpers ---------- */
