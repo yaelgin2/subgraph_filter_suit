@@ -181,7 +181,8 @@ void FlowManager::enumerator_filter_run(
     const std::string& motif_cache_file, const std::string& path_cache_file,
     const CacheManagerType cache_reader_type, std::string& output_folder,
     ResultOutputType output_type, const std::string& log_file_path, bool filter_paths,
-    bool filter_motifs, const GraphEnumerationCacheConfig& graph_cache_config, const bool non_induced)
+    bool filter_motifs, const GraphEnumerationCacheConfig& graph_cache_config,
+    const bool non_induced)
 {
     const LoggerBundle log_bundle(log_file_path);
     LibraryData graphs_to_find_in;
@@ -206,9 +207,12 @@ void FlowManager::enumerator_filter_run(
         graphs_cache_manager = make_cache_manager(
             cache_reader_type, graph_cache_config.m_graph_cache_dir, log_bundle.handler());
     }
-    const EnumerationTransformer no_op = [](EnumerationResultVector&) {};
-    const MotifDagExpander::GraphType dag_type =
-        is_directed ? MotifDagExpander::GraphType::DIRECTED : MotifDagExpander::GraphType::UNDIRECTED;
+    const EnumerationTransformer no_op = [](EnumerationResultVector&)
+    {
+    };
+    const MotifDagExpander::GraphType dag_type = is_directed
+                                                     ? MotifDagExpander::GraphType::DIRECTED
+                                                     : MotifDagExpander::GraphType::UNDIRECTED;
     if (filter_paths)
     {
         enumerate_and_filter(
@@ -226,15 +230,15 @@ void FlowManager::enumerator_filter_run(
     {
         const EnumerationTransformer motif_transform =
             non_induced ? EnumerationTransformer(
-                          [dag_type](EnumerationResultVector& enumeration)
-                          {
-                              const MotifDagExpander expander(dag_type);
-                              for (auto& result : enumeration)
+                              [dag_type](EnumerationResultVector& enumeration)
                               {
-                                  result = expander.expand(std::move(result));
-                              }
-                          })
-                    : no_op;
+                                  const MotifDagExpander expander(dag_type);
+                                  for (auto& result : enumeration)
+                                  {
+                                      result = expander.expand(std::move(result));
+                                  }
+                              })
+                        : no_op;
         enumerate_and_filter(
             motif_cache_file, !graph_cache_config.m_graphs_motif_cache_path.empty(),
             graph_cache_config.m_graphs_motif_cache_path, std::string(MOTIF_CACHE_BASE_NAME),

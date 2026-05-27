@@ -25,7 +25,8 @@ MotifDagExpander::extract_colors(const UInt128& colors_bits)
     for (uint32_t index = 0U; index < SgfConstants::MOTIF_SIZE; ++index)
     {
         const uint32_t shift = index * static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR);
-        color_array.at(index) = static_cast<uint32_t>(colors_bits >> shift) & SgfConstants::MAX_VERTEX_COLOR;
+        color_array.at(index) =
+            static_cast<uint32_t>(colors_bits >> shift) & SgfConstants::MAX_VERTEX_COLOR;
     }
     return color_array;
 }
@@ -55,7 +56,8 @@ void MotifDagExpander::process_motif(const UInt128 motif_key, const uint32_t cou
     }
     const UInt128 color_section =
         motif_key - (UInt128{static_cast<uint64_t>(motif_number)} << COLOR_SHIFT);
-    const std::array<uint32_t, SgfConstants::MOTIF_SIZE> color_array = extract_colors(color_section);
+    const std::array<uint32_t, SgfConstants::MOTIF_SIZE> color_array =
+        extract_colors(color_section);
     for (const auto& [dest_node, permutations] : edge_it->second)
     {
         for (const auto& permutation : permutations)

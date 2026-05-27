@@ -51,7 +51,7 @@ struct CliArgs
     bool m_use_motifs{false};       ///< Enable motif-based processing.
     bool m_use_paths{false};        ///< Enable path-based processing.
     bool m_is_directed{false};      ///< Treat graphs as directed.
-    bool m_non_induced{false};       ///< Expand induced motif counts via DAG before filtering.
+    bool m_non_induced{false};      ///< Expand induced motif counts via DAG before filtering.
     PreprocessArgs m_preprocess{};  ///< Preprocessing-stage arguments.
     FilterArgs m_filter{};          ///< Filter-stage arguments.
 };

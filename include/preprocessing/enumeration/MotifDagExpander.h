@@ -52,8 +52,8 @@ public:
     [[nodiscard]] EnumerationResult expand(EnumerationResult motifs) const;
 
 private:
-    static constexpr uint32_t COLOR_SHIFT =
-        static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR) * static_cast<uint32_t>(SgfConstants::MOTIF_SIZE);
+    static constexpr uint32_t COLOR_SHIFT = static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR) *
+                                            static_cast<uint32_t>(SgfConstants::MOTIF_SIZE);
 
     const DagAdjacency& m_dag;
 
@@ -65,7 +65,8 @@ private:
      * @param colors_bits Low COLOR_SHIFT bits of a motif key.
      * @return Array of MOTIF_SIZE color values.
      */
-    static std::array<uint32_t, SgfConstants::MOTIF_SIZE> extract_colors(const UInt128& colors_bits);
+    static std::array<uint32_t, SgfConstants::MOTIF_SIZE>
+    extract_colors(const UInt128& colors_bits);
 
     /**
      * @brief Apply a permutation to a color array, returning the repacked 96-bit color section.
