@@ -115,7 +115,7 @@ public:
      * @param log_file_path      Optional log file path.
      * @param filter_paths       Filter by path signatures.
      * @param filter_motifs      Filter by motif signatures.
-     * @param induced            Expand query graph motif counts via inclusion DAG before filtering.
+     * @param non_induced        Expand query graph motif counts via inclusion DAG before filtering.
      */
     static void
     enumerator_filter_run(const std::string& graph_input_path, bool is_directed,
@@ -123,7 +123,7 @@ public:
                           const std::string& path_cache_file, CacheManagerType cache_reader_type,
                           std::string& output_folder, ResultOutputType output_type,
                           const std::string& log_file_path, bool filter_paths, bool filter_motifs,
-                          const GraphEnumerationCacheConfig& graph_cache_config, bool induced);
+                          const GraphEnumerationCacheConfig& graph_cache_config, bool non_induced);
 
     /// @brief Run the pattern preprocessing stage.
     static void pattern_preprocess_run();

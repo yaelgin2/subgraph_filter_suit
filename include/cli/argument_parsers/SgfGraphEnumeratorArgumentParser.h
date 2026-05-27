@@ -51,7 +51,7 @@ struct CliArgs
     bool m_use_motifs{false};       ///< Enable motif-based processing.
     bool m_use_paths{false};        ///< Enable path-based processing.
     bool m_is_directed{false};      ///< Treat graphs as directed.
-    bool m_induced{false};          ///< Expand induced motif counts via DAG before filtering.
+    bool m_non_induced{false};       ///< Expand induced motif counts via DAG before filtering.
     PreprocessArgs m_preprocess{};  ///< Preprocessing-stage arguments.
     FilterArgs m_filter{};          ///< Filter-stage arguments.
 };
@@ -87,7 +87,7 @@ private:
     static constexpr const char* KEY_MOTIFS = "motifs";
     static constexpr const char* KEY_PATHS = "paths";
     static constexpr const char* KEY_IS_DIRECTED = "is-directed";
-    static constexpr const char* KEY_INDUCED = "induced";
+    static constexpr const char* KEY_NON_INDUCED = "non-induced";
     static constexpr const char* KEY_LIBRARY_DIR = "library-dir";
     static constexpr const char* KEY_READER_TYPE = "reader-type";
     static constexpr const char* KEY_CACHE_DIR = "cache-dir";

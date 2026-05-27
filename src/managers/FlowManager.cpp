@@ -181,7 +181,7 @@ void FlowManager::enumerator_filter_run(
     const std::string& motif_cache_file, const std::string& path_cache_file,
     const CacheManagerType cache_reader_type, std::string& output_folder,
     ResultOutputType output_type, const std::string& log_file_path, bool filter_paths,
-    bool filter_motifs, const GraphEnumerationCacheConfig& graph_cache_config, const bool induced)
+    bool filter_motifs, const GraphEnumerationCacheConfig& graph_cache_config, const bool non_induced)
 {
     const LoggerBundle log_bundle(log_file_path);
     LibraryData graphs_to_find_in;
@@ -225,7 +225,7 @@ void FlowManager::enumerator_filter_run(
     if (filter_motifs)
     {
         const EnumerationTransformer motif_transform =
-            !induced ? EnumerationTransformer(
+            non_induced ? EnumerationTransformer(
                           [dag_type](EnumerationResultVector& enumeration)
                           {
                               const MotifDagExpander expander(dag_type);

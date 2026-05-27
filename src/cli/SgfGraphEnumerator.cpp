@@ -38,7 +38,7 @@ void run_filter(const CliArgs& args)
         args.m_filter.m_motif_cache_file, args.m_filter.m_path_cache_file,
         args.m_filter.m_cache_type, result_folder, args.m_filter.m_result_type,
         args.m_filter.m_log_file_path, args.m_use_paths, args.m_use_motifs, cache_config,
-        args.m_induced);
+        args.m_non_induced);
 }
 
 /**

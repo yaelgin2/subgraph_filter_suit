@@ -52,38 +52,45 @@ public:
     [[nodiscard]] EnumerationResult expand(EnumerationResult motifs) const;
 
 private:
-    static constexpr uint32_t BITS_PER_BYTE = 8U;
-    static constexpr uint32_t COLOR_SHIFT = BITS_PER_BYTE * SgfConstants::MOTIF_SIZE;
-    static constexpr uint32_t BYTE_MASK = 0xFFU;
+    static constexpr uint32_t COLOR_SHIFT =
+        static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR) * static_cast<uint32_t>(SgfConstants::MOTIF_SIZE);
 
     const DagAdjacency& m_dag;
 
     /**
-     * @brief Extract the per-vertex 8-bit color values packed in the low COLOR_SHIFT bits.
-     * @param colors_bits Low 32 bits of a motif key.
+     * @brief Extract the per-vertex 24-bit color values packed in the low COLOR_SHIFT bits.
+     *
+     * Colors are stored LSB-first: color[i] at bits [i*BITS_PER_COLOR : (i+1)*BITS_PER_COLOR-1].
+     *
+     * @param colors_bits Low COLOR_SHIFT bits of a motif key.
      * @return Array of MOTIF_SIZE color values.
      */
-    static std::array<uint32_t, SgfConstants::MOTIF_SIZE> extract_colors(uint32_t colors_bits);
+    static std::array<uint32_t, SgfConstants::MOTIF_SIZE> extract_colors(const UInt128& colors_bits);
 
     /**
-     * @brief Apply a permutation to a color array, returning the repacked color bits.
+     * @brief Apply a permutation to a color array, returning the repacked 96-bit color section.
+     *
+     * Applies output[permutation[i]] = color_array[i], packed LSB-first.
+     *
      * @param color_array Per-vertex colors extracted by extract_colors.
      * @param permutation Permutation indices from a DAG edge.
-     * @return Repacked color bits after applying the permutation.
+     * @return Repacked 96-bit color section after applying the permutation.
      */
-    static uint32_t
+    static UInt128
     apply_permutation(const std::array<uint32_t, SgfConstants::MOTIF_SIZE>& color_array,
                       const DagPermutation& permutation);
 
     /**
      * @brief Process one motif key: follow all DAG out-edges and accumulate sub-motif counts.
+     *
+     * Safe to call while holding a snapshot of the original keys, since iteration
+     * is over the snapshot, not over @p motifs directly.
+     *
      * @param motif_key The full 128-bit motif key.
      * @param count     Occurrence count of this motif.
-     * @param motifs    Result map updated in-place for existing keys.
-     * @param keys_to_add Accumulator for newly discovered keys.
+     * @param motifs    Result map updated in-place (new keys may be inserted).
      */
-    void process_motif(UInt128 motif_key, uint32_t count, EnumerationResult& motifs,
-                       EnumerationResult& keys_to_add) const;
+    void process_motif(UInt128 motif_key, uint32_t count, EnumerationResult& motifs) const;
 };
 
 }  // namespace sgf
