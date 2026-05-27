@@ -15,11 +15,9 @@
 namespace sgf
 {
 
-IPatternCacheIOManager::IPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                                               std::shared_ptr<IPatternWriter> writer)
+IPatternCacheIOManager::IPatternCacheIOManager(std::string folder, LoggerHandler logger)
     : m_folder(std::move(folder))
     , m_logger(std::move(logger))
-    , m_writer(std::move(writer))
 {
 }
 
@@ -30,10 +28,11 @@ std::string IPatternCacheIOManager::build_pattern_base_name(const uint32_t index
 }
 
 std::string IPatternCacheIOManager::build_pattern_full_path(const uint32_t index,
-                                                            const std::string& timestamp) const
+                                                            const std::string& timestamp,
+                                                            const IPatternWriter& writer) const
 {
     const std::string base_name = build_pattern_base_name(index, timestamp);
-    const std::string ext = m_writer->get_file_extension();
+    const std::string ext = writer.get_file_extension();
     const std::string filename = ext.empty() ? base_name : base_name + "." + ext;
     return (std::filesystem::path(m_folder) / filename).string();
 }
@@ -47,23 +46,24 @@ std::string IPatternCacheIOManager::build_mapping_path(const std::string& timest
 void IPatternCacheIOManager::write_single_pattern(const PatternPreprocessorResult& result,
                                                   const uint32_t index,
                                                   const std::string& timestamp,
+                                                  const IPatternWriter& writer,
                                                   PatternMapping& mapping) const
 {
-    const std::string pattern_path = build_pattern_full_path(index, timestamp);
-    m_writer->write(result.first, pattern_path, m_logger);
+    const std::string pattern_path = build_pattern_full_path(index, timestamp, writer);
+    writer.write(result.first, pattern_path, m_logger);
     const std::string base_name = build_pattern_base_name(index, timestamp);
     mapping.emplace(base_name, result.second);
 }
 
-void IPatternCacheIOManager::write(const PatternOutput& patterns,
-                                   const std::string& timestamp) const
+void IPatternCacheIOManager::write(const PatternOutput& patterns, const std::string& timestamp,
+                                   std::shared_ptr<IPatternWriter> writer) const
 {
     IOUtils::create_directory_if_needed(m_folder);
     PatternMapping mapping;
     uint32_t pattern_idx = 0U;
     for (const PatternPreprocessorResult& result : patterns)
     {
-        write_single_pattern(result, pattern_idx, timestamp, mapping);
+        write_single_pattern(result, pattern_idx, timestamp, *writer, mapping);
         ++pattern_idx;
     }
     const std::string mapping_path = build_mapping_path(timestamp);

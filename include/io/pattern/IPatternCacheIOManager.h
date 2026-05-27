@@ -42,10 +42,8 @@ public:
      *
      * @param folder  Directory where all output files are written.
      * @param logger  Optional logger for diagnostics.
-     * @param writer  Writer used to serialize each pattern graph.
      */
-    IPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                           std::shared_ptr<IPatternWriter> writer);
+    IPatternCacheIOManager(std::string folder, LoggerHandler logger);
 
     /**
      * @brief Default virtual destructor.
@@ -61,14 +59,16 @@ public:
      * @brief Writes each pattern graph and the pattern→graph-index mapping.
      *
      * Creates @p folder if absent, then for each pattern in @p patterns writes
-     * the BoostGraph using the owned IPatternWriter and records the covering
+     * the BoostGraph using the supplied IPatternWriter and records the covering
      * graph index set in the mapping file.
      *
      * @param patterns  Mined patterns with their covering library graph indices.
      * @param timestamp Unique run identifier appended to every output filename.
+     * @param writer    Writer used to serialize each pattern graph.
      * @throws SgfPathExistsException if any file cannot be opened or written.
      */
-    void write(const PatternOutput& patterns, const std::string& timestamp) const;
+    void write(const PatternOutput& patterns, const std::string& timestamp,
+               std::shared_ptr<IPatternWriter> writer) const;
 
     /**
      * @brief Reads the pattern→graph-index mapping from a previous write() call.
@@ -108,15 +108,15 @@ protected:
 private:
     std::string m_folder;
     LoggerHandler m_logger;
-    std::shared_ptr<IPatternWriter> m_writer;
 
     [[nodiscard]] static std::string build_pattern_base_name(uint32_t index,
                                                              const std::string& timestamp);
-    [[nodiscard]] std::string build_pattern_full_path(uint32_t index,
-                                                      const std::string& timestamp) const;
+    [[nodiscard]] std::string build_pattern_full_path(uint32_t index, const std::string& timestamp,
+                                                      const IPatternWriter& writer) const;
     [[nodiscard]] std::string build_mapping_path(const std::string& timestamp) const;
     void write_single_pattern(const PatternPreprocessorResult& result, uint32_t index,
-                              const std::string& timestamp, PatternMapping& mapping) const;
+                              const std::string& timestamp, const IPatternWriter& writer,
+                              PatternMapping& mapping) const;
 };
 
 }  // namespace sgf

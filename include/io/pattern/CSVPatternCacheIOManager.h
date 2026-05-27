@@ -4,7 +4,6 @@
 #include "LoggerHandler.h"
 
 #include <fstream>
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -27,8 +26,8 @@ namespace sgf
  * pattern_1_1748300000,1
  * @endcode
  *
- * Pattern graph files are written by the IPatternWriter supplied at
- * construction. Their base names follow the form pattern_<index>_<timestamp>
+ * Pattern graph files are written by the IPatternWriter supplied to write().
+ * Their base names follow the form pattern_<index>_<timestamp>
  * and are the keys stored in the mapping.
  */
 class CSVPatternCacheIOManager : public IPatternCacheIOManager
@@ -39,10 +38,8 @@ public:
      *
      * @param folder  Directory where pattern files and the mapping file are written.
      * @param logger  Optional logger for diagnostics.
-     * @param writer  Writer used to serialize each pattern graph.
      */
-    CSVPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                             std::shared_ptr<IPatternWriter> writer);
+    CSVPatternCacheIOManager(std::string folder, LoggerHandler logger);
 
     /**
      * @brief Default virtual destructor.
