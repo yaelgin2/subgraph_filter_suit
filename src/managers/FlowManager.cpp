@@ -249,10 +249,15 @@ void FlowManager::subgraph_isomorphism_run()
 std::string FlowManager::generate_timestamp()
 {
     const std::time_t now = std::time(nullptr);
-    const std::tm* local_time = std::localtime(&now);
+    std::tm local_time{};
+#ifdef _WIN32
+    localtime_s(&local_time, &now);
+#else
+    localtime_r(&now, &local_time);  // NOLINT(misc-include-cleaner)
+#endif
     constexpr size_t timestamp_buffer_size = 20U;
     std::array<char, timestamp_buffer_size> buffer{};
-    std::strftime(buffer.data(), buffer.size(), "%Y-%m-%d_%H-%M-%S", local_time);
+    std::strftime(buffer.data(), buffer.size(), "%Y-%m-%d_%H-%M-%S", &local_time);
     return buffer.data();
 }
 

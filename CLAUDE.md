@@ -237,6 +237,7 @@ Each concrete exception class defines a **unique** `return_code()` used by CLI t
 | `InvalidArgumentException` | `include/exceptions/InvalidArgumentException.h` | 2 |
 | `GraphConstructionException` | `include/exceptions/GraphConstructionException.h` | 3 |
 | `EnumerationOverflowException` | `include/exceptions/EnumerationOverflowException.h` | 6 |
+| `MatchFoundException` | `include/exceptions/MatchFoundException.h` | 11 |
 
 When adding a new exception type, add it to this table and do not reuse an existing return code.
 
