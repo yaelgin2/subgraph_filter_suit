@@ -26,11 +26,13 @@ using PatternMapping = std::unordered_map<std::string, std::unordered_set<uint32
  * Owns directory creation and path construction so that concrete subclasses
  * only handle format-specific mapping serialization.
  *
- * write() serializes each pattern graph via the owned IPatternWriter and then
+ * write() serializes each pattern graph via the supplied IPatternWriter and then
  * writes a mapping file that records which library graph indices each pattern
  * covers. Pattern files are named pattern_<index>_<timestamp>[.<ext>] where
  * the extension is determined by the writer. The mapping file is named
- * pattern_index_<timestamp>.<mapping_ext>.
+ * pattern_index_<timestamp>.<mapping_ext>. The mapping keys are the full
+ * pattern filenames (including extension), so read() callers need only the
+ * cache folder to reconstruct file paths.
  *
  * read() deserializes the mapping file and returns the pattern-to-indices map.
  */
@@ -68,7 +70,7 @@ public:
      * @throws SgfPathExistsException if any file cannot be opened or written.
      */
     void write(const PatternOutput& patterns, const std::string& timestamp,
-               std::shared_ptr<IPatternWriter> writer) const;
+               const std::shared_ptr<IPatternWriter>& writer) const;
 
     /**
      * @brief Reads the pattern→graph-index mapping from a previous write() call.

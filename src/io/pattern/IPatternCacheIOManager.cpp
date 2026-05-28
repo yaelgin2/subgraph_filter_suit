@@ -51,12 +51,12 @@ void IPatternCacheIOManager::write_single_pattern(const PatternPreprocessorResul
 {
     const std::string pattern_path = build_pattern_full_path(index, timestamp, writer);
     writer.write(result.first, pattern_path, m_logger);
-    const std::string base_name = build_pattern_base_name(index, timestamp);
-    mapping.emplace(base_name, result.second);
+    const std::string filename = std::filesystem::path(pattern_path).filename().string();
+    mapping.emplace(filename, result.second);
 }
 
 void IPatternCacheIOManager::write(const PatternOutput& patterns, const std::string& timestamp,
-                                   std::shared_ptr<IPatternWriter> writer) const
+                                   const std::shared_ptr<IPatternWriter>& writer) const
 {
     IOUtils::create_directory_if_needed(m_folder);
     PatternMapping mapping;

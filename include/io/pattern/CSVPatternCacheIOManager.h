@@ -21,14 +21,14 @@ namespace sgf
  *
  * @code
  * pattern_name,graph_index
- * pattern_0_1748300000,0
- * pattern_0_1748300000,3
- * pattern_1_1748300000,1
+ * pattern_0_1748300000.graphml,0
+ * pattern_0_1748300000.graphml,3
+ * pattern_1_1748300000.graphml,1
  * @endcode
  *
  * Pattern graph files are written by the IPatternWriter supplied to write().
- * Their base names follow the form pattern_<index>_<timestamp>
- * and are the keys stored in the mapping.
+ * The mapping key is the full filename (base name + extension), so readers can
+ * reconstruct the file path from the cache folder alone without knowing the writer type.
  */
 class CSVPatternCacheIOManager : public IPatternCacheIOManager
 {

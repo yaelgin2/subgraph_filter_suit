@@ -29,16 +29,15 @@
 #include "MotifPreprocessor.h"
 #include "MultiGraphPatternPreprocessor.h"
 #include "PathProcessor.h"
-#include "PattermPreprocessManager.h"
+#include "PatternGraphFilter.h"
+#include "PatternPreprocessManager.h"
 #include "PriorPolicy.h"
 #include "SingleGraphPatternPreprocessor.h"
 #include "SubgraphSearcher.h"
 #include "VertexEdgeGraphReader.h"
-#include "PatternGraphFilter.h"
 #include "VertexEdgePatternWriter.h"
 
 #include <ICacheIOManager.h>
-#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <ctime>
@@ -48,7 +47,6 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -82,6 +80,22 @@ std::shared_ptr<IPatternWriter> FlowManager::make_pattern_writer(const PatternWr
         return std::make_shared<JsonPatternWriter>();
     case PatternWriterType::VERTEX_EDGE:
         return std::make_shared<VertexEdgePatternWriter>();
+    default:
+        throw InvalidArgumentException("Unknown PatternWriterType.");
+    }
+}
+
+GraphReaderType
+FlowManager::pattern_witer_type_to_graph_reader_type(const PatternWriterType pattern_writer_type)
+{
+    switch (pattern_writer_type)
+    {
+    case PatternWriterType::GRAPHML:
+        return GraphReaderType::GRAPHML;
+    case PatternWriterType::JSON:
+        return GraphReaderType::JSON;
+    case PatternWriterType::VERTEX_EDGE:
+        return GraphReaderType::VERTEX_EDGE;
     default:
         throw InvalidArgumentException("Unknown PatternWriterType.");
     }
@@ -353,8 +367,46 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     return result;
 }
 
-void FlowManager::pattern_filter_run()
+// NOLINTNEXTLINE(readability-function-size)
+std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::pattern_filter_run(
+    const std::string& pattern_to_filter_cache, const PatternWriterType pattern_type,
+    const std::string& background_graph_path, const GraphReaderType reader_type,
+    const bool is_directed, std::string& output_path, const ResultOutputType output_type,
+    const std::string& log_file_path, const PriorPolicy prior_policy, const bool is_induced)
 {
+    const LoggerBundle log_bundle(log_file_path);
+    const std::filesystem::path cache_path_obj(pattern_to_filter_cache);
+    const std::string cache_folder = cache_path_obj.parent_path().string();
+    const std::string timestamp =
+        cache_path_obj.stem().string().substr(std::char_traits<char>::length(PATTERN_INDEX_PREFIX));
+    const CSVPatternCacheIOManager cache_manager(cache_folder, log_bundle.handler());
+    const PatternMapping pattern_mapping = cache_manager.read(timestamp);
+    const std::unique_ptr<IColoredGraphReader> pattern_reader =
+        make_graph_reader(pattern_witer_type_to_graph_reader_type(pattern_type));
+    std::vector<ColoredGraphPatternResult> library_cache;
+    std::vector<std::string> pattern_filenames;
+    library_cache.reserve(pattern_mapping.size());
+    pattern_filenames.reserve(pattern_mapping.size());
+    for (const auto& [filename, indices] : pattern_mapping)
+    {
+        const std::string file_path = (std::filesystem::path(cache_folder) / filename).string();
+        library_cache.emplace_back(
+            pattern_reader->read(file_path, is_directed, log_bundle.handler()), indices);
+        pattern_filenames.push_back(filename);
+    }
+    const PatternGraphFilter pattern_filter(std::move(library_cache), log_bundle.handler());
+    const std::unique_ptr<IColoredGraphReader> graph_reader = make_graph_reader(reader_type);
+    const ColoredGraph background =
+        graph_reader->read(background_graph_path, is_directed, log_bundle.handler());
+    const FilterResult filter_result = pattern_filter.filter(background, is_induced, prior_policy);
+    std::unique_ptr<IFilterIOManager> filter_results_writer =
+        make_filter_results_io_manager(output_type, output_path, log_bundle.handler());
+    const std::string background_stem =
+        std::filesystem::path(background_graph_path).stem().string();
+    filter_results_writer->write(background_stem + PATTERN_FILTER_RESULT_SUFFIX +
+                                     generate_timestamp(),
+                                 pattern_filenames, filter_result);
+    return {std::unordered_map<std::string, FilterResult>{{background_stem, filter_result}}};
 }
 
 // NOLINTNEXTLINE(readability-function-size)
