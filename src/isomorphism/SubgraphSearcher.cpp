@@ -1,6 +1,7 @@
 #include "SubgraphSearcher.h"
 
 #include "ColoredGraph.h"
+#include "InvalidArgumentException.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 #include "MatchFoundException.h"
@@ -112,19 +113,29 @@ SubgraphSearcher::PriorMap SubgraphSearcher::calculate_prior(const ColoredGraph&
                                                              const ColoredGraph& graph,
                                                              const PriorPolicy policy) const
 {
+    PriorMap prior;
     if (policy == PriorPolicy::SUBGRAPH_DEGREE_SQUARED)
     {
-        return calculate_prior_second_degree(subgraph);
+        prior = calculate_prior_second_degree(subgraph);
     }
-    if (policy == PriorPolicy::GRAPH_DEGREE_SQUARED)
+    else if (policy == PriorPolicy::GRAPH_DEGREE_SQUARED)
     {
-        return calculate_prior_second_degree(graph);
+        prior = calculate_prior_second_degree(graph);
     }
-    if (policy == PriorPolicy::SUBGRAPH_DEGREE)
+    else if (policy == PriorPolicy::SUBGRAPH_DEGREE)
     {
-        return calculate_prior_first_degree(subgraph);
+        prior = calculate_prior_first_degree(subgraph);
     }
-    return {};
+    // prior stays empty ({}) for policies that do not populate it (e.g. RANDOM, CONSTANT)
+    if (!m_logger.is_null())
+    {
+        for (auto& [vertex, score] : prior)
+        {
+            m_logger.log(LogLevel::DEBUG, "prior vertex=" + std::to_string(vertex) +
+                                              " score=" + std::to_string(score));
+        }
+    }
+    return prior;
 }
 
 double SubgraphSearcher::score_graph_degree_squared(const RestrictionMap& restrictions,
@@ -654,6 +665,10 @@ uint64_t SubgraphSearcher::recursion_search(SearchContext& context, const uint32
 uint64_t SubgraphSearcher::find_all(const ColoredGraph& graph, const ColoredGraph& subgraph,
                                     const bool stop_after_first) const
 {
+    if (subgraph.vertex_count() == 0U)
+    {
+        throw InvalidArgumentException("subgraph must have at least one vertex");
+    }
     m_stop = false;
     const PriorMap prior = calculate_prior(subgraph, graph, m_policy);
     const uint32_t start_vertex = choose_start(subgraph, prior);
