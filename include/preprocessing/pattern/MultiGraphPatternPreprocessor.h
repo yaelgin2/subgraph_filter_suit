@@ -26,11 +26,11 @@ public:
      * @param graph_library  Non-owning reference to the library of graphs to mine patterns from.
      * @param is_directed    True if the graphs are directed.
      * @param pattern_number Number of patterns to extract.
-     * @param alive_precent  Minimum fraction of graphs (0–100) a pattern must appear in.
+     * @param alive_precent  Minimum percentage of graphs (0.0–100.0) a pattern must appear in.
      * @param logger         Optional logger; defaults to a no-op handler.
      */
     MultiGraphPatternPreprocessor(std::vector<ColoredGraph>& graph_library, bool is_directed,
-                                  uint32_t pattern_number, uint32_t alive_precent,
+                                  uint32_t pattern_number, double alive_precent,
                                   LoggerHandler logger = LoggerHandler::null());
 
     /**
@@ -44,7 +44,7 @@ private:
     std::vector<ColoredGraph>& m_graph_library;  ///< Library of graphs to mine.
     const bool M_IS_DIRECTED;                    ///< Whether graphs are directed.
     const uint32_t M_PATTERN_NUMBER;             ///< Number of patterns to extract.
-    const uint32_t M_ALIVE_PRECENT;              ///< Minimum coverage fraction (0–100).
+    const double M_ALIVE_PRECENT;               ///< Minimum coverage percentage (0.0–100.0).
     LoggerHandler m_logger;                      ///< Logger for runtime messages.
 };
 

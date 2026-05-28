@@ -170,7 +170,7 @@ SgfPatternFinderArgumentParser::parse_preprocess_args(const po::variables_map& v
     result.m_preprocess_multigraph = parse_uint32_value(
         variables_map.at(KEY_PREPROCESS_MULTIGRAPH).as<std::string>(), KEY_PREPROCESS_MULTIGRAPH);
     result.m_multigraph_alive_percent =
-        parse_uint32_value(variables_map.at(KEY_MULTIGRAPH_ALIVE_PERCENT).as<std::string>(),
+        parse_double_value(variables_map.at(KEY_MULTIGRAPH_ALIVE_PERCENT).as<std::string>(),
                            KEY_MULTIGRAPH_ALIVE_PERCENT);
     result.m_preprocess_single_graph_from_results =
         variables_map.at(KEY_PREPROCESS_SINGLE_GRAPH_FROM_RESULTS).as<bool>();

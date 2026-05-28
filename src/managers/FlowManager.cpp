@@ -287,7 +287,7 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
 std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const std::string& input_path, const bool is_directed, GraphReaderType reader_type,
     std::string& output_path, const PatternWriterType output_type, const std::string& log_file_path,
-    const uint32_t preprocess_multigraph, const uint32_t multigraph_alive_percent,
+    const uint32_t preprocess_multigraph, const double multigraph_alive_percent,
     const bool preprocess_singlegraph_results_file, const std::string& results_file_path,
     const int64_t preprocess_singlegraph, const ResultOutputType results_file_type,
     const std::string& background_graph_path, const double score_threshold,
