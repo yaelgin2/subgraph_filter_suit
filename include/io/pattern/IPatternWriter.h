@@ -47,6 +47,17 @@ public:
     void write(const BoostGraph& graph, const std::string& path,
                const LoggerHandler& logger = LoggerHandler::null()) const;
 
+    /**
+     * @brief Returns the file extension this writer appends, without a leading dot.
+     *
+     * For single-file formats (GraphML, JSON) this is the format extension
+     * (e.g. "graphml", "json"). For multi-file formats that append their own
+     * suffixes to the base path (e.g. VertexEdge), this returns an empty string.
+     *
+     * @return Extension string, or empty if the writer manages its own suffixes.
+     */
+    [[nodiscard]] virtual std::string get_file_extension() const = 0;
+
 private:
     /**
      * @brief Writes @p graph to @p path in the concrete format.

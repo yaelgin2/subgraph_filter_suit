@@ -1,7 +1,8 @@
+#include "PatternPreprocessManager.h"
+
 #include "ColoredGraph.h"
 #include "IPatternPreprocessor.h"
 #include "LoggerHandler.h"
-#include "PatternPreprocessManager.h"
 
 #include <memory>
 #include <utility>

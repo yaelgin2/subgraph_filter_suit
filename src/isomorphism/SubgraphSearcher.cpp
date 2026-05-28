@@ -290,7 +290,10 @@ void SubgraphSearcher::write_match(SearchContext& context, const uint32_t graph_
     }
     oss << "}";
     context.m_path.erase(graph_vertex);
-    m_match_writer->write_match(oss.str());
+    if (m_match_writer != nullptr)
+    {
+        m_match_writer->write_match(oss.str());
+    }
     if (context.m_stop_after_first)
     {
         throw MatchFoundException{};

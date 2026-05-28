@@ -15,6 +15,12 @@ namespace sgf
 class GraphmlPatternWriter : public IPatternWriter
 {
 public:
+    /**
+     * @brief Returns the GraphML file extension.
+     * @return "graphml"
+     */
+    [[nodiscard]] std::string get_file_extension() const override;
+
 private:
     /**
      * @brief Writes @p graph to @p path in GraphML format.
