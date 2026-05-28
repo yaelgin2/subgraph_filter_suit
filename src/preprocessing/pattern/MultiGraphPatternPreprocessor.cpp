@@ -3,6 +3,7 @@
 #include "ColoredGraph.h"
 #include "IPatternPreprocessor.h"
 #include "LoggerHandler.h"
+#include "LogLevel.h"
 #include "MultiGraphPatternFinder.h"
 
 #include <cstdint>
@@ -29,6 +30,8 @@ std::vector<PatternPreprocessorResult> MultiGraphPatternPreprocessor::calculate(
     std::vector<PatternPreprocessorResult> pattern_result(M_PATTERN_NUMBER);
     for (uint32_t pattern_index = 0U; pattern_index < M_PATTERN_NUMBER; ++pattern_index)
     {
+        m_logger.log(LogLevel::INFO, "Extracting pattern " + std::to_string(pattern_index + 1U) + "/" +
+                     std::to_string(M_PATTERN_NUMBER) + "...");
         pattern_result[pattern_index] = pattern_finder.find_pattern(M_ALIVE_PRECENT, true);
     }
     return pattern_result;

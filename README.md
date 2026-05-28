@@ -15,10 +15,10 @@ A C++ library for efficient subgraph matching. It preprocesses a library of grap
 
 ```bash
 # Configure with CLI disabled
-cmake -S . -B build -DSGF_BUILD_CLI=OFF
+cmake -S . -B build -DSGF_BUILD_CLI=OFF -DCMAKE_BUILD_TYPE=Release
 
-# Build
-cmake --build build --config Release
+# Build (parallel — uses all available cores on Linux, macOS, and Windows)
+cmake --build build --config Release --parallel
 ```
 
 The library target is `subgraph_filter_suite`. Link against it from your own CMake project with:
@@ -32,13 +32,20 @@ target_link_libraries(my_target PRIVATE subgraph_filter_suite)
 
 ```bash
 # Configure (CLI is ON by default) — also generates compile_commands.json for IDE tooling
-cmake -S . -B build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
-# Build (Release)
-cmake --build build --config Release
+# Build (parallel — uses all available cores on Linux, macOS, and Windows)
+cmake --build build --config Release --parallel
 ```
 
 This produces the `sgf-graph-enumerator` executable in the `build/` directory in addition to the library.
+
+> **Note on `--config Release` vs `-DCMAKE_BUILD_TYPE=Release`:** CMake has two generator families.
+> Single-config generators (Unix Makefiles, Ninja — typical on Linux/macOS) read the build type
+> from `-DCMAKE_BUILD_TYPE` at configure time and ignore `--config` at build time.
+> Multi-config generators (Visual Studio, Xcode — typical on Windows/macOS) ignore
+> `-DCMAKE_BUILD_TYPE` and read the build type from `--config` at build time.
+> Passing both, as shown above, ensures a Release build on every platform.
 
 ### Compiler/Boost ABI mismatch
 
@@ -58,13 +65,13 @@ Users with system Boost and system GCC typically do not need this flag.
 
 ```bash
 # Run all tests with output on failure
-ctest --test-dir build --output-on-failure -C Release
+ctest --test-dir build --output-on-failure --build-config Release
 
 # Run a specific test suite by name
-ctest --test-dir build -R colored_graph_tests --output-on-failure
+ctest --test-dir build -R colored_graph_tests --output-on-failure --build-config Release
 
 # Run single test
-ctest --test-dir build -R three_vertices_triangle_returns_empty_map --output-on-failure -C Release
+ctest --test-dir build -R three_vertices_triangle_returns_empty_map --output-on-failure --build-config Release
 
 ```
 

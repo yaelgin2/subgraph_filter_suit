@@ -18,18 +18,20 @@ namespace sgf
  */
 struct PatternPreprocessArgs
 {
-    std::string m_library_input_folder;                                   ///< Input graph library directory.
-    std::string m_output_folder;                                          ///< Output directory for patterns.
+    std::string m_library_input_folder;  ///< Input graph library directory.
+    std::string m_output_folder;         ///< Output directory for patterns.
     PatternWriterType m_pattern_output_type{PatternWriterType::GRAPHML};  ///< Pattern file format.
-    uint32_t m_preprocess_multigraph{0};           ///< Number of multigraph patterns to extract.
-    uint32_t m_multigraph_alive_percent{0};        ///< Minimum alive percentage for multigraph patterns.
-    bool m_preprocess_single_graph_from_results{false};  ///< Load single graph index from a results file.
-    std::string m_results_file_path;               ///< Path to results file (required when m_preprocess_single_graph_from_results is true).
+    uint32_t m_preprocess_multigraph{0};     ///< Number of multigraph patterns to extract.
+    uint32_t m_multigraph_alive_percent{0};  ///< Minimum alive percentage for multigraph patterns.
+    bool m_preprocess_single_graph_from_results{
+        false};                       ///< Load single graph index from a results file.
+    std::string m_results_file_path;  ///< Path to results file (required when
+                                      ///< m_preprocess_single_graph_from_results is true).
     ResultOutputType m_results_file_type{ResultOutputType::JSON};  ///< Format of the results file.
-    int64_t m_preprocess_single_graph{0};          ///< Index of single graph to process.
-    std::string m_background_graph_path;           ///< Path to the background graph file.
-    double m_score_threshold{0.0};                 ///< Pattern score cutoff.
-    SingleGraphFinderConfig m_config{};            ///< Beam search tuning parameters.
+    int64_t m_preprocess_single_graph{0};  ///< Index of single graph to process.
+    std::string m_background_graph_path;   ///< Path to the background graph file.
+    double m_score_threshold{0.0};         ///< Pattern score cutoff.
+    SingleGraphFinderConfig m_config{};    ///< Beam search tuning parameters.
 };
 
 /**
@@ -40,10 +42,10 @@ struct PatternFilterArgs
     std::string m_pattern_mapping_cache;                           ///< Path to pattern cache.
     PatternWriterType m_pattern_type{PatternWriterType::GRAPHML};  ///< Pattern cache file format.
     std::string m_background_graph_folder;                         ///< Path to background graph.
-    std::string m_output_path;                                     ///< Output directory for filter results.
-    ResultOutputType m_output_type{ResultOutputType::JSON};        ///< Filter results format.
-    PriorPolicy m_prior_policy{PriorPolicy::SUBGRAPH_DEGREE};      ///< Vertex ordering heuristic.
-    bool m_is_induced{false};                                      ///< Search for induced subgraph matches.
+    std::string m_output_path;  ///< Output directory for filter results.
+    ResultOutputType m_output_type{ResultOutputType::JSON};    ///< Filter results format.
+    PriorPolicy m_prior_policy{PriorPolicy::SUBGRAPH_DEGREE};  ///< Vertex ordering heuristic.
+    bool m_is_induced{false};  ///< Search for induced subgraph matches.
 };
 
 /**
@@ -51,13 +53,13 @@ struct PatternFilterArgs
  */
 struct PatternFinderCliArgs
 {
-    bool m_run_preprocess{false};                                       ///< Run the pattern preprocessing stage.
-    bool m_run_filter{false};                                           ///< Run the pattern filter stage.
-    bool m_is_directed{false};                                          ///< Treat graphs as directed.
-    GraphReaderType m_reader_type{GraphReaderType::GRAPHML};            ///< Graph file format.
-    std::string m_log_file_path;                                        ///< Optional log file path.
-    PatternPreprocessArgs m_preprocess{};                               ///< Preprocessing-stage arguments.
-    PatternFilterArgs m_filter{};                                       ///< Filter-stage arguments.
+    bool m_run_preprocess{false};  ///< Run the pattern preprocessing stage.
+    bool m_run_filter{false};      ///< Run the pattern filter stage.
+    bool m_is_directed{false};     ///< Treat graphs as directed.
+    GraphReaderType m_reader_type{GraphReaderType::GRAPHML};  ///< Graph file format.
+    std::string m_log_file_path;                              ///< Optional log file path.
+    PatternPreprocessArgs m_preprocess{};                     ///< Preprocessing-stage arguments.
+    PatternFilterArgs m_filter{};                             ///< Filter-stage arguments.
 };
 
 /**

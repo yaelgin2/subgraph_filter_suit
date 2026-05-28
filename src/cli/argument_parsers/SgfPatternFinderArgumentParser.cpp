@@ -26,7 +26,7 @@ namespace sgf
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 std::optional<PatternFinderCliArgs> SgfPatternFinderArgumentParser::parse(const int argc,
-                                                                           char* argv[])
+                                                                          char* argv[]) // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays,-warnings-as-errors)
 {
     const po::options_description desc = build_options();
     const po::variables_map variables_map = parse_raw(argc, argv, desc);
@@ -72,27 +72,21 @@ po::options_description SgfPatternFinderArgumentParser::build_preprocess_options
         "Directory where extracted patterns are written")(
         KEY_PATTERN_OUTPUT_TYPE, po::value<std::string>(),
         "Pattern file format: graphml, json, vertex-edge")(
-        KEY_PREPROCESS_MULTIGRAPH,
-        po::value<std::string>()->default_value("0"),
+        KEY_PREPROCESS_MULTIGRAPH, po::value<std::string>()->default_value("0"),
         "Number of multigraph patterns to extract (default: 0)")(
-        KEY_MULTIGRAPH_ALIVE_PERCENT,
-        po::value<std::string>()->default_value("0"),
+        KEY_MULTIGRAPH_ALIVE_PERCENT, po::value<std::string>()->default_value("0"),
         "Minimum alive percentage for multigraph patterns (default: 0)")(
         KEY_PREPROCESS_SINGLE_GRAPH_FROM_RESULTS, po::bool_switch(),
         "Derive single-graph index from a results file instead of --preprocess-single-graph")(
         KEY_RESULTS_FILE_PATH, po::value<std::string>(),
         "Path to results file (required with --preprocess-single-graph-from-results)")(
-        KEY_RESULTS_FILE_TYPE,
-        po::value<std::string>()->default_value("json"),
+        KEY_RESULTS_FILE_TYPE, po::value<std::string>()->default_value("json"),
         "Results file format: json, csv (default: json)")(
-        KEY_PREPROCESS_SINGLE_GRAPH,
-        po::value<std::string>()->default_value("0"),
+        KEY_PREPROCESS_SINGLE_GRAPH, po::value<std::string>()->default_value("0"),
         "Index of single graph to process (required when using single-graph mode, default: 0)")(
-        KEY_BACKGROUND_GRAPH_PATH,
-        po::value<std::string>()->default_value(""),
+        KEY_BACKGROUND_GRAPH_PATH, po::value<std::string>()->default_value(""),
         "(optional) Path to background graph file for pattern scoring")(
-        KEY_SCORE_THRESHOLD,
-        po::value<std::string>()->default_value("0.0"),
+        KEY_SCORE_THRESHOLD, po::value<std::string>()->default_value("0.0"),
         "Pattern score cutoff; beam search stops below this value (default: 0.0)");
     return desc;
 }
@@ -106,8 +100,7 @@ po::options_description SgfPatternFinderArgumentParser::build_filter_options()
         "Pattern cache file format: graphml, json, vertex-edge")(
         KEY_BACKGROUND_GRAPH_FOLDER, po::value<std::string>(),
         "Path to the background graph used during filtering")(
-        KEY_OUTPUT_PATH, po::value<std::string>(),
-        "Directory where filter results are written")(
+        KEY_OUTPUT_PATH, po::value<std::string>(), "Directory where filter results are written")(
         KEY_OUTPUT_TYPE, po::value<std::string>(), "Filter results format: json, csv")(
         KEY_PRIOR_POLICY, po::value<std::string>(),
         "Vertex ordering heuristic: subgraph-degree-squared, graph-degree-squared, "
@@ -118,23 +111,20 @@ po::options_description SgfPatternFinderArgumentParser::build_filter_options()
 
 po::options_description SgfPatternFinderArgumentParser::build_config_options()
 {
-    po::options_description desc("SingleGraphFinder config flags (optional, used with --preprocess)");
-    desc.add_options()(
-        KEY_MAX_ACTIVE_PATTERNS,
-        po::value<std::string>()->default_value("500"),
-        "Maximum number of simultaneously active beam states (default: 500)")(
-        KEY_ALPHA_0,
-        po::value<std::string>()->default_value("1.0"),
+    po::options_description desc(
+        "SingleGraphFinder config flags (optional, used with --preprocess)");
+    desc.add_options()(KEY_MAX_ACTIVE_PATTERNS, po::value<std::string>()->default_value("500"),
+                       "Maximum number of simultaneously active beam states (default: 500)")(
+        KEY_ALPHA_0, po::value<std::string>()->default_value("1.0"),
         "Initial weight for the outside-neighbour score term (default: 1.0)")(
-        KEY_ALPHA_DECAY,
-        po::value<std::string>()->default_value("0.9"),
+        KEY_ALPHA_DECAY, po::value<std::string>()->default_value("0.9"),
         "Per-depth multiplicative decay applied to alpha-0 (default: 0.9)");
     return desc;
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-po::variables_map SgfPatternFinderArgumentParser::parse_raw(
-    const int argc, char* argv[], const po::options_description& desc)
+po::variables_map SgfPatternFinderArgumentParser::parse_raw(const int argc, char* argv[],
+                                                            const po::options_description& desc)
 {
     po::variables_map variables_map;
     try
@@ -149,8 +139,8 @@ po::variables_map SgfPatternFinderArgumentParser::parse_raw(
     return variables_map;
 }
 
-PatternFinderCliArgs SgfPatternFinderArgumentParser::build_cli_args(
-    const po::variables_map& variables_map)
+PatternFinderCliArgs
+SgfPatternFinderArgumentParser::build_cli_args(const po::variables_map& variables_map)
 {
     PatternFinderCliArgs result;
     result.m_run_preprocess = variables_map.at(KEY_PREPROCESS).as<bool>();
@@ -169,55 +159,50 @@ PatternFinderCliArgs SgfPatternFinderArgumentParser::build_cli_args(
     return result;
 }
 
-PatternPreprocessArgs SgfPatternFinderArgumentParser::parse_preprocess_args(
-    const po::variables_map& variables_map)
+PatternPreprocessArgs
+SgfPatternFinderArgumentParser::parse_preprocess_args(const po::variables_map& variables_map)
 {
     PatternPreprocessArgs result;
-    result.m_library_input_folder =
-        get_required_string(variables_map, KEY_LIBRARY_INPUT_FOLDER);
+    result.m_library_input_folder = get_required_string(variables_map, KEY_LIBRARY_INPUT_FOLDER);
     result.m_output_folder = get_required_string(variables_map, KEY_OUTPUT_FOLDER);
     result.m_pattern_output_type =
         parse_pattern_writer_type(get_required_string(variables_map, KEY_PATTERN_OUTPUT_TYPE));
     result.m_preprocess_multigraph = parse_uint32_value(
-        variables_map.at(KEY_PREPROCESS_MULTIGRAPH).as<std::string>(),
-        KEY_PREPROCESS_MULTIGRAPH);
-    result.m_multigraph_alive_percent = parse_uint32_value(
-        variables_map.at(KEY_MULTIGRAPH_ALIVE_PERCENT).as<std::string>(),
-        KEY_MULTIGRAPH_ALIVE_PERCENT);
+        variables_map.at(KEY_PREPROCESS_MULTIGRAPH).as<std::string>(), KEY_PREPROCESS_MULTIGRAPH);
+    result.m_multigraph_alive_percent =
+        parse_uint32_value(variables_map.at(KEY_MULTIGRAPH_ALIVE_PERCENT).as<std::string>(),
+                           KEY_MULTIGRAPH_ALIVE_PERCENT);
     result.m_preprocess_single_graph_from_results =
         variables_map.at(KEY_PREPROCESS_SINGLE_GRAPH_FROM_RESULTS).as<bool>();
     result.m_results_file_path = get_optional_string(variables_map, KEY_RESULTS_FILE_PATH);
     result.m_results_file_type =
         parse_result_type(variables_map.at(KEY_RESULTS_FILE_TYPE).as<std::string>());
-    result.m_preprocess_single_graph = parse_int64_value(
-        variables_map.at(KEY_PREPROCESS_SINGLE_GRAPH).as<std::string>(),
-        KEY_PREPROCESS_SINGLE_GRAPH);
-    result.m_background_graph_path =
-        variables_map.at(KEY_BACKGROUND_GRAPH_PATH).as<std::string>();
+    result.m_preprocess_single_graph =
+        parse_int64_value(variables_map.at(KEY_PREPROCESS_SINGLE_GRAPH).as<std::string>(),
+                          KEY_PREPROCESS_SINGLE_GRAPH);
+    result.m_background_graph_path = variables_map.at(KEY_BACKGROUND_GRAPH_PATH).as<std::string>();
     result.m_score_threshold = parse_double_value(
         variables_map.at(KEY_SCORE_THRESHOLD).as<std::string>(), KEY_SCORE_THRESHOLD);
     result.m_config.m_max_active_patterns = parse_uint32_value(
         variables_map.at(KEY_MAX_ACTIVE_PATTERNS).as<std::string>(), KEY_MAX_ACTIVE_PATTERNS);
     result.m_config.m_alpha_0 =
         parse_double_value(variables_map.at(KEY_ALPHA_0).as<std::string>(), KEY_ALPHA_0);
-    result.m_config.m_alpha_decay = parse_double_value(
-        variables_map.at(KEY_ALPHA_DECAY).as<std::string>(), KEY_ALPHA_DECAY);
+    result.m_config.m_alpha_decay =
+        parse_double_value(variables_map.at(KEY_ALPHA_DECAY).as<std::string>(), KEY_ALPHA_DECAY);
     return result;
 }
 
-PatternFilterArgs SgfPatternFinderArgumentParser::parse_filter_args(
-    const po::variables_map& variables_map)
+PatternFilterArgs
+SgfPatternFinderArgumentParser::parse_filter_args(const po::variables_map& variables_map)
 {
     PatternFilterArgs result;
-    result.m_pattern_mapping_cache =
-        get_required_string(variables_map, KEY_PATTERN_MAPPING_CACHE);
+    result.m_pattern_mapping_cache = get_required_string(variables_map, KEY_PATTERN_MAPPING_CACHE);
     result.m_pattern_type =
         parse_pattern_writer_type(get_required_string(variables_map, KEY_PATTERN_TYPE));
     result.m_background_graph_folder =
         get_required_string(variables_map, KEY_BACKGROUND_GRAPH_FOLDER);
     result.m_output_path = get_required_string(variables_map, KEY_OUTPUT_PATH);
-    result.m_output_type =
-        parse_result_type(get_required_string(variables_map, KEY_OUTPUT_TYPE));
+    result.m_output_type = parse_result_type(get_required_string(variables_map, KEY_OUTPUT_TYPE));
     result.m_prior_policy =
         parse_prior_policy(get_required_string(variables_map, KEY_PRIOR_POLICY));
     result.m_is_induced = variables_map.at(KEY_IS_INDUCED).as<bool>();
@@ -250,10 +235,13 @@ void SgfPatternFinderArgumentParser::validate_preprocess_args(const PatternPrepr
     }
 }
 
-void SgfPatternFinderArgumentParser::validate_filter_args(const PatternFilterArgs& /*args*/) {}
+void SgfPatternFinderArgumentParser::validate_filter_args(const PatternFilterArgs& /*args*/)
+{
+}
 
-std::string SgfPatternFinderArgumentParser::get_required_string(
-    const po::variables_map& variables_map, const std::string& key)
+std::string
+SgfPatternFinderArgumentParser::get_required_string(const po::variables_map& variables_map,
+                                                    const std::string& key)
 {
     if (variables_map.count(key) == 0U)
     {
@@ -262,8 +250,9 @@ std::string SgfPatternFinderArgumentParser::get_required_string(
     return variables_map.at(key).as<std::string>();
 }
 
-std::string SgfPatternFinderArgumentParser::get_optional_string(
-    const po::variables_map& variables_map, const std::string& key)
+std::string
+SgfPatternFinderArgumentParser::get_optional_string(const po::variables_map& variables_map,
+                                                    const std::string& key)
 {
     if (variables_map.count(key) == 0U)
     {
@@ -273,15 +262,15 @@ std::string SgfPatternFinderArgumentParser::get_optional_string(
 }
 
 uint32_t SgfPatternFinderArgumentParser::parse_uint32_value(const std::string& val,
-                                                             const char* flag_name)
+                                                            const char* flag_name)
 {
     try
     {
         const unsigned long result = std::stoul(val);
         if (result > std::numeric_limits<uint32_t>::max())
         {
-            throw SgfInvalidArgumentException("Value out of range for --" +
-                                              std::string(flag_name) + ": '" + val + "'");
+            throw SgfInvalidArgumentException("Value out of range for --" + std::string(flag_name) +
+                                              ": '" + val + "'");
         }
         return static_cast<uint32_t>(result);
     }
@@ -289,38 +278,53 @@ uint32_t SgfPatternFinderArgumentParser::parse_uint32_value(const std::string& v
     {
         throw;
     }
-    catch (const std::exception&)
+    catch (const std::out_of_range&)
     {
-        throw SgfInvalidArgumentException("Invalid integer value for --" +
-                                          std::string(flag_name) + ": '" + val + "'");
+        throw SgfInvalidArgumentException("Value out of range for --" + std::string(flag_name) +
+                                          ": '" + val + "'");
+    }
+    catch (const std::invalid_argument&)
+    {
+        throw SgfInvalidArgumentException("Invalid integer value for --" + std::string(flag_name) +
+                                          ": '" + val + "'");
     }
 }
 
 int64_t SgfPatternFinderArgumentParser::parse_int64_value(const std::string& val,
-                                                           const char* flag_name)
+                                                          const char* flag_name)
 {
     try
     {
         return std::stoll(val);
     }
-    catch (const std::exception&)
+    catch (const std::out_of_range&)
     {
-        throw SgfInvalidArgumentException("Invalid integer value for --" +
-                                          std::string(flag_name) + ": '" + val + "'");
+        throw SgfInvalidArgumentException("Value out of range for --" + std::string(flag_name) +
+                                          ": '" + val + "'");
+    }
+    catch (const std::invalid_argument&)
+    {
+        throw SgfInvalidArgumentException("Invalid integer value for --" + std::string(flag_name) +
+                                          ": '" + val + "'");
     }
 }
 
 double SgfPatternFinderArgumentParser::parse_double_value(const std::string& val,
-                                                           const char* flag_name)
+                                                          const char* flag_name)
 {
     try
     {
         return std::stod(val);
     }
-    catch (const std::exception&)
+    catch (const std::out_of_range&)
     {
-        throw SgfInvalidArgumentException("Invalid numeric value for --" +
-                                          std::string(flag_name) + ": '" + val + "'");
+        throw SgfInvalidArgumentException("Value out of range for --" + std::string(flag_name) +
+                                          ": '" + val + "'");
+    }
+    catch (const std::invalid_argument&)
+    {
+        throw SgfInvalidArgumentException("Invalid numeric value for --" + std::string(flag_name) +
+                                          ": '" + val + "'");
     }
 }
 
@@ -342,8 +346,8 @@ GraphReaderType SgfPatternFinderArgumentParser::parse_reader_type(const std::str
                                       "'. Valid values: graphml, json, vertex-edge.");
 }
 
-PatternWriterType SgfPatternFinderArgumentParser::parse_pattern_writer_type(
-    const std::string& type_str)
+PatternWriterType
+SgfPatternFinderArgumentParser::parse_pattern_writer_type(const std::string& type_str)
 {
     if (type_str == READER_GRAPHML)
     {
