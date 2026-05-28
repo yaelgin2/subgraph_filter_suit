@@ -193,6 +193,19 @@ private:
                          const ColoredGraph& subgraph, const PriorMap& prior) const;
 
     /**
+     * @brief Logs the dynamic restriction score for @p vertex if a logger is attached.
+     * @param vertex Subgraph vertex being scored.
+     * @param score  The computed restriction score.
+     */
+    void log_dynamic_score(uint32_t vertex, double score) const;
+
+    /**
+     * @brief Logs the vertex chosen by choose_next if a logger is attached.
+     * @param vertex The chosen subgraph vertex.
+     */
+    void log_choose_next(uint32_t vertex) const;
+
+    /**
      * @brief Returns the first subgraph vertex not in @p chosen.
      * @param subgraph The pattern graph.
      * @param chosen   Already-matched subgraph vertices.

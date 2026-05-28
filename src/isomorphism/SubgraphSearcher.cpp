@@ -78,11 +78,7 @@ uint64_t SubgraphSearcher::score_second_degree_vertices(const ColoredGraph& grap
     uint64_t score = 0ULL;
     for (const uint32_t neighbor : neighbors)
     {
-        score += graph.out_degree(neighbor);
-        if (m_directed)
-        {
-            score += graph.in_degree(neighbor);
-        }
+        score += all_adjacent(graph, neighbor).size();
     }
     return score;
 }
@@ -194,7 +190,12 @@ uint32_t SubgraphSearcher::choose_start(const ColoredGraph& subgraph, const Prio
 {
     if (m_policy == PriorPolicy::CONSTANT || m_policy == PriorPolicy::GRAPH_DEGREE_SQUARED)
     {
-        return random_vertex(subgraph.vertex_count());
+        const uint32_t start = random_vertex(subgraph.vertex_count());
+        if (!m_logger.is_null())
+        {
+            m_logger.log(LogLevel::DEBUG, "choose_start vertex=" + std::to_string(start));
+        }
+        return start;
     }
     static const RestrictionMap empty_restrictions{};
     double max_score = NEGATIVE_INFINITY;
@@ -207,6 +208,10 @@ uint32_t SubgraphSearcher::choose_start(const ColoredGraph& subgraph, const Prio
             max_score = score;
             best_vertex = vertex;
         }
+    }
+    if (!m_logger.is_null())
+    {
+        m_logger.log(LogLevel::DEBUG, "choose_start vertex=" + std::to_string(best_vertex));
     }
     return best_vertex;
 }
@@ -238,20 +243,40 @@ uint32_t SubgraphSearcher::choose_next(const RestrictionMap& restrictions, const
         }
         if (restriction_entry.second.size() <= 1U)
         {
-            return vertex;
+            best_vertex = vertex;
+            break;
         }
         const double score = restriction_score(restrictions, prior, vertex);
+        log_dynamic_score(vertex, score);
         if (score > max_score)
         {
             max_score = score;
             best_vertex = vertex;
         }
     }
-    if (best_vertex != INVALID_VERTEX_ID)
+    if (best_vertex == INVALID_VERTEX_ID)
     {
-        return best_vertex;
+        best_vertex = find_unchosen_vertex(subgraph, chosen);
     }
-    return find_unchosen_vertex(subgraph, chosen);
+    log_choose_next(best_vertex);
+    return best_vertex;
+}
+
+void SubgraphSearcher::log_dynamic_score(const uint32_t vertex, const double score) const
+{
+    if (!m_logger.is_null())
+    {
+        m_logger.log(LogLevel::DEBUG, "dynamic_score subgraph_vertex=" + std::to_string(vertex) +
+                                          " score=" + std::to_string(score));
+    }
+}
+
+void SubgraphSearcher::log_choose_next(const uint32_t vertex) const
+{
+    if (!m_logger.is_null())
+    {
+        m_logger.log(LogLevel::DEBUG, "choose_next vertex=" + std::to_string(vertex));
+    }
 }
 
 bool SubgraphSearcher::check_induced(const SearchContext& context, const uint32_t graph_vertex,

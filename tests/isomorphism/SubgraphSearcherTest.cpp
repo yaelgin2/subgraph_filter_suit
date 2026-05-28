@@ -1167,7 +1167,119 @@ TEST_F(SubgraphSearcherFileTest, find_all_directed_single_vertex_both_endpoints_
     check_file_matches(m_temp_path, {MatchMap{{0U, 0U}}, MatchMap{{1U, 0U}}});
 }
 
+// ── Color test: multi-vertex S, color constraint reduces matches ──────────────
+
+/**
+ * @brief S = directed edge (color 0→color 1). G = directed path (color 0→color 1→color 2).
+ *
+ * Only edge G.0→G.1 satisfies both the direction and color constraints (color 0→color 1).
+ * Edge G.1→G.2 has colors 1→2, which does not match S. Result: exactly 1 match.
+ */
+TEST_F(SubgraphSearcherFileTest, find_all_colored_edge_in_directed_path_finds_one)
+{
+    constexpr uint64_t EXPECTED_COUNT = 1ULL;
+    const ColoredGraph graph = [&]()
+    {
+        std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {1U, 2U}};
+        return ColoredGraph{3U, edges, {0U, 1U, 2U}, true};
+    }();
+    const ColoredGraph subgraph = make_directed_edge_with_colors(0U, 1U);
+    const uint64_t result = [&]()
+    {
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false,
+                                        std::make_unique<MatchOutputWriter>(m_temp_path),
+                                        LoggerHandler::null()};
+        return searcher.find_all(graph, subgraph);
+    }();
+    EXPECT_EQ(result, EXPECTED_COUNT);
+    check_file_matches(m_temp_path, {MatchMap{{0U, 0U}, {1U, 1U}}});
+}
+
+// ── Color test: multi-vertex S, color mismatch blocks all matches ─────────────
+
+/**
+ * @brief S = directed edge (color 0→color 1). G = directed path (colors [1,1,0]).
+ *
+ * Edge G.0→G.1 is color 1→1 and G.1→G.2 is color 1→0. Neither goes from a
+ * color-0 source to a color-1 destination, so no mapping satisfies the color
+ * constraints. Result: 0 matches.
+ */
+TEST_F(SubgraphSearcherFileTest, find_all_colored_edge_no_matching_color_order_finds_zero)
+{
+    constexpr uint64_t EXPECTED_COUNT = 0ULL;
+    const ColoredGraph graph = [&]()
+    {
+        std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {1U, 2U}};
+        return ColoredGraph{3U, edges, {1U, 1U, 0U}, true};
+    }();
+    const ColoredGraph subgraph = make_directed_edge_with_colors(0U, 1U);
+    const uint64_t result = [&]()
+    {
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false,
+                                        std::make_unique<MatchOutputWriter>(m_temp_path),
+                                        LoggerHandler::null()};
+        return searcher.find_all(graph, subgraph);
+    }();
+    EXPECT_EQ(result, EXPECTED_COUNT);
+    EXPECT_EQ(count_file_lines(m_temp_path), EXPECTED_COUNT);
+}
+
 // ── Directed test 9: Triangle not in directed 4-cycle ────────────────────────
+
+// ── Color test: undirected edge, color constraint limits candidates ────────────
+
+/**
+ * @brief S = undirected edge (color 0 — color 1). G = undirected path of 3 vertices
+ *        with colors [0, 1, 0].
+ *
+ * Only G.1 (color 1) can satisfy S.1. It is adjacent to both G.0 and G.2 (both
+ * color 0), giving exactly 2 matches — one per color-0 endpoint.
+ */
+TEST_F(SubgraphSearcherFileTest, find_all_undirected_colored_edge_finds_two)
+{
+    constexpr uint64_t EXPECTED_COUNT = 2ULL;
+    const ColoredGraph graph = [&]()
+    {
+        std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {1U, 2U}};
+        return ColoredGraph{3U, edges, {0U, 1U, 0U}};
+    }();
+    const ColoredGraph subgraph = make_edge_with_colors(0U, 1U);
+    const uint64_t result = [&]()
+    {
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false,
+                                        std::make_unique<MatchOutputWriter>(m_temp_path),
+                                        LoggerHandler::null()};
+        return searcher.find_all(graph, subgraph);
+    }();
+    EXPECT_EQ(result, EXPECTED_COUNT);
+    check_file_matches(m_temp_path, {MatchMap{{0U, 0U}, {1U, 1U}}, MatchMap{{2U, 0U}, {1U, 1U}}});
+}
+
+/**
+ * @brief S = undirected edge (color 0 — color 1). G = undirected path colors [0, 1, 1].
+ *
+ * Only G.0 (color 0) can satisfy S.0. It is adjacent only to G.1 (color 1),
+ * so exactly 1 match exists.
+ */
+TEST_F(SubgraphSearcherFileTest, find_all_undirected_colored_edge_asymmetric_finds_one)
+{
+    constexpr uint64_t EXPECTED_COUNT = 1ULL;
+    const ColoredGraph graph = [&]()
+    {
+        std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {1U, 2U}};
+        return ColoredGraph{3U, edges, {0U, 1U, 1U}};
+    }();
+    const ColoredGraph subgraph = make_edge_with_colors(0U, 1U);
+    const uint64_t result = [&]()
+    {
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false,
+                                        std::make_unique<MatchOutputWriter>(m_temp_path),
+                                        LoggerHandler::null()};
+        return searcher.find_all(graph, subgraph);
+    }();
+    EXPECT_EQ(result, EXPECTED_COUNT);
+    check_file_matches(m_temp_path, {MatchMap{{0U, 0U}, {1U, 1U}}});
+}
 
 /**
  * @brief A directed 3-cycle S finds zero matches in a directed 4-cycle G.
@@ -1367,7 +1479,6 @@ TEST_F(SubgraphSearcherFileTest, find_all_directed_bidirectional_edge_count)
 }
 
 // ── Directed: prior scores logged correctly ───────────────────────────────────
-// TODO: go over this test
 /**
  * @brief Verifies that calculate_prior logs the correct score per vertex.
  *
@@ -1422,9 +1533,338 @@ TEST(SubgraphSearcherTest, calculate_prior_scores_are_logged_correctly)
                                         LoggerHandler(std::weak_ptr<ILogger>(logger))};
         searcher.find_all(graph, subgraph);
         const std::vector<std::string> msgs = logger->messages();
-        check_logged(msgs, 0U, 3.0);
+        check_logged(msgs, 0U, 2.0);
+        check_logged(msgs, 1U, 2.0);
+        check_logged(msgs, 2U, 2.0);
+    }
+
+    // SUBGRAPH_DEGREE_SQUARED directed, S = bidirectional+extra (0→1, 1→0, 0→2):
+    //   V0: neighbors={1,2} (SET deduplicates 1→0 and 0→1 to one entry)
+    //       all_adj(1).size()=1 + all_adj(2).size()=1 = 2
+    //   V1: neighbors={0}. all_adj(0).size()=2 = 2
+    //   V2: neighbors={0}. all_adj(0).size()=2 = 2
+    //   Without SET: V0 score would be 3 (V1 counted twice) — regression check.
+    {
+        const ColoredGraph bidir_sub = make_directed_bidirectional_with_extra();
+        const ColoredGraph bidir_graph = make_complete_graph(3U);
+        const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE_SQUARED, true, false,
+                                        make_null_writer(),
+                                        LoggerHandler(std::weak_ptr<ILogger>(logger))};
+        searcher.find_all(bidir_graph, bidir_sub);
+        const std::vector<std::string> msgs = logger->messages();
+        check_logged(msgs, 0U, 2.0);
+        check_logged(msgs, 1U, 2.0);
+        check_logged(msgs, 2U, 2.0);
+    }
+
+    // SUBGRAPH_DEGREE_SQUARED on undirected path-4 (0-1-2-3):
+    //   S.0: neighbor={1}, all_adj(1).size()=2          → score 2
+    //   S.1: neighbors={0,2}, sizes 1+2                 → score 3
+    //   S.2: neighbors={1,3}, sizes 2+1                 → score 3
+    //   S.3: neighbor={2}, all_adj(2).size()=2          → score 2
+    {
+        const ColoredGraph path4_sub = make_path_graph(4U);
+        const ColoredGraph path4_graph = make_complete_graph(4U);
+        const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE_SQUARED, false, false,
+                                        make_null_writer(),
+                                        LoggerHandler(std::weak_ptr<ILogger>(logger))};
+        searcher.find_all(path4_graph, path4_sub);
+        const std::vector<std::string> msgs = logger->messages();
+        check_logged(msgs, 0U, 2.0);
         check_logged(msgs, 1U, 3.0);
         check_logged(msgs, 2U, 3.0);
+        check_logged(msgs, 3U, 2.0);
+    }
+
+    // SUBGRAPH_DEGREE undirected on path-4 (0-1-2-3):
+    //   V0: adj={1}     → score 1
+    //   V1: adj={0,2}   → score 2
+    //   V2: adj={1,3}   → score 2
+    //   V3: adj={2}     → score 1
+    {
+        const ColoredGraph path4 = make_path_graph(4U);
+        const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false,
+                                        make_null_writer(),
+                                        LoggerHandler(std::weak_ptr<ILogger>(logger))};
+        searcher.find_all(make_complete_graph(4U), path4);
+        const std::vector<std::string> msgs = logger->messages();
+        check_logged(msgs, 0U, 1.0);
+        check_logged(msgs, 1U, 2.0);
+        check_logged(msgs, 2U, 2.0);
+        check_logged(msgs, 3U, 1.0);
+    }
+
+    // GRAPH_DEGREE_SQUARED undirected on path-4 as G (0-1-2-3):
+    //   G.0: adj={1},   all_adj(1).size()=2              → score 2
+    //   G.1: adj={0,2}, all_adj(0).size()+all_adj(2).size()=1+2=3 → score 3
+    //   G.2: adj={1,3}, all_adj(1).size()+all_adj(3).size()=2+1=3 → score 3
+    //   G.3: adj={2},   all_adj(2).size()=2              → score 2
+    {
+        const ColoredGraph path4_sub = make_path_graph(2U);
+        const ColoredGraph path4_graph = make_path_graph(4U);
+        const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+        const SubgraphSearcher searcher{PriorPolicy::GRAPH_DEGREE_SQUARED, false, false,
+                                        make_null_writer(),
+                                        LoggerHandler(std::weak_ptr<ILogger>(logger))};
+        searcher.find_all(path4_graph, path4_sub);
+        const std::vector<std::string> msgs = logger->messages();
+        check_logged(msgs, 0U, 2.0);
+        check_logged(msgs, 1U, 3.0);
+        check_logged(msgs, 2U, 3.0);
+        check_logged(msgs, 3U, 2.0);
+    }
+}
+
+// ── choose_start: highest-degree vertex is selected ──────────────────────────
+
+/**
+ * @brief Verifies choose_start logs the correct start vertex for SUBGRAPH_DEGREE
+ *        and SUBGRAPH_DEGREE_SQUARED, both undirected and directed.
+ *
+ * Undirected star (center=0, leaves=1,2,3): center has degree 3, leaves degree 1.
+ * SUBGRAPH_DEGREE scores {0:3, 1:1, 2:1, 3:1} → start vertex = 0.
+ *
+ * Directed star (0→1, 0→2, 0→3): same asymmetry in directed mode → start = 0.
+ *
+ * Undirected path-4: SUBGRAPH_DEGREE_SQUARED scores {0:2, 1:3, 2:3, 3:2}.
+ * Vertex 1 is first to reach max score 3 → start = 1.
+ */
+TEST(SubgraphSearcherTest, choose_start_logged_correctly)
+{
+    const auto check_start = [](const std::vector<std::string>& msgs, const uint32_t vertex)
+    {
+        const std::string expected = "choose_start vertex=" + std::to_string(vertex);
+        EXPECT_TRUE(std::any_of(msgs.cbegin(), msgs.cend(),
+                                [&expected](const std::string& msg)
+                                {
+                                    return msg == expected;
+                                }));
+    };
+
+    // Undirected star, SUBGRAPH_DEGREE → start = 0 (highest degree)
+    {
+        const ColoredGraph star = [&]()
+        {
+            std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {0U, 2U}, {0U, 3U}};
+            return ColoredGraph{4U, edges, {0U, 0U, 0U, 0U}};
+        }();
+        const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, false, false,
+                                        make_null_writer(),
+                                        LoggerHandler(std::weak_ptr<ILogger>(logger))};
+        searcher.find_all(make_complete_graph(4U), star);
+        check_start(logger->messages(), 0U);
+    }
+
+    // Directed star (0→1, 0→2, 0→3), SUBGRAPH_DEGREE → start = 0
+    {
+        const ColoredGraph directed_star = [&]()
+        {
+            std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {0U, 2U}, {0U, 3U}};
+            return ColoredGraph{4U, edges, {0U, 0U, 0U, 0U}, true};
+        }();
+        const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE, true, false,
+                                        make_null_writer(),
+                                        LoggerHandler(std::weak_ptr<ILogger>(logger))};
+        const ColoredGraph directed_k4 = [&]()
+        {
+            std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {0U, 2U}, {0U, 3U},
+                                                             {1U, 2U}, {1U, 3U}, {2U, 3U}};
+            return ColoredGraph{4U, edges, {0U, 0U, 0U, 0U}, true};
+        }();
+        searcher.find_all(directed_k4, directed_star);
+        check_start(logger->messages(), 0U);
+    }
+
+    // Undirected path-4, SUBGRAPH_DEGREE_SQUARED → start = 1 (first vertex with max score 3)
+    {
+        const ColoredGraph path4 = make_path_graph(4U);
+        const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+        const SubgraphSearcher searcher{PriorPolicy::SUBGRAPH_DEGREE_SQUARED, false, false,
+                                        make_null_writer(),
+                                        LoggerHandler(std::weak_ptr<ILogger>(logger))};
+        searcher.find_all(make_complete_graph(4U), path4);
+        check_start(logger->messages(), 1U);
+    }
+}
+
+// ── choose_next: CONSTANT picks most-constrained S vertex ────────────────────
+
+/**
+ * @brief Verifies CONSTANT picks the S vertex with the fewest G candidates.
+ *
+ * S = colored triangle: S.0(color 0) — S.1(color 1) — S.2(color 2).
+ * G = 7 vertices: G.0(color 0), G.1-2(color 1), G.3-6(color 2).
+ *   G.0 connected to all; G.1-2 connected to G.3-6.
+ *
+ * CONSTANT picks the start vertex randomly. Expected choose_next per start:
+ *
+ *   start=0 → only G.0 qualifies (color 0).
+ *             After matching S.0→G.0:
+ *               S.1 restriction = {G.1, G.2}           → size 2
+ *               S.2 restriction = {G.3, G.4, G.5, G.6} → size 4
+ *             CONSTANT picks S.1 (most constrained)     → next=1
+ *             If CONSTANT were inverted it would pick S.2 → test catches that bug.
+ *
+ *   start=1 → G.1 or G.2 qualifies. S.0 gets {G.0}    → size 1 → immediate → next=0
+ *   start=2 → G.3-6 qualify.        S.0 gets {G.0}    → size 1 → immediate → next=0
+ */
+TEST(SubgraphSearcherTest, choose_next_constant_picks_most_constrained_vertex)
+{
+    const ColoredGraph subgraph = [&]()
+    {
+        std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {0U, 2U}, {1U, 2U}};
+        return ColoredGraph{3U, edges, {0U, 1U, 2U}};
+    }();
+    const ColoredGraph graph = [&]()
+    {
+        std::vector<std::pair<uint32_t, uint32_t>> edges{
+            {0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}, {0U, 5U}, {0U, 6U}, {1U, 3U},
+            {1U, 4U}, {1U, 5U}, {1U, 6U}, {2U, 3U}, {2U, 4U}, {2U, 5U}, {2U, 6U}};
+        return ColoredGraph{7U, edges, {0U, 1U, 1U, 2U, 2U, 2U, 2U}};
+    }();
+    const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+    const SubgraphSearcher searcher{PriorPolicy::CONSTANT, false, false, make_null_writer(),
+                                    LoggerHandler(std::weak_ptr<ILogger>(logger))};
+    searcher.find_all(graph, subgraph);
+    const std::vector<std::string> msgs = logger->messages();
+
+    const std::string START_PREFIX = "choose_start vertex=";
+    const std::string NEXT_PREFIX = "choose_next vertex=";
+    const std::vector<std::string>::const_iterator start_it =
+        std::find_if(msgs.cbegin(), msgs.cend(),
+                     [&START_PREFIX](const std::string& msg)
+                     {
+                         return msg.substr(0U, START_PREFIX.size()) == START_PREFIX;
+                     });
+    const std::vector<std::string>::const_iterator next_it =
+        std::find_if(msgs.cbegin(), msgs.cend(),
+                     [&NEXT_PREFIX](const std::string& msg)
+                     {
+                         return msg.substr(0U, NEXT_PREFIX.size()) == NEXT_PREFIX;
+                     });
+    ASSERT_NE(start_it, msgs.cend());
+    ASSERT_NE(next_it, msgs.cend());
+
+    const uint32_t start_vertex =
+        static_cast<uint32_t>(std::stoul(start_it->substr(START_PREFIX.size())));
+    const uint32_t next_vertex =
+        static_cast<uint32_t>(std::stoul(next_it->substr(NEXT_PREFIX.size())));
+
+    if (start_vertex == 0U)
+    {
+        // S.1 has 2 candidates, S.2 has 4. CONSTANT picks S.1 (most constrained).
+        EXPECT_EQ(next_vertex, 1U);
+    }
+    else
+    {
+        // start=1 or start=2: S.0 has exactly 1 candidate → immediate return.
+        EXPECT_EQ(next_vertex, 0U);
+    }
+}
+
+// ── choose_next: GRAPH_DEGREE_SQUARED picks by sum of G-vertex prior scores ──
+
+/**
+ * @brief Verifies GRAPH_DEGREE_SQUARED picks the S vertex whose candidates have
+ *        the smallest sum of G-vertex prior scores (most constrained in G terms).
+ *
+ * Same S and G as choose_next_constant_picks_most_constrained_vertex.
+ *
+ * G prior scores (sum of neighbor sizes): G.0=22, G.1=G.2=18, G.3-6=16.
+ *
+ * start=0 → S.1 candidates {G.1,G.2}: score -(18+18)=-36
+ *            S.2 candidates {G.3-6}:  score -(16×4)=-64
+ *            -36 > -64 → picks S.1 → next=1
+ *            (CONSTANT picks same vertex but via restriction-set SIZE, not prior)
+ * start=1 → S.0 gets {G.0} → size 1 → immediate return → next=0
+ * start=2 → S.0 gets {G.0} → size 1 → immediate return → next=0
+ */
+TEST(SubgraphSearcherTest, choose_next_graph_degree_squared_picks_lowest_prior_sum)
+{
+    const ColoredGraph subgraph = [&]()
+    {
+        std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}, {0U, 2U}, {1U, 2U}};
+        return ColoredGraph{3U, edges, {0U, 1U, 2U}};
+    }();
+    const ColoredGraph graph = [&]()
+    {
+        std::vector<std::pair<uint32_t, uint32_t>> edges{
+            {0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}, {0U, 5U}, {0U, 6U}, {1U, 3U},
+            {1U, 4U}, {1U, 5U}, {1U, 6U}, {2U, 3U}, {2U, 4U}, {2U, 5U}, {2U, 6U}};
+        return ColoredGraph{7U, edges, {0U, 1U, 1U, 2U, 2U, 2U, 2U}};
+    }();
+    const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+    const SubgraphSearcher searcher{PriorPolicy::GRAPH_DEGREE_SQUARED, false, false,
+                                    make_null_writer(),
+                                    LoggerHandler(std::weak_ptr<ILogger>(logger))};
+    searcher.find_all(graph, subgraph);
+    const std::vector<std::string> msgs = logger->messages();
+
+    const std::string START_PREFIX = "choose_start vertex=";
+    const std::string NEXT_PREFIX = "choose_next vertex=";
+    const std::vector<std::string>::const_iterator start_it =
+        std::find_if(msgs.cbegin(), msgs.cend(),
+                     [&START_PREFIX](const std::string& msg)
+                     {
+                         return msg.substr(0U, START_PREFIX.size()) == START_PREFIX;
+                     });
+    const std::vector<std::string>::const_iterator next_it =
+        std::find_if(msgs.cbegin(), msgs.cend(),
+                     [&NEXT_PREFIX](const std::string& msg)
+                     {
+                         return msg.substr(0U, NEXT_PREFIX.size()) == NEXT_PREFIX;
+                     });
+    ASSERT_NE(start_it, msgs.cend());
+    ASSERT_NE(next_it, msgs.cend());
+
+    const uint32_t start_vertex =
+        static_cast<uint32_t>(std::stoul(start_it->substr(START_PREFIX.size())));
+    const uint32_t next_vertex =
+        static_cast<uint32_t>(std::stoul(next_it->substr(NEXT_PREFIX.size())));
+
+    if (start_vertex == 0U)
+    {
+        // S.1 prior sum 36, S.2 prior sum 64. GRAPH_DEGREE_SQUARED picks S.1.
+        EXPECT_EQ(next_vertex, 1U);
+        // Verify the logged G-vertex prior scores that drove this decision.
+        EXPECT_TRUE(std::any_of(msgs.cbegin(), msgs.cend(),
+                                [](const std::string& msg)
+                                {
+                                    return msg == "prior vertex=1 score=18.000000";
+                                }));
+        EXPECT_TRUE(std::any_of(msgs.cbegin(), msgs.cend(),
+                                [](const std::string& msg)
+                                {
+                                    return msg == "prior vertex=2 score=18.000000";
+                                }));
+        EXPECT_TRUE(std::any_of(msgs.cbegin(), msgs.cend(),
+                                [](const std::string& msg)
+                                {
+                                    return msg == "prior vertex=3 score=16.000000";
+                                }));
+        // Verify the dynamic sum: S.1 sum=18+18=36 → score=-36, S.2 sum=16×4=64 → score=-64.
+        EXPECT_TRUE(std::any_of(msgs.cbegin(), msgs.cend(),
+                                [](const std::string& msg)
+                                {
+                                    return msg ==
+                                           "dynamic_score subgraph_vertex=1 score=-36.000000";
+                                }));
+        EXPECT_TRUE(std::any_of(msgs.cbegin(), msgs.cend(),
+                                [](const std::string& msg)
+                                {
+                                    return msg ==
+                                           "dynamic_score subgraph_vertex=2 score=-64.000000";
+                                }));
+    }
+    else
+    {
+        // start=1 or start=2: S.0 has exactly 1 candidate → immediate return.
+        EXPECT_EQ(next_vertex, 0U);
     }
 }
 
@@ -1608,7 +2048,3 @@ TEST_F(SubgraphSearcherFileTest, find_all_stop_after_first_returns_one)
         EXPECT_TRUE(match == valid_first || match == valid_second);
     }
 }
-
-// TODO: add tests for PriorPolicy variations, and for logging behavior (perhaps via a mock logger
-// that records calls). Also check when S directed and G not (the graph themselves), etc Also test
-// the colors prior check from paper
