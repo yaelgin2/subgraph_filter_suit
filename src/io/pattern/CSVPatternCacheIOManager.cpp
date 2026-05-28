@@ -2,13 +2,11 @@
 
 #include "GraphConstructionException.h"
 #include "IPatternCacheIOManager.h"
-#include "IPatternWriter.h"
 #include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <cstdint>
 #include <fstream>
-#include <memory>
 #include <new>
 #include <sstream>
 #include <stdexcept>
@@ -19,9 +17,8 @@
 namespace sgf
 {
 
-CSVPatternCacheIOManager::CSVPatternCacheIOManager(std::string folder, LoggerHandler logger,
-                                                   std::shared_ptr<IPatternWriter> writer)
-    : IPatternCacheIOManager(std::move(folder), std::move(logger), std::move(writer))
+CSVPatternCacheIOManager::CSVPatternCacheIOManager(std::string folder, LoggerHandler logger)
+    : IPatternCacheIOManager(std::move(folder), std::move(logger))
 {
 }
 

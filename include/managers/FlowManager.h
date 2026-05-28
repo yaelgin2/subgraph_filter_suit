@@ -128,7 +128,7 @@ public:
                           const GraphEnumerationCacheConfig& graph_cache_config, bool non_induced);
 
     /// @brief Run the pattern preprocessing stage.
-    static void pattern_preprocess_run(
+    static std::vector<PatternPreprocessorResult> pattern_preprocess_run(
         const std::string& input_path, bool is_directed, GraphReaderType reader_type,
         std::string& output_path, PatternWriterType output_type, const std::string& log_file_path,
         uint32_t preprocess_multigraph, uint32_t multigraph_alive_percent,
@@ -138,7 +138,11 @@ public:
         const SingleGraphFinderConfig& config);
 
     /// @brief Run the pattern filter stage.
-    static void pattern_filter_run();
+    static std::vector<std::unordered_map<std::string, FilterResult>>
+    pattern_filter_run(const std::string& pattern_to_filter_cache, PatternWriterType pattern_type,
+                       const std::string& background_graph_path, GraphReaderType reader_type,
+                       bool is_directed, std::string& output_path, ResultOutputType output_type,
+                       const std::string& log_file_path, PriorPolicy prior_policy, bool is_induced);
 
     /// @brief Run the exact subgraph isomorphism stage.
     static uint64_t subgraph_isomorphism_run(const std::string& subgraph_path,
@@ -152,6 +156,8 @@ public:
 private:
     static constexpr const char* PATH_CACHE_BASE_NAME = "path_cache";
     static constexpr const char* MOTIF_CACHE_BASE_NAME = "motif_cache";
+    static constexpr const char* PATTERN_INDEX_PREFIX = "pattern_index_";
+    static constexpr const char* PATTERN_FILTER_RESULT_SUFFIX = "_pattern_filtering_result_";
 
     /**
      * @brief Optional post-processing step applied to query graph enumeration results.
@@ -245,6 +251,14 @@ private:
      * @return Owning pointer to the concrete IPatternWriter.
      */
     static std::shared_ptr<IPatternWriter> make_pattern_writer(PatternWriterType type);
+
+    /**
+     * @brief Maps a PatternWriterType to the corresponding GraphReaderType.
+     * @param pattern_writer_type The writer format used when patterns were saved.
+     * @return The matching reader type for loading pattern files.
+     */
+    static GraphReaderType
+    pattern_witer_type_to_graph_reader_type(PatternWriterType pattern_writer_type);
 
     /**
      * @brief Construct a cache manager for the given format.
