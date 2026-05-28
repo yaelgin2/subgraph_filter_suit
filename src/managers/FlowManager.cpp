@@ -368,7 +368,7 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
 }
 
 // NOLINTNEXTLINE(readability-function-size)
-std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::pattern_filter_run(
+std::unordered_map<std::string, FilterResult> FlowManager::pattern_filter_run(
     const std::string& pattern_to_filter_cache, const PatternWriterType pattern_type,
     const std::string& background_graph_path, const GraphReaderType reader_type,
     const bool is_directed, std::string& output_path, const ResultOutputType output_type,
@@ -396,17 +396,24 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::pattern_
     }
     const PatternGraphFilter pattern_filter(std::move(library_cache), log_bundle.handler());
     const std::unique_ptr<IColoredGraphReader> graph_reader = make_graph_reader(reader_type);
-    const ColoredGraph background =
-        graph_reader->read(background_graph_path, is_directed, log_bundle.handler());
-    const FilterResult filter_result = pattern_filter.filter(background, is_induced, prior_policy);
-    std::unique_ptr<IFilterIOManager> filter_results_writer =
-        make_filter_results_io_manager(output_type, output_path, log_bundle.handler());
-    const std::string background_stem =
-        std::filesystem::path(background_graph_path).stem().string();
-    filter_results_writer->write(background_stem + PATTERN_FILTER_RESULT_SUFFIX +
-                                     generate_timestamp(),
-                                 pattern_filenames, filter_result);
-    return {std::unordered_map<std::string, FilterResult>{{background_stem, filter_result}}};
+    LibraryData graph_to_find_in =
+            load_library(background_graph_path, reader_type, is_directed, log_bundle.handler());
+    std::unordered_map<std::string, FilterResult> results;
+    results.reserve(graph_to_find_in.m_library.size());
+    for (uint32_t graph_index = 0U; graph_index < static_cast<uint32_t>(graph_to_find_in.m_library.size()); graph_index++)
+    {
+        const FilterResult filter_result = pattern_filter.filter(graph_to_find_in.m_library[graph_index], is_induced, prior_policy);
+        std::unique_ptr<IFilterIOManager> filter_results_writer =
+            make_filter_results_io_manager(output_type, output_path, log_bundle.handler());
+        const std::string background_stem =
+            std::filesystem::path(graph_to_find_in.m_graph_names[graph_index]).stem().string();
+        filter_results_writer->write(background_stem + PATTERN_FILTER_RESULT_SUFFIX +
+                                        generate_timestamp(),
+                                    pattern_filenames, filter_result);
+        results[graph_to_find_in.m_graph_names[graph_index]] = filter_result;
+    }
+    
+    return results;
 }
 
 // NOLINTNEXTLINE(readability-function-size)
