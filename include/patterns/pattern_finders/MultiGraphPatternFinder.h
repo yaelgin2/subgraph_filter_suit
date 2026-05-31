@@ -209,7 +209,7 @@ private:
      */
     void update_tree_after_extension(
         uint32_t graph_idx, const std::vector<std::pair<uint32_t, NodePtr>>& extension_candidates,
-        std::vector<std::vector<NodePtr>>& leaf_matches);
+        std::vector<std::vector<NodePtr>>& leaf_matches, uint32_t connected_pattern_vertex);
 
     /* ---------- Edge scoring and pruning ---------- */
 

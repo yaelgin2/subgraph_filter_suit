@@ -226,7 +226,7 @@ private:
      */
     std::vector<uint32_t> collect_vertex_external_colors(
         uint32_t candidate_vertex, const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-        const std::unordered_map<uint32_t, uint32_t>& excluded_previous_children,
+        const std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& excluded_previous_children,
         bool is_reversed) const;
 
     /**
@@ -243,7 +243,7 @@ private:
     std::vector<uint32_t> get_colors_of_neighbours_not_in_tree_path(
         const std::unordered_set<uint32_t>& candidate_indexes,
         const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-        const std::unordered_map<uint32_t, uint32_t>& excluded_previous_children,
+        const std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& excluded_previous_children,
         bool is_reversed) const;
 };
 

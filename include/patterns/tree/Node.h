@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace sgf
 {
@@ -32,8 +33,8 @@ struct Node
     std::shared_ptr<Node> m_son;    ///< First child of this node.
     std::weak_ptr<Node> m_parent;   ///< Non-owning back-reference to parent.
 
-    std::unordered_map<uint32_t, uint32_t>
-        m_previous_children;  ///< Indices of previously-removed children.
+    std::unordered_map<uint32_t, std::unordered_set<uint32_t>>
+        m_previous_children;  ///< Indices of previously-removed children: vertex_id → {tree_depth, ...}.
 
     uint32_t m_index;                  ///< Source-graph vertex index.
     uint32_t m_depth;                  ///< Depth within the tree (root = 0).

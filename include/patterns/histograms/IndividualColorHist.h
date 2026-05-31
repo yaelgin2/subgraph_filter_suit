@@ -39,6 +39,7 @@ public:
      * @param general_color_hist Shared histogram updated when this one's counts cross zero.
      */
     explicit IndividualColorHist(GeneralColorHist& general_color_hist,
+                                 uint32_t hist_index = 0U,
                                  LoggerHandler logger = LoggerHandler::null());
 
     /**
@@ -81,6 +82,7 @@ private:
     std::vector<std::vector<uint32_t>> m_number_of_neighbours;  ///< [depth][color] neighbour count.
     uint32_t m_num_colors;                                      ///< Number of distinct colors.
     GeneralColorHist& m_general_hist;                           ///< Shared general histogram.
+    uint32_t m_hist_index;      ///< Index of the graph this histogram tracks.
     LoggerHandler m_logger;  ///< Logger for before/after tracing.
 };
 
