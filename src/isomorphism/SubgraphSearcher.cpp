@@ -698,7 +698,7 @@ uint64_t SubgraphSearcher::find_all(const ColoredGraph& graph, const ColoredGrap
     const PriorMap prior = calculate_prior(subgraph, graph, m_policy);
     const uint32_t start_vertex = choose_start(subgraph, prior);
     const uint32_t start_color = subgraph.get_vertex_color(start_vertex);
-    std::atomic<uint64_t> counter{0ULL};
+    std::atomic<uint64_t> matches_counter{0ULL};
     std::vector<std::thread> threads;
     for (uint32_t vertex = 0; vertex < graph.vertex_count(); ++vertex)
     {
@@ -711,17 +711,17 @@ uint64_t SubgraphSearcher::find_all(const ColoredGraph& graph, const ColoredGrap
             continue;
         }
         threads.emplace_back(
-            [this, &graph, &subgraph, &prior, &counter, stop_after_first, vertex, start_vertex]()
+            [this, &graph, &subgraph, &prior, &matches_counter, stop_after_first, vertex, start_vertex]()
             {
                 SearchContext ctx{graph, subgraph, prior, {}, {}, {}, stop_after_first};
                 try
                 {
-                    counter.fetch_add(recursion_search(ctx, vertex, start_vertex));
+                    matches_counter.fetch_add(recursion_search(ctx, vertex, start_vertex));
                 }
                 catch (const MatchFoundException&)
                 {
                     m_stop = true;
-                    counter.fetch_add(1ULL);
+                    matches_counter.fetch_add(1ULL);
                 }
             });
         if (threads.size() >= BATCH_SIZE)
@@ -730,7 +730,7 @@ uint64_t SubgraphSearcher::find_all(const ColoredGraph& graph, const ColoredGrap
         }
     }
     join_all(threads);
-    return counter.load();
+    return matches_counter.load();
 }
 
 }  // namespace sgf
