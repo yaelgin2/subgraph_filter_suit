@@ -122,6 +122,40 @@ if(SGF_BUILD_CLI)
         $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
     )
+
+    add_executable(sgf-graph-searcher
+        src/cli/SgfGraphSearcher.cpp
+        src/cli/argument_parsers/SgfGraphSearcherArgumentParser.cpp
+    )
+    target_include_directories(sgf-graph-searcher PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/cli/argument_parsers"
+    )
+    target_link_libraries(sgf-graph-searcher PRIVATE
+        subgraph_filter_suite
+        Boost::program_options
+    )
+    target_compile_options(sgf-graph-searcher PRIVATE
+        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
+        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
+    )
+
+    add_executable(sgf-pattern-finder
+        src/cli/SgfPatternFinder.cpp
+        src/cli/argument_parsers/SgfPatternFinderArgumentParser.cpp
+    )
+    target_include_directories(sgf-pattern-finder PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/cli/argument_parsers"
+    )
+    target_link_libraries(sgf-pattern-finder PRIVATE
+        subgraph_filter_suite
+        Boost::program_options
+    )
+    target_compile_options(sgf-pattern-finder PRIVATE
+        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
+        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
+    )
 endif()
 
 # ── Tests ─────────────────────────────────────────────────────────────────────

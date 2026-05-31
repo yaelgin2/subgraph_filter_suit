@@ -17,6 +17,11 @@
 namespace sgf
 {
 
+std::string JsonPatternWriter::get_file_extension() const
+{
+    return "json";
+}
+
 boost::json::array JsonPatternWriter::build_nodes_array(const BoostGraph& graph)
 {
     boost::json::array nodes;

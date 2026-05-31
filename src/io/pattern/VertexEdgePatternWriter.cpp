@@ -15,6 +15,11 @@
 namespace sgf
 {
 
+std::string VertexEdgePatternWriter::get_file_extension() const
+{
+    return "";
+}
+
 void VertexEdgePatternWriter::write_node_labels(const BoostGraph& graph,
                                                 const std::string& base_path)
 {

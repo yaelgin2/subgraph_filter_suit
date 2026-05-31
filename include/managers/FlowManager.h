@@ -3,9 +3,12 @@
 #include "ColoredGraph.h"
 #include "ICacheIOManager.h"
 #include "IColoredGraphReader.h"
-#include "IFilterOutputManager.h"
+#include "IFilterIOManager.h"
 #include "IPatternWriter.h"
+#include "PriorPolicy.h"
+#include "SingleGraphPatternPreprocessor.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -95,11 +98,11 @@ public:
      * @param preprocess_paths  Preprocess path signatures.
      * @param preprocess_motifs Preprocess motif signatures.
      */
-    static void enumerator_preprocess_run(const std::string& input_path, bool is_directed,
-                                          GraphReaderType reader_type, std::string& output_path,
-                                          CacheManagerType output_type,
-                                          const std::string& log_file_path, bool preprocess_paths,
-                                          bool preprocess_motifs);
+    static std::vector<EnumerationResultVector>
+    enumerator_preprocess_run(const std::string& input_path, bool is_directed,
+                              GraphReaderType reader_type, std::string& output_path,
+                              CacheManagerType output_type, const std::string& log_file_path,
+                              bool preprocess_paths, bool preprocess_motifs);
 
     /**
      * @brief Run the enumeration filter stage.
@@ -114,27 +117,54 @@ public:
      * @param log_file_path      Optional log file path.
      * @param filter_paths       Filter by path signatures.
      * @param filter_motifs      Filter by motif signatures.
+     * @param non_induced        Expand query graph motif counts via inclusion DAG before filtering.
      */
-    static void
+    static std::vector<std::unordered_map<std::string, FilterResult>>
     enumerator_filter_run(const std::string& graph_input_path, bool is_directed,
                           GraphReaderType reader_type, const std::string& motif_cache_file,
                           const std::string& path_cache_file, CacheManagerType cache_reader_type,
                           std::string& output_folder, ResultOutputType output_type,
                           const std::string& log_file_path, bool filter_paths, bool filter_motifs,
-                          const GraphEnumerationCacheConfig& graph_cache_config);
+                          const GraphEnumerationCacheConfig& graph_cache_config, bool non_induced);
 
     /// @brief Run the pattern preprocessing stage.
-    static void pattern_preprocess_run();
+    static std::vector<PatternPreprocessorResult> pattern_preprocess_run(
+        const std::string& input_path, bool is_directed, GraphReaderType reader_type,
+        std::string& output_path, PatternWriterType output_type, const std::string& log_file_path,
+        bool preprocess_singlegraph_results_file, const std::string& results_file_path,
+        int64_t preprocess_singlegraph, ResultOutputType results_file_type,
+        const std::string& background_graph_path, double score_threshold,
+        const SingleGraphFinderConfig& config);
 
     /// @brief Run the pattern filter stage.
-    static void pattern_filter_run();
+    static std::vector<std::unordered_map<std::string, FilterResult>>
+    pattern_filter_run(const std::string& pattern_to_filter_cache, PatternWriterType pattern_type,
+                       const std::string& background_graph_path, GraphReaderType reader_type,
+                       bool is_directed, std::string& output_path, ResultOutputType output_type,
+                       const std::string& log_file_path, PriorPolicy prior_policy, bool is_induced);
 
     /// @brief Run the exact subgraph isomorphism stage.
-    static void subgraph_isomorphism_run();
+    static uint64_t subgraph_isomorphism_run(const std::string& subgraph_path,
+                                             const std::string& background_graph_path,
+                                             GraphReaderType reader_type, bool is_output,
+                                             std::string& output_path, bool is_directed,
+                                             bool is_induced, PriorPolicy policy,
+                                             bool stop_on_first_match,
+                                             const std::string& log_file_path);
 
 private:
     static constexpr const char* PATH_CACHE_BASE_NAME = "path_cache";
     static constexpr const char* MOTIF_CACHE_BASE_NAME = "motif_cache";
+    static constexpr const char* PATTERN_INDEX_PREFIX = "pattern_index_";
+    static constexpr const char* PATTERN_FILTER_RESULT_SUFFIX = "_pattern_filtering_result_";
+
+    /**
+     * @brief Optional post-processing step applied to query graph enumeration results.
+     *
+     * Called with the full EnumerationResultVector after enumeration is computed or
+     * loaded. Pass a no-op lambda when no post-processing is needed.
+     */
+    using EnumerationTransformer = std::function<void(EnumerationResultVector&)>;
 
     /**
      * @brief Loads query graph enumeration from a cache file in the order
@@ -172,10 +202,10 @@ private:
                           const LibraryData& library, const PreprocessorFactory& factory,
                           const std::string& timestamp);
 
-    static void run_enumeration_filter_stage(
+    static std::unordered_map<std::string, FilterResult> run_enumeration_filter_stage(
         const std::string& result_file_base_name, const EnumerationResultVector& graphs_enumeration,
         const ICacheIOManager& lib_cache_manager, const std::string& lib_cache_path,
-        IFilterOutputManager& filter_results_writer, const LibraryData& library,
+        IFilterIOManager& filter_results_writer, const LibraryData& library,
         const std::string& timestamp, const LoggerHandler& logger);
 
     /**
@@ -186,6 +216,17 @@ private:
      * @return Timestamp string.
      */
     static std::string generate_timestamp();
+
+    /**
+     * @brief Converts a filter map (filename → pruned) to a to_process vector indexed by library.
+     *
+     * @param graph_names  Ordered list of graph names from the library.
+     * @param filter_map   Map from graph filename stem to pruned flag (true = pruned).
+     * @return Vector of bools (true = should process = not pruned), in graph_names order.
+     */
+    static std::vector<bool>
+    build_to_process(const std::vector<std::string>& graph_names,
+                     const std::unordered_map<std::string, bool>& filter_map);
 
     /**
      * @brief Load all graphs from @p path using @p reader_type.
@@ -208,7 +249,15 @@ private:
      * @param type Desired writer format.
      * @return Owning pointer to the concrete IPatternWriter.
      */
-    static std::unique_ptr<IPatternWriter> make_pattern_writer(PatternWriterType type);
+    static std::shared_ptr<IPatternWriter> make_pattern_writer(PatternWriterType type);
+
+    /**
+     * @brief Maps a PatternWriterType to the corresponding GraphReaderType.
+     * @param pattern_writer_type The writer format used when patterns were saved.
+     * @return The matching reader type for loading pattern files.
+     */
+    static GraphReaderType
+    pattern_witer_type_to_graph_reader_type(PatternWriterType pattern_writer_type);
 
     /**
      * @brief Construct a cache manager for the given format.
@@ -225,11 +274,11 @@ private:
      * @param type    Desired output format.
      * @param folder  Directory where the output file will be written.
      * @param logger  Logger for write diagnostics.
-     * @return Owning pointer to the concrete IFilterOutputManager.
+     * @return Owning pointer to the concrete IFilterIOManager.
      */
-    static std::unique_ptr<IFilterOutputManager>
-    make_filter_results_writer(ResultOutputType type, const std::string& folder,
-                               LoggerHandler logger);
+    static std::unique_ptr<IFilterIOManager>
+    make_filter_results_io_manager(ResultOutputType type, const std::string& folder,
+                                   LoggerHandler logger);
 
     /**
      * @brief Loads or computes graph enumeration for one stage, then runs the filter.
@@ -247,8 +296,9 @@ private:
      * @param filter_results_writer Output manager for filter results.
      * @param timestamp            Timestamp string used in output file names.
      * @param logger               Logger for diagnostics.
+     * @param post_process         Applied to the enumeration vector before filtering.
      */
-    static void
+    static std::unordered_map<std::string, FilterResult>
     enumerate_and_filter(const std::string& library_cache_file, bool load_graph_cache,
                          const std::string& graphs_cache_path,
                          const std::string& run_type_file_base_name,
@@ -256,8 +306,8 @@ private:
                          const std::shared_ptr<ICacheIOManager>& graphs_cache_manager,
                          LibraryData& graphs_to_find_in,
                          const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
-                         IFilterOutputManager& filter_results_writer, const std::string& timestamp,
-                         const LoggerHandler& logger);
+                         IFilterIOManager& filter_results_writer, const std::string& timestamp,
+                         const LoggerHandler& logger, const EnumerationTransformer& post_process);
 };
 
 }  // namespace sgf
