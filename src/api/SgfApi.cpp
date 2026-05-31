@@ -3,8 +3,8 @@
 #include "EnumerationPreprocessManager.h"
 #include "FilteringUtils.h"
 #include "FlowManager.h"
-#include "InvalidArgumentException.h"
 #include "IPatternPreprocessor.h"
+#include "InvalidArgumentException.h"
 
 #include <cstdint>
 #include <optional>
