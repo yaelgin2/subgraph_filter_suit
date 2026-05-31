@@ -227,6 +227,11 @@ All five functions throw `InvalidArgumentException` (exit code 2) on validation 
 
 All other `SgfException` subtypes propagate unchanged from the underlying pipeline.
 
+
+# Run a single test by name
+ctest --test-dir build -R three_vertices_triangle_returns_empty_map --output-on-failure --build-config Release
+```
+
 ## Graph file formats
 
 All three tools accept the same `--reader-type` values:
