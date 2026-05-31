@@ -50,6 +50,7 @@ add_sgf_test(vertex_edge_pattern_writer_tests           io/pattern/VertexEdgePat
 add_sgf_test(graphml_writer_tests                       io/pattern/GraphmlPatternWriterTest.cpp)
 
 add_sgf_test(line_graph_searcher_tests                  isomorphism/SubgraphSearcherTest.cpp)
+add_sgf_test(large_graph_searcher_tests                 isomorphism/LargeGraphSearcherTest.cpp)
 
 add_sgf_test(general_color_hist_tests                   patterns/histograms/GeneralColorHistTest.cpp)
 add_sgf_test(individual_color_hist_tests                patterns/histograms/IndividualColorHistTest.cpp)

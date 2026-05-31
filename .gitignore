@@ -44,3 +44,4 @@
 build/*
 
 graphify-out/*
+local_tests/*

@@ -306,6 +306,14 @@ uint64_t count_matches(const std::string& text)
     return count;
 }
 
+
+ColoredGraph make_directed_single_edge(const uint32_t color,const uint32_t color2)
+{
+    std::vector<std::pair<uint32_t, uint32_t>> edges{{0U, 1U}};
+    const std::vector<uint32_t> colors{color, color2};
+    return {2U, edges, colors, true};
+}
+
 /**
  * @brief Creates a null MatchOutputWriter for tests that only check match count.
  * @return unique_ptr to a StringMatchOutputWriter (output ignored).
@@ -591,11 +599,13 @@ TEST(SubgraphSearcherTest, find_all_planted_directed_edge_in_large_complete_grap
 {
     ColoredGraph graph = make_complete_graph(1000U);
 
-    // Plant one edge with endpoint colors 1—1.
+    // Plant one edge with endpoint colors 1—2.
     graph.set_vertex_color(0U, 1U);
-    graph.set_vertex_color(1U, 1U);
+    graph.set_vertex_color(1U, 2U);
 
-    const ColoredGraph subgraph = make_single_edge(1U);
+    std::vector<std::pair<uint32_t, uint32_t>> subgraph_edges{{0U, 1U}};
+    const std::vector<uint32_t> subgraph_colors{1U, 2U};
+    const ColoredGraph subgraph{2U, subgraph_edges, subgraph_colors, true};
 
     const SubgraphSearcher searcher{
         PriorPolicy::SUBGRAPH_DEGREE,
@@ -925,5 +935,88 @@ TEST(
     // Choose two distinct color-1 vertices in order: 3 * 2.
     // Choose one color-2 vertex: 2.
     // Total: 3 * 2 * 2 = 12.
+    EXPECT_EQ(matches, 0ULL);
+}
+
+/**
+ * @brief A large complete graph with a unique color for every vertex has
+ *        exactly one color-preserving isomorphism with itself.
+ */
+TEST(
+    SubgraphSearcherTest,
+    large_uniquely_colored_clique_matches_itself_once)
+{
+    constexpr uint32_t vertex_count = 10000U;
+
+    ColoredGraph graph = make_complete_graph(vertex_count);
+
+    // Assign a unique color to every vertex.
+    for (uint32_t vertex = 0U; vertex < vertex_count; ++vertex)
+    {
+        graph.set_vertex_color(vertex, vertex);
+    }
+
+    const ColoredGraph subgraph = graph;
+
+    const SubgraphSearcher searcher{
+        PriorPolicy::SUBGRAPH_DEGREE,
+        false,  // undirected
+        false,  // non-induced
+        make_null_writer(),
+        LoggerHandler::null()
+    };
+
+    const uint64_t matches = searcher.find_all(graph, subgraph);
+
+    EXPECT_EQ(matches, 1ULL);
+}
+
+/**
+ * @brief Changing the color of one vertex in a large complete subgraph to
+ *        another color that already exists in the host graph eliminates the
+ *        color-preserving isomorphism.
+ */
+TEST(
+    SubgraphSearcherTest,
+    large_colored_clique_with_one_recolored_vertex_has_zero_matches)
+{
+    constexpr uint32_t vertex_count = 1000U;
+
+    ColoredGraph graph = make_complete_graph(vertex_count);
+
+    // Assign a unique color to every vertex.
+    for (uint32_t vertex = 0U; vertex < vertex_count; ++vertex)
+    {
+        graph.set_vertex_color(vertex, vertex);
+    }
+
+    ColoredGraph subgraph = graph;
+
+    // Change the color of vertex 500 from 500 to 499.
+    // Color 499 already exists in G, so the modified color is taken
+    // from the original color distribution.
+    //
+    // G contains:
+    //   one vertex of color 499
+    //   one vertex of color 500
+    //
+    // S contains:
+    //   two vertices of color 499
+    //   zero vertices of color 500
+    subgraph.set_vertex_color(
+        vertex_count / 2U,
+        vertex_count / 2U - 1U
+    );
+
+    const SubgraphSearcher searcher{
+        PriorPolicy::SUBGRAPH_DEGREE,
+        false,  // undirected
+        false,  // non-induced
+        make_null_writer(),
+        LoggerHandler::null()
+    };
+
+    const uint64_t matches = searcher.find_all(graph, subgraph);
+
     EXPECT_EQ(matches, 0ULL);
 }
