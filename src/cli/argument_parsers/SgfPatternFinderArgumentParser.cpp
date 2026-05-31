@@ -82,8 +82,8 @@ po::options_description SgfPatternFinderArgumentParser::build_preprocess_options
         "Path to results file (required with --preprocess-single-graph-from-results)")(
         KEY_RESULTS_FILE_TYPE, po::value<std::string>()->default_value("json"),
         "Results file format: json, csv (default: json)")(
-        KEY_PREPROCESS_SINGLE_GRAPH, po::value<std::string>()->default_value("0"),
-        "Index of single graph to process (required when using single-graph mode, default: 0)")(
+        KEY_PREPROCESS_SINGLE_GRAPH, po::value<std::string>()->default_value("-1"),
+        "Index of single graph to process (required when using single-graph mode; -1 = disabled)")(
         KEY_BACKGROUND_GRAPH_PATH, po::value<std::string>()->default_value(""),
         "(optional) Path to background graph file for pattern scoring")(
         KEY_SCORE_THRESHOLD, po::value<std::string>()->default_value("0.0"),

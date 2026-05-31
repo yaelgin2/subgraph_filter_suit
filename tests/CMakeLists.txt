@@ -56,7 +56,7 @@ add_sgf_test(individual_color_hist_tests                patterns/histograms/Indi
 
 add_sgf_test(tree_tests                                 patterns/tree/TreeTest.cpp)
 
-add_sgf_test(single_graph_pattern_finder_tests          patterns/SingleGraphPatternFinderTest.cpp)
+add_sgf_test(single_graph_pattern_finder_tests          patterns/pattern_finders/SingleGraphPatternFinderTest.cpp)
 add_sgf_test(multi_graph_pattern_finder_tests           patterns/pattern_finders/MultiGraphPatternFinderTest.cpp)
 
 add_sgf_test(motif_preprocessor_tests                   preprocessing/MotifPreprocessorTest.cpp)

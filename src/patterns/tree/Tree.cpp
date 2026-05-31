@@ -2,6 +2,7 @@
 
 #include "AddNodeException.h"
 #include "ColoredGraph.h"
+#include "DebugLog.h"
 #include "DeleteNodeException.h"
 #include "GeneralColorHist.h"
 #include "IndividualColorHist.h"
@@ -11,6 +12,7 @@
 #include "PatternException.h"
 
 #include <cstddef>
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -23,6 +25,28 @@
 
 namespace
 {
+
+/**
+ * @brief Format vertex-parent pairs as "[(v0,p0) (v1,p1) ...]" for debug logging.
+ * @param pairs Vector of (vertex index, parent node) pairs.
+ * @return Formatted string.
+ */
+std::string format_vertex_parent_pairs(
+    const std::vector<std::pair<uint32_t, sgf::NodePtr>>& pairs)
+{
+    std::string result = "[";
+    for (size_t idx = 0; idx < pairs.size(); ++idx)
+    {
+        if (idx > 0U)
+        {
+            result += " ";
+        }
+        const uint32_t parent_index = pairs[idx].second ? pairs[idx].second->m_index : 0U;
+        result += "(" + std::to_string(pairs[idx].first) + "," + std::to_string(parent_index) + ")";
+    }
+    result += "]";
+    return result;
+}
 
 /**
  * @brief Hash for pairs of uint32_t, used in unordered containers.
@@ -40,30 +64,6 @@ struct PairHash
     }
 };
 
-/**
- * @brief Append duplicate ancestor colors to @p collected_colors.
- *
- * For each (depth, color) pair, appends the color (count - 1) extra times, where count
- * is the number of neighbours sharing that ancestor depth.
- *
- * @param unique_pairs Set of unique (ancestor_depth, color) pairs.
- * @param count_by_depth Map from ancestor depth to total neighbour count at that depth.
- * @param collected_colors Output vector to append duplicate colors to.
- */
-void append_ancestor_duplicate_colors(
-    const std::unordered_set<std::pair<uint32_t, uint32_t>, PairHash>& unique_pairs,
-    const std::unordered_map<uint32_t, uint32_t>& count_by_depth,
-    std::vector<uint32_t>& collected_colors)
-{
-    for (const auto& [ancestor_depth_key, pair_color] : unique_pairs)
-    {
-        const uint32_t duplicate_count = count_by_depth.at(ancestor_depth_key) - 1U;
-        for (uint32_t duplicate_index = 0U; duplicate_index < duplicate_count; ++duplicate_index)
-        {
-            collected_colors.push_back(pair_color);
-        }
-    }
-}
 
 }  // namespace
 
@@ -78,9 +78,10 @@ Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, const Lo
     , m_logger(logger)
     , m_graph(graph)
     , m_is_directed(graph.is_directed())
-    , m_hist(general_hist, logger)
+    , m_hist(general_hist, root_vertex_index, logger)
     , m_reverse_hist(reverse_general_hist ? std::optional<IndividualColorHist>(
-                                                std::in_place, reverse_general_hist->get(), logger)
+                                                std::in_place, reverse_general_hist->get(),
+                                                root_vertex_index, logger)
                                           : std::nullopt)
 {
     if (m_is_directed && !m_reverse_hist)
@@ -88,6 +89,7 @@ Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, const Lo
         m_logger.log(LogLevel::ERROR, "Tree: reverse histogram required for directed tree");
         throw PatternException("Reverse histogram required for directed trees");
     }
+    SGF_DEBUG_LOG(m_logger, "Tree: root=" + std::to_string(root_vertex_index));
 }
 
 NodePtr Tree::add_node(const NodePtr& parent, const uint32_t vertex_index)
@@ -169,9 +171,26 @@ void Tree::delete_node(const NodePtr& node)
         {
             parent_node->m_son = node->m_left;
         }
-        parent_node->m_previous_children.insert({node->m_index, node->m_depth});
-        parent_node->m_previous_children.insert(node->m_previous_children.begin(),
-                                                node->m_previous_children.end());
+        
+        if (parent_node->m_previous_children.find(node->m_index) == parent_node->m_previous_children.end())
+        {
+            parent_node->m_previous_children[node->m_index].insert({node->m_depth});
+        }
+        else {
+            parent_node->m_previous_children.insert({node->m_index, {{node->m_depth}}});
+        }
+        for (auto [index, depth_set] : node->m_previous_children)
+        {
+            if (parent_node->m_previous_children.find(node->m_index) != parent_node->m_previous_children.end())
+            {
+                parent_node->m_previous_children[index].insert(depth_set.begin(), depth_set.end());
+            }
+            else
+            {
+                parent_node->m_previous_children[index] = depth_set;
+            }
+
+        }
     }
 }
 
@@ -260,38 +279,44 @@ void Tree::update_neighbours_in_tree_path(
     std::vector<uint32_t>& found_depths, std::vector<bool>& vertex_processed_flags,
     const bool is_reversed) const
 {
+
     for (const auto& [path_vertex_index, path_vertex_depth] : tree_path_depths)
     {
         if (vertex_processed_flags[path_vertex_index])
         {
             continue;
         }
-
+        
         const std::pair<std::vector<uint32_t>::const_iterator,
                         std::vector<uint32_t>::const_iterator>
             neighbour_range = m_graph.get_neighbours(path_vertex_index, is_reversed);
 
-        for (std::vector<uint32_t>::const_iterator neighbour_it = neighbour_range.first;
-             neighbour_it != neighbour_range.second; ++neighbour_it)
+        bool all_candidates_neighbours = true;
+        for (auto candidate_index : candidate_indexes)
         {
-            if (candidate_indexes.find(*neighbour_it) != candidate_indexes.end())
+            if(std::find(neighbour_range.first, neighbour_range.second, candidate_index) == neighbour_range.second)
             {
-                found_depths.push_back(path_vertex_depth - 1U);
-                vertex_processed_flags[path_vertex_index] = true;
+                all_candidates_neighbours = false;
                 break;
             }
+        }
+        if (all_candidates_neighbours)
+        {
+            SGF_DEBUG_LOG(m_logger, "Decreasing neighbour for vertex=" + std::to_string(path_vertex_index) + " at depth=" + std::to_string(path_vertex_depth));
+            found_depths.push_back(path_vertex_depth - 1U);
+            vertex_processed_flags[path_vertex_index] = true;
         }
     }
 }
 
 std::vector<uint32_t> Tree::collect_vertex_external_colors(
     const uint32_t candidate_vertex, const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-    const std::unordered_map<uint32_t, uint32_t>& excluded_previous_children,
+    const std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& excluded_previous_children,
     const bool is_reversed) const
 {
     std::vector<uint32_t> collected_colors;
-    std::unordered_map<uint32_t, uint32_t> neighbour_count_by_ancestor_depth;
-    std::unordered_set<std::pair<uint32_t, uint32_t>, PairHash> unique_ancestor_depth_color_pairs;
+    std::unordered_map<uint32_t, std::unordered_set<uint32_t>> color_to_tree_level_count;
+    std::unordered_map<uint32_t, uint32_t> neighbour_count_in_color;
 
     const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
         neighbour_range = m_graph.get_neighbours(candidate_vertex, is_reversed);
@@ -299,27 +324,43 @@ std::vector<uint32_t> Tree::collect_vertex_external_colors(
     for (std::vector<uint32_t>::const_iterator neighbour_it = neighbour_range.first;
          neighbour_it != neighbour_range.second; ++neighbour_it)
     {
+        SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors checking neighbour: " + std::to_string(*neighbour_it));
         const uint32_t adjacent_vertex_index = *neighbour_it;
         if (tree_path_depths.find(adjacent_vertex_index) != tree_path_depths.end())
         {
+            SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors in tree path");
             continue;
         }
         if (excluded_previous_children.find(adjacent_vertex_index) ==
             excluded_previous_children.end())
         {
+            SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors not in previous children");
             collected_colors.push_back(m_graph.get_vertex_color(adjacent_vertex_index));
         }
         else
         {
-            const uint32_t ancestor_depth = excluded_previous_children.at(adjacent_vertex_index);
-            unique_ancestor_depth_color_pairs.insert(
-                {ancestor_depth, m_graph.get_vertex_color(adjacent_vertex_index)});
-            neighbour_count_by_ancestor_depth[ancestor_depth]++;
+            SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors in previous children");
+            const std::unordered_set<uint32_t> ancestor_depth = excluded_previous_children.at(adjacent_vertex_index);
+            const uint32_t color = m_graph.get_vertex_color(adjacent_vertex_index);
+            for (auto depth : ancestor_depth)
+            {
+                SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors ancestor depth: " + std::to_string(depth));
+                color_to_tree_level_count[color].insert(depth);
+            }
+            ++neighbour_count_in_color[color];
         }
     }
 
-    append_ancestor_duplicate_colors(unique_ancestor_depth_color_pairs,
-                                     neighbour_count_by_ancestor_depth, collected_colors);
+    for (const auto& [color, count] : neighbour_count_in_color)
+    {
+        const uint32_t unique_depths =
+            static_cast<uint32_t>(color_to_tree_level_count[color].size());
+        SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors color: " + std::to_string(color) + " count: " + std::to_string(count) + " unique_depths: " + std::to_string(unique_depths));
+        for (uint32_t i = 0U; i < count - unique_depths; ++i)
+        {
+            collected_colors.push_back(color);
+        }
+    }
 
     return collected_colors;
 }
@@ -327,7 +368,7 @@ std::vector<uint32_t> Tree::collect_vertex_external_colors(
 std::vector<uint32_t> Tree::get_colors_of_neighbours_not_in_tree_path(
     const std::unordered_set<uint32_t>& candidate_indexes,
     const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-    const std::unordered_map<uint32_t, uint32_t>& excluded_previous_children,
+    const std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& excluded_previous_children,
     const bool is_reversed) const
 {
     std::vector<uint32_t> collected_colors;
@@ -372,7 +413,7 @@ void Tree::process_new_level_histogram(
     const uint32_t vertex_count = m_graph.vertex_count();
     std::vector<bool> forward_processed_flags(vertex_count, false);
     std::vector<bool> reverse_processed_flags(vertex_count, false);
-    const std::unordered_map<uint32_t, uint32_t> empty_excluded_previous_children;
+    const std::unordered_map<uint32_t, std::unordered_set<uint32_t>> empty_excluded_previous_children;
     std::unordered_map<uint32_t, uint32_t> tree_path_depths =
         get_tree_path_map(vertex_parent_pairs[0].second);
     NodePtr previous_parent_node;
@@ -417,6 +458,8 @@ void Tree::process_new_level_histogram(
 std::vector<NodePtr>
 Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs)
 {
+    SGF_DEBUG_LOG(m_logger, "add_tree_level: root=" + std::to_string(m_root->m_index) +
+                                " pairs=" + format_vertex_parent_pairs(vertex_parent_pairs));
     if (vertex_parent_pairs.empty())
     {
         return {};
@@ -449,6 +492,9 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_par
 
 void Tree::remove_node(const NodePtr& node)
 {
+    SGF_DEBUG_LOG(m_logger, "remove_node: root=" + std::to_string(m_root->m_index) +
+                                " vertex=" + std::to_string(node->m_index) +
+                                " depth=" + std::to_string(node->m_depth));
     NodePtr node_to_remove = node;
     std::unordered_map<uint32_t, uint32_t> tree_path_depths = get_tree_path_map(node_to_remove);
 

@@ -556,9 +556,11 @@ LibraryData FlowManager::load_library(const std::string& path, const GraphReader
     library.m_graph_names = IOUtils::get_files_in_directory(path);
     library.m_library.reserve(library.m_graph_names.size());
     std::unique_ptr<IColoredGraphReader> reader = make_graph_reader(reader_type);
-    for (const std::string& graph_name : library.m_graph_names)
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(library.m_graph_names.size()); ++idx)
     {
-        library.m_library.push_back(reader->read(graph_name, is_directed, logger));
+        logger.log(LogLevel::INFO, "[load] index=" + std::to_string(idx) +
+                                       " file=" + library.m_graph_names[idx]);
+        library.m_library.push_back(reader->read(library.m_graph_names[idx], is_directed, logger));
     }
     return library;
 }
