@@ -27,7 +27,6 @@
 #include "MatchOutputWriter.h"
 #include "MotifDagExpander.h"
 #include "MotifPreprocessor.h"
-#include "MultiGraphPatternPreprocessor.h"
 #include "PathProcessor.h"
 #include "PatternGraphFilter.h"
 #include "PatternPreprocessManager.h"
@@ -287,7 +286,6 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
 std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const std::string& input_path, const bool is_directed, GraphReaderType reader_type,
     std::string& output_path, const PatternWriterType output_type, const std::string& log_file_path,
-    const uint32_t preprocess_multigraph, const double multigraph_alive_percent,
     const bool preprocess_singlegraph_results_file, const std::string& results_file_path,
     const int64_t preprocess_singlegraph, const ResultOutputType results_file_type,
     const std::string& background_graph_path, const double score_threshold,
@@ -300,21 +298,6 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const std::shared_ptr<IPatternWriter> pattern_writer = make_pattern_writer(output_type);
     const std::string timestamp = generate_timestamp();
     PatternPreprocessManager preprocess_manager(library.m_library, log_bundle.handler());
-    if (preprocess_multigraph > 0U)
-    {
-        const PatternOutput multigraph_results = preprocess_manager.preprocess(
-            [preprocess_multigraph, multigraph_alive_percent,
-             is_directed](std::vector<ColoredGraph>& library_ref,
-                          LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
-            {
-                return std::make_unique<MultiGraphPatternPreprocessor>(
-                    library_ref, is_directed, preprocess_multigraph, multigraph_alive_percent,
-                    std::move(logger));
-            });
-        result.insert(result.end(), multigraph_results.begin(), multigraph_results.end());
-        const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(multigraph_results, timestamp, pattern_writer);
-    }
     const bool need_background =
         preprocess_singlegraph != -1 || preprocess_singlegraph_results_file;
     std::optional<ColoredGraph> background_graph_opt;

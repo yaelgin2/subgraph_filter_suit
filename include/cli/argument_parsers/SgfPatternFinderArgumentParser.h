@@ -21,8 +21,6 @@ struct PatternPreprocessArgs
     std::string m_library_input_folder;  ///< Input graph library directory.
     std::string m_output_folder;         ///< Output directory for patterns.
     PatternWriterType m_pattern_output_type{PatternWriterType::GRAPHML};  ///< Pattern file format.
-    uint32_t m_preprocess_multigraph{0};     ///< Number of multigraph patterns to extract.
-    double m_multigraph_alive_percent{0.0};  ///< Minimum alive percentage for multigraph patterns.
     bool m_preprocess_single_graph_from_results{
         false};                       ///< Load single graph index from a results file.
     std::string m_results_file_path;  ///< Path to results file (required when
@@ -97,8 +95,6 @@ private:
     static constexpr const char* KEY_LIBRARY_INPUT_FOLDER = "library-input-folder";
     static constexpr const char* KEY_OUTPUT_FOLDER = "output-folder";
     static constexpr const char* KEY_PATTERN_OUTPUT_TYPE = "pattern-output-type";
-    static constexpr const char* KEY_PREPROCESS_MULTIGRAPH = "preprocess-multigraph";
-    static constexpr const char* KEY_MULTIGRAPH_ALIVE_PERCENT = "multigraph-alive-percent";
     static constexpr const char* KEY_PREPROCESS_SINGLE_GRAPH_FROM_RESULTS =
         "preprocess-single-graph-from-results";
     static constexpr const char* KEY_RESULTS_FILE_PATH = "results-file-path";

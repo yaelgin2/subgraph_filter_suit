@@ -72,10 +72,6 @@ po::options_description SgfPatternFinderArgumentParser::build_preprocess_options
         "Directory where extracted patterns are written")(
         KEY_PATTERN_OUTPUT_TYPE, po::value<std::string>(),
         "Pattern file format: graphml, json, vertex-edge")(
-        KEY_PREPROCESS_MULTIGRAPH, po::value<std::string>()->default_value("0"),
-        "Number of multigraph patterns to extract (default: 0)")(
-        KEY_MULTIGRAPH_ALIVE_PERCENT, po::value<std::string>()->default_value("0"),
-        "Minimum alive percentage for multigraph patterns (default: 0)")(
         KEY_PREPROCESS_SINGLE_GRAPH_FROM_RESULTS, po::bool_switch(),
         "Derive single-graph index from a results file instead of --preprocess-single-graph")(
         KEY_RESULTS_FILE_PATH, po::value<std::string>(),
@@ -167,11 +163,6 @@ SgfPatternFinderArgumentParser::parse_preprocess_args(const po::variables_map& v
     result.m_output_folder = get_required_string(variables_map, KEY_OUTPUT_FOLDER);
     result.m_pattern_output_type =
         parse_pattern_writer_type(get_required_string(variables_map, KEY_PATTERN_OUTPUT_TYPE));
-    result.m_preprocess_multigraph = parse_uint32_value(
-        variables_map.at(KEY_PREPROCESS_MULTIGRAPH).as<std::string>(), KEY_PREPROCESS_MULTIGRAPH);
-    result.m_multigraph_alive_percent =
-        parse_double_value(variables_map.at(KEY_MULTIGRAPH_ALIVE_PERCENT).as<std::string>(),
-                           KEY_MULTIGRAPH_ALIVE_PERCENT);
     result.m_preprocess_single_graph_from_results =
         variables_map.at(KEY_PREPROCESS_SINGLE_GRAPH_FROM_RESULTS).as<bool>();
     result.m_results_file_path = get_optional_string(variables_map, KEY_RESULTS_FILE_PATH);
