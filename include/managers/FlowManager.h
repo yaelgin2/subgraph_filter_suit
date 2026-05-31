@@ -137,7 +137,7 @@ public:
         const SingleGraphFinderConfig& config);
 
     /// @brief Run the pattern filter stage.
-    static std::unordered_map<std::string, FilterResult>
+    static std::vector<std::unordered_map<std::string, FilterResult>>
     pattern_filter_run(const std::string& pattern_to_filter_cache, PatternWriterType pattern_type,
                        const std::string& background_graph_path, GraphReaderType reader_type,
                        bool is_directed, std::string& output_path, ResultOutputType output_type,
