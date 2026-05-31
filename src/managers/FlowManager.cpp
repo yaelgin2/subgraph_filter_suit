@@ -298,21 +298,6 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const std::shared_ptr<IPatternWriter> pattern_writer = make_pattern_writer(output_type);
     const std::string timestamp = generate_timestamp();
     PatternPreprocessManager preprocess_manager(library.m_library, log_bundle.handler());
-    if (preprocess_multigraph > 0U)
-    {
-        const PatternOutput multigraph_results = preprocess_manager.preprocess(
-            [preprocess_multigraph, multigraph_alive_percent,
-             is_directed](std::vector<ColoredGraph>& library_ref,
-                          LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
-            {
-                return std::make_unique<MultiGraphPatternPreprocessor>(
-                    library_ref, is_directed, preprocess_multigraph, multigraph_alive_percent,
-                    std::move(logger));
-            });
-        result.insert(result.end(), multigraph_results.begin(), multigraph_results.end());
-        const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(multigraph_results, timestamp, pattern_writer);
-    }
     const bool need_background =
         preprocess_singlegraph != -1 || preprocess_singlegraph_results_file;
     std::optional<ColoredGraph> background_graph_opt;
