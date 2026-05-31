@@ -1,6 +1,7 @@
 #include "JsonGraphReader.h"
 
 #include "ColoredGraph.h"
+#include "DebugLog.h"
 #include "GraphConstructionException.h"
 #include "IOConstants.h"
 #include "IoGraphUtils.h"
@@ -257,6 +258,12 @@ ColoredGraph JsonGraphReader::read(const std::string& path, bool is_directed,
     const std::unordered_map<uint32_t, uint32_t> color_by_id = collect_node_colors(nodes_array);
     const std::unordered_map<uint32_t, uint32_t> consecutive_index_by_original_id =
         IoGraphUtils::build_consecutive_index_map(color_by_id);
+    std::string id_remap_log = "id_remap '" + path + "' (original_id→consecutive_index):";
+    for (const auto& entry : consecutive_index_by_original_id)
+    {
+        id_remap_log += " " + std::to_string(entry.first) + "→" + std::to_string(entry.second);
+    }
+    SGF_DEBUG_LOG(logger, id_remap_log);
     const std::vector<uint32_t> vertex_colors =
         build_vertex_colors(color_by_id, consecutive_index_by_original_id);
     const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
