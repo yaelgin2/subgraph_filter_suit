@@ -1,7 +1,10 @@
 #include "SgfApi.h"
 
+#include "EnumerationPreprocessManager.h"
+#include "FilteringUtils.h"
 #include "FlowManager.h"
 #include "InvalidArgumentException.h"
+#include "IPatternPreprocessor.h"
 
 #include <cstdint>
 #include <optional>
@@ -74,16 +77,15 @@ filter_with_enumeration(const FilterWithEnumerationParams& params)
     }
     if (params.m_filter_paths && !params.m_path_cache_file.has_value())
     {
-        throw InvalidArgumentException(
-            "m_path_cache_file is required when m_filter_paths is true");
+        throw InvalidArgumentException("m_path_cache_file is required when m_filter_paths is true");
     }
     std::string output_folder = params.m_output_folder;
     return FlowManager::enumerator_filter_run(
         params.m_query_graph_path, params.m_is_directed, params.m_reader_type,
-        optional_or_empty(params.m_motif_cache_file),
-        optional_or_empty(params.m_path_cache_file), params.m_cache_type, output_folder,
-        params.m_result_type, optional_or_empty(params.m_log_file), params.m_filter_paths,
-        params.m_filter_motifs, params.m_cache_config, params.m_non_induced);
+        optional_or_empty(params.m_motif_cache_file), optional_or_empty(params.m_path_cache_file),
+        params.m_cache_type, output_folder, params.m_result_type,
+        optional_or_empty(params.m_log_file), params.m_filter_paths, params.m_filter_motifs,
+        params.m_cache_config, params.m_non_induced);
 }
 
 std::vector<PatternPreprocessorResult> preprocess_patterns(const PreprocessPatternsParams& params)
@@ -100,8 +102,7 @@ std::vector<PatternPreprocessorResult> preprocess_patterns(const PreprocessPatte
     const bool single_graph_mode = use_single_index || use_results_file;
     if (single_graph_mode && !params.m_background_graph_path.has_value())
     {
-        throw InvalidArgumentException(
-            "m_background_graph_path is required in single-graph mode");
+        throw InvalidArgumentException("m_background_graph_path is required in single-graph mode");
     }
     std::string output_path = params.m_output_path;
     const int64_t single_graph_index =

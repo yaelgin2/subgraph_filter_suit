@@ -25,13 +25,13 @@ namespace sgf
  */
 struct EnumerateLibraryParams
 {
-    std::string m_library_path;          ///< [required] Directory containing the graph library.
-    GraphReaderType m_reader_type;        ///< [required] Graph file format.
-    std::string m_output_path;           ///< [required] Directory where caches are written.
-    CacheManagerType m_cache_type;        ///< [required] Cache file format.
-    bool m_preprocess_motifs{false};      ///< Enumerate motif signatures.
-    bool m_preprocess_paths{false};       ///< Enumerate path signatures.
-    bool m_is_directed{false};            ///< Treat graphs as directed.
+    std::string m_library_path;             ///< [required] Directory containing the graph library.
+    GraphReaderType m_reader_type;          ///< [required] Graph file format.
+    std::string m_output_path;              ///< [required] Directory where caches are written.
+    CacheManagerType m_cache_type;          ///< [required] Cache file format.
+    bool m_preprocess_motifs{false};        ///< Enumerate motif signatures.
+    bool m_preprocess_paths{false};         ///< Enumerate path signatures.
+    bool m_is_directed{false};              ///< Treat graphs as directed.
     std::optional<std::string> m_log_file;  ///< Log file path; absent = no logging.
 };
 
@@ -57,19 +57,19 @@ std::vector<EnumerationResultVector> enumerate_library(const EnumerateLibraryPar
  */
 struct FilterWithEnumerationParams
 {
-    std::string m_query_graph_path;      ///< [required] Directory containing query graphs.
-    GraphReaderType m_reader_type;        ///< [required] Query graph file format.
-    std::string m_output_folder;         ///< [required] Directory for filter result output.
-    ResultOutputType m_result_type;       ///< [required] Filter result file format.
-    CacheManagerType m_cache_type;        ///< [required] Cache file format.
-    bool m_filter_motifs{false};          ///< Filter by motif signatures.
-    bool m_filter_paths{false};           ///< Filter by path signatures.
+    std::string m_query_graph_path;  ///< [required] Directory containing query graphs.
+    GraphReaderType m_reader_type;   ///< [required] Query graph file format.
+    std::string m_output_folder;     ///< [required] Directory for filter result output.
+    ResultOutputType m_result_type;  ///< [required] Filter result file format.
+    CacheManagerType m_cache_type;   ///< [required] Cache file format.
+    bool m_filter_motifs{false};     ///< Filter by motif signatures.
+    bool m_filter_paths{false};      ///< Filter by path signatures.
     std::optional<std::string> m_motif_cache_file;  ///< Required when m_filter_motifs is true.
     std::optional<std::string> m_path_cache_file;   ///< Required when m_filter_paths is true.
-    bool m_is_directed{false};            ///< Treat graphs as directed.
-    bool m_non_induced{false};            ///< Expand motif counts via inclusion DAG (non-induced).
-    std::optional<std::string> m_log_file;           ///< Log file path; absent = no logging.
-    GraphEnumerationCacheConfig m_cache_config{};    ///< Query graph enumeration caching options.
+    bool m_is_directed{false};                      ///< Treat graphs as directed.
+    bool m_non_induced{false};  ///< Expand motif counts via inclusion DAG (non-induced).
+    std::optional<std::string> m_log_file;         ///< Log file path; absent = no logging.
+    GraphEnumerationCacheConfig m_cache_config{};  ///< Query graph enumeration caching options.
 };
 
 /**
@@ -97,18 +97,19 @@ filter_with_enumeration(const FilterWithEnumerationParams& params);
  */
 struct PreprocessPatternsParams
 {
-    std::string m_library_path;           ///< [required] Directory containing the graph library.
-    GraphReaderType m_reader_type;         ///< [required] Graph file format.
-    std::string m_output_path;            ///< [required] Directory where pattern files are written.
-    PatternWriterType m_pattern_type;      ///< [required] Pattern file format.
-    bool m_is_directed{false};             ///< Treat graphs as directed.
-    std::optional<int64_t> m_single_graph_index;        ///< Process one graph by library index.
-    std::optional<std::string> m_results_file_path;     ///< Derive graph index from results file.
+    std::string m_library_path;        ///< [required] Directory containing the graph library.
+    GraphReaderType m_reader_type;     ///< [required] Graph file format.
+    std::string m_output_path;         ///< [required] Directory where pattern files are written.
+    PatternWriterType m_pattern_type;  ///< [required] Pattern file format.
+    bool m_is_directed{false};         ///< Treat graphs as directed.
+    std::optional<int64_t> m_single_graph_index;     ///< Process one graph by library index.
+    std::optional<std::string> m_results_file_path;  ///< Derive graph index from results file.
     ResultOutputType m_results_file_type{ResultOutputType::JSON};  ///< Results file format.
-    std::optional<std::string> m_background_graph_path;  ///< Background graph (required in single-graph mode).
-    double m_score_threshold{0.0};          ///< Pattern score cutoff.
+    std::optional<std::string>
+        m_background_graph_path;    ///< Background graph (required in single-graph mode).
+    double m_score_threshold{0.0};  ///< Pattern score cutoff.
     SingleGraphFinderConfig m_finder_config{};  ///< Beam search tuning parameters.
-    std::optional<std::string> m_log_file;  ///< Log file path; absent = no logging.
+    std::optional<std::string> m_log_file;      ///< Log file path; absent = no logging.
 };
 
 /**
@@ -122,8 +123,7 @@ struct PreprocessPatternsParams
  * @throws InvalidArgumentException if required fields are empty, both single-graph modes
  *         are set simultaneously, or single-graph mode is active without a background graph.
  */
-std::vector<PatternPreprocessorResult>
-preprocess_patterns(const PreprocessPatternsParams& params);
+std::vector<PatternPreprocessorResult> preprocess_patterns(const PreprocessPatternsParams& params);
 
 // ── filter_with_patterns ──────────────────────────────────────────────────────
 
@@ -132,16 +132,16 @@ preprocess_patterns(const PreprocessPatternsParams& params);
  */
 struct FilterWithPatternsParams
 {
-    std::string m_pattern_cache_path;         ///< [required] Full path to the pattern cache.
-    PatternWriterType m_pattern_type;          ///< [required] Pattern cache file format.
-    std::string m_background_graph_folder;    ///< [required] Background graph directory.
-    GraphReaderType m_reader_type;             ///< [required] Graph file format.
-    std::string m_output_path;                ///< [required] Directory for filter result output.
-    ResultOutputType m_result_type;            ///< [required] Filter result file format.
-    PriorPolicy m_prior_policy;                ///< [required] Vertex ordering heuristic.
-    bool m_is_directed{false};                 ///< Treat graphs as directed.
-    bool m_is_induced{false};                  ///< Search for induced subgraph matches.
-    std::optional<std::string> m_log_file;     ///< Log file path; absent = no logging.
+    std::string m_pattern_cache_path;       ///< [required] Full path to the pattern cache.
+    PatternWriterType m_pattern_type;       ///< [required] Pattern cache file format.
+    std::string m_background_graph_folder;  ///< [required] Background graph directory.
+    GraphReaderType m_reader_type;          ///< [required] Graph file format.
+    std::string m_output_path;              ///< [required] Directory for filter result output.
+    ResultOutputType m_result_type;         ///< [required] Filter result file format.
+    PriorPolicy m_prior_policy;             ///< [required] Vertex ordering heuristic.
+    bool m_is_directed{false};              ///< Treat graphs as directed.
+    bool m_is_induced{false};               ///< Search for induced subgraph matches.
+    std::optional<std::string> m_log_file;  ///< Log file path; absent = no logging.
 };
 
 /**
@@ -161,13 +161,13 @@ filter_with_patterns(const FilterWithPatternsParams& params);
  */
 struct FindSubgraphParams
 {
-    std::string m_subgraph_path;           ///< [required] Path to the query subgraph file.
-    std::string m_background_path;         ///< [required] Path to the background graph file.
-    GraphReaderType m_reader_type;          ///< [required] Graph file format.
-    PriorPolicy m_prior_policy;             ///< [required] Vertex ordering heuristic.
-    bool m_is_directed{false};              ///< Treat graphs as directed.
-    bool m_is_induced{false};               ///< Search for induced subgraph matches.
-    bool m_stop_on_first_match{false};      ///< Stop after the first match is found.
+    std::string m_subgraph_path;               ///< [required] Path to the query subgraph file.
+    std::string m_background_path;             ///< [required] Path to the background graph file.
+    GraphReaderType m_reader_type;             ///< [required] Graph file format.
+    PriorPolicy m_prior_policy;                ///< [required] Vertex ordering heuristic.
+    bool m_is_directed{false};                 ///< Treat graphs as directed.
+    bool m_is_induced{false};                  ///< Search for induced subgraph matches.
+    bool m_stop_on_first_match{false};         ///< Stop after the first match is found.
     std::optional<std::string> m_output_path;  ///< Write match mappings here; absent = no output.
     std::optional<std::string> m_log_file;     ///< Log file path; absent = no logging.
 };
