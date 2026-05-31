@@ -89,10 +89,9 @@ ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_dir
                 "Failed to read graphml - requested a directed graph when the graphml is "
                 "undirected.");
         }
-        std::map<std::string, uint32_t> color_map;
         const ColoredGraph graph =
-            read_graphml_from_file(path, file_is_directed, is_directed, color_map);
-        log_read_result(logger, path, file_is_directed, is_directed, color_map);
+            read_graphml_from_file(path, file_is_directed, is_directed, m_color_map);
+        log_read_result(logger, path, file_is_directed, is_directed, m_color_map);
         return graph;
     }
     catch (const boost::bad_any_cast& exc)

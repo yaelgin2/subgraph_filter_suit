@@ -18,6 +18,10 @@ namespace sgf
  * properties are mapped to ColoredGraph labels using a string→uint registry
  * (any string value is accepted). All Boost and I/O exceptions are re-wrapped
  * as GraphConstructionException.
+ *
+ * The string→uint color registry (@c m_color_map) is shared across all calls
+ * to @c read on the same instance, so the same color string always maps to the
+ * same integer ID regardless of which file introduced it first.
  */
 class GraphmlGraphReader : public IColoredGraphReader
 {
@@ -26,8 +30,9 @@ public:
      * @brief Reads a ColoredGraph from a GraphML file.
      *
      * Color strings are mapped to sequential uint IDs in order of first
-     * appearance across vertices and edges. The resulting map is logged at
-     * INFO level if @p logger is non-null.
+     * appearance across vertices and edges. The accumulated color map is shared
+     * across successive calls on the same reader instance and is logged at INFO
+     * level after each successful read.
      *
      * If @p is_directed is false and the file declares directed edges, the
      * file edges are treated as undirected (caller param wins, warning logged).
@@ -49,6 +54,14 @@ public:
                       const LoggerHandler& logger) const override;
 
 private:
+    /**
+     * @brief Accumulated string→uint color registry shared across all reads on this instance.
+     *
+     * Mutable so that the logically const @c read method can extend the map
+     * as new color strings are encountered.
+     */
+    mutable std::map<std::string, uint32_t> m_color_map;
+
     /**
      * @brief Wraps @p exc in a GraphConstructionException and throws it.
      * @param path The file path associated with the failure.
