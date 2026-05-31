@@ -25,8 +25,10 @@ namespace sgf
 {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-std::optional<PatternFinderCliArgs> SgfPatternFinderArgumentParser::parse(const int argc,
-                                                                          char* argv[]) // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays,-warnings-as-errors)
+std::optional<PatternFinderCliArgs> SgfPatternFinderArgumentParser::parse(
+    const int argc,
+    char* argv
+        [])  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays,-warnings-as-errors)
 {
     const po::options_description desc = build_options();
     const po::variables_map variables_map = parse_raw(argc, argv, desc);
