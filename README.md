@@ -77,6 +77,156 @@ ctest --test-dir build -R colored_graph_tests --output-on-failure --build-config
 ctest --test-dir build -R three_vertices_triangle_returns_empty_map --output-on-failure --build-config Release
 ```
 
+## C++ API
+
+The library exposes five free functions in `include/api/SgfApi.h` that mirror the CLI tools but use typed C++ structs with `std::optional` for optional fields. Each function validates its inputs and throws `InvalidArgumentException` if a required field is missing.
+
+### Quick example
+
+```cpp
+#include "SgfApi.h"
+
+// 1. Preprocess a library into motif caches
+sgf::EnumerateLibraryParams ep;
+ep.m_library_path    = "./graphs/library";
+ep.m_reader_type     = sgf::GraphReaderType::JSON;
+ep.m_output_path     = "./cache";
+ep.m_cache_type      = sgf::CacheManagerType::BINARY;
+ep.m_preprocess_motifs = true;
+ep.m_preprocess_paths  = true;
+sgf::enumerate_library(ep);
+
+// 2. Filter query graphs against those caches
+sgf::FilterWithEnumerationParams fp;
+fp.m_query_graph_path  = "./graphs/queries";
+fp.m_reader_type       = sgf::GraphReaderType::JSON;
+fp.m_output_folder     = "./results";
+fp.m_result_type       = sgf::ResultOutputType::JSON;
+fp.m_cache_type        = sgf::CacheManagerType::BINARY;
+fp.m_filter_motifs     = true;
+fp.m_filter_paths      = true;
+fp.m_motif_cache_file  = "./cache/motif_cache_2024-01-01_12-00-00";
+fp.m_path_cache_file   = "./cache/path_cache_2024-01-01_12-00-00";
+auto results = sgf::filter_with_enumeration(fp);
+
+// 3. Exact subgraph search
+sgf::FindSubgraphParams sp;
+sp.m_subgraph_path   = "./query.json";
+sp.m_background_path = "./background.json";
+sp.m_reader_type     = sgf::GraphReaderType::JSON;
+sp.m_prior_policy    = sgf::PriorPolicy::SUBGRAPH_DEGREE;
+const uint64_t count = sgf::find_subgraph(sp);
+```
+
+### `enumerate_library` — `EnumerateLibraryParams`
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `m_library_path` | `string` | yes | Directory containing the graph library. |
+| `m_reader_type` | `GraphReaderType` | yes | Graph file format. |
+| `m_output_path` | `string` | yes | Directory where caches are written. |
+| `m_cache_type` | `CacheManagerType` | yes | Cache file format (`BINARY` or `CSV`). |
+| `m_preprocess_motifs` | `bool` | at least one | Enumerate motif signatures. |
+| `m_preprocess_paths` | `bool` | at least one | Enumerate path signatures. |
+| `m_is_directed` | `bool` | — | Treat graphs as directed (default `false`). |
+| `m_log_file` | `optional<string>` | — | Log file path. |
+
+Returns `vector<EnumerationResultVector>`, one element per enabled feature.
+
+---
+
+### `filter_with_enumeration` — `FilterWithEnumerationParams`
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `m_query_graph_path` | `string` | yes | Directory containing query graphs. |
+| `m_reader_type` | `GraphReaderType` | yes | Query graph file format. |
+| `m_output_folder` | `string` | yes | Directory for filter result output. |
+| `m_result_type` | `ResultOutputType` | yes | Filter result format (`JSON` or `CSV`). |
+| `m_cache_type` | `CacheManagerType` | yes | Cache file format. |
+| `m_filter_motifs` | `bool` | at least one | Filter by motif signatures. |
+| `m_filter_paths` | `bool` | at least one | Filter by path signatures. |
+| `m_motif_cache_file` | `optional<string>` | if motifs | Full path to the motif cache file. |
+| `m_path_cache_file` | `optional<string>` | if paths | Full path to the path cache file. |
+| `m_is_directed` | `bool` | — | Treat graphs as directed (default `false`). |
+| `m_non_induced` | `bool` | — | Expand motif counts via inclusion DAG (default `false`). |
+| `m_log_file` | `optional<string>` | — | Log file path. |
+| `m_cache_config` | `GraphEnumerationCacheConfig` | — | Query graph enumeration caching options. |
+
+Returns `vector<unordered_map<string, FilterResult>>`, one map per feature.
+
+---
+
+### `preprocess_patterns` — `PreprocessPatternsParams`
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `m_library_path` | `string` | yes | Directory containing the graph library. |
+| `m_reader_type` | `GraphReaderType` | yes | Graph file format. |
+| `m_output_path` | `string` | yes | Directory where pattern files are written. |
+| `m_pattern_type` | `PatternWriterType` | yes | Pattern file format. |
+| `m_is_directed` | `bool` | — | Treat graphs as directed (default `false`). |
+| `m_single_graph_index` | `optional<int64_t>` | mutually exclusive with `m_results_file_path` | Process one library graph by index. |
+| `m_results_file_path` | `optional<string>` | mutually exclusive with `m_single_graph_index` | Derive graph index from a results file. |
+| `m_results_file_type` | `ResultOutputType` | — | Results file format (default `JSON`). |
+| `m_background_graph_path` | `optional<string>` | required in single-graph mode | Background graph for pattern scoring. |
+| `m_score_threshold` | `double` | — | Pattern score cutoff (default `0.0`). |
+| `m_finder_config` | `SingleGraphFinderConfig` | — | Beam search tuning (max patterns, alpha, decay). |
+| `m_log_file` | `optional<string>` | — | Log file path. |
+
+Returns `vector<PatternPreprocessorResult>`.
+
+---
+
+### `filter_with_patterns` — `FilterWithPatternsParams`
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `m_pattern_cache_path` | `string` | yes | Full path to the pattern cache from `preprocess_patterns`. |
+| `m_pattern_type` | `PatternWriterType` | yes | Pattern cache file format. |
+| `m_background_graph_folder` | `string` | yes | Directory containing background graphs. |
+| `m_reader_type` | `GraphReaderType` | yes | Graph file format. |
+| `m_output_path` | `string` | yes | Directory for filter result output. |
+| `m_result_type` | `ResultOutputType` | yes | Filter result format. |
+| `m_prior_policy` | `PriorPolicy` | yes | Vertex ordering heuristic. |
+| `m_is_directed` | `bool` | — | Treat graphs as directed (default `false`). |
+| `m_is_induced` | `bool` | — | Search for induced matches (default `false`). |
+| `m_log_file` | `optional<string>` | — | Log file path. |
+
+Returns `vector<unordered_map<string, FilterResult>>`.
+
+---
+
+### `find_subgraph` — `FindSubgraphParams`
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `m_subgraph_path` | `string` | yes | Path to the query subgraph file. |
+| `m_background_path` | `string` | yes | Path to the background graph file. |
+| `m_reader_type` | `GraphReaderType` | yes | Graph file format. |
+| `m_prior_policy` | `PriorPolicy` | yes | Vertex ordering heuristic. |
+| `m_is_directed` | `bool` | — | Treat graphs as directed (default `false`). |
+| `m_is_induced` | `bool` | — | Search for induced matches (default `false`). |
+| `m_stop_on_first_match` | `bool` | — | Stop after finding the first match (default `false`). |
+| `m_output_path` | `optional<string>` | — | File to write match vertex mappings to. |
+| `m_log_file` | `optional<string>` | — | Log file path. |
+
+Returns `uint64_t` — the number of matching instances found.
+
+> **Note:** Only **connected** subgraphs are supported. A disconnected query graph (two or more separate components) always returns 0.
+
+---
+
+### Error handling
+
+All five functions throw `InvalidArgumentException` (exit code 2) on validation failures:
+- Required `string` fields that are empty
+- No feature flag set (`m_preprocess_motifs`/`m_preprocess_paths` both false)
+- A required conditional field absent (e.g. `m_motif_cache_file` missing when `m_filter_motifs` is true)
+- Mutually exclusive fields set simultaneously
+
+All other `SgfException` subtypes propagate unchanged from the underlying pipeline.
+
 ## Graph file formats
 
 All three tools accept the same `--reader-type` values:
