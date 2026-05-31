@@ -711,7 +711,8 @@ uint64_t SubgraphSearcher::find_all(const ColoredGraph& graph, const ColoredGrap
             continue;
         }
         threads.emplace_back(
-            [this, &graph, &subgraph, &prior, &matches_counter, stop_after_first, vertex, start_vertex]()
+            [this, &graph, &subgraph, &prior, &matches_counter, stop_after_first, vertex,
+             start_vertex]()
             {
                 SearchContext ctx{graph, subgraph, prior, {}, {}, {}, stop_after_first};
                 try
