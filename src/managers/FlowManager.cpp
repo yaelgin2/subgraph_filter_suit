@@ -361,10 +361,8 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::pattern_
     const LoggerBundle log_bundle(log_file_path);
     const std::filesystem::path cache_path_obj(pattern_to_filter_cache);
     const std::string cache_folder = cache_path_obj.parent_path().string();
-    const std::string timestamp =
-        cache_path_obj.stem().string().substr(std::char_traits<char>::length(PATTERN_INDEX_PREFIX));
     const CSVPatternCacheIOManager cache_manager(cache_folder, log_bundle.handler());
-    const PatternMapping pattern_mapping = cache_manager.read(timestamp);
+    const PatternMapping pattern_mapping = cache_manager.read(pattern_to_filter_cache);
     const std::unique_ptr<IColoredGraphReader> pattern_reader =
         make_graph_reader(pattern_witer_type_to_graph_reader_type(pattern_type));
     std::vector<ColoredGraphPatternResult> library_cache;

@@ -71,11 +71,10 @@ void IPatternCacheIOManager::write(const PatternOutput& patterns, const std::str
     write_mapping_to_file(mapping, mapping_path);
 }
 
-PatternMapping IPatternCacheIOManager::read(const std::string& timestamp) const
+PatternMapping IPatternCacheIOManager::read(const std::string& full_path) const
 {
-    const std::string mapping_path = build_mapping_path(timestamp);
-    m_logger.log(LogLevel::INFO, "Reading pattern index from '" + mapping_path + "'");
-    return read_mapping_from_file(mapping_path);
+    m_logger.log(LogLevel::INFO, "Reading pattern index from '" + full_path + "'");
+    return read_mapping_from_file(full_path);
 }
 
 }  // namespace sgf

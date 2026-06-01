@@ -155,7 +155,6 @@ public:
 private:
     static constexpr const char* PATH_CACHE_BASE_NAME = "path_cache";
     static constexpr const char* MOTIF_CACHE_BASE_NAME = "motif_cache";
-    static constexpr const char* PATTERN_INDEX_PREFIX = "pattern_index_";
     static constexpr const char* PATTERN_FILTER_RESULT_SUFFIX = "_pattern_filtering_result_";
 
     /**
