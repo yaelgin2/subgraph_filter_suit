@@ -47,6 +47,17 @@ This produces the `sgf-graph-enumerator` executable in the `build/` directory in
 > `-DCMAKE_BUILD_TYPE` and read the build type from `--config` at build time.
 > Passing both, as shown above, ensures a Release build on every platform.
 
+### Building with Ninja
+
+Ninja is a faster alternative to the default Make generator. Install it (`apt install ninja-build` / `brew install ninja` / `conda install ninja`) then pass `-G Ninja` at configure time:
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+Ninja automatically parallelises the build — no `--parallel` flag needed. On large machines this can significantly cut build times compared to Make.
+
 ### Compiler/Boost ABI mismatch
 
 If you see linker errors like `undefined reference to GLIBCXX_*`, your default compiler and your Boost installation were built against different C++ standard library ABIs. Fix by pointing CMake at the compiler that built your Boost:

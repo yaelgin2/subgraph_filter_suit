@@ -414,8 +414,9 @@ TEST_F(TreeTest, path_tree_updates_hist_correctly)
 {
     const ColoredGraph graph = make_path_4();
 
-    GeneralColorHist fwd_hist_2(2);
-    Tree tree(0U, graph, null_logger(), fwd_hist_2);
+    std::shared_ptr<FileLogger> logger = std::make_shared<FileLogger>("/home/cohent59/subgraph_filter_suit/tree_test_log.log");
+    GeneralColorHist fwd_hist_2(2, LoggerHandler(logger));
+    Tree tree(0U, graph, LoggerHandler(logger), fwd_hist_2);
 
     const NodePtr root = tree.get_root();
     std::vector<sgf::NodePtr> first_layer =
@@ -451,16 +452,12 @@ TEST_F(TreeTest, path_tree_colored_updates_hist_correctly)
 
     const NodePtr root = tree.get_root();
     std::vector<sgf::NodePtr> first_layer = tree.add_tree_level({{0U, root}});
-    std::cout << "After layer 1:\n";
     expect_hist_equals(fwd_hist_4, {{0U, 1U, 0U, 0U}});
     std::vector<sgf::NodePtr> second_layer = tree.add_tree_level({{1U, first_layer[0]}});
-    std::cout << "After layer 2:\n";
     expect_hist_equals(fwd_hist_4, {{0U, 0U, 0U, 0U}, {0U, 0U, 1U, 0U}});
     std::vector<sgf::NodePtr> third_layer = tree.add_tree_level({{2U, second_layer[0]}});
-    std::cout << "After layer 3:\n";
     expect_hist_equals(fwd_hist_4, {{0U, 0U, 0U, 0U}, {0U, 0U, 0U, 0U}, {0U, 0U, 0U, 1U}});
     std::vector<sgf::NodePtr> forth = tree.add_tree_level({{3U, third_layer[0]}});
-    std::cout << "After layer 4:\n";
     expect_hist_equals(fwd_hist_4, {{0U, 0U, 0U, 0U}, {0U, 0U, 0U, 0U}, {0U, 0U, 0U, 0U}});
 }
 

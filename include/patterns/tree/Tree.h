@@ -2,7 +2,7 @@
 
 #include "ColoredGraph.h"
 #include "GeneralColorHist.h"
-#include "IndividualColorHist.h"
+#include "PatternPeriphery.h"
 #include "LoggerHandler.h"
 #include "Node.h"
 
@@ -105,9 +105,9 @@ private:
     LoggerHandler m_logger;       ///< Logger.
     const ColoredGraph& m_graph;  ///< Source graph for neighbour lookups.
     bool m_is_directed;           ///< Whether the graph is directed.
-    IndividualColorHist m_hist;   ///< Forward-edge color histogram.
-    std::optional<IndividualColorHist>
-        m_reverse_hist;  ///< Reverse-edge color histogram (directed only).
+    PatternPeriphery m_periphery;   ///< Forward-edge color histogram.
+    std::optional<PatternPeriphery>
+        m_reverse_periphery;  ///< Reverse-edge color histogram (directed only).
 
     /**
      * @brief Insert a new child node under @p parent.

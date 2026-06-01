@@ -5,7 +5,7 @@
 #include "DebugLog.h"
 #include "DeleteNodeException.h"
 #include "GeneralColorHist.h"
-#include "IndividualColorHist.h"
+#include "PatternPeriphery.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 #include "Node.h"
@@ -31,7 +31,7 @@ namespace
  * @param pairs Vector of (vertex index, parent node) pairs.
  * @return Formatted string.
  */
-std::string format_vertex_parent_pairs(
+[[maybe_unused]] std::string format_vertex_parent_pairs(
     const std::vector<std::pair<uint32_t, sgf::NodePtr>>& pairs)
 {
     std::string result = "[";
@@ -78,13 +78,13 @@ Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, const Lo
     , m_logger(logger)
     , m_graph(graph)
     , m_is_directed(graph.is_directed())
-    , m_hist(general_hist, root_vertex_index, logger)
-    , m_reverse_hist(reverse_general_hist ? std::optional<IndividualColorHist>(
+    , m_periphery(general_hist, root_vertex_index, logger)
+    , m_reverse_periphery(reverse_general_hist ? std::optional<PatternPeriphery>(
                                                 std::in_place, reverse_general_hist->get(),
                                                 root_vertex_index, logger)
                                           : std::nullopt)
 {
-    if (m_is_directed && !m_reverse_hist)
+    if (m_is_directed && !m_reverse_periphery)
     {
         m_logger.log(LogLevel::ERROR, "Tree: reverse histogram required for directed tree");
         throw PatternException("Reverse histogram required for directed trees");
@@ -434,20 +434,20 @@ void Tree::process_new_level_histogram(
 
         update_neighbours_in_tree_path(sibling_vertex_indexes, tree_path_depths,
                                        forward_decrease_depths, forward_processed_flags, false);
-        if (m_reverse_hist.has_value())
+        if (m_reverse_periphery.has_value())
         {
             update_neighbours_in_tree_path(sibling_vertex_indexes, tree_path_depths,
                                            reverse_decrease_depths, reverse_processed_flags, true);
         }
 
-        m_hist.update_neighbours_add_node_add_neighbours_to_hist(
+        m_periphery.added_vertex_to_pattern_add_neihgbours_to_periphery(
             m_depth - 1U,
             get_colors_of_neighbours_not_in_tree_path(sibling_vertex_indexes, tree_path_depths,
                                                       empty_excluded_previous_children, false));
 
-        if (m_reverse_hist.has_value())
+        if (m_reverse_periphery.has_value())
         {
-            m_reverse_hist->update_neighbours_add_node_add_neighbours_to_hist(
+            m_reverse_periphery->added_vertex_to_pattern_add_neihgbours_to_periphery(
                 m_depth - 1U,
                 get_colors_of_neighbours_not_in_tree_path(sibling_vertex_indexes, tree_path_depths,
                                                           empty_excluded_previous_children, true));
@@ -478,12 +478,12 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_par
 
     const uint32_t representative_vertex_color =
         m_graph.get_vertex_color(vertex_parent_pairs[0].first);
-    m_hist.update_hist_decrease_from_neighbours(representative_vertex_color,
+    m_periphery.added_vertex_to_pattern_remove_from_periphery(representative_vertex_color,
                                                 forward_decrease_depths);
 
-    if (m_reverse_hist.has_value())
+    if (m_reverse_periphery.has_value())
     {
-        m_reverse_hist->update_hist_decrease_from_neighbours(representative_vertex_color,
+        m_reverse_periphery->added_vertex_to_pattern_remove_from_periphery(representative_vertex_color,
                                                              reverse_decrease_depths);
     }
 
@@ -514,14 +514,14 @@ void Tree::remove_node(const NodePtr& node)
             break;
         }
 
-        m_hist.update_neighbours_remove_node_decrease_neighbours_from_hist(
+        m_periphery.remove_vertex_from_pattern_remove_from_periphery(
             node_to_remove->m_depth - 1U,
             get_colors_of_neighbours_not_in_tree_path({node_to_remove->m_index}, tree_path_depths,
                                                       node_to_remove->m_previous_children, false));
 
-        if (m_reverse_hist.has_value())
+        if (m_reverse_periphery.has_value())
         {
-            m_reverse_hist->update_neighbours_remove_node_decrease_neighbours_from_hist(
+            m_reverse_periphery->remove_vertex_from_pattern_remove_from_periphery(
                 node_to_remove->m_depth - 1U, get_colors_of_neighbours_not_in_tree_path(
                                                   {node_to_remove->m_index}, tree_path_depths,
                                                   node_to_remove->m_previous_children, true));
