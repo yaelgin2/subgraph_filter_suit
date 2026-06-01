@@ -13,6 +13,7 @@
 #include "IColoredGraphReader.h"
 #include "IFilterIOManager.h"
 #include "IGraphPreprocessor.h"
+#include "IOConstants.h"
 #include "IOUtils.h"
 #include "IPatternCacheIOManager.h"
 #include "IPatternPreprocessor.h"
@@ -527,7 +528,10 @@ LibraryData FlowManager::load_library(const std::string& path, const GraphReader
                                       const bool is_directed, const LoggerHandler& logger)
 {
     LibraryData library;
-    library.m_graph_names = IOUtils::get_files_in_directory(path);
+    const std::vector<std::string> all_files = IOUtils::get_files_in_directory(path);
+    library.m_graph_names = reader_type == GraphReaderType::VERTEX_EDGE
+                                ? collect_vertex_edge_base_paths(all_files)
+                                : all_files;
     library.m_library.reserve(library.m_graph_names.size());
     std::unique_ptr<IColoredGraphReader> reader = make_graph_reader(reader_type);
     for (const std::string& graph_name : library.m_graph_names)
@@ -535,6 +539,21 @@ LibraryData FlowManager::load_library(const std::string& path, const GraphReader
         library.m_library.push_back(reader->read(graph_name, is_directed, logger));
     }
     return library;
+}
+
+std::vector<std::string>
+FlowManager::collect_vertex_edge_base_paths(const std::vector<std::string>& all_files)
+{
+    std::vector<std::string> base_paths;
+    for (const std::string& file : all_files)
+    {
+        const std::filesystem::path file_path(file);
+        if (file_path.extension() == IOConstants::NODE_LABELS_SUFFIX)
+        {
+            base_paths.push_back((file_path.parent_path() / file_path.stem()).string());
+        }
+    }
+    return base_paths;
 }
 
 }  // namespace sgf
