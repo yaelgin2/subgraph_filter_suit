@@ -27,9 +27,9 @@ struct PatternPreprocessArgs
                                       ///< m_preprocess_single_graph_from_results is true).
     ResultOutputType m_results_file_type{ResultOutputType::JSON};  ///< Format of the results file.
     int64_t m_preprocess_single_graph{-1};  ///< Index of single graph to process; -1 = disabled.
-    std::string m_background_graph_path;   ///< Path to the background graph file.
-    double m_score_threshold{0.0};         ///< Pattern score cutoff.
-    SingleGraphFinderConfig m_config{};    ///< Beam search tuning parameters.
+    std::string m_background_graph_path;    ///< Path to the background graph file.
+    double m_score_threshold{0.0};          ///< Pattern score cutoff.
+    SingleGraphFinderConfig m_config{};     ///< Beam search tuning parameters.
 };
 
 /**
