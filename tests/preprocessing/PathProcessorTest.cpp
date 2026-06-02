@@ -74,63 +74,63 @@ const UInt128 COLOR_PORTION_MASK = (UInt128{1U} << (5U * 24U)) - UInt128{1U};
 
 // ── Edge cases ────────────────────────────────────────────────────────────────
 
-TEST(PathProcessorTest, EmptyGraph)
+TEST(PathProcessorTest, empty_graph)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
     const ColoredGraph graph(0U, edges, {}, false);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, OneVertex)
+TEST(PathProcessorTest, one_vertex)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
     const ColoredGraph graph(1U, edges, {1U}, false);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, TwoVerticesUndirected)
+TEST(PathProcessorTest, two_vertices_undirected)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}};
     const ColoredGraph graph(2U, edges, {1U, 2U}, false);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, TwoVerticesDirected)
+TEST(PathProcessorTest, two_vertices_directed)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}};
     const ColoredGraph graph(2U, edges, {1U, 2U}, true);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, ThreeVerticesChainUndirected)
+TEST(PathProcessorTest, three_vertices_chain_undirected)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}};
     const ColoredGraph graph(3U, edges, {1U, 2U, 3U}, false);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, ThreeVerticesTriangle)
+TEST(PathProcessorTest, three_vertices_triangle)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {0U, 2U}};
     const ColoredGraph graph(3U, edges, {1U, 2U, 3U}, false);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, FourVerticesChainUndirected)
+TEST(PathProcessorTest, four_vertices_chain_undirected)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 3U}};
     const ColoredGraph graph(4U, edges, {1U, 2U, 3U, 4U}, false);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, FourVerticesChainDirected)
+TEST(PathProcessorTest, four_vertices_chain_directed)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 3U}};
     const ColoredGraph graph(4U, edges, {1U, 2U, 3U, 4U}, true);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, FourVerticesCompleteUndirected)
+TEST(PathProcessorTest, four_vertices_complete_undirected)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U},
                                                         {1U, 2U}, {1U, 3U}, {2U, 3U}};
@@ -138,14 +138,14 @@ TEST(PathProcessorTest, FourVerticesCompleteUndirected)
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, FiveDisconnectedVertices)
+TEST(PathProcessorTest, five_disconnected_vertices)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges;
     const ColoredGraph graph(5U, edges, {1U, 2U, 3U, 4U, 5U}, false);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, FourChainPlusIsolatedVertexUndirected)
+TEST(PathProcessorTest, four_chain_plus_isolated_vertex_undirected)
 {
     // 0-1-2-3 is a chain; vertex 4 is isolated.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 3U}};
@@ -153,14 +153,14 @@ TEST(PathProcessorTest, FourChainPlusIsolatedVertexUndirected)
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, FourChainPlusIsolatedVertexDirected)
+TEST(PathProcessorTest, four_chain_plus_isolated_vertex_directed)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 3U}};
     const ColoredGraph graph(5U, edges, {1U, 2U, 3U, 4U, 5U}, true);
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, TwoDisconnectedEdgesUndirected)
+TEST(PathProcessorTest, two_disconnected_edges_undirected)
 {
     // 0-1 and 3-4 are disconnected; vertex 2 is isolated.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {3U, 4U}};
@@ -168,7 +168,7 @@ TEST(PathProcessorTest, TwoDisconnectedEdgesUndirected)
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, StarK14Undirected)
+TEST(PathProcessorTest, star_k14_undirected)
 {
     // Center=0 connects to all leaves; no 5-vertex simple path exists.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}};
@@ -176,7 +176,7 @@ TEST(PathProcessorTest, StarK14Undirected)
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, StarK14Directed)
+TEST(PathProcessorTest, star_k14_directed)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U}};
     const ColoredGraph graph(5U, edges, {0U, 0U, 0U, 0U, 0U}, true);
@@ -185,7 +185,7 @@ TEST(PathProcessorTest, StarK14Directed)
 
 // ── Undirected chain: all 120 permutations of colors 1–5 ─────────────────────
 
-TEST(PathProcessorTest, UndirectedChainAllColorPermutations)
+TEST(PathProcessorTest, undirected_chain_all_color_permutations)
 {
     std::vector<uint32_t> colors = {1U, 2U, 3U, 4U, 5U};
     do
@@ -203,7 +203,7 @@ TEST(PathProcessorTest, UndirectedChainAllColorPermutations)
     } while (std::next_permutation(colors.begin(), colors.end()));
 }
 
-TEST(PathProcessorTest, UndirectedChainReversePermutationSameMotif)
+TEST(PathProcessorTest, undirected_chain_reverse_permutation_same_motif)
 {
     // A color sequence and its reverse must canonicalize to the same motif.
     const std::vector<uint32_t> fwd = {1U, 2U, 3U, 4U, 5U};
@@ -221,7 +221,7 @@ TEST(PathProcessorTest, UndirectedChainReversePermutationSameMotif)
 
 // ── Directed chain: all 120 permutations of colors 1–5 ───────────────────────
 
-TEST(PathProcessorTest, DirectedChainAllColorPermutations)
+TEST(PathProcessorTest, directed_chain_all_color_permutations)
 {
     // Both forward and backward traversals of the same directed path must
     // canonicalize to the same motif key.
@@ -237,7 +237,7 @@ TEST(PathProcessorTest, DirectedChainAllColorPermutations)
     } while (std::next_permutation(colors.begin(), colors.end()));
 }
 
-TEST(PathProcessorTest, DirectedChainReversePermutationSameMotif)
+TEST(PathProcessorTest, directed_chain_reverse_permutation_same_motif)
 {
     const std::vector<uint32_t> fwd = {1U, 2U, 3U, 4U, 5U};
     const std::vector<uint32_t> rev(fwd.crbegin(), fwd.crend());
@@ -254,7 +254,7 @@ TEST(PathProcessorTest, DirectedChainReversePermutationSameMotif)
 
 // ── All-zero colors: verify motif key is 0 (undirected) / color bits are 0 ───
 
-TEST(PathProcessorTest, UndirectedChainAllZeroColors)
+TEST(PathProcessorTest, undirected_chain_all_zero_colors)
 {
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result =
@@ -264,7 +264,7 @@ TEST(PathProcessorTest, UndirectedChainAllZeroColors)
     EXPECT_EQ(result.at(UInt128{}), 1U);
 }
 
-TEST(PathProcessorTest, DirectedChainAllZeroColors)
+TEST(PathProcessorTest, directed_chain_all_zero_colors)
 {
     const std::vector<uint32_t> zero = {0U, 0U, 0U, 0U, 0U};
     const std::unordered_map<UInt128, uint32_t, UInt128Hash> result =
@@ -281,7 +281,7 @@ TEST(PathProcessorTest, DirectedChainAllZeroColors)
 // For undirected graphs, motif key must be 0 for any found path.
 // For directed graphs, color bits of every motif key must be 0.
 
-TEST(PathProcessorTest, UndirectedChordGraph02AllZeroColors)
+TEST(PathProcessorTest, undirected_chord_graph_02_all_zero_colors)
 {
     // Chain 0-1-2-3-4 plus chord 0-2.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
@@ -294,7 +294,7 @@ TEST(PathProcessorTest, UndirectedChordGraph02AllZeroColors)
     EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
-TEST(PathProcessorTest, DirectedChordGraph02AllZeroColors)
+TEST(PathProcessorTest, directed_chord_graph_02_all_zero_colors)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {0U, 2U}};
@@ -306,7 +306,7 @@ TEST(PathProcessorTest, DirectedChordGraph02AllZeroColors)
     }
 }
 
-TEST(PathProcessorTest, UndirectedChordGraph13AllZeroColors)
+TEST(PathProcessorTest, undirected_chord_graph_13_all_zero_colors)
 {
     // Chain 0-1-2-3-4 plus chord 1-3.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
@@ -319,7 +319,7 @@ TEST(PathProcessorTest, UndirectedChordGraph13AllZeroColors)
     EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
-TEST(PathProcessorTest, DirectedChordGraph13AllZeroColors)
+TEST(PathProcessorTest, directed_chord_graph_13_all_zero_colors)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {1U, 3U}};
@@ -331,7 +331,7 @@ TEST(PathProcessorTest, DirectedChordGraph13AllZeroColors)
     }
 }
 
-TEST(PathProcessorTest, UndirectedChordGraph14AllZeroColors)
+TEST(PathProcessorTest, undirected_chord_graph_14_all_zero_colors)
 {
     // Chain 0-1-2-3-4 plus chord 1-4.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
@@ -344,7 +344,7 @@ TEST(PathProcessorTest, UndirectedChordGraph14AllZeroColors)
     EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
-TEST(PathProcessorTest, DirectedChordGraph14AllZeroColors)
+TEST(PathProcessorTest, directed_chord_graph_14_all_zero_colors)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {1U, 4U}};
@@ -356,7 +356,7 @@ TEST(PathProcessorTest, DirectedChordGraph14AllZeroColors)
     }
 }
 
-TEST(PathProcessorTest, UndirectedChordGraph24AllZeroColors)
+TEST(PathProcessorTest, undirected_chord_graph_24_all_zero_colors)
 {
     // Chain 0-1-2-3-4 plus chord 2-4.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
@@ -369,7 +369,7 @@ TEST(PathProcessorTest, UndirectedChordGraph24AllZeroColors)
     EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
-TEST(PathProcessorTest, DirectedChordGraph24AllZeroColors)
+TEST(PathProcessorTest, directed_chord_graph_24_all_zero_colors)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {2U, 4U}};
@@ -381,7 +381,7 @@ TEST(PathProcessorTest, DirectedChordGraph24AllZeroColors)
     }
 }
 
-TEST(PathProcessorTest, UndirectedCycleC3AllZeroColors)
+TEST(PathProcessorTest, undirected_cycle_c3_all_zero_colors)
 {
     // 3-cycle has only 3 vertices — no 5-vertex simple path can exist.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 0U}};
@@ -390,7 +390,7 @@ TEST(PathProcessorTest, UndirectedCycleC3AllZeroColors)
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, UndirectedCycleC4AllZeroColors)
+TEST(PathProcessorTest, undirected_cycle_c4_all_zero_colors)
 {
     // 4-cycle has only 4 vertices — no 5-vertex simple path can exist.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 0U}};
@@ -399,7 +399,7 @@ TEST(PathProcessorTest, UndirectedCycleC4AllZeroColors)
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, UndirectedCycleC5AllZeroColors)
+TEST(PathProcessorTest, undirected_cycle_c5_all_zero_colors)
 {
     // 5-cycle: 0-1-2-3-4-0.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
@@ -412,7 +412,7 @@ TEST(PathProcessorTest, UndirectedCycleC5AllZeroColors)
     EXPECT_EQ(result.at(UInt128{}), 5U);
 }
 
-TEST(PathProcessorTest, DirectedCycleC5AllZeroColors)
+TEST(PathProcessorTest, directed_cycle_c5_all_zero_colors)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
         {0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 4U}, {4U, 0U}};
@@ -424,7 +424,7 @@ TEST(PathProcessorTest, DirectedCycleC5AllZeroColors)
     }
 }
 
-TEST(PathProcessorTest, UndirectedCycleC6AllZeroColors)
+TEST(PathProcessorTest, undirected_cycle_c6_all_zero_colors)
 {
     // 6-cycle: each of the 6 vertices can be excluded to leave a 5-vertex chain.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 3U},
@@ -436,7 +436,7 @@ TEST(PathProcessorTest, UndirectedCycleC6AllZeroColors)
     EXPECT_EQ(result.at(UInt128{}), 6U);
 }
 
-TEST(PathProcessorTest, UndirectedCompleteK5AllZeroColors)
+TEST(PathProcessorTest, undirected_complete_k5_all_zero_colors)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U},
                                                         {1U, 2U}, {1U, 3U}, {1U, 4U}, {2U, 3U},
@@ -449,7 +449,7 @@ TEST(PathProcessorTest, UndirectedCompleteK5AllZeroColors)
     EXPECT_EQ(result.count(UInt128{}), 1U);
 }
 
-TEST(PathProcessorTest, DirectedCompleteK5AllZeroColors)
+TEST(PathProcessorTest, directed_complete_k5_all_zero_colors)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {0U, 2U}, {0U, 3U}, {0U, 4U},
                                                         {1U, 2U}, {1U, 3U}, {1U, 4U}, {2U, 3U},
@@ -464,7 +464,7 @@ TEST(PathProcessorTest, DirectedCompleteK5AllZeroColors)
 
 // ── Colored cycle tests: C3, C4, C5, C6 ─────────────────────────────────────
 
-TEST(PathProcessorTest, UndirectedCycleC3Colors123)
+TEST(PathProcessorTest, undirected_cycle_c3_colors_123)
 {
     // 3 vertices — no 5-vertex path regardless of colors.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 0U}};
@@ -473,7 +473,7 @@ TEST(PathProcessorTest, UndirectedCycleC3Colors123)
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, UndirectedCycleC4Colors1234)
+TEST(PathProcessorTest, undirected_cycle_c4_colors_1234)
 {
     // 4 vertices — no 5-vertex path regardless of colors.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 3U}, {3U, 0U}};
@@ -482,7 +482,7 @@ TEST(PathProcessorTest, UndirectedCycleC4Colors1234)
     EXPECT_TRUE(run(graph).empty());
 }
 
-TEST(PathProcessorTest, UndirectedCycleC5Colors12345)
+TEST(PathProcessorTest, undirected_cycle_c5_colors_12345)
 {
     // Each of the 5 Hamiltonian paths in C5 is a distinct rotation of [1,2,3,4,5].
     std::vector<std::pair<uint32_t, uint32_t>> edges = {
@@ -506,7 +506,7 @@ TEST(PathProcessorTest, UndirectedCycleC5Colors12345)
     }
 }
 
-TEST(PathProcessorTest, UndirectedCycleC6Colors123456)
+TEST(PathProcessorTest, undirected_cycle_c6_colors_123456)
 {
     // C6 has 6 simple 5-vertex paths (one per excluded vertex), all distinct.
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}, {1U, 2U}, {2U, 3U},
