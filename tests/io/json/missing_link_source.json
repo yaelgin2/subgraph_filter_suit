@@ -1,0 +1,4 @@
+{
+  "nodes": [{"id": 0, "color": 0}, {"id": 1, "color": 0}],
+  "links": [{"target": 1}]
+}

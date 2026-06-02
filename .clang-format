@@ -1,0 +1,57 @@
+---
+# Auto-detected by clang-format when running from any subdirectory.
+# Requires clang-format 16+ (ubuntu-latest in CI satisfies this).
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+
+# Line length
+ColumnLimit: 100
+
+# End-of-file newline (clang-format 16+)
+InsertNewlineAtEOF: true
+
+# Blank lines: enforce at least 1 blank line between top-level definitions;
+# allow up to 2 so the convention of 2 blank lines between functions is preserved.
+# NOTE: clang-format inserts the first blank line automatically (SeparateDefinitionBlocks),
+# but will NOT insert a second one — the developer must add it and clang-format keeps it.
+SeparateDefinitionBlocks: Always
+MaxEmptyLinesToKeep: 2
+
+# Braces
+BreakBeforeBraces: Allman
+InsertBraces: true
+
+# Short constructs — disallow collapsing onto one line
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLambdasOnASingleLine: None
+
+# Pointers and references
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Include sorting
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+
+# Trailing comments
+SpacesBeforeTrailingComments: 2
+
+# Constructor initializer lists
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: Never
+
+# Template parameters
+AlwaysBreakTemplateDeclarations: Yes
+
+# Namespace
+NamespaceIndentation: None
+CompactNamespaces: false

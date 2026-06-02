@@ -1,0 +1,17 @@
+name: subgraph_filter_suit
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - cmake>=3.16
+  - ninja
+  - pkg-config
+  - make
+  - cxx-compiler
+  - compilers
+  - clang=17
+  - clangxx=17
+  - clang-tools=17
+  - boost>=1.76           # Boost::log and Boost::log_setup
+  - gtest

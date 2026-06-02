@@ -1,0 +1,96 @@
+# Auto-detected by clang-tidy when running from any subdirectory.
+# Requires compile_commands.json for accurate analysis — see CLAUDE.md for build steps.
+
+SystemHeaders: false
+
+# -Wno-maybe-uninitialized is GCC-only; compile_commands.json is generated with GCC
+# so Clang (used by clang-tidy) sees an unknown warning option.  Suppress silently.
+ExtraArgsBefore: ['-Wno-unknown-warning-option']
+
+Checks: >
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  hicpp-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -misc-non-private-member-variables-in-classes,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -hicpp-named-parameter,
+  -readability-named-parameter,
+  -modernize-use-auto,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  -hicpp-use-auto,
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -readability-isolate-declaration,
+  -cppcoreguidelines-avoid-const-or-ref-data-members
+
+# Treat every enabled check as an error (CI fails on any warning)
+WarningsAsErrors: "*"
+
+# Lint only headers under src/ or include/ inside the project; portable across machines.
+HeaderFilterRegex: "^.*/subgraph_filter_suit/(src|include)/.*"
+
+CheckOptions:
+  # ── Function size limits ──────────────────────────────────────────────────
+  - key: readability-function-size.LineThreshold
+    value: "50"
+  - key: readability-function-size.BranchThreshold
+    value: "5"
+  - key: readability-function-size.ParameterThreshold
+    value: "5"
+  - key: readability-function-size.VariableThreshold
+    value: "10"
+  - key: readability-function-size.StatementThreshold
+    value: "30"
+  - key: readability-function-size.NestingThreshold
+    value: "5"
+
+  # ── Smart pointers (cppcoreguidelines-owning-memory) ──────────────────────
+  # Raw owning pointers must be marked gsl::owner<T*>; prefer unique_ptr/shared_ptr
+  - key: cppcoreguidelines-owning-memory.LegacyResourceProducers
+    value: ""
+  - key: cppcoreguidelines-owning-memory.LegacyResourceConsumers
+    value: ""
+
+  # ── Naming (adjust to match your chosen convention) ───────────────────────
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberPrefix
+    value: m_
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.LocalConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstantParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: UPPER_CASE
+
+  # ── Include cleaner ───────────────────────────────────────────────────────────
+  # Suppress "no header providing X" for symbols defined in Boost internal detail
+  # headers (e.g. boost::num_vertices, boost::vertices, boost::get for bundled
+  # properties). The public API header <boost/graph/adjacency_list.hpp> is the
+  # correct include; the detail header is an implementation artifact.
+  - key: misc-include-cleaner.IgnoreHeaders
+    value: "boost/graph/detail/adjacency_list\\.hpp"

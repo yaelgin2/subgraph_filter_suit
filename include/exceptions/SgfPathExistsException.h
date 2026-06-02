@@ -1,0 +1,40 @@
+#pragma once
+
+#include "SgfException.h"
+#include "SgfReturnCode.h"
+
+#include <string>
+
+namespace sgf
+{
+
+/**
+ * @brief Thrown when a requested file path does not exist or cannot be opened.
+ *
+ * Distinct from GraphConstructionException so callers can distinguish
+ * "file not found" from "file found but malformed".
+ * CLI exit code: SgfReturnCode::PATH_DOESNT_EXIST.
+ */
+class SgfPathExistsException : public SgfException
+{
+public:
+    /**
+     * @brief Constructs an SgfPathExistsException.
+     * @param message Description of the missing or inaccessible path.
+     */
+    explicit SgfPathExistsException(const std::string& message)
+        : SgfException(message)
+    {
+    }
+
+    /**
+     * @brief Returns the CLI exit code for this exception type.
+     * @return SgfReturnCode::PATH_DOESNT_EXIST.
+     */
+    [[nodiscard]] SgfReturnCode return_code() const noexcept override
+    {
+        return SgfReturnCode::PATH_DOESNT_EXIST;
+    }
+};
+
+}  // namespace sgf
