@@ -73,13 +73,13 @@ public:
                const std::shared_ptr<IPatternWriter>& writer) const;
 
     /**
-     * @brief Reads the pattern→graph-index mapping from a previous write() call.
+     * @brief Reads the pattern→graph-index mapping from a mapping file.
      *
-     * @param timestamp Timestamp used when write() was called.
-     * @return Map from pattern base name to the set of library graph indices it covers.
-     * @throws SgfPathExistsException if the mapping file cannot be opened.
+     * @param full_path Absolute path to the mapping file.
+     * @return Map from pattern filename to the set of library graph indices it covers.
+     * @throws SgfPathExistsException if the file cannot be opened.
      */
-    PatternMapping read(const std::string& timestamp) const;
+    PatternMapping read(const std::string& full_path) const;
 
 protected:
     /**

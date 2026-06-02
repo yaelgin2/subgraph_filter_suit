@@ -26,10 +26,10 @@ struct PatternPreprocessArgs
     std::string m_results_file_path;  ///< Path to results file (required when
                                       ///< m_preprocess_single_graph_from_results is true).
     ResultOutputType m_results_file_type{ResultOutputType::JSON};  ///< Format of the results file.
-    int64_t m_preprocess_single_graph{0};  ///< Index of single graph to process.
-    std::string m_background_graph_path;   ///< Path to the background graph file.
-    double m_score_threshold{0.0};         ///< Pattern score cutoff.
-    SingleGraphFinderConfig m_config{};    ///< Beam search tuning parameters.
+    int64_t m_preprocess_single_graph{-1};  ///< Index of single graph to process; -1 = disabled.
+    std::string m_background_graph_path;    ///< Path to the background graph file.
+    double m_score_threshold{0.0};          ///< Pattern score cutoff.
+    SingleGraphFinderConfig m_config{};     ///< Beam search tuning parameters.
 };
 
 /**
@@ -100,6 +100,7 @@ private:
     static constexpr const char* KEY_RESULTS_FILE_PATH = "results-file-path";
     static constexpr const char* KEY_RESULTS_FILE_TYPE = "results-file-type";
     static constexpr const char* KEY_PREPROCESS_SINGLE_GRAPH = "preprocess-single-graph";
+    static constexpr int64_t SINGLE_GRAPH_DISABLED = -1;  ///< Sentinel: single-graph mode off.
     static constexpr const char* KEY_BACKGROUND_GRAPH_PATH = "background-graph-path";
     static constexpr const char* KEY_SCORE_THRESHOLD = "score-threshold";
     static constexpr const char* KEY_MAX_ACTIVE_PATTERNS = "max-active-patterns";

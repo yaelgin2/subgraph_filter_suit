@@ -155,7 +155,6 @@ public:
 private:
     static constexpr const char* PATH_CACHE_BASE_NAME = "path_cache";
     static constexpr const char* MOTIF_CACHE_BASE_NAME = "motif_cache";
-    static constexpr const char* PATTERN_INDEX_PREFIX = "pattern_index_";
     static constexpr const char* PATTERN_FILTER_RESULT_SUFFIX = "_pattern_filtering_result_";
 
     /**
@@ -236,6 +235,18 @@ private:
      */
     static LibraryData load_library(const std::string& path, GraphReaderType reader_type,
                                     bool is_directed, const LoggerHandler& logger);
+
+    /**
+     * @brief Extracts base paths for vertex-edge graphs from a directory file listing.
+     *
+     * Filters @p all_files to entries whose extension matches NODE_LABELS_SUFFIX and
+     * strips that suffix, yielding the base path VertexEdgeGraphReader::read expects.
+     *
+     * @param all_files All file paths from IOUtils::get_files_in_directory.
+     * @return One base path per vertex-edge graph found.
+     */
+    static std::vector<std::string>
+    collect_vertex_edge_base_paths(const std::vector<std::string>& all_files);
 
     /**
      * @brief Construct a graph reader for the given format.
