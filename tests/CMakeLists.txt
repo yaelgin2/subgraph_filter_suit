@@ -51,8 +51,6 @@ add_sgf_test(graphml_writer_tests                       io/pattern/GraphmlPatter
 
 add_sgf_test(line_graph_searcher_tests                  isomorphism/SubgraphSearcherTest.cpp)
 
-add_sgf_test(general_color_hist_tests                   patterns/histograms/GeneralColorHistTest.cpp)
-
 add_sgf_test(tree_tests                                 patterns/tree/TreeTest.cpp)
 
 add_sgf_test(single_graph_pattern_finder_tests          patterns/pattern_finders/SingleGraphPatternFinderTest.cpp)

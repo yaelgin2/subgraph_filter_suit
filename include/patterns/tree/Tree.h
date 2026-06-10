@@ -1,17 +1,15 @@
 #pragma once
 
 #include "ColoredGraph.h"
-#include "GeneralColorHist.h"
-#include "PatternPeriphery.h"
+#include "CountsMap.h"
 #include "LoggerHandler.h"
 #include "Node.h"
 
 #include <cstdint>
-#include <functional>
 #include <memory>
-#include <optional>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace sgf
@@ -26,8 +24,6 @@ namespace sgf
  * - m_left:   left sibling
  * - m_right:  right sibling
  * - m_parent: weak_ptr to avoid ownership cycles
- *
- * For directed graphs a reverse histogram must be supplied alongside the forward one.
  */
 class Tree
 {
@@ -37,14 +33,8 @@ public:
      * @param root_vertex_index Source-graph vertex index for the root node.
      * @param graph The source graph; directionality is inferred from it.
      * @param logger Logger instance.
-     * @param general_hist Shared general histogram for forward edges.
-     * @param reverse_general_hist Shared general histogram for reverse edges (required when
-     * directed).
      */
-    Tree(uint32_t root_vertex_index, const ColoredGraph& graph, const LoggerHandler& logger,
-         GeneralColorHist& general_hist,
-         std::optional<std::reference_wrapper<GeneralColorHist>> reverse_general_hist =
-             std::nullopt);
+    Tree(uint32_t root_vertex_index, const ColoredGraph& graph, const LoggerHandler& logger);
 
     Tree() = delete;
     Tree(const Tree&) = delete;
@@ -70,7 +60,7 @@ public:
     bool is_empty() const;
 
     /**
-     * @brief Add a new level of children and update the histograms.
+     * @brief Add a new level of children to the tree.
      * @param vertex_parent_pairs Pairs of (vertex index, parent node) for each new child.
      * @return Vector of newly created nodes.
      */
@@ -99,15 +89,31 @@ public:
     static std::unordered_map<uint32_t, uint32_t>
     get_tree_path_map(const NodePtr& last_node_in_path);
 
+    /**
+     * @brief Count graph neighbours of the current match frontier, keyed by
+     *        (neighbour colour, ancestor depth).
+     *
+     * @p leaves must be the current frontier nodes, sorted so siblings are
+     * consecutive (the caller owns the ordering — typically the leaf_matches
+     * vector maintained by MultiGraphPatternFinder).
+     *
+     * For each leaf the running ancestor-path map is advanced incrementally
+     * to the new parent by walking both ancestor chains to their common
+     * ancestor, removing old nodes and adding new ones.  Every path vertex's
+     * external graph neighbours (not already in the path) are then counted
+     * by {colour, depth}.
+     *
+     * @param leaves Current frontier nodes, siblings consecutive.
+     * @return Map from {colour, depth} to total unexplored-neighbour count.
+     */
+    void get_color_by_depth_neighbour_counts(const std::vector<NodePtr>& leaves,
+                                             CountsMap& counts) const;
+
 private:
     NodePtr m_root;               ///< Root node of the tree.
-    uint32_t m_depth;             ///< Maximum depth reached.
     LoggerHandler m_logger;       ///< Logger.
     const ColoredGraph& m_graph;  ///< Source graph for neighbour lookups.
-    bool m_is_directed;           ///< Whether the graph is directed.
-    PatternPeriphery m_periphery;   ///< Forward-edge color histogram.
-    std::optional<PatternPeriphery>
-        m_reverse_periphery;  ///< Reverse-edge color histogram (directed only).
+    bool m_is_directed;          ///< Whether the source graph is directed (inferred from m_graph).
 
     /**
      * @brief Insert a new child node under @p parent.
@@ -124,7 +130,7 @@ private:
     static void splice_out_of_sibling_ring(const NodePtr& node);
 
     /**
-     * @brief Remove a leaf node from the sibling ring and record it in the parent.
+     * @brief Remove a leaf node from the sibling ring and update the parent.
      * @param node Leaf node to remove.
      */
     void delete_node(const NodePtr& node);
@@ -146,105 +152,33 @@ private:
     attach_all_new_nodes(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs);
 
     /**
-     * @brief Collect vertex indexes sharing the same parent and advance @p current_pair_index.
-     * @param vertex_parent_pairs Full ordered list of (vertex, parent) pairs.
-     * @param current_pair_index Index into @p vertex_parent_pairs; advanced past the collected
-     * group.
-     * @param current_parent_node Set to the shared parent of the collected group.
-     * @return Set of vertex indexes belonging to the current sibling group.
+     * @brief Accumulate neighbour counts in one edge direction for every vertex in @p path.
+     *
+     * For each vertex in @p path, every graph neighbour reachable via @p is_reversed edges
+     * that is NOT already in @p path_set is counted under {colour, pattern_index, is_reversed}.
+     *
+     * @param path        Vertex indices indexed by pattern depth.
+     * @param path_set    Set of vertex indices currently in @p path.
+     * @param is_reversed False for out-edges, true for in-edges.
+     * @param counts      Accumulator updated in-place.
      */
-    static std::unordered_set<uint32_t> collect_sibling_vertex_indexes(
-        const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs,
-        size_t& current_pair_index, NodePtr& current_parent_node);
+    void accumulate_direction_neighbour_counts(const std::vector<uint32_t>& path,
+                                               const std::unordered_set<uint32_t>& path_set,
+                                               bool is_reversed, CountsMap& counts) const;
 
     /**
-     * @brief Update the tree-path map when moving from @p previous_parent to @p current_parent.
+     * @brief Accumulate neighbour counts for both directions (undirected: out only).
      *
-     * Walks the two ancestor chains simultaneously until they converge. Nodes exclusive
-     * to @p current_parent's chain are added; nodes exclusive to @p previous_parent's chain
-     * are removed. Processed flags for changed vertices are reset.
+     * Calls accumulate_direction_neighbour_counts for out-edges and, when the
+     * source graph is directed, again for in-edges.
      *
-     * @param previous_parent_node The parent processed in the previous sibling group.
-     * @param current_parent_node  The parent for the current sibling group.
-     * @param tree_path_depths     Map of vertex index → depth; updated in place.
-     * @param forward_processed_flags Per-vertex forward-processing flags; reset for changed nodes.
-     * @param reverse_processed_flags Per-vertex reverse-processing flags; reset for changed nodes.
+     * @param path     Vertex indices indexed by pattern depth.
+     * @param path_set Set of vertex indices currently in @p path.
+     * @param counts   Accumulator updated in-place.
      */
-    static void advance_tree_path_to_parent(
-        const NodePtr& previous_parent_node, const NodePtr& current_parent_node,
-        std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-        std::vector<bool>& forward_processed_flags, std::vector<bool>& reverse_processed_flags);
-
-    /**
-     * @brief Run the per-sibling-group histogram loop for an entire new level.
-     *
-     * For each sibling group in @p vertex_parent_pairs: updates the tree-path map,
-     * records depths whose neighbour counts must be decremented, and adds external
-     * neighbour colors to the histograms.
-     *
-     * @param vertex_parent_pairs   Ordered list of (vertex, parent) pairs for the new level.
-     * @param forward_decrease_depths Output: depths to decrement in the forward histogram.
-     * @param reverse_decrease_depths Output: depths to decrement in the reverse histogram.
-     */
-    void process_new_level_histogram(
-        const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs,
-        std::vector<uint32_t>& forward_decrease_depths,
-        std::vector<uint32_t>& reverse_decrease_depths);
-
-    /**
-     * @brief Collect depths of tree-path vertices that are neighbours of @p candidate_indexes.
-     *
-     * For each unprocessed vertex in @p tree_path_depths, checks whether it neighbours
-     * any vertex in @p candidate_indexes. If so, its depth is appended to @p found_depths
-     * and it is marked processed.
-     *
-     * @param candidate_indexes Vertex indices of the newly added children.
-     * @param tree_path_depths Map of vertex index → depth for the current tree path.
-     * @param found_depths Output vector to append matched depths to.
-     * @param vertex_processed_flags Per-vertex flag to avoid duplicate entries.
-     * @param is_reversed If true, use incoming edges; otherwise outgoing.
-     */
-    void
-    update_neighbours_in_tree_path(const std::unordered_set<uint32_t>& candidate_indexes,
-                                   const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-                                   std::vector<uint32_t>& found_depths,
-                                   std::vector<bool>& vertex_processed_flags,
-                                   bool is_reversed) const;
-
-    /**
-     * @brief Collect colors of all external neighbours of a single candidate vertex.
-     *
-     * Neighbours in @p tree_path_depths are skipped. Neighbours in
-     * @p excluded_previous_children contribute their color once per unique (depth, color) pair.
-     * All remaining neighbours contribute their color directly.
-     *
-     * @param candidate_vertex The vertex whose external neighbours are collected.
-     * @param tree_path_depths Map of vertex index → depth for the current tree path.
-     * @param excluded_previous_children Previously removed child indices to skip (vertex → depth).
-     * @param is_reversed If true, use incoming edges; otherwise outgoing.
-     * @return Colors of all qualifying neighbours.
-     */
-    std::vector<uint32_t> collect_vertex_external_colors(
-        uint32_t candidate_vertex, const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-        const std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& excluded_previous_children,
-        bool is_reversed) const;
-
-    /**
-     * @brief Collect colors of neighbours of @p candidate_indexes not in the tree path.
-     *
-     * Delegates per-vertex collection to collect_vertex_external_colors and concatenates results.
-     *
-     * @param candidate_indexes Vertex indices to expand from.
-     * @param tree_path_depths Map of vertex index → depth for the current tree path.
-     * @param excluded_previous_children Previously removed child indices to skip.
-     * @param is_reversed If true, use incoming edges; otherwise outgoing.
-     * @return Colors of all qualifying neighbours.
-     */
-    std::vector<uint32_t> get_colors_of_neighbours_not_in_tree_path(
-        const std::unordered_set<uint32_t>& candidate_indexes,
-        const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-        const std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& excluded_previous_children,
-        bool is_reversed) const;
+    void accumulate_path_neighbour_counts(const std::vector<uint32_t>& path,
+                                          const std::unordered_set<uint32_t>& path_set,
+                                          CountsMap& counts) const;
 };
 
 }  // namespace sgf

@@ -2,21 +2,17 @@
 
 #include "AddNodeException.h"
 #include "ColoredGraph.h"
+#include "CountsMap.h"
 #include "DebugLog.h"
 #include "DeleteNodeException.h"
-#include "GeneralColorHist.h"
-#include "PatternPeriphery.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 #include "Node.h"
-#include "PatternException.h"
 
-#include <cstddef>
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <memory>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -48,47 +44,17 @@ namespace
     return result;
 }
 
-/**
- * @brief Hash for pairs of uint32_t, used in unordered containers.
- */
-struct PairHash
-{
-    /**
-     * @brief Compute hash for a pair of uint32_t values.
-     * @param pair The pair to hash.
-     * @return Combined hash value.
-     */
-    std::size_t operator()(const std::pair<uint32_t, uint32_t>& pair) const
-    {
-        return std::hash<uint32_t>{}(pair.first) ^ (std::hash<uint32_t>{}(pair.second) << 1U);
-    }
-};
-
-
 }  // namespace
 
 namespace sgf
 {
 
-Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, const LoggerHandler& logger,
-           GeneralColorHist& general_hist,
-           const std::optional<std::reference_wrapper<GeneralColorHist>> reverse_general_hist)
+Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, const LoggerHandler& logger)
     : m_root(std::make_shared<Node>(root_vertex_index, 0U))
-    , m_depth(0U)
     , m_logger(logger)
     , m_graph(graph)
     , m_is_directed(graph.is_directed())
-    , m_periphery(general_hist, root_vertex_index, logger)
-    , m_reverse_periphery(reverse_general_hist ? std::optional<PatternPeriphery>(
-                                                std::in_place, reverse_general_hist->get(),
-                                                root_vertex_index, logger)
-                                          : std::nullopt)
 {
-    if (m_is_directed && !m_reverse_periphery)
-    {
-        m_logger.log(LogLevel::ERROR, "Tree: reverse histogram required for directed tree");
-        throw PatternException("Reverse histogram required for directed trees");
-    }
     SGF_DEBUG_LOG(m_logger, "Tree: root=" + std::to_string(root_vertex_index));
 }
 
@@ -165,32 +131,9 @@ void Tree::delete_node(const NodePtr& node)
     splice_out_of_sibling_ring(node);
 
     const NodePtr parent_node = node->m_parent.lock();
-    if (parent_node)
+    if (parent_node && parent_node->m_son == node)
     {
-        if (parent_node->m_son == node)
-        {
-            parent_node->m_son = node->m_left;
-        }
-        
-        if (parent_node->m_previous_children.find(node->m_index) == parent_node->m_previous_children.end())
-        {
-            parent_node->m_previous_children[node->m_index].insert({node->m_depth});
-        }
-        else {
-            parent_node->m_previous_children.insert({node->m_index, {{node->m_depth}}});
-        }
-        for (auto [index, depth_set] : node->m_previous_children)
-        {
-            if (parent_node->m_previous_children.find(node->m_index) != parent_node->m_previous_children.end())
-            {
-                parent_node->m_previous_children[index].insert(depth_set.begin(), depth_set.end());
-            }
-            else
-            {
-                parent_node->m_previous_children[index] = depth_set;
-            }
-
-        }
+        parent_node->m_son = node->m_left;
     }
 }
 
@@ -227,160 +170,6 @@ Tree::attach_all_new_nodes(const std::vector<std::pair<uint32_t, NodePtr>>& vert
     return added_nodes;
 }
 
-std::unordered_set<uint32_t> Tree::collect_sibling_vertex_indexes(
-    const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs,
-    size_t& current_pair_index, NodePtr& current_parent_node)
-{
-    std::unordered_set<uint32_t> sibling_vertex_indexes;
-    sibling_vertex_indexes.insert(vertex_parent_pairs[current_pair_index].first);
-    current_parent_node = vertex_parent_pairs[current_pair_index].second;
-
-    while (current_pair_index + 1U < vertex_parent_pairs.size() &&
-           vertex_parent_pairs[current_pair_index + 1U].second == current_parent_node)
-    {
-        ++current_pair_index;
-        sibling_vertex_indexes.insert(vertex_parent_pairs[current_pair_index].first);
-    }
-    ++current_pair_index;
-    return sibling_vertex_indexes;
-}
-
-void Tree::advance_tree_path_to_parent(const NodePtr& previous_parent_node,
-                                       const NodePtr& current_parent_node,
-                                       std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-                                       std::vector<bool>& forward_processed_flags,
-                                       std::vector<bool>& reverse_processed_flags)
-{
-    NodePtr previous_ancestor = previous_parent_node;
-    NodePtr current_ancestor = current_parent_node;
-    std::unordered_set<uint32_t> newly_added_path_vertices;
-
-    while (previous_ancestor != current_ancestor)
-    {
-        tree_path_depths[current_ancestor->m_index] = current_ancestor->m_depth;
-        forward_processed_flags[current_ancestor->m_index] = false;
-        reverse_processed_flags[current_ancestor->m_index] = false;
-        newly_added_path_vertices.insert(current_ancestor->m_index);
-
-        if (newly_added_path_vertices.find(previous_ancestor->m_index) ==
-            newly_added_path_vertices.end())
-        {
-            tree_path_depths.erase(previous_ancestor->m_index);
-        }
-
-        current_ancestor = current_ancestor->m_parent.lock();
-        previous_ancestor = previous_ancestor->m_parent.lock();
-    }
-}
-
-void Tree::update_neighbours_in_tree_path(
-    const std::unordered_set<uint32_t>& candidate_indexes,
-    const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-    std::vector<uint32_t>& found_depths, std::vector<bool>& vertex_processed_flags,
-    const bool is_reversed) const
-{
-
-    for (const auto& [path_vertex_index, path_vertex_depth] : tree_path_depths)
-    {
-        if (vertex_processed_flags[path_vertex_index])
-        {
-            continue;
-        }
-        
-        const std::pair<std::vector<uint32_t>::const_iterator,
-                        std::vector<uint32_t>::const_iterator>
-            neighbour_range = m_graph.get_neighbours(path_vertex_index, is_reversed);
-
-        bool all_candidates_neighbours = true;
-        for (auto candidate_index : candidate_indexes)
-        {
-            if(std::find(neighbour_range.first, neighbour_range.second, candidate_index) == neighbour_range.second)
-            {
-                all_candidates_neighbours = false;
-                break;
-            }
-        }
-        if (all_candidates_neighbours)
-        {
-            SGF_DEBUG_LOG(m_logger, "Decreasing neighbour for vertex=" + std::to_string(path_vertex_index) + " at depth=" + std::to_string(path_vertex_depth));
-            found_depths.push_back(path_vertex_depth - 1U);
-            vertex_processed_flags[path_vertex_index] = true;
-        }
-    }
-}
-
-std::vector<uint32_t> Tree::collect_vertex_external_colors(
-    const uint32_t candidate_vertex, const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-    const std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& excluded_previous_children,
-    const bool is_reversed) const
-{
-    std::vector<uint32_t> collected_colors;
-    std::unordered_map<uint32_t, std::unordered_set<uint32_t>> color_to_tree_level_count;
-    std::unordered_map<uint32_t, uint32_t> neighbour_count_in_color;
-
-    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
-        neighbour_range = m_graph.get_neighbours(candidate_vertex, is_reversed);
-
-    for (std::vector<uint32_t>::const_iterator neighbour_it = neighbour_range.first;
-         neighbour_it != neighbour_range.second; ++neighbour_it)
-    {
-        SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors checking neighbour: " + std::to_string(*neighbour_it));
-        const uint32_t adjacent_vertex_index = *neighbour_it;
-        if (tree_path_depths.find(adjacent_vertex_index) != tree_path_depths.end())
-        {
-            SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors in tree path");
-            continue;
-        }
-        if (excluded_previous_children.find(adjacent_vertex_index) ==
-            excluded_previous_children.end())
-        {
-            SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors not in previous children");
-            collected_colors.push_back(m_graph.get_vertex_color(adjacent_vertex_index));
-        }
-        else
-        {
-            SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors in previous children");
-            const std::unordered_set<uint32_t> ancestor_depth = excluded_previous_children.at(adjacent_vertex_index);
-            const uint32_t color = m_graph.get_vertex_color(adjacent_vertex_index);
-            for (auto depth : ancestor_depth)
-            {
-                SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors ancestor depth: " + std::to_string(depth));
-                color_to_tree_level_count[color].insert(depth);
-            }
-            ++neighbour_count_in_color[color];
-        }
-    }
-
-    for (const auto& [color, count] : neighbour_count_in_color)
-    {
-        const uint32_t unique_depths =
-            static_cast<uint32_t>(color_to_tree_level_count[color].size());
-        SGF_DEBUG_LOG(m_logger, "collect_vertex_external_colors color: " + std::to_string(color) + " count: " + std::to_string(count) + " unique_depths: " + std::to_string(unique_depths));
-        for (uint32_t i = 0U; i < count - unique_depths; ++i)
-        {
-            collected_colors.push_back(color);
-        }
-    }
-
-    return collected_colors;
-}
-
-std::vector<uint32_t> Tree::get_colors_of_neighbours_not_in_tree_path(
-    const std::unordered_set<uint32_t>& candidate_indexes,
-    const std::unordered_map<uint32_t, uint32_t>& tree_path_depths,
-    const std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& excluded_previous_children,
-    const bool is_reversed) const
-{
-    std::vector<uint32_t> collected_colors;
-    for (const uint32_t candidate_vertex : candidate_indexes)
-    {
-        const std::vector<uint32_t> vertex_colors = collect_vertex_external_colors(
-            candidate_vertex, tree_path_depths, excluded_previous_children, is_reversed);
-        collected_colors.insert(collected_colors.end(), vertex_colors.begin(), vertex_colors.end());
-    }
-    return collected_colors;
-}
-
 std::unordered_map<uint32_t, uint32_t> Tree::get_tree_path_map(const NodePtr& last_node_in_path)
 {
     std::unordered_map<uint32_t, uint32_t> tree_path_depths;
@@ -406,55 +195,6 @@ bool Tree::is_empty() const
     return m_root == nullptr;
 }
 
-void Tree::process_new_level_histogram(
-    const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs,
-    std::vector<uint32_t>& forward_decrease_depths, std::vector<uint32_t>& reverse_decrease_depths)
-{
-    const uint32_t vertex_count = m_graph.vertex_count();
-    std::vector<bool> forward_processed_flags(vertex_count, false);
-    std::vector<bool> reverse_processed_flags(vertex_count, false);
-    const std::unordered_map<uint32_t, std::unordered_set<uint32_t>> empty_excluded_previous_children;
-    std::unordered_map<uint32_t, uint32_t> tree_path_depths =
-        get_tree_path_map(vertex_parent_pairs[0].second);
-    NodePtr previous_parent_node;
-    size_t current_pair_index = 0U;
-
-    while (current_pair_index < vertex_parent_pairs.size())
-    {
-        NodePtr current_parent_node;
-        const std::unordered_set<uint32_t> sibling_vertex_indexes = collect_sibling_vertex_indexes(
-            vertex_parent_pairs, current_pair_index, current_parent_node);
-
-        if (previous_parent_node)
-        {
-            advance_tree_path_to_parent(previous_parent_node, current_parent_node, tree_path_depths,
-                                        forward_processed_flags, reverse_processed_flags);
-        }
-        previous_parent_node = current_parent_node;
-
-        update_neighbours_in_tree_path(sibling_vertex_indexes, tree_path_depths,
-                                       forward_decrease_depths, forward_processed_flags, false);
-        if (m_reverse_periphery.has_value())
-        {
-            update_neighbours_in_tree_path(sibling_vertex_indexes, tree_path_depths,
-                                           reverse_decrease_depths, reverse_processed_flags, true);
-        }
-
-        m_periphery.added_vertex_to_pattern_add_neihgbours_to_periphery(
-            m_depth - 1U,
-            get_colors_of_neighbours_not_in_tree_path(sibling_vertex_indexes, tree_path_depths,
-                                                      empty_excluded_previous_children, false));
-
-        if (m_reverse_periphery.has_value())
-        {
-            m_reverse_periphery->added_vertex_to_pattern_add_neihgbours_to_periphery(
-                m_depth - 1U,
-                get_colors_of_neighbours_not_in_tree_path(sibling_vertex_indexes, tree_path_depths,
-                                                          empty_excluded_previous_children, true));
-        }
-    }
-}
-
 std::vector<NodePtr>
 Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs)
 {
@@ -466,28 +206,7 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_par
     }
 
     validate_parent_ordering(vertex_parent_pairs);
-
-    ++m_depth;
-
-    std::vector<NodePtr> added_nodes = attach_all_new_nodes(vertex_parent_pairs);
-
-    std::vector<uint32_t> forward_decrease_depths;
-    std::vector<uint32_t> reverse_decrease_depths;
-    process_new_level_histogram(vertex_parent_pairs, forward_decrease_depths,
-                                reverse_decrease_depths);
-
-    const uint32_t representative_vertex_color =
-        m_graph.get_vertex_color(vertex_parent_pairs[0].first);
-    m_periphery.added_vertex_to_pattern_remove_from_periphery(representative_vertex_color,
-                                                forward_decrease_depths);
-
-    if (m_reverse_periphery.has_value())
-    {
-        m_reverse_periphery->added_vertex_to_pattern_remove_from_periphery(representative_vertex_color,
-                                                             reverse_decrease_depths);
-    }
-
-    return added_nodes;
+    return attach_all_new_nodes(vertex_parent_pairs);
 }
 
 void Tree::remove_node(const NodePtr& node)
@@ -496,7 +215,6 @@ void Tree::remove_node(const NodePtr& node)
                                 " vertex=" + std::to_string(node->m_index) +
                                 " depth=" + std::to_string(node->m_depth));
     NodePtr node_to_remove = node;
-    std::unordered_map<uint32_t, uint32_t> tree_path_depths = get_tree_path_map(node_to_remove);
 
     while (node_to_remove)
     {
@@ -514,25 +232,11 @@ void Tree::remove_node(const NodePtr& node)
             break;
         }
 
-        m_periphery.remove_vertex_from_pattern_remove_from_periphery(
-            node_to_remove->m_depth - 1U,
-            get_colors_of_neighbours_not_in_tree_path({node_to_remove->m_index}, tree_path_depths,
-                                                      node_to_remove->m_previous_children, false));
-
-        if (m_reverse_periphery.has_value())
-        {
-            m_reverse_periphery->remove_vertex_from_pattern_remove_from_periphery(
-                node_to_remove->m_depth - 1U, get_colors_of_neighbours_not_in_tree_path(
-                                                  {node_to_remove->m_index}, tree_path_depths,
-                                                  node_to_remove->m_previous_children, true));
-        }
-
         const NodePtr parent_node = node_to_remove->m_parent.lock();
         delete_node(node_to_remove);
 
         if (parent_node && !parent_node->m_son)
         {
-            tree_path_depths.erase(node_to_remove->m_index);
             node_to_remove = parent_node;
         }
         else
@@ -550,6 +254,105 @@ NodePtr Tree::get_node_by_depth(const NodePtr& lowest_node_in_match, const uint3
         current_node = current_node->m_parent.lock();
     }
     return current_node;
+}
+
+void Tree::accumulate_direction_neighbour_counts(const std::vector<uint32_t>& path,
+                                                 const std::unordered_set<uint32_t>& path_set,
+                                                 const bool is_reversed,
+                                                 CountsMap& counts) const
+{
+    for (uint32_t pattern_index = 0U;
+         pattern_index < static_cast<uint32_t>(path.size()); ++pattern_index)
+    {
+        const std::pair<std::vector<uint32_t>::const_iterator,
+                        std::vector<uint32_t>::const_iterator>
+            neighbour_range = m_graph.get_neighbours(path[pattern_index], is_reversed);
+
+        for (std::vector<uint32_t>::const_iterator neighbour_it = neighbour_range.first;
+             neighbour_it != neighbour_range.second; ++neighbour_it)
+        {
+            if (path_set.find(*neighbour_it) == path_set.end())
+            {
+                ++counts[std::make_tuple(
+                    m_graph.get_vertex_color(*neighbour_it), pattern_index, is_reversed)];
+            }
+        }
+    }
+}
+
+void Tree::accumulate_path_neighbour_counts(const std::vector<uint32_t>& path,
+                                            const std::unordered_set<uint32_t>& path_set,
+                                            CountsMap& counts) const
+{
+    accumulate_direction_neighbour_counts(path, path_set, false, counts);
+    if (m_is_directed)
+    {
+        accumulate_direction_neighbour_counts(path, path_set, true, counts);
+    }
+}
+
+void Tree::get_color_by_depth_neighbour_counts(const std::vector<NodePtr>& leaves,
+                                               CountsMap& counts) const
+{
+
+    if (leaves.empty())
+    {
+        return;
+    }
+
+    // All frontier leaves are at the same depth — fix the vector size once.
+    const uint32_t frontier_depth = leaves.at(0)->m_depth;
+
+    // path_vec[i] = vertex index matched at pattern depth i+1 (1-indexed depths).
+    std::vector<uint32_t> path_vec(frontier_depth, 0U);
+
+    // path_set mirrors path_vec for O(1) "is this neighbour committed?" checks.
+    std::unordered_set<uint32_t> path_set;
+
+    // Seed path from the first leaf's ancestor chain (root excluded).
+    {
+        NodePtr ancestor = leaves.at(0);
+        while (ancestor && !ancestor->m_parent.expired())
+        {
+            path_vec[ancestor->m_depth - 1U] = ancestor->m_index;
+            path_set.insert(ancestor->m_index);
+            ancestor = ancestor->m_parent.lock();
+        }
+    }
+    accumulate_path_neighbour_counts(path_vec, path_set, counts);
+
+    for (uint32_t current_leaf_idx = 1U;
+         current_leaf_idx < static_cast<uint32_t>(leaves.size()); ++current_leaf_idx)
+    {
+        const NodePtr& leaf = leaves[current_leaf_idx];
+
+        // Walk both ancestor chains to the common ancestor.
+        // Collect diverging nodes into to_remove / to_add.
+        // Remove old first, then add new, to avoid premature eviction from path_set.
+        std::vector<NodePtr> to_remove;
+        std::vector<NodePtr> to_add;
+        NodePtr prev_ancestor = leaves[current_leaf_idx - 1U];
+        NodePtr curr_ancestor = leaf;
+        while (prev_ancestor != curr_ancestor)
+        {
+            to_remove.push_back(prev_ancestor);
+            to_add.push_back(curr_ancestor);
+            prev_ancestor = prev_ancestor->m_parent.lock();
+            curr_ancestor = curr_ancestor->m_parent.lock();
+        }
+
+        for (const NodePtr& node : to_remove)
+        {
+            path_set.erase(node->m_index);
+        }
+        for (const NodePtr& node : to_add)
+        {
+            path_vec[node->m_depth - 1U] = node->m_index;
+            path_set.insert(node->m_index);
+        }
+
+        accumulate_path_neighbour_counts(path_vec, path_set, counts);
+    }
 }
 
 }  // namespace sgf

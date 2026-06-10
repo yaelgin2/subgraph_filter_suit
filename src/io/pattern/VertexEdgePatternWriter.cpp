@@ -47,6 +47,10 @@ void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph, const std
         {
             const boost::graph_traits<BoostGraph>::edge_descriptor edge = *it;
             const uint32_t dst = static_cast<uint32_t>(boost::target(edge, graph));
+            if (src > dst && boost::edge(dst, src, graph).second)
+            {
+                continue;
+            }
             file << src << ' ' << dst << ' ' << graph[edge].m_color << '\n';
         }
     }

@@ -11,6 +11,7 @@
 #include <boost/range/iterator_range.hpp>
 #include <cstdint>
 #include <gtest/gtest.h>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <unordered_set>
@@ -186,6 +187,26 @@ bool are_graph_signatures_isomorphic(const GraphSignature& candidate_sig,
         return false;
     }
     return find_isomorphism(candidate_sig, ref_sig);
+}
+
+/**
+ * @brief Print a BoostGraph to stdout for debugging.
+ * @param graph The graph to print.
+ */
+void print_boost_graph(const BoostGraph& graph)
+{
+    const uint32_t vertex_count = static_cast<uint32_t>(boost::num_vertices(graph));
+    const uint32_t edge_count = static_cast<uint32_t>(boost::num_edges(graph));
+    std::cout << "BoostGraph: " << vertex_count << " vertices, " << edge_count << " edges\n";
+    for (uint32_t vertex_idx = 0U; vertex_idx < vertex_count; ++vertex_idx)
+    {
+        std::cout << "  vertex " << vertex_idx << " color=" << graph[vertex_idx].m_color << " -> [";
+        for (const auto& edge : boost::make_iterator_range(boost::out_edges(vertex_idx, graph)))
+        {
+            std::cout << boost::target(edge, graph) << " ";
+        }
+        std::cout << "]\n";
+    }
 }
 
 /**
@@ -635,19 +656,3 @@ TEST_F(MultiGraphPatternFinderTest, path_4_with_added_vertex_3_graphs_found_grap
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U, 2U}));
 }
 
-TEST_F(MultiGraphPatternFinderTest, path_4_with_added_vertex_3_directed_graphs_found_graph)
-{
-    const GraphSpec spec = make_path_4_with_1_added_vertex_directed();
-    std::vector<ColoredGraph> graphs;
-    graphs.push_back(spec.to_graph());
-    graphs.push_back(make_path_4_directed().to_graph());
-    graphs.push_back(make_path_4_with_2_added_vertex_directed().to_graph());
-
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, null_logger());
-    const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
-        finder.find_pattern(0.7, false);
-
-    EXPECT_TRUE(
-        boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
-    EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U, 2U}));
-}

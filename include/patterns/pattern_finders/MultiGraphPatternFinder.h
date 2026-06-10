@@ -2,17 +2,16 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
-#include "GeneralColorHist.h"
 #include "LoggerHandler.h"
 #include "Node.h"
 #include "Tree.h"
 
-#include <boost/optional.hpp>
 #include <chrono>
 #include <cstdint>
 #include <memory>
-#include <random>
 #include <tuple>
+#include <optional>
+#include <random>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -57,6 +56,7 @@ private:
     static constexpr uint64_t LOWER_32_BITS_MASK = 0xffffffffULL;
     static constexpr uint32_t UPPER_32_BITS_SHIFT = 32U;
     static constexpr double NON_RANDOM_PROBABILITY = 0.5;
+    static constexpr uint32_t ROOT_DEPTH = 0U;
 
     std::vector<ColoredGraph>& m_graph_list;
     bool m_is_directed;
@@ -65,8 +65,6 @@ private:
     BoostGraph m_pattern;
     LoggerHandler m_logger;
     std::vector<int32_t> m_color_map;
-    boost::optional<GeneralColorHist> m_forward_color_hist;
-    boost::optional<GeneralColorHist> m_reverse_color_hist;
     std::mt19937_64 m_random_engine;
     std::uniform_real_distribution<double> m_uniform_dist{0.0, 1.0};
 
@@ -82,12 +80,6 @@ private:
      * @return Per-colour probability vector indexed by compact colour ID.
      */
     std::vector<double> build_color_distribution() const;
-
-    /**
-     * @brief Construct m_forward_color_hist (and m_reverse_color_hist if directed).
-     * @param color_count Number of distinct colours.
-     */
-    void create_histograms(uint32_t color_count);
 
     /**
      * @brief Resize m_match_trees and build one Tree per graph.
@@ -122,7 +114,7 @@ private:
      * @param alive_threshold       Minimum alive-graph fraction.
      * @param is_random             Whether to use randomised selection.
      * @param leaf_matches          Current leaf nodes, updated in-place.
-     * @param done_adding_vertices  Set true when histogram is exhausted.
+     * @param done_adding_vertices  Set true when no candidates remain.
      * @param failed_add_edge       Set true when edge addition fails.
      */
     void run_one_growth_step(double alive_threshold, bool is_random,
@@ -131,13 +123,34 @@ private:
 
     /**
      * @brief Try to add one new vertex (with edge) to the pattern.
+     *
+     * Calls get_color_by_depth_neighbour_counts() on every alive tree, merges the
+     * results into a single {colour, depth} → count map, then delegates selection
+     * to choose_next_vertex().
+     *
      * @param alive_threshold Minimum alive-graph fraction.
-     * @param is_random       Whether to use randomised selection.
+     * @param is_random       Passed through to choose_next_vertex.
      * @param leaf_matches    Updated in-place if a vertex is added.
      * @return True if a vertex was added.
      */
     bool attempt_add_vertex(double alive_threshold, bool is_random,
                             std::vector<std::vector<NodePtr>>& leaf_matches);
+
+    /**
+     * @brief Select the next (colour, depth) expansion key from the combined neighbour counts.
+     *
+     * When @p is_random is false the key with the highest count is returned.
+     * When @p is_random is true the counts are used as weights for a
+     * std::discrete_distribution and one key is sampled.
+     *
+     * @param combined_counts Map of {colour, depth} → total count across alive trees.
+     * @param min_alive_count Minimum count a key must reach to be a candidate.
+     * @param is_random       Whether to sample randomly (true) or pick the maximum (false).
+     * @return Chosen {colour, depth} pair, or std::nullopt if no valid candidate exists.
+     */
+    std::optional<std::tuple<uint32_t, uint32_t, bool>>
+    choose_next_vertex(const CountsMap& combined_counts, const CountsMap& tree_support,
+                       uint32_t min_alive_count, bool is_random);
 
     /**
      * @brief Log the current set of alive graph indexes at DEBUG level.
@@ -151,28 +164,6 @@ private:
      */
     std::pair<BoostGraph, std::unordered_set<uint32_t>> finalize_and_return(
         const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time);
-
-    /* ---------- Histogram selection ---------- */
-
-    /**
-     * @brief Select the next vertex colour and attachment point from the histograms.
-     * @param min_alive_count Minimum support count a histogram cell must reach.
-     * @param is_random       Whether selection is weighted-random.
-     * @return Tuple of {colour index, depth index, is_edge_reversed}.
-     */
-    std::tuple<int32_t, int32_t, bool> get_candidates_from_histogram(uint32_t min_alive_count,
-                                                                     bool is_random = true);
-
-    /**
-     * @brief Choose between forward and reverse candidates for a directed graph.
-     * @param forward_candidate Forward-direction candidate from the histogram.
-     * @param min_alive_count   Minimum support count.
-     * @param is_random         Whether selection is weighted-random.
-     * @return Tuple of {colour index, depth index, is_edge_reversed}.
-     */
-    std::tuple<int32_t, int32_t, bool>
-    select_directed_candidate(const std::tuple<int32_t, int32_t, uint32_t>& forward_candidate,
-                              uint32_t min_alive_count, bool is_random);
 
     /* ---------- Pattern extension ---------- */
 
@@ -206,6 +197,7 @@ private:
      * @param graph_idx            Index into m_graph_list / m_match_trees.
      * @param extension_candidates Candidates produced by collect_extension_candidates.
      * @param leaf_matches         Updated in-place.
+     * @param connected_pattern_vertex The pattern vertex the new vertex connects to.
      */
     void update_tree_after_extension(
         uint32_t graph_idx, const std::vector<std::pair<uint32_t, NodePtr>>& extension_candidates,

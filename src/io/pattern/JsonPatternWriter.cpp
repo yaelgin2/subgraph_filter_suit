@@ -46,11 +46,21 @@ boost::json::array JsonPatternWriter::build_links_array(const BoostGraph& graph)
 
     for (const auto edge : boost::make_iterator_range(boost::edges(graph)))
     {
+        const auto src = boost::source(edge, graph);
+        const auto tgt = boost::target(edge, graph);
+
+        // For undirected patterns both (u,v) and (v,u) are stored; emit only the
+        // canonical direction (src < tgt) to avoid writing each edge twice.
+        if (src > tgt && boost::edge(tgt, src, graph).second)
+        {
+            continue;
+        }
+
         boost::json::object link;
 
-        link[IOConstants::JSON_SOURCE_KEY] = static_cast<int64_t>(boost::source(edge, graph));
+        link[IOConstants::JSON_SOURCE_KEY] = static_cast<int64_t>(src);
 
-        link[IOConstants::JSON_TARGET_KEY] = static_cast<int64_t>(boost::target(edge, graph));
+        link[IOConstants::JSON_TARGET_KEY] = static_cast<int64_t>(tgt);
 
         link[IOConstants::JSON_COLOR_KEY] = static_cast<int64_t>(graph[edge].m_color);
 

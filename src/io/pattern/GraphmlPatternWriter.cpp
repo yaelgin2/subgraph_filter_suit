@@ -64,6 +64,11 @@ void GraphmlPatternWriter::build_edges(const BoostGraph& graph,
             const boost::graph_traits<BoostGraph>::vertex_descriptor dst =
                 boost::target(edge, graph);
 
+            if (src > dst && boost::edge(dst, src, graph).second)
+            {
+                continue;
+            }
+
             boost::graph_traits<IOConstants::GraphmlDirectedBoostGraph>::edge_descriptor new_edge;
             bool edge_added = false;
             std::tie(new_edge, edge_added) = boost::add_edge(src, dst, out);
