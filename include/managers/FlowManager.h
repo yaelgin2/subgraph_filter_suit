@@ -131,14 +131,13 @@ public:
     static std::vector<PatternPreprocessorResult> pattern_preprocess_run(
         const std::string& input_path, bool is_directed, GraphReaderType reader_type,
         std::string& output_path, PatternWriterType output_type, const std::string& log_file_path,
-        uint32_t preprocess_multigraph, double multigraph_alive_percent,
         bool preprocess_singlegraph_results_file, const std::string& results_file_path,
         int64_t preprocess_singlegraph, ResultOutputType results_file_type,
         const std::string& background_graph_path, double score_threshold,
         const SingleGraphFinderConfig& config);
 
     /// @brief Run the pattern filter stage.
-    static std::unordered_map<std::string, FilterResult>
+    static std::vector<std::unordered_map<std::string, FilterResult>>
     pattern_filter_run(const std::string& pattern_to_filter_cache, PatternWriterType pattern_type,
                        const std::string& background_graph_path, GraphReaderType reader_type,
                        bool is_directed, std::string& output_path, ResultOutputType output_type,
@@ -156,7 +155,6 @@ public:
 private:
     static constexpr const char* PATH_CACHE_BASE_NAME = "path_cache";
     static constexpr const char* MOTIF_CACHE_BASE_NAME = "motif_cache";
-    static constexpr const char* PATTERN_INDEX_PREFIX = "pattern_index_";
     static constexpr const char* PATTERN_FILTER_RESULT_SUFFIX = "_pattern_filtering_result_";
 
     /**
@@ -237,6 +235,18 @@ private:
      */
     static LibraryData load_library(const std::string& path, GraphReaderType reader_type,
                                     bool is_directed, const LoggerHandler& logger);
+
+    /**
+     * @brief Extracts base paths for vertex-edge graphs from a directory file listing.
+     *
+     * Filters @p all_files to entries whose extension matches NODE_LABELS_SUFFIX and
+     * strips that suffix, yielding the base path VertexEdgeGraphReader::read expects.
+     *
+     * @param all_files All file paths from IOUtils::get_files_in_directory.
+     * @return One base path per vertex-edge graph found.
+     */
+    static std::vector<std::string>
+    collect_vertex_edge_base_paths(const std::vector<std::string>& all_files);
 
     /**
      * @brief Construct a graph reader for the given format.

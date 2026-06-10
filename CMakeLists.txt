@@ -68,6 +68,7 @@ target_include_directories(subgraph_filter_suite PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/pattern_finders"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/utils"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/isomorphism"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/api"
 )
 
 target_link_libraries(subgraph_filter_suite PUBLIC

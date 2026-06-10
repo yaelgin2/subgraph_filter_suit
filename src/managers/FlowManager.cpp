@@ -13,6 +13,7 @@
 #include "IColoredGraphReader.h"
 #include "IFilterIOManager.h"
 #include "IGraphPreprocessor.h"
+#include "IOConstants.h"
 #include "IOUtils.h"
 #include "IPatternCacheIOManager.h"
 #include "IPatternPreprocessor.h"
@@ -27,7 +28,6 @@
 #include "MatchOutputWriter.h"
 #include "MotifDagExpander.h"
 #include "MotifPreprocessor.h"
-#include "MultiGraphPatternPreprocessor.h"
 #include "PathProcessor.h"
 #include "PatternGraphFilter.h"
 #include "PatternPreprocessManager.h"
@@ -287,7 +287,6 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
 std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const std::string& input_path, const bool is_directed, GraphReaderType reader_type,
     std::string& output_path, const PatternWriterType output_type, const std::string& log_file_path,
-    const uint32_t preprocess_multigraph, const double multigraph_alive_percent,
     const bool preprocess_singlegraph_results_file, const std::string& results_file_path,
     const int64_t preprocess_singlegraph, const ResultOutputType results_file_type,
     const std::string& background_graph_path, const double score_threshold,
@@ -368,7 +367,7 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
 }
 
 // NOLINTNEXTLINE(readability-function-size)
-std::unordered_map<std::string, FilterResult> FlowManager::pattern_filter_run(
+std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::pattern_filter_run(
     const std::string& pattern_to_filter_cache, const PatternWriterType pattern_type,
     const std::string& background_graph_path, const GraphReaderType reader_type,
     const bool is_directed, std::string& output_path, const ResultOutputType output_type,
@@ -377,10 +376,8 @@ std::unordered_map<std::string, FilterResult> FlowManager::pattern_filter_run(
     const LoggerBundle log_bundle(log_file_path);
     const std::filesystem::path cache_path_obj(pattern_to_filter_cache);
     const std::string cache_folder = cache_path_obj.parent_path().string();
-    const std::string timestamp =
-        cache_path_obj.stem().string().substr(std::char_traits<char>::length(PATTERN_INDEX_PREFIX));
     const CSVPatternCacheIOManager cache_manager(cache_folder, log_bundle.handler());
-    const PatternMapping pattern_mapping = cache_manager.read(timestamp);
+    const PatternMapping pattern_mapping = cache_manager.read(pattern_to_filter_cache);
     const std::unique_ptr<IColoredGraphReader> pattern_reader =
         make_graph_reader(pattern_witer_type_to_graph_reader_type(pattern_type));
     std::vector<ColoredGraphPatternResult> library_cache;
@@ -396,26 +393,17 @@ std::unordered_map<std::string, FilterResult> FlowManager::pattern_filter_run(
     }
     const PatternGraphFilter pattern_filter(std::move(library_cache), log_bundle.handler());
     const std::unique_ptr<IColoredGraphReader> graph_reader = make_graph_reader(reader_type);
-    LibraryData graph_to_find_in =
-        load_library(background_graph_path, reader_type, is_directed, log_bundle.handler());
-    std::unordered_map<std::string, FilterResult> results;
-    results.reserve(graph_to_find_in.m_library.size());
-    for (uint32_t graph_index = 0U;
-         graph_index < static_cast<uint32_t>(graph_to_find_in.m_library.size()); graph_index++)
-    {
-        const FilterResult filter_result = pattern_filter.filter(
-            graph_to_find_in.m_library[graph_index], is_induced, prior_policy);
-        std::unique_ptr<IFilterIOManager> filter_results_writer =
-            make_filter_results_io_manager(output_type, output_path, log_bundle.handler());
-        const std::string background_stem =
-            std::filesystem::path(graph_to_find_in.m_graph_names[graph_index]).stem().string();
-        filter_results_writer->write(background_stem + PATTERN_FILTER_RESULT_SUFFIX +
-                                         generate_timestamp(),
-                                     pattern_filenames, filter_result);
-        results[graph_to_find_in.m_graph_names[graph_index]] = filter_result;
-    }
-
-    return results;
+    const ColoredGraph background =
+        graph_reader->read(background_graph_path, is_directed, log_bundle.handler());
+    const FilterResult filter_result = pattern_filter.filter(background, is_induced, prior_policy);
+    std::unique_ptr<IFilterIOManager> filter_results_writer =
+        make_filter_results_io_manager(output_type, output_path, log_bundle.handler());
+    const std::string background_stem =
+        std::filesystem::path(background_graph_path).stem().string();
+    filter_results_writer->write(background_stem + PATTERN_FILTER_RESULT_SUFFIX +
+                                     generate_timestamp(),
+                                 pattern_filenames, filter_result);
+    return {std::unordered_map<std::string, FilterResult>{{background_stem, filter_result}}};
 }
 
 // NOLINTNEXTLINE(readability-function-size)
@@ -553,7 +541,10 @@ LibraryData FlowManager::load_library(const std::string& path, const GraphReader
                                       const bool is_directed, const LoggerHandler& logger)
 {
     LibraryData library;
-    library.m_graph_names = IOUtils::get_files_in_directory(path);
+    const std::vector<std::string> all_files = IOUtils::get_files_in_directory(path);
+    library.m_graph_names = reader_type == GraphReaderType::VERTEX_EDGE
+                                ? collect_vertex_edge_base_paths(all_files)
+                                : all_files;
     library.m_library.reserve(library.m_graph_names.size());
     std::unique_ptr<IColoredGraphReader> reader = make_graph_reader(reader_type);
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(library.m_graph_names.size()); ++idx)
@@ -563,6 +554,21 @@ LibraryData FlowManager::load_library(const std::string& path, const GraphReader
         library.m_library.push_back(reader->read(library.m_graph_names[idx], is_directed, logger));
     }
     return library;
+}
+
+std::vector<std::string>
+FlowManager::collect_vertex_edge_base_paths(const std::vector<std::string>& all_files)
+{
+    std::vector<std::string> base_paths;
+    for (const std::string& file : all_files)
+    {
+        const std::filesystem::path file_path(file);
+        if (file_path.extension() == IOConstants::NODE_LABELS_SUFFIX)
+        {
+            base_paths.push_back((file_path.parent_path() / file_path.stem()).string());
+        }
+    }
+    return base_paths;
 }
 
 }  // namespace sgf
