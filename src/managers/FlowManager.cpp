@@ -32,6 +32,7 @@
 #include "PatternGraphFilter.h"
 #include "PatternPreprocessManager.h"
 #include "PriorPolicy.h"
+#include "MultiGraphPatternPreprocessor.h"
 #include "SingleGraphPatternPreprocessor.h"
 #include "SubgraphSearcher.h"
 #include "VertexEdgeGraphReader.h"
@@ -290,7 +291,8 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const bool preprocess_singlegraph_results_file, const std::string& results_file_path,
     const int64_t preprocess_singlegraph, const ResultOutputType results_file_type,
     const std::string& background_graph_path, const double score_threshold,
-    const SingleGraphFinderConfig& config)
+    const SingleGraphFinderConfig& config, const uint32_t preprocess_multigraph,
+    const double multigraph_alive_percent)
 {
     std::vector<PatternPreprocessorResult> result;
     const LoggerBundle log_bundle(log_file_path);

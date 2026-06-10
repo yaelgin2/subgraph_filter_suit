@@ -211,6 +211,8 @@ Extracts pattern subgraphs from a graph library and filters query graphs against
 | `--results-file-type` | `json` \| `csv` | `json` | Format of the results file. |
 | `--background-graph-path` | string | — | *(optional)* Path to background graph for pattern scoring. Required when `--preprocess-single-graph` is set. |
 | `--score-threshold` | float | `0.0` | Pattern score cutoff; beam search stops below this value. |
+| `--preprocess-multigraph` | integer | `0` | Number of multigraph patterns to extract across the library; `0` disables multigraph mode. |
+| `--multigraph-alive-percent` | float | `0.5` | Fraction of library graphs a pattern must appear in to be kept (range `(0, 1]`). Required when `--preprocess-multigraph` > 0. |
 
 **SingleGraphFinder config flags** (optional, used with `--preprocess`):
 

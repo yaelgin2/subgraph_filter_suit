@@ -85,7 +85,11 @@ po::options_description SgfPatternFinderArgumentParser::build_preprocess_options
         KEY_BACKGROUND_GRAPH_PATH, po::value<std::string>()->default_value(""),
         "(optional) Path to background graph file for pattern scoring")(
         KEY_SCORE_THRESHOLD, po::value<std::string>()->default_value("0.0"),
-        "Pattern score cutoff; beam search stops below this value (default: 0.0)");
+        "Pattern score cutoff; beam search stops below this value (default: 0.0)")(
+        KEY_PREPROCESS_MULTIGRAPH, po::value<std::string>()->default_value("0"),
+        "Number of multigraph patterns to extract; 0 disables multigraph mode (default: 0)")(
+        KEY_MULTIGRAPH_ALIVE_PERCENT, po::value<std::string>()->default_value("0.5"),
+        "Fraction of library graphs a pattern must appear in, in (0, 1] (default: 0.5)");
     return desc;
 }
 
@@ -182,6 +186,11 @@ SgfPatternFinderArgumentParser::parse_preprocess_args(const po::variables_map& v
         parse_double_value(variables_map.at(KEY_ALPHA_0).as<std::string>(), KEY_ALPHA_0);
     result.m_config.m_alpha_decay =
         parse_double_value(variables_map.at(KEY_ALPHA_DECAY).as<std::string>(), KEY_ALPHA_DECAY);
+    result.m_preprocess_multigraph = parse_uint32_value(
+        variables_map.at(KEY_PREPROCESS_MULTIGRAPH).as<std::string>(), KEY_PREPROCESS_MULTIGRAPH);
+    result.m_multigraph_alive_percent = parse_double_value(
+        variables_map.at(KEY_MULTIGRAPH_ALIVE_PERCENT).as<std::string>(),
+        KEY_MULTIGRAPH_ALIVE_PERCENT);
     return result;
 }
 
@@ -231,6 +240,12 @@ void SgfPatternFinderArgumentParser::validate_preprocess_args(const PatternPrepr
     {
         throw SgfInvalidArgumentException(
             "--background-graph-path is required when --preprocess-single-graph is set.");
+    }
+    if (args.m_preprocess_multigraph > 0U &&
+        (args.m_multigraph_alive_percent <= 0.0 || args.m_multigraph_alive_percent > 1.0))
+    {
+        throw SgfInvalidArgumentException(
+            "--multigraph-alive-percent must be in (0, 1] when --preprocess-multigraph is set.");
     }
 }
 

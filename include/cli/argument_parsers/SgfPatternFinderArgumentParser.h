@@ -30,6 +30,8 @@ struct PatternPreprocessArgs
     std::string m_background_graph_path;    ///< Path to the background graph file.
     double m_score_threshold{0.0};          ///< Pattern score cutoff.
     SingleGraphFinderConfig m_config{};     ///< Beam search tuning parameters.
+    uint32_t m_preprocess_multigraph{0U};   ///< Number of multigraph patterns to extract; 0 = disabled.
+    double m_multigraph_alive_percent{0.5}; ///< Fraction of library graphs a pattern must appear in.
 };
 
 /**
@@ -103,6 +105,8 @@ private:
     static constexpr int64_t SINGLE_GRAPH_DISABLED = -1;  ///< Sentinel: single-graph mode off.
     static constexpr const char* KEY_BACKGROUND_GRAPH_PATH = "background-graph-path";
     static constexpr const char* KEY_SCORE_THRESHOLD = "score-threshold";
+    static constexpr const char* KEY_PREPROCESS_MULTIGRAPH = "preprocess-multigraph";
+    static constexpr const char* KEY_MULTIGRAPH_ALIVE_PERCENT = "multigraph-alive-percent";
     static constexpr const char* KEY_MAX_ACTIVE_PATTERNS = "max-active-patterns";
     static constexpr const char* KEY_ALPHA_0 = "alpha-0";
     static constexpr const char* KEY_ALPHA_DECAY = "alpha-decay";
