@@ -28,11 +28,11 @@
 #include "MatchOutputWriter.h"
 #include "MotifDagExpander.h"
 #include "MotifPreprocessor.h"
+#include "MultiGraphPatternPreprocessor.h"
 #include "PathProcessor.h"
 #include "PatternGraphFilter.h"
 #include "PatternPreprocessManager.h"
 #include "PriorPolicy.h"
-#include "MultiGraphPatternPreprocessor.h"
 #include "SingleGraphPatternPreprocessor.h"
 #include "SubgraphSearcher.h"
 #include "VertexEdgeGraphReader.h"
@@ -551,8 +551,8 @@ LibraryData FlowManager::load_library(const std::string& path, const GraphReader
     std::unique_ptr<IColoredGraphReader> reader = make_graph_reader(reader_type);
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(library.m_graph_names.size()); ++idx)
     {
-        logger.log(LogLevel::INFO, "[load] index=" + std::to_string(idx) +
-                                       " file=" + library.m_graph_names[idx]);
+        logger.log(LogLevel::INFO,
+                   "[load] index=" + std::to_string(idx) + " file=" + library.m_graph_names[idx]);
         library.m_library.push_back(reader->read(library.m_graph_names[idx], is_directed, logger));
     }
     return library;

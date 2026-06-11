@@ -113,7 +113,7 @@ private:
     NodePtr m_root;               ///< Root node of the tree.
     LoggerHandler m_logger;       ///< Logger.
     const ColoredGraph& m_graph;  ///< Source graph for neighbour lookups.
-    bool m_is_directed;          ///< Whether the source graph is directed (inferred from m_graph).
+    bool m_is_directed;           ///< Whether the source graph is directed (inferred from m_graph).
 
     /**
      * @brief Insert a new child node under @p parent.

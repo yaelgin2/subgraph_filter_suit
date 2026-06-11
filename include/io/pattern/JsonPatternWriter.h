@@ -53,7 +53,8 @@ private:
      * @param path Destination file path.
      * @throws SgfPathExistsException if the file cannot be opened for writing.
      */
-    void do_write(const BoostGraph& graph, const std::string& path, bool is_directed) const override;
+    void do_write(const BoostGraph& graph, const std::string& path,
+                  bool is_directed) const override;
     /**
      * @brief Builds a JSON array of node objects from a BoostGraph.
      *

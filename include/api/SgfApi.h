@@ -107,11 +107,11 @@ struct PreprocessPatternsParams
     ResultOutputType m_results_file_type{ResultOutputType::JSON};  ///< Results file format.
     std::optional<std::string>
         m_background_graph_path;    ///< Background graph (required in single-graph mode).
-    double m_score_threshold{0.0};              ///< Pattern score cutoff.
+    double m_score_threshold{0.0};  ///< Pattern score cutoff.
     SingleGraphFinderConfig m_finder_config{};  ///< Beam search tuning parameters.
     std::optional<std::string> m_log_file;      ///< Log file path; absent = no logging.
     uint32_t m_preprocess_multigraph{0U};       ///< Number of multigraph patterns; 0 = disabled.
-    double m_multigraph_alive_percent{0.5};     ///< Fraction of library graphs pattern must appear in.
+    double m_multigraph_alive_percent{0.5};  ///< Fraction of library graphs pattern must appear in.
 };
 
 /**

@@ -27,8 +27,8 @@ namespace
  * @param pairs Vector of (vertex index, parent node) pairs.
  * @return Formatted string.
  */
-[[maybe_unused]] std::string format_vertex_parent_pairs(
-    const std::vector<std::pair<uint32_t, sgf::NodePtr>>& pairs)
+[[maybe_unused]] std::string
+format_vertex_parent_pairs(const std::vector<std::pair<uint32_t, sgf::NodePtr>>& pairs)
 {
     std::string result = "[";
     for (size_t idx = 0; idx < pairs.size(); ++idx)
@@ -258,11 +258,10 @@ NodePtr Tree::get_node_by_depth(const NodePtr& lowest_node_in_match, const uint3
 
 void Tree::accumulate_direction_neighbour_counts(const std::vector<uint32_t>& path,
                                                  const std::unordered_set<uint32_t>& path_set,
-                                                 const bool is_reversed,
-                                                 CountsMap& counts) const
+                                                 const bool is_reversed, CountsMap& counts) const
 {
-    for (uint32_t pattern_index = 0U;
-         pattern_index < static_cast<uint32_t>(path.size()); ++pattern_index)
+    for (uint32_t pattern_index = 0U; pattern_index < static_cast<uint32_t>(path.size());
+         ++pattern_index)
     {
         const std::pair<std::vector<uint32_t>::const_iterator,
                         std::vector<uint32_t>::const_iterator>
@@ -273,8 +272,8 @@ void Tree::accumulate_direction_neighbour_counts(const std::vector<uint32_t>& pa
         {
             if (path_set.find(*neighbour_it) == path_set.end())
             {
-                ++counts[std::make_tuple(
-                    m_graph.get_vertex_color(*neighbour_it), pattern_index, is_reversed)];
+                ++counts[std::make_tuple(m_graph.get_vertex_color(*neighbour_it), pattern_index,
+                                         is_reversed)];
             }
         }
     }
@@ -321,8 +320,8 @@ void Tree::get_color_by_depth_neighbour_counts(const std::vector<NodePtr>& leave
     }
     accumulate_path_neighbour_counts(path_vec, path_set, counts);
 
-    for (uint32_t current_leaf_idx = 1U;
-         current_leaf_idx < static_cast<uint32_t>(leaves.size()); ++current_leaf_idx)
+    for (uint32_t current_leaf_idx = 1U; current_leaf_idx < static_cast<uint32_t>(leaves.size());
+         ++current_leaf_idx)
     {
         const NodePtr& leaf = leaves[current_leaf_idx];
 

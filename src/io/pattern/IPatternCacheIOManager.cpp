@@ -43,12 +43,9 @@ std::string IPatternCacheIOManager::build_mapping_path(const std::string& timest
     return (std::filesystem::path(m_folder) / filename).string();
 }
 
-void IPatternCacheIOManager::write_single_pattern(const PatternPreprocessorResult& result,
-                                                  const uint32_t index,
-                                                  const std::string& timestamp,
-                                                  const IPatternWriter& writer,
-                                                  PatternMapping& mapping,
-                                                  const bool is_directed) const
+void IPatternCacheIOManager::write_single_pattern(
+    const PatternPreprocessorResult& result, const uint32_t index, const std::string& timestamp,
+    const IPatternWriter& writer, PatternMapping& mapping, const bool is_directed) const
 {
     const std::string pattern_path = build_pattern_full_path(index, timestamp, writer);
     writer.write(result.first, pattern_path, m_logger, is_directed);

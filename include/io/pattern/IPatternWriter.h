@@ -48,8 +48,7 @@ public:
      * @throws SgfPathExistsException if directory creation or file writing fails.
      */
     void write(const BoostGraph& graph, const std::string& path,
-               const LoggerHandler& logger = LoggerHandler::null(),
-               bool is_directed = true) const;
+               const LoggerHandler& logger = LoggerHandler::null(), bool is_directed = true) const;
 
     /**
      * @brief Returns the file extension this writer appends, without a leading dot.

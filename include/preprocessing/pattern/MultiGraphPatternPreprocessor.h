@@ -44,7 +44,7 @@ private:
     std::vector<ColoredGraph>& m_graph_library;  ///< Library of graphs to mine.
     const bool M_IS_DIRECTED;                    ///< Whether graphs are directed.
     const uint32_t M_PATTERN_NUMBER;             ///< Number of patterns to extract.
-    const double M_ALIVE_PRECENT;               ///< Minimum coverage percentage (0.0–100.0).
+    const double M_ALIVE_PRECENT;                ///< Minimum coverage percentage (0.0–100.0).
     LoggerHandler m_logger;                      ///< Logger for runtime messages.
 };
 

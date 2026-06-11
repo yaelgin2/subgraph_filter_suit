@@ -655,4 +655,3 @@ TEST_F(MultiGraphPatternFinderTest, path_4_with_added_vertex_3_graphs_found_grap
         boost_graph_isomorphic_to(result.first, spec.m_edges, spec.m_colors, spec.m_is_directed));
     EXPECT_EQ(result.second, (std::unordered_set<uint32_t>{0U, 2U}));
 }
-

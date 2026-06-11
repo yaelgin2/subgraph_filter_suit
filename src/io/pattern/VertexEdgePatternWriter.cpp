@@ -32,8 +32,7 @@ void VertexEdgePatternWriter::write_node_labels(const BoostGraph& graph,
     }
 }
 
-void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph,
-                                              const std::string& base_path,
+void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph, const std::string& base_path,
                                               const bool is_directed)
 {
     std::ofstream file =

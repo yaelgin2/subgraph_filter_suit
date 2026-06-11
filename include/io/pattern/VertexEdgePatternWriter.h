@@ -59,7 +59,8 @@ private:
      * @param path Base file path; suffixes are appended automatically.
      * @throws SgfPathExistsException if either output file cannot be opened.
      */
-    void do_write(const BoostGraph& graph, const std::string& path, bool is_directed) const override;
+    void do_write(const BoostGraph& graph, const std::string& path,
+                  bool is_directed) const override;
     /**
      * @brief Writes vertex data to @p base_path.node_labels.
      *

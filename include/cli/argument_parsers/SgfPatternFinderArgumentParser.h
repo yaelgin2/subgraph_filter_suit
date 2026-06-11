@@ -30,8 +30,10 @@ struct PatternPreprocessArgs
     std::string m_background_graph_path;    ///< Path to the background graph file.
     double m_score_threshold{0.0};          ///< Pattern score cutoff.
     SingleGraphFinderConfig m_config{};     ///< Beam search tuning parameters.
-    uint32_t m_preprocess_multigraph{0U};   ///< Number of multigraph patterns to extract; 0 = disabled.
-    double m_multigraph_alive_percent{0.5}; ///< Fraction of library graphs a pattern must appear in.
+    uint32_t m_preprocess_multigraph{
+        0U};  ///< Number of multigraph patterns to extract; 0 = disabled.
+    double m_multigraph_alive_percent{
+        0.5};  ///< Fraction of library graphs a pattern must appear in.
 };
 
 /**
