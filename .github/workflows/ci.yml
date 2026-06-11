@@ -109,9 +109,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up MSVC environment
-        uses: microsoft/setup-msbuild@v2
-
       - name: Enable vcpkg binary caching (MSVC)
         uses: actions/github-script@v7
         with:
