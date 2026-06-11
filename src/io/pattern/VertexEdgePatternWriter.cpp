@@ -32,7 +32,9 @@ void VertexEdgePatternWriter::write_node_labels(const BoostGraph& graph,
     }
 }
 
-void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph, const std::string& base_path)
+void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph,
+                                              const std::string& base_path,
+                                              const bool is_directed)
 {
     std::ofstream file =
         VertexEdgeUtils::open_file_for_writing(base_path + IOConstants::EDGE_SUFFIX);
@@ -47,7 +49,7 @@ void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph, const std
         {
             const boost::graph_traits<BoostGraph>::edge_descriptor edge = *it;
             const uint32_t dst = static_cast<uint32_t>(boost::target(edge, graph));
-            if (src > dst && boost::edge(dst, src, graph).second)
+            if (!is_directed && src > dst && boost::edge(dst, src, graph).second)
             {
                 continue;
             }
@@ -56,10 +58,11 @@ void VertexEdgePatternWriter::write_edge_file(const BoostGraph& graph, const std
     }
 }
 
-void VertexEdgePatternWriter::do_write(const BoostGraph& graph, const std::string& path) const
+void VertexEdgePatternWriter::do_write(const BoostGraph& graph, const std::string& path,
+                                       const bool is_directed) const
 {
     write_node_labels(graph, path);
-    write_edge_file(graph, path);
+    write_edge_file(graph, path, is_directed);
 }
 
 }  // namespace sgf

@@ -47,23 +47,25 @@ void IPatternCacheIOManager::write_single_pattern(const PatternPreprocessorResul
                                                   const uint32_t index,
                                                   const std::string& timestamp,
                                                   const IPatternWriter& writer,
-                                                  PatternMapping& mapping) const
+                                                  PatternMapping& mapping,
+                                                  const bool is_directed) const
 {
     const std::string pattern_path = build_pattern_full_path(index, timestamp, writer);
-    writer.write(result.first, pattern_path, m_logger);
+    writer.write(result.first, pattern_path, m_logger, is_directed);
     const std::string filename = std::filesystem::path(pattern_path).filename().string();
     mapping.emplace(filename, result.second);
 }
 
 void IPatternCacheIOManager::write(const PatternOutput& patterns, const std::string& timestamp,
-                                   const std::shared_ptr<IPatternWriter>& writer) const
+                                   const std::shared_ptr<IPatternWriter>& writer,
+                                   const bool is_directed) const
 {
     IOUtils::create_directory_if_needed(m_folder);
     PatternMapping mapping;
     uint32_t pattern_idx = 0U;
     for (const PatternPreprocessorResult& result : patterns)
     {
-        write_single_pattern(result, pattern_idx, timestamp, *writer, mapping);
+        write_single_pattern(result, pattern_idx, timestamp, *writer, mapping, is_directed);
         ++pattern_idx;
     }
     const std::string mapping_path = build_mapping_path(timestamp);

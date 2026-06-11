@@ -53,7 +53,7 @@ private:
      * @param path Destination file path.
      * @throws SgfPathExistsException if the file cannot be opened for writing.
      */
-    void do_write(const BoostGraph& graph, const std::string& path) const override;
+    void do_write(const BoostGraph& graph, const std::string& path, bool is_directed) const override;
     /**
      * @brief Builds a JSON array of node objects from a BoostGraph.
      *
@@ -69,10 +69,11 @@ private:
      *
      * Each element has the form {"source": <src>, "target": <dst>, "color": <edge_color>}.
      *
-     * @param graph The source graph.
+     * @param graph       The source graph.
+     * @param is_directed When false, skips the higher-index endpoint of each symmetric edge pair.
      * @return JSON array of link objects.
      */
-    static boost::json::array build_links_array(const BoostGraph& graph);
+    static boost::json::array build_links_array(const BoostGraph& graph, bool is_directed);
 
     /**
      * @brief Serializes a JSON root object and writes it to a file.

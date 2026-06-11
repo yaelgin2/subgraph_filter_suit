@@ -314,7 +314,7 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
             });
         result.insert(result.end(), multigraph_results.begin(), multigraph_results.end());
         const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(multigraph_results, timestamp, pattern_writer);
+        cache_manager.write(multigraph_results, timestamp, pattern_writer, is_directed);
     }
     const bool need_background =
         preprocess_singlegraph != -1 || preprocess_singlegraph_results_file;
@@ -341,7 +341,7 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
             });
         result.insert(result.end(), single_graph_results.begin(), single_graph_results.end());
         const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(single_graph_results, timestamp, pattern_writer);
+        cache_manager.write(single_graph_results, timestamp, pattern_writer, is_directed);
     }
     if (preprocess_singlegraph_results_file && background_graph_opt.has_value())
     {
@@ -362,7 +362,7 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
                     std::move(logger));
             });
         const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(single_graph_results, timestamp, pattern_writer);
+        cache_manager.write(single_graph_results, timestamp, pattern_writer, is_directed);
         result.insert(result.end(), single_graph_results.begin(), single_graph_results.end());
     }
     return result;
