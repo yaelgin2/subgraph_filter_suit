@@ -9,9 +9,9 @@
 #include "LoggerHandler.h"
 #include "Node.h"
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <tuple>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -49,9 +49,9 @@ format_vertex_parent_pairs(const std::vector<std::pair<uint32_t, sgf::NodePtr>>&
 namespace sgf
 {
 
-Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, const LoggerHandler& logger)
+Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, LoggerHandler logger)
     : m_root(std::make_shared<Node>(root_vertex_index, 0U))
-    , m_logger(logger)
+    , m_logger(std::move(logger))
     , m_graph(graph)
     , m_is_directed(graph.is_directed())
 {
@@ -290,66 +290,62 @@ void Tree::accumulate_path_neighbour_counts(const std::vector<uint32_t>& path,
     }
 }
 
+void Tree::seed_path_from_leaf(const NodePtr& leaf, std::vector<uint32_t>& path_vec,
+                              std::unordered_set<uint32_t>& path_set)
+{
+    NodePtr ancestor = leaf;
+    while (ancestor && !ancestor->m_parent.expired())
+    {
+        path_vec[ancestor->m_depth - 1U] = ancestor->m_index;
+        path_set.insert(ancestor->m_index);
+        ancestor = ancestor->m_parent.lock();
+    }
+}
+
+void Tree::update_path_to_next_leaf(const NodePtr& prev_leaf, const NodePtr& curr_leaf,
+                                    std::vector<uint32_t>& path_vec,
+                                    std::unordered_set<uint32_t>& path_set)
+{
+    NodePtr prev_ancestor = prev_leaf;
+    NodePtr curr_ancestor = curr_leaf;
+    std::vector<NodePtr> to_remove;
+    std::vector<NodePtr> to_add;
+    while (prev_ancestor != curr_ancestor)
+    {
+        to_remove.push_back(prev_ancestor);
+        to_add.push_back(curr_ancestor);
+        prev_ancestor = prev_ancestor->m_parent.lock();
+        curr_ancestor = curr_ancestor->m_parent.lock();
+    }
+    for (const NodePtr& node : to_remove)
+    {
+        path_set.erase(node->m_index);
+    }
+    for (const NodePtr& node : to_add)
+    {
+        path_vec[node->m_depth - 1U] = node->m_index;
+        path_set.insert(node->m_index);
+    }
+}
+
 void Tree::get_color_by_depth_neighbour_counts(const std::vector<NodePtr>& leaves,
                                                CountsMap& counts) const
 {
-
     if (leaves.empty())
     {
         return;
     }
 
-    // All frontier leaves are at the same depth — fix the vector size once.
     const uint32_t frontier_depth = leaves.at(0)->m_depth;
-
-    // path_vec[i] = vertex index matched at pattern depth i+1 (1-indexed depths).
     std::vector<uint32_t> path_vec(frontier_depth, 0U);
-
-    // path_set mirrors path_vec for O(1) "is this neighbour committed?" checks.
     std::unordered_set<uint32_t> path_set;
 
-    // Seed path from the first leaf's ancestor chain (root excluded).
-    {
-        NodePtr ancestor = leaves.at(0);
-        while (ancestor && !ancestor->m_parent.expired())
-        {
-            path_vec[ancestor->m_depth - 1U] = ancestor->m_index;
-            path_set.insert(ancestor->m_index);
-            ancestor = ancestor->m_parent.lock();
-        }
-    }
+    seed_path_from_leaf(leaves.at(0), path_vec, path_set);
     accumulate_path_neighbour_counts(path_vec, path_set, counts);
 
-    for (uint32_t current_leaf_idx = 1U; current_leaf_idx < static_cast<uint32_t>(leaves.size());
-         ++current_leaf_idx)
+    for (uint32_t leaf_idx = 1U; leaf_idx < static_cast<uint32_t>(leaves.size()); ++leaf_idx)
     {
-        const NodePtr& leaf = leaves[current_leaf_idx];
-
-        // Walk both ancestor chains to the common ancestor.
-        // Collect diverging nodes into to_remove / to_add.
-        // Remove old first, then add new, to avoid premature eviction from path_set.
-        std::vector<NodePtr> to_remove;
-        std::vector<NodePtr> to_add;
-        NodePtr prev_ancestor = leaves[current_leaf_idx - 1U];
-        NodePtr curr_ancestor = leaf;
-        while (prev_ancestor != curr_ancestor)
-        {
-            to_remove.push_back(prev_ancestor);
-            to_add.push_back(curr_ancestor);
-            prev_ancestor = prev_ancestor->m_parent.lock();
-            curr_ancestor = curr_ancestor->m_parent.lock();
-        }
-
-        for (const NodePtr& node : to_remove)
-        {
-            path_set.erase(node->m_index);
-        }
-        for (const NodePtr& node : to_add)
-        {
-            path_vec[node->m_depth - 1U] = node->m_index;
-            path_set.insert(node->m_index);
-        }
-
+        update_path_to_next_leaf(leaves[leaf_idx - 1U], leaves[leaf_idx], path_vec, path_set);
         accumulate_path_neighbour_counts(path_vec, path_set, counts);
     }
 }

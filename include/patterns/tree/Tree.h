@@ -34,7 +34,7 @@ public:
      * @param graph The source graph; directionality is inferred from it.
      * @param logger Logger instance.
      */
-    Tree(uint32_t root_vertex_index, const ColoredGraph& graph, const LoggerHandler& logger);
+    Tree(uint32_t root_vertex_index, const ColoredGraph& graph, LoggerHandler logger);
 
     Tree() = delete;
     Tree(const Tree&) = delete;
@@ -179,6 +179,26 @@ private:
     void accumulate_path_neighbour_counts(const std::vector<uint32_t>& path,
                                           const std::unordered_set<uint32_t>& path_set,
                                           CountsMap& counts) const;
+
+    /**
+     * @brief Seed path_vec and path_set from a leaf's ancestor chain (root excluded).
+     * @param leaf      Leaf node to walk up from.
+     * @param path_vec  Filled with vertex indices indexed by depth-1.
+     * @param path_set  Filled with the same vertex indices for O(1) lookup.
+     */
+    static void seed_path_from_leaf(const NodePtr& leaf, std::vector<uint32_t>& path_vec,
+                                    std::unordered_set<uint32_t>& path_set);
+
+    /**
+     * @brief Advance path state from @p prev_leaf to @p curr_leaf via their common ancestor.
+     * @param prev_leaf  Leaf from the previous iteration.
+     * @param curr_leaf  Leaf for the current iteration.
+     * @param path_vec   Updated in-place.
+     * @param path_set   Updated in-place.
+     */
+    static void update_path_to_next_leaf(const NodePtr& prev_leaf, const NodePtr& curr_leaf,
+                                         std::vector<uint32_t>& path_vec,
+                                         std::unordered_set<uint32_t>& path_set);
 };
 
 }  // namespace sgf

@@ -2,6 +2,7 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
+#include "CountsMap.h"
 #include "LoggerHandler.h"
 #include "Node.h"
 #include "Tree.h"
@@ -53,6 +54,8 @@ public:
     MultiGraphPatternResult find_pattern(double alive_threshold, bool is_random = true);
 
 private:
+    using Entry = std::pair<std::tuple<uint32_t, uint32_t, bool>, uint32_t>;
+
     static constexpr uint64_t LOWER_32_BITS_MASK = 0xffffffffULL;
     static constexpr uint32_t UPPER_32_BITS_SHIFT = 32U;
     static constexpr double NON_RANDOM_PROBABILITY = 0.5;
@@ -151,6 +154,33 @@ private:
     std::optional<std::tuple<uint32_t, uint32_t, bool>>
     choose_next_vertex(const CountsMap& combined_counts, const CountsMap& tree_support,
                        uint32_t min_alive_count, bool is_random);
+
+    /**
+     * @brief Build filtered candidate list from combined counts and support map.
+     * @param combined_counts  Merged neighbour counts across alive trees.
+     * @param tree_support     Per-key count of trees that reported each neighbour.
+     * @param min_alive_count  Minimum support count for a candidate to qualify.
+     * @return Vector of (key, total-count) pairs that meet the support threshold.
+     */
+    static std::vector<Entry> build_candidates(const CountsMap& combined_counts,
+                                               const CountsMap& tree_support,
+                                               uint32_t min_alive_count);
+
+    /**
+     * @brief Sample one candidate using counts as weights.
+     * @param candidates Non-empty list of (key, weight) pairs.
+     * @return Chosen key.
+     */
+    std::tuple<uint32_t, uint32_t, bool>
+    sample_candidate_random(const std::vector<Entry>& candidates);
+
+    /**
+     * @brief Accumulate combined and per-tree neighbour counts over all alive trees.
+     * @param leaf_matches Current leaf nodes of each graph's match tree.
+     * @return Pair of {combined_counts, tree_support}.
+     */
+    std::pair<CountsMap, CountsMap>
+    accumulate_vertex_counts(const std::vector<std::vector<NodePtr>>& leaf_matches) const;
 
     /**
      * @brief Log the current set of alive graph indexes at DEBUG level.

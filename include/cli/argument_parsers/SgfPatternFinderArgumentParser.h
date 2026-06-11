@@ -18,6 +18,8 @@ namespace sgf
  */
 struct PatternPreprocessArgs
 {
+    static constexpr double DEFAULT_MULTIGRAPH_ALIVE_PERCENT = 0.5;
+
     std::string m_library_input_folder;  ///< Input graph library directory.
     std::string m_output_folder;         ///< Output directory for patterns.
     PatternWriterType m_pattern_output_type{PatternWriterType::GRAPHML};  ///< Pattern file format.
@@ -33,7 +35,7 @@ struct PatternPreprocessArgs
     uint32_t m_preprocess_multigraph{
         0U};  ///< Number of multigraph patterns to extract; 0 = disabled.
     double m_multigraph_alive_percent{
-        0.5};  ///< Fraction of library graphs a pattern must appear in.
+        DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs a pattern must appear in.
 };
 
 /**

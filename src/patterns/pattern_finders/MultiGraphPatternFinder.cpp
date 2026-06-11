@@ -2,6 +2,7 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
+#include "CountsMap.h"
 #include "DebugLog.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
@@ -10,6 +11,7 @@
 #include "Tree.h"
 
 #include <algorithm>
+#include <tuple>
 #include <boost/graph/adjacency_list.hpp>
 #include <chrono>
 #include <cmath>
@@ -136,12 +138,11 @@ void MultiGraphPatternFinder::setup_random_engine()
 
 /* ---------- Growth loop helpers ---------- */
 
-std::optional<std::tuple<uint32_t, uint32_t, bool>>
-MultiGraphPatternFinder::choose_next_vertex(const CountsMap& combined_counts,
-                                            const CountsMap& tree_support,
-                                            const uint32_t min_alive_count, const bool is_random)
+std::vector<MultiGraphPatternFinder::Entry>
+MultiGraphPatternFinder::build_candidates(const CountsMap& combined_counts,
+                                          const CountsMap& tree_support,
+                                          const uint32_t min_alive_count)
 {
-    using Entry = std::pair<std::tuple<uint32_t, uint32_t, bool>, uint32_t>;
     std::vector<Entry> candidates;
     for (const auto& entry : combined_counts)
     {
@@ -151,6 +152,54 @@ MultiGraphPatternFinder::choose_next_vertex(const CountsMap& combined_counts,
             candidates.emplace_back(entry.first, entry.second);
         }
     }
+    return candidates;
+}
+
+std::tuple<uint32_t, uint32_t, bool>
+MultiGraphPatternFinder::sample_candidate_random(const std::vector<Entry>& candidates)
+{
+    std::vector<double> weights;
+    weights.reserve(candidates.size());
+    for (const Entry& candidate : candidates)
+    {
+        weights.push_back(static_cast<double>(candidate.second));
+    }
+    std::discrete_distribution<uint32_t> dist(weights.cbegin(), weights.cend());
+    const uint32_t sampled_idx = dist(m_random_engine);
+    return candidates[sampled_idx].first;
+}
+
+std::pair<CountsMap, CountsMap>
+MultiGraphPatternFinder::accumulate_vertex_counts(
+    const std::vector<std::vector<NodePtr>>& leaf_matches) const
+{
+    CountsMap combined_counts;
+    CountsMap tree_support;
+    for (const uint32_t graph_idx : m_alive_graph_indexes)
+    {
+        if (!m_match_trees[graph_idx] || m_match_trees[graph_idx]->is_empty())
+        {
+            continue;
+        }
+        CountsMap per_tree_counts;
+        m_match_trees[graph_idx]->get_color_by_depth_neighbour_counts(leaf_matches[graph_idx],
+                                                                      per_tree_counts);
+        for (const auto& entry : per_tree_counts)
+        {
+            combined_counts[entry.first] += entry.second;
+            ++tree_support[entry.first];
+        }
+    }
+    return {combined_counts, tree_support};
+}
+
+std::optional<std::tuple<uint32_t, uint32_t, bool>>
+MultiGraphPatternFinder::choose_next_vertex(const CountsMap& combined_counts,
+                                            const CountsMap& tree_support,
+                                            const uint32_t min_alive_count, const bool is_random)
+{
+    const std::vector<Entry> candidates =
+        build_candidates(combined_counts, tree_support, min_alive_count);
 
     if (candidates.empty())
     {
@@ -180,15 +229,7 @@ MultiGraphPatternFinder::choose_next_vertex(const CountsMap& combined_counts,
         return best_it->first;
     }
 
-    std::vector<double> weights;
-    weights.reserve(candidates.size());
-    for (const Entry& candidate : candidates)
-    {
-        weights.push_back(static_cast<double>(candidate.second));
-    }
-    std::discrete_distribution<uint32_t> dist(weights.cbegin(), weights.cend());
-    const uint32_t sampled_idx = dist(m_random_engine);
-    return candidates[sampled_idx].first;
+    return sample_candidate_random(candidates);
 }
 
 bool MultiGraphPatternFinder::attempt_add_vertex(const double alive_threshold, const bool is_random,
@@ -198,26 +239,9 @@ bool MultiGraphPatternFinder::attempt_add_vertex(const double alive_threshold, c
     const uint32_t min_alive_count = std::max(
         1U, static_cast<uint32_t>(static_cast<double>(m_graph_list.size()) * alive_threshold));
 
-    CountsMap combined_counts;
-    CountsMap tree_support;
-    for (const uint32_t graph_idx : m_alive_graph_indexes)
-    {
-        if (!m_match_trees[graph_idx] || m_match_trees[graph_idx]->is_empty())
-        {
-            continue;
-        }
-        CountsMap per_tree_counts;
-        m_match_trees[graph_idx]->get_color_by_depth_neighbour_counts(leaf_matches[graph_idx],
-                                                                      per_tree_counts);
-        for (const auto& entry : per_tree_counts)
-        {
-            combined_counts[entry.first] += entry.second;
-            ++tree_support[entry.first];
-        }
-    }
-
+    const std::pair<CountsMap, CountsMap> counts = accumulate_vertex_counts(leaf_matches);
     const std::optional<std::tuple<uint32_t, uint32_t, bool>> chosen =
-        choose_next_vertex(combined_counts, tree_support, min_alive_count, is_random);
+        choose_next_vertex(counts.first, counts.second, min_alive_count, is_random);
     if (!chosen)
     {
         return false;

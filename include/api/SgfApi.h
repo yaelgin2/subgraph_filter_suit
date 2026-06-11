@@ -97,6 +97,8 @@ filter_with_enumeration(const FilterWithEnumerationParams& params);
  */
 struct PreprocessPatternsParams
 {
+    static constexpr double DEFAULT_MULTIGRAPH_ALIVE_PERCENT = 0.5;
+
     std::string m_library_path;        ///< [required] Directory containing the graph library.
     GraphReaderType m_reader_type;     ///< [required] Graph file format.
     std::string m_output_path;         ///< [required] Directory where pattern files are written.
@@ -111,7 +113,8 @@ struct PreprocessPatternsParams
     SingleGraphFinderConfig m_finder_config{};  ///< Beam search tuning parameters.
     std::optional<std::string> m_log_file;      ///< Log file path; absent = no logging.
     uint32_t m_preprocess_multigraph{0U};       ///< Number of multigraph patterns; 0 = disabled.
-    double m_multigraph_alive_percent{0.5};  ///< Fraction of library graphs pattern must appear in.
+    double m_multigraph_alive_percent{
+        DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs pattern must appear in.
 };
 
 /**

@@ -117,9 +117,6 @@ private:
     [[nodiscard]] std::string build_pattern_full_path(uint32_t index, const std::string& timestamp,
                                                       const IPatternWriter& writer) const;
     [[nodiscard]] std::string build_mapping_path(const std::string& timestamp) const;
-    void write_single_pattern(const PatternPreprocessorResult& result, uint32_t index,
-                              const std::string& timestamp, const IPatternWriter& writer,
-                              PatternMapping& mapping, bool is_directed) const;
 };
 
 }  // namespace sgf
