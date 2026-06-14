@@ -11,7 +11,6 @@
 #include "Tree.h"
 
 #include <algorithm>
-#include <tuple>
 #include <boost/graph/adjacency_list.hpp>
 #include <chrono>
 #include <cmath>
@@ -21,6 +20,7 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -138,10 +138,8 @@ void MultiGraphPatternFinder::setup_random_engine()
 
 /* ---------- Growth loop helpers ---------- */
 
-std::vector<MultiGraphPatternFinder::Entry>
-MultiGraphPatternFinder::build_candidates(const CountsMap& combined_counts,
-                                          const CountsMap& tree_support,
-                                          const uint32_t min_alive_count)
+std::vector<MultiGraphPatternFinder::Entry> MultiGraphPatternFinder::build_candidates(
+    const CountsMap& combined_counts, const CountsMap& tree_support, const uint32_t min_alive_count)
 {
     std::vector<Entry> candidates;
     for (const auto& entry : combined_counts)
@@ -169,8 +167,7 @@ MultiGraphPatternFinder::sample_candidate_random(const std::vector<Entry>& candi
     return candidates[sampled_idx].first;
 }
 
-std::pair<CountsMap, CountsMap>
-MultiGraphPatternFinder::accumulate_vertex_counts(
+std::pair<CountsMap, CountsMap> MultiGraphPatternFinder::accumulate_vertex_counts(
     const std::vector<std::vector<NodePtr>>& leaf_matches) const
 {
     CountsMap combined_counts;

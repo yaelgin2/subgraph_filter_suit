@@ -11,9 +11,9 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <tuple>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -291,7 +291,7 @@ void Tree::accumulate_path_neighbour_counts(const std::vector<uint32_t>& path,
 }
 
 void Tree::seed_path_from_leaf(const NodePtr& leaf, std::vector<uint32_t>& path_vec,
-                              std::unordered_set<uint32_t>& path_set)
+                               std::unordered_set<uint32_t>& path_set)
 {
     NodePtr ancestor = leaf;
     while (ancestor && !ancestor->m_parent.expired())

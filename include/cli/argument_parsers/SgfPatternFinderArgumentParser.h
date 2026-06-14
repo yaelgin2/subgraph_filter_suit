@@ -35,7 +35,8 @@ struct PatternPreprocessArgs
     uint32_t m_preprocess_multigraph{
         0U};  ///< Number of multigraph patterns to extract; 0 = disabled.
     double m_multigraph_alive_percent{
-        DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs a pattern must appear in.
+        DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs a pattern must appear
+                                            ///< in.
 };
 
 /**
