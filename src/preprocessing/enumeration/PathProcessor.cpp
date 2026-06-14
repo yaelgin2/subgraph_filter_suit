@@ -6,9 +6,11 @@
 #include "LoggerHandler.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <iterator>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -21,14 +23,51 @@ PathProcessor::PathProcessor(const ColoredGraph& graph, LoggerHandler logger,
 {
 }
 
-void PathProcessor::stream_groups_to_counter(
-    [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-    const GroupCounterCallback& count_group) const
+// NOLINTNEXTLINE(readability-function-size)
+EnumerationResult PathProcessor::stream_groups_to_counter(
+    [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix) const
 {
-    for (const uint32_t vertex : m_node_order)
+    const uint32_t order_size = static_cast<uint32_t>(m_node_order.size());
+    const uint32_t thread_count = std::min(m_thread_number, order_size);
+
+    std::atomic<uint32_t> next_idx{0U};
+    std::vector<EnumerationResult> local_maps(thread_count);
+    std::vector<std::thread> threads;
+    threads.reserve(thread_count);
+
+    for (uint32_t thread_idx = 0U; thread_idx < thread_count; ++thread_idx)
     {
-        stream_groups_to_counter_for_vertex(count_group, vertex);
+        EnumerationResult& local_map = local_maps[thread_idx];
+        threads.emplace_back(
+            [&]()
+            {
+                const GroupCounterCallback count_group =
+                    [this, &local_map](const uint32_t desc, const std::vector<uint32_t>& group)
+                {
+                    local_map[calculate_motif_number(desc, group_to_node_colors(group))] += 1U;
+                };
+                uint32_t idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
+                while (idx < order_size)
+                {
+                    stream_groups_to_counter_for_vertex(count_group, m_node_order[idx]);
+                    idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
+                }
+            });
     }
+    for (std::thread& thread : threads)
+    {
+        thread.join();
+    }
+
+    EnumerationResult merged;
+    for (const EnumerationResult& local_map : local_maps)
+    {
+        for (const auto& [motif_id, count] : local_map)
+        {
+            merged[motif_id] += count;
+        }
+    }
+    return merged;
 }
 
 UInt128 PathProcessor::calculate_motif_number(const uint32_t motif_descriptor,

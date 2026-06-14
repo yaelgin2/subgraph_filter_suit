@@ -66,30 +66,25 @@ void GroupEnumerationPreprocessor::sort_nodes()
 std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor::calculate()
 {
     std::unordered_map<UInt128, uint32_t, UInt128Hash> motif_count;
-
     std::vector<std::vector<bool>> graph_adjacency_matrix;
     graph_to_adjacency_matrix(graph_adjacency_matrix);
     sort_nodes();
 
-    uint32_t groups_counted = 0;
-    const GroupCounterCallback count_group =
-        [&motif_count, &groups_counted, this](const uint32_t group_structure_descriptor,
-                                              const std::vector<uint32_t>& group_vertex_ids)
+    const EnumerationResult thread_result = stream_groups_to_counter(graph_adjacency_matrix);
+
+    uint32_t groups_counted = 0U;
+    for (const auto& [motif_id, count] : thread_result)
     {
-        const std::vector<uint32_t> node_colors = group_to_node_colors(group_vertex_ids);
-        uint32_t& count =
-            motif_count[calculate_motif_number(group_structure_descriptor, node_colors)];
-        if (count == std::numeric_limits<uint32_t>::max())
+        uint32_t& existing = motif_count[motif_id];
+        if (existing > std::numeric_limits<uint32_t>::max() - count)
         {
             throw EnumerationOverflowException(
                 "Motif count overflow: occurrence count exceeded uint32_t capacity.");
         }
-        count += 1U;
+        existing += count;
+        groups_counted += count;
+    }
 
-        groups_counted++;
-    };
-
-    stream_groups_to_counter(graph_adjacency_matrix, count_group);
     m_logger.log(LogLevel::INFO, "Finished enumerating " + std::to_string(groups_counted) + " " +
                                      entity_name() + ".");
     return motif_count;

@@ -9,9 +9,12 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -43,16 +46,55 @@ void MotifPreprocessor::sort_nodes()
     }
 }
 
-void MotifPreprocessor::stream_groups_to_counter(
-    const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-    const GroupCounterCallback& count_group) const
+// NOLINTNEXTLINE(readability-function-size)
+EnumerationResult MotifPreprocessor::stream_groups_to_counter(
+    const std::vector<std::vector<bool>>& graph_adjacency_matrix) const
 {
-    std::vector<int64_t> bfs_visited(m_graph.vertex_count(), -1);
-    for (const uint32_t vertex : m_node_order)
+    const uint32_t vertex_count = m_graph.vertex_count();
+    const uint32_t order_size = static_cast<uint32_t>(m_node_order.size());
+    const uint32_t thread_count = std::min(m_thread_number, order_size);
+
+    std::atomic<uint32_t> next_idx{0U};
+    std::vector<EnumerationResult> local_maps(thread_count);
+    std::vector<std::thread> threads;
+    threads.reserve(thread_count);
+
+    for (uint32_t thread_idx = 0U; thread_idx < thread_count; ++thread_idx)
     {
-        stream_groups_to_counter_for_vertex(graph_adjacency_matrix, count_group, bfs_visited,
-                                            vertex);
+        EnumerationResult& local_map = local_maps[thread_idx];
+        threads.emplace_back(
+            [&]()
+            {
+                std::vector<int64_t> bfs_visited(vertex_count, -1);
+                const GroupCounterCallback thread_count_fn =
+                    [this, &local_map](const uint32_t desc, const std::vector<uint32_t>& group)
+                {
+                    local_map[calculate_motif_number(desc, group_to_node_colors(group))] += 1U;
+                };
+                // fetch_add returns the old value, so the first thread gets idx=0
+                uint32_t idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
+                while (idx < order_size)
+                {
+                    stream_groups_to_counter_for_vertex(graph_adjacency_matrix, thread_count_fn,
+                                                        bfs_visited, m_node_order[idx]);
+                    idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
+                }
+            });
     }
+    for (std::thread& thread : threads)
+    {
+        thread.join();
+    }
+
+    EnumerationResult merged;
+    for (const EnumerationResult& local_map : local_maps)
+    {
+        for (const auto& [motif_id, count] : local_map)
+        {
+            merged[motif_id] += count;
+        }
+    }
+    return merged;
 }
 
 void MotifPreprocessor::mark_depth_one_neighbours(KavoshContext& ctx,

@@ -69,7 +69,7 @@ public:
 
 protected:
     /**
-     * @brief Enumerate all simple 4-edge paths and report each via callback.
+     * @brief Enumerate all simple 4-edge paths and return their counts.
      *
      * Iterates over all vertices in m_node_order. For each root vertex, all pairs
      * of distinct depth-1 neighbours are considered; for each pair, all combinations
@@ -77,11 +77,10 @@ protected:
      *
      * @param graph_adjacency_matrix Dense boolean adjacency matrix (unused; neighbour
      *        lists from ColoredGraph are used directly).
-     * @param count_group Callback invoked once per discovered path.
+     * @return Map from canonical path identifier to occurrence count.
      */
-    void stream_groups_to_counter(
-        [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-        const GroupCounterCallback& count_group) const override;
+    EnumerationResult stream_groups_to_counter(
+        [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix) const override;
 
     /**
      * @brief Encode a 4-edge path into a canonical 128-bit motif identifier.

@@ -4,7 +4,11 @@
 #include "GroupEnumerationPreprocessor.h"
 #include "LoggerHandler.h"
 
+#include <atomic>
 #include <cstdint>
+#include <exception>
+#include <mutex>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -58,8 +62,8 @@ protected:
      * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
      * @param count_group Callback invoked for each discovered group.
      */
-    void stream_groups_to_counter(const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-                                  const GroupCounterCallback& count_group) const override;
+    EnumerationResult
+    stream_groups_to_counter(const std::vector<std::vector<bool>>& graph_adjacency_matrix) const override;
 
     /**
      * @brief Canonicalize a 4-node group into a unique motif identifier.
@@ -77,6 +81,32 @@ protected:
                                    const std::vector<uint32_t>& node_colors) const override;
 
 private:
+    /**
+     * @brief State shared across all worker threads during parallel enumeration.
+     */
+    struct EnumerationSharedState
+    {
+        std::mutex m_count_mutex;                ///< Serialises calls to count_group.
+        std::mutex m_exception_mutex;            ///< Guards m_exception writes.
+        std::atomic<uint32_t> m_next_idx{0U};   ///< Index of the next vertex to process.
+        std::exception_ptr m_exception;          ///< First exception thrown by any thread.
+    };
+
+    /**
+     * @brief Worker executed by each thread in stream_groups_to_counter.
+     *
+     * Repeatedly claims the next unprocessed vertex via @p shared.m_next_idx and
+     * calls stream_groups_to_counter_for_vertex until all vertices are done.
+     * Exceptions are captured into @p shared.m_exception and the thread exits early.
+     *
+     * @param graph_adjacency_matrix Dense boolean adjacency matrix (read-only).
+     * @param safe_count Thread-safe wrapper around the caller's count_group callback.
+     * @param shared Shared coordination state for all threads in this run.
+     */
+    void run_enumeration_worker(const std::vector<std::vector<bool>>& graph_adjacency_matrix,
+                                const GroupCounterCallback& safe_count,
+                                EnumerationSharedState& shared) const;
+
     /**
      * @brief Shared mutable state for one Kavosh BFS run rooted at a single vertex.
      *
