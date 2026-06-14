@@ -63,6 +63,7 @@ struct PatternFinderCliArgs
     bool m_is_directed{false};     ///< Treat graphs as directed.
     GraphReaderType m_reader_type{GraphReaderType::GRAPHML};  ///< Graph file format.
     std::string m_log_file_path;                              ///< Optional log file path.
+    uint32_t m_thread_number{1U};                             ///< Maximum threads for preprocessing.
     PatternPreprocessArgs m_preprocess{};                     ///< Preprocessing-stage arguments.
     PatternFilterArgs m_filter{};                             ///< Filter-stage arguments.
 };
@@ -98,6 +99,7 @@ private:
     static constexpr const char* KEY_IS_DIRECTED = "is-directed";
     static constexpr const char* KEY_READER_TYPE = "reader-type";
     static constexpr const char* KEY_LOG_FILE_PATH = "log-file-path";
+    static constexpr const char* KEY_THREAD_NUMBER = "thread-number";
 
     static constexpr const char* KEY_LIBRARY_INPUT_FOLDER = "library-input-folder";
     static constexpr const char* KEY_OUTPUT_FOLDER = "output-folder";

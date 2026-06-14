@@ -52,8 +52,9 @@ public:
      * @brief Construct a PathProcessor for the given graph.
      * @param graph The colored graph to preprocess.
      * @param logger Logger handler for status and debug output.
+     * @param thread_number Maximum number of threads to use during enumeration.
      */
-    PathProcessor(const ColoredGraph& graph, LoggerHandler logger);
+    PathProcessor(const ColoredGraph& graph, LoggerHandler logger, uint32_t thread_number = 1U);
 
     PathProcessor() = delete;
     PathProcessor(const PathProcessor&) = delete;

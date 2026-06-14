@@ -31,9 +31,11 @@ using NeighbourIteratorPair =
 }  // namespace
 
 GroupEnumerationPreprocessor::GroupEnumerationPreprocessor(const ColoredGraph& graph,
-                                                           LoggerHandler logger)
+                                                           LoggerHandler logger,
+                                                           const uint32_t thread_number)
     : m_graph(graph)
     , m_logger(std::move(logger))
+    , m_thread_number(thread_number)
 {
 }
 

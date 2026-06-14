@@ -15,8 +15,9 @@
 namespace sgf
 {
 
-PathProcessor::PathProcessor(const ColoredGraph& graph, LoggerHandler logger)
-    : GroupEnumerationPreprocessor(graph, std::move(logger))
+PathProcessor::PathProcessor(const ColoredGraph& graph, LoggerHandler logger,
+                             const uint32_t thread_number)
+    : GroupEnumerationPreprocessor(graph, std::move(logger), thread_number)
 {
 }
 

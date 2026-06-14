@@ -32,6 +32,7 @@ struct SingleGraphFinderConfig
     uint32_t m_max_active_patterns = DEFAULT_MAX_ACTIVE_PATTERNS;  ///< Beam width cap.
     double m_alpha_0 = DEFAULT_ALPHA_0;                            ///< Initial alpha weight.
     double m_alpha_decay = DEFAULT_ALPHA_DECAY;                    ///< Per-depth alpha decay.
+    uint32_t m_thread_number = 1U;  ///< Maximum threads to use during pattern search.
 };
 
 /**

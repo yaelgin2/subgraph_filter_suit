@@ -58,8 +58,10 @@ public:
      *
      * @param graph The graph to process.
      * @param logger Logger handler used for status/debug output.
+     * @param thread_number Maximum number of threads to use during enumeration.
      */
-    GroupEnumerationPreprocessor(const ColoredGraph& graph, LoggerHandler logger);
+    GroupEnumerationPreprocessor(const ColoredGraph& graph, LoggerHandler logger,
+                                 uint32_t thread_number = 1U);
 
     GroupEnumerationPreprocessor() = delete;
     GroupEnumerationPreprocessor(const GroupEnumerationPreprocessor&) = delete;
@@ -98,6 +100,11 @@ protected:
      * @brief Logger used for runtime messages.
      */
     LoggerHandler m_logger;
+
+    /**
+     * @brief Maximum number of threads to use during enumeration.
+     */
+    uint32_t m_thread_number;
 
     /**
      * @brief Node ordering used during enumeration.

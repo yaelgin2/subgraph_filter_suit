@@ -14,13 +14,15 @@
 namespace sgf
 {
 
+// NOLINTNEXTLINE(readability-function-size)
 MultiGraphPatternPreprocessor::MultiGraphPatternPreprocessor(
     std::vector<ColoredGraph>& graph_library, const bool is_directed, const uint32_t pattern_number,
-    const double alive_precent, LoggerHandler logger)
+    const double alive_precent, const uint32_t thread_number, LoggerHandler logger)
     : m_graph_library(graph_library)
     , M_IS_DIRECTED(is_directed)
     , M_PATTERN_NUMBER(pattern_number)
     , M_ALIVE_PRECENT(alive_precent)
+    , m_thread_number(thread_number)
     , m_logger(std::move(logger))
 {
 }

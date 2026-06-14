@@ -54,6 +54,8 @@ po::options_description SgfPatternFinderArgumentParser::build_options()
     common_desc.add_options()(KEY_IS_DIRECTED, po::bool_switch(), "Treat graphs as directed")(
         KEY_READER_TYPE, po::value<std::string>(),
         "Graph file format: graphml, json, vertex-edge (required)")(
+        KEY_THREAD_NUMBER, po::value<std::string>()->default_value("1"),
+        "Maximum number of threads to use during preprocessing (default: 1)")(
         KEY_LOG_FILE_PATH, po::value<std::string>(), "(optional) Log file path");
 
     po::options_description all_desc("sgf-pattern-finder options");
@@ -150,6 +152,8 @@ SgfPatternFinderArgumentParser::build_cli_args(const po::variables_map& variable
     result.m_is_directed = variables_map.at(KEY_IS_DIRECTED).as<bool>();
     result.m_reader_type = parse_reader_type(get_required_string(variables_map, KEY_READER_TYPE));
     result.m_log_file_path = get_optional_string(variables_map, KEY_LOG_FILE_PATH);
+    result.m_thread_number =
+        parse_uint32_value(variables_map.at(KEY_THREAD_NUMBER).as<std::string>(), KEY_THREAD_NUMBER);
     if (result.m_run_preprocess)
     {
         result.m_preprocess = parse_preprocess_args(variables_map);

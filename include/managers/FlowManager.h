@@ -102,7 +102,8 @@ public:
     enumerator_preprocess_run(const std::string& input_path, bool is_directed,
                               GraphReaderType reader_type, std::string& output_path,
                               CacheManagerType output_type, const std::string& log_file_path,
-                              bool preprocess_paths, bool preprocess_motifs);
+                              bool preprocess_paths, bool preprocess_motifs,
+                              uint32_t thread_number);
 
     /**
      * @brief Run the enumeration filter stage.
@@ -125,7 +126,8 @@ public:
                           const std::string& path_cache_file, CacheManagerType cache_reader_type,
                           std::string& output_folder, ResultOutputType output_type,
                           const std::string& log_file_path, bool filter_paths, bool filter_motifs,
-                          const GraphEnumerationCacheConfig& graph_cache_config, bool non_induced);
+                          const GraphEnumerationCacheConfig& graph_cache_config, bool non_induced,
+                          uint32_t thread_number);
 
     /// @brief Run the pattern preprocessing stage.
     static std::vector<PatternPreprocessorResult> pattern_preprocess_run(
@@ -135,7 +137,7 @@ public:
         int64_t preprocess_singlegraph, ResultOutputType results_file_type,
         const std::string& background_graph_path, double score_threshold,
         const SingleGraphFinderConfig& config, uint32_t preprocess_multigraph,
-        double multigraph_alive_percent);
+        double multigraph_alive_percent, uint32_t thread_number);
 
     /// @brief Run the pattern filter stage.
     static std::vector<std::unordered_map<std::string, FilterResult>>

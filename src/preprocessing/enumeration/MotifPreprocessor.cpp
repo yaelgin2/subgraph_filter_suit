@@ -27,8 +27,9 @@ using NeighbourIteratorPair =
 
 }  // namespace
 
-MotifPreprocessor::MotifPreprocessor(const ColoredGraph& graph, LoggerHandler logger)
-    : GroupEnumerationPreprocessor(graph, std::move(logger))
+MotifPreprocessor::MotifPreprocessor(const ColoredGraph& graph, LoggerHandler logger,
+                                     const uint32_t thread_number)
+    : GroupEnumerationPreprocessor(graph, std::move(logger), thread_number)
 {
 }
 
