@@ -86,11 +86,10 @@ private:
     struct KavoshContext
     {
         const std::vector<std::vector<bool>>& m_adjacency_matrix;  ///< Full graph adjacency matrix.
-        const GroupCounterCallback& m_count_group;   ///< Callback for emitting groups.
-        const std::vector<bool>& m_ignore_vertices;  ///< Already-processed vertex mask.
-        std::vector<int64_t>& m_bfs_visited;         ///< BFS depth-encoding array.
-        int64_t m_run_id;                            ///< Root-unique run identifier.
-        uint32_t m_root;                             ///< Current root vertex.
+        const GroupCounterCallback& m_count_group;  ///< Callback for emitting groups.
+        std::vector<int64_t>& m_bfs_visited;        ///< BFS depth-encoding array.
+        int64_t m_run_id;                           ///< Root-unique run identifier.
+        uint32_t m_root;                            ///< Current root vertex.
     };
 
     /**
@@ -108,6 +107,20 @@ private:
             m_rev_begin;  ///< First incoming neighbour (directed only).
         std::vector<uint32_t>::const_iterator m_rev_end;  ///< One past last incoming neighbour.
     };
+
+    /**
+     * @brief Maps each vertex to its position in @c m_node_order.
+     *
+     * Populated by @c sort_nodes() immediately after @c m_node_order is built.
+     * A vertex @c v is skipped as a non-root group member when
+     * @c m_order_index[v] < @c m_order_index[root], avoiding double-counting.
+     */
+    std::vector<uint32_t> m_order_index;
+
+    /**
+     * @brief Build @c m_node_order via the base sort, then derive @c m_order_index.
+     */
+    void sort_nodes() override;
 
     /// Low 2 bits of each bfs_visited entry encode BFS depth (0–3); upper bits hold run_id.
     static constexpr uint64_t BFS_DEPTH_TWO_OFFSET = 2;
@@ -161,19 +174,18 @@ private:
      * Entry point for all four (1,1,1), (1,1,2), (1,2,2), (1,2,3) sub-enumerations.
      * Marks the root vertex in @p bfs_visited_vertices and then delegates to
      * specialised helpers for each depth variation.
+     * Vertices with a smaller @c m_order_index than @p root are skipped as group members
+     * to avoid double-counting groups that share the same vertex set.
      *
      * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
      * @param count_group Callback invoked for each discovered group.
-     * @param visited_vertices_to_ignore Vertices already fully processed (ignored as group
-     * members).
      * @param bfs_visited_vertices Depth-encoding array shared across all root iterations.
      * @param root The vertex currently acting as root for BFS enumeration.
      */
     void stream_groups_to_counter_for_vertex(
         const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-        const GroupCounterCallback& count_group,
-        const std::vector<bool>& visited_vertices_to_ignore,
-        std::vector<int64_t>& bfs_visited_vertices, uint32_t root) const;
+        const GroupCounterCallback& count_group, std::vector<int64_t>& bfs_visited_vertices,
+        uint32_t root) const;
 
     /**
      * @brief Mark every depth-1 neighbour of root in the BFS-visited array.

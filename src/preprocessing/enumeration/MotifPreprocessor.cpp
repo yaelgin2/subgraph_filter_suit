@@ -33,17 +33,25 @@ MotifPreprocessor::MotifPreprocessor(const ColoredGraph& graph, LoggerHandler lo
 {
 }
 
+void MotifPreprocessor::sort_nodes()
+{
+    GroupEnumerationPreprocessor::sort_nodes();
+    m_order_index.assign(m_graph.vertex_count(), 0U);
+    for (uint32_t idx = 0; idx < static_cast<uint32_t>(m_node_order.size()); ++idx)
+    {
+        m_order_index[m_node_order[idx]] = idx;
+    }
+}
+
 void MotifPreprocessor::stream_groups_to_counter(
     const std::vector<std::vector<bool>>& graph_adjacency_matrix,
     const GroupCounterCallback& count_group) const
 {
     std::vector<int64_t> bfs_visited(m_graph.vertex_count(), -1);
-    std::vector<bool> processed_vertices(m_graph.vertex_count(), false);
     for (const uint32_t vertex : m_node_order)
     {
-        stream_groups_to_counter_for_vertex(graph_adjacency_matrix, count_group, processed_vertices,
-                                            bfs_visited, vertex);
-        processed_vertices[vertex] = true;
+        stream_groups_to_counter_for_vertex(graph_adjacency_matrix, count_group, bfs_visited,
+                                            vertex);
     }
 }
 
@@ -68,7 +76,7 @@ void MotifPreprocessor::emit_depth_1_1_1_groups(const KavoshContext& ctx,
 {
     for (auto first = depth_one.m_begin; first != depth_one.m_end; ++first)
     {
-        if (ctx.m_ignore_vertices[*first])
+        if (m_order_index[*first] < m_order_index[ctx.m_root])
         {
             continue;
         }
@@ -78,7 +86,8 @@ void MotifPreprocessor::emit_depth_1_1_1_groups(const KavoshContext& ctx,
     {
         for (auto first = depth_one.m_rev_begin; first != depth_one.m_rev_end; ++first)
         {
-            if (ctx.m_ignore_vertices[*first] || ctx.m_adjacency_matrix[ctx.m_root][*first])
+            if (m_order_index[*first] < m_order_index[ctx.m_root] ||
+                ctx.m_adjacency_matrix[ctx.m_root][*first])
             {
                 continue;
             }
@@ -92,7 +101,7 @@ void MotifPreprocessor::emit_depth_1_1_1_groups_first_vertex_chosen(
     const KavoshContext& ctx, const NeighbourRange& depth_one,
     std::vector<uint32_t>::const_iterator first_neighbour, bool is_first_neighbour_reversed) const
 {
-    if (ctx.m_ignore_vertices[*first_neighbour])
+    if (m_order_index[*first_neighbour] < m_order_index[ctx.m_root])
     {
         return;
     }
@@ -100,7 +109,7 @@ void MotifPreprocessor::emit_depth_1_1_1_groups_first_vertex_chosen(
     {
         for (auto second = first_neighbour + 1; second != depth_one.m_end; ++second)
         {
-            if (ctx.m_ignore_vertices[*second])
+            if (m_order_index[*second] < m_order_index[ctx.m_root])
             {
                 continue;
             }
@@ -113,7 +122,8 @@ void MotifPreprocessor::emit_depth_1_1_1_groups_first_vertex_chosen(
         auto second = is_first_neighbour_reversed ? first_neighbour + 1 : depth_one.m_rev_begin;
         for (; second != depth_one.m_rev_end; ++second)
         {
-            if (ctx.m_ignore_vertices[*second] || ctx.m_adjacency_matrix[ctx.m_root][*second])
+            if (m_order_index[*second] < m_order_index[ctx.m_root] ||
+                ctx.m_adjacency_matrix[ctx.m_root][*second])
             {
                 continue;
             }
@@ -133,7 +143,7 @@ void MotifPreprocessor::emit_depth_1_1_1_groups_second_vertex_chosen(
     {
         for (auto third = second_neighbour + 1; third != depth_one.m_end; ++third)
         {
-            if (ctx.m_ignore_vertices[*third])
+            if (m_order_index[*third] < m_order_index[ctx.m_root])
             {
                 continue;
             }
@@ -147,7 +157,8 @@ void MotifPreprocessor::emit_depth_1_1_1_groups_second_vertex_chosen(
         auto third = is_second_neighbour_reversed ? second_neighbour + 1 : depth_one.m_rev_begin;
         for (; third != depth_one.m_rev_end; ++third)
         {
-            if (ctx.m_ignore_vertices[*third] || ctx.m_adjacency_matrix[ctx.m_root][*third])
+            if (m_order_index[*third] < m_order_index[ctx.m_root] ||
+                ctx.m_adjacency_matrix[ctx.m_root][*third])
             {
                 continue;
             }
@@ -190,7 +201,7 @@ void MotifPreprocessor::emit_depth_1_1_2_for_first_vertex(
     for (auto second_degree_neighbour = depth_two.m_begin;
          second_degree_neighbour != depth_two.m_end; ++second_degree_neighbour)
     {
-        if (ctx.m_ignore_vertices[*(second_degree_neighbour)] ||
+        if (m_order_index[*(second_degree_neighbour)] < m_order_index[ctx.m_root] ||
             ctx.m_bfs_visited[*(second_degree_neighbour)] !=
                 static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET))
         {
@@ -204,7 +215,7 @@ void MotifPreprocessor::emit_depth_1_1_2_for_first_vertex(
         for (auto second_degree_neighbour = depth_two.m_rev_begin;
              second_degree_neighbour != depth_two.m_rev_end; ++second_degree_neighbour)
         {
-            if (ctx.m_ignore_vertices[*(second_degree_neighbour)] ||
+            if (m_order_index[*(second_degree_neighbour)] < m_order_index[ctx.m_root] ||
                 ctx.m_bfs_visited[*(second_degree_neighbour)] !=
                     static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET) ||
                 ctx.m_adjacency_matrix[(*first_neighbour)][*(second_degree_neighbour)])
@@ -225,7 +236,7 @@ void MotifPreprocessor::emit_depth_1_1_2_for_second_vertex(
     for (auto second_first_degree_neighbour = depth_one.m_begin;
          second_first_degree_neighbour != depth_one.m_end; ++second_first_degree_neighbour)
     {
-        if (ctx.m_ignore_vertices[*(second_first_degree_neighbour)] ||
+        if (m_order_index[*(second_first_degree_neighbour)] < m_order_index[ctx.m_root] ||
             *first_neighbour == *second_first_degree_neighbour)
         {
             continue;
@@ -247,7 +258,7 @@ void MotifPreprocessor::emit_depth_1_1_2_for_second_vertex(
         for (auto second_first_degree_neighbour = depth_one.m_rev_begin;
              second_first_degree_neighbour != depth_one.m_rev_end; ++second_first_degree_neighbour)
         {
-            if (ctx.m_ignore_vertices[*(second_first_degree_neighbour)] ||
+            if (m_order_index[*(second_first_degree_neighbour)] < m_order_index[ctx.m_root] ||
                 *first_neighbour == *second_first_degree_neighbour ||
                 ctx.m_adjacency_matrix[ctx.m_root][*(second_first_degree_neighbour)])
             {
@@ -276,7 +287,7 @@ void MotifPreprocessor::emit_depth_1_2_2_for_first_vertex(
     for (auto first_second_degree_neighbour = depth_two.m_begin;
          first_second_degree_neighbour != depth_two.m_end; ++first_second_degree_neighbour)
     {
-        if (ctx.m_ignore_vertices[*(first_second_degree_neighbour)] ||
+        if (m_order_index[*(first_second_degree_neighbour)] < m_order_index[ctx.m_root] ||
             ctx.m_bfs_visited[*(first_second_degree_neighbour)] !=
                 static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET))
         {
@@ -290,7 +301,7 @@ void MotifPreprocessor::emit_depth_1_2_2_for_first_vertex(
         for (auto first_second_degree_neighbour = depth_two.m_rev_begin;
              first_second_degree_neighbour != depth_two.m_rev_end; ++first_second_degree_neighbour)
         {
-            if (ctx.m_ignore_vertices[*(first_second_degree_neighbour)] ||
+            if (m_order_index[*(first_second_degree_neighbour)] < m_order_index[ctx.m_root] ||
                 (ctx.m_bfs_visited[*(first_second_degree_neighbour)] !=
                  static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET)) ||
                 ctx.m_adjacency_matrix[(*first_neighbour)][*(first_second_degree_neighbour)])
@@ -314,7 +325,7 @@ void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(
         for (auto second_second_degree_neighbour = second_neighbour + 1;
              second_second_degree_neighbour != depth_two.m_end; ++second_second_degree_neighbour)
         {
-            if (ctx.m_ignore_vertices[*(second_second_degree_neighbour)] ||
+            if (m_order_index[*(second_second_degree_neighbour)] < m_order_index[ctx.m_root] ||
                 (ctx.m_bfs_visited[*(second_second_degree_neighbour)] !=
                  static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET)))
             {
@@ -333,7 +344,7 @@ void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(
         for (; second_second_degree_neighbour != depth_two.m_rev_end;
              ++second_second_degree_neighbour)
         {
-            if (ctx.m_ignore_vertices[*(second_second_degree_neighbour)] ||
+            if (m_order_index[*(second_second_degree_neighbour)] < m_order_index[ctx.m_root] ||
                 (ctx.m_bfs_visited[*(second_second_degree_neighbour)] !=
                  static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET)) ||
                 ctx.m_adjacency_matrix[*(first_neighbour)][*(second_second_degree_neighbour)])
@@ -367,7 +378,7 @@ void MotifPreprocessor::emit_depth_1_1_2_and_1_2_2_groups(KavoshContext& ctx,
 {
     for (auto first = depth_one.m_begin; first != depth_one.m_end; ++first)
     {
-        if (ctx.m_ignore_vertices[*first])
+        if (m_order_index[*first] < m_order_index[ctx.m_root])
         {
             continue;
         }
@@ -377,7 +388,8 @@ void MotifPreprocessor::emit_depth_1_1_2_and_1_2_2_groups(KavoshContext& ctx,
     {
         for (auto first = depth_one.m_rev_begin; first != depth_one.m_rev_end; ++first)
         {
-            if (ctx.m_ignore_vertices[*first] || ctx.m_adjacency_matrix[ctx.m_root][*first])
+            if (m_order_index[*first] < m_order_index[ctx.m_root] ||
+                ctx.m_adjacency_matrix[ctx.m_root][*first])
             {
                 continue;
             }
@@ -423,7 +435,7 @@ void MotifPreprocessor::emit_depth_1_2_3_for_second_vertex(KavoshContext& ctx,
     for (auto third_vertex = third_degree.m_begin; third_vertex != third_degree.m_end;
          ++third_vertex)
     {
-        if (ctx.m_ignore_vertices[*third_vertex])
+        if (m_order_index[*third_vertex] < m_order_index[ctx.m_root])
         {
             continue;
         }
@@ -435,7 +447,7 @@ void MotifPreprocessor::emit_depth_1_2_3_for_second_vertex(KavoshContext& ctx,
         for (auto third_vertex = third_degree.m_rev_begin; third_vertex != third_degree.m_rev_end;
              ++third_vertex)
         {
-            if (ctx.m_ignore_vertices[*third_vertex] ||
+            if (m_order_index[*third_vertex] < m_order_index[ctx.m_root] ||
                 ctx.m_adjacency_matrix[second_degree_vertex][*third_vertex])
             {
                 continue;
@@ -453,7 +465,7 @@ void MotifPreprocessor::emit_depth_1_2_3_for_first_vertex(KavoshContext& ctx,
     for (auto second_vertex = second_degree.m_begin; second_vertex != second_degree.m_end;
          ++second_vertex)
     {
-        if (ctx.m_ignore_vertices[*second_vertex] ||
+        if (m_order_index[*second_vertex] < m_order_index[ctx.m_root] ||
             ctx.m_bfs_visited[*second_vertex] !=
                 static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET))
         {
@@ -472,7 +484,7 @@ void MotifPreprocessor::emit_depth_1_2_3_for_first_vertex(KavoshContext& ctx,
         for (auto second_vertex = second_degree.m_rev_begin;
              second_vertex != second_degree.m_rev_end; ++second_vertex)
         {
-            if (ctx.m_ignore_vertices[*second_vertex] ||
+            if (m_order_index[*second_vertex] < m_order_index[ctx.m_root] ||
                 ctx.m_bfs_visited[*second_vertex] !=
                     static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET) ||
                 ctx.m_adjacency_matrix[first_degree_vertex][*second_vertex])
@@ -495,7 +507,7 @@ void MotifPreprocessor::emit_depth_1_2_3_groups(KavoshContext& ctx,
 {
     for (auto first_vertex = depth_one.m_begin; first_vertex != depth_one.m_end; ++first_vertex)
     {
-        if (ctx.m_ignore_vertices[*first_vertex])
+        if (m_order_index[*first_vertex] < m_order_index[ctx.m_root])
         {
             continue;
         }
@@ -512,7 +524,7 @@ void MotifPreprocessor::emit_depth_1_2_3_groups(KavoshContext& ctx,
         for (auto first_vertex = depth_one.m_rev_begin; first_vertex != depth_one.m_rev_end;
              ++first_vertex)
         {
-            if (ctx.m_ignore_vertices[*first_vertex] ||
+            if (m_order_index[*first_vertex] < m_order_index[ctx.m_root] ||
                 ctx.m_adjacency_matrix[ctx.m_root][*first_vertex])
             {
                 continue;
@@ -530,8 +542,8 @@ void MotifPreprocessor::emit_depth_1_2_3_groups(KavoshContext& ctx,
 
 void MotifPreprocessor::stream_groups_to_counter_for_vertex(
     const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-    const GroupCounterCallback& count_group, const std::vector<bool>& visited_vertices_to_ignore,
-    std::vector<int64_t>& bfs_visited_vertices, const uint32_t root) const
+    const GroupCounterCallback& count_group, std::vector<int64_t>& bfs_visited_vertices,
+    const uint32_t root) const
 {
     // Pack root into upper bits; low 2 bits encode BFS depth. Stale entries from prior roots
     // are detected by checking the upper bits against the current root.
@@ -545,8 +557,7 @@ void MotifPreprocessor::stream_groups_to_counter_for_vertex(
                                               : std::make_pair(one_fwd.second, one_fwd.second);
     const NeighbourRange depth_one{one_fwd.first, one_fwd.second, one_rev.first, one_rev.second};
 
-    KavoshContext ctx{graph_adjacency_matrix, count_group, visited_vertices_to_ignore,
-                      bfs_visited_vertices,   run_id,      root};
+    KavoshContext ctx{graph_adjacency_matrix, count_group, bfs_visited_vertices, run_id, root};
     mark_depth_one_neighbours(ctx, depth_one);
     emit_depth_1_1_1_groups(ctx, depth_one);
     emit_depth_1_1_2_and_1_2_2_groups(ctx, depth_one);
