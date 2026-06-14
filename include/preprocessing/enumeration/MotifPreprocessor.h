@@ -34,7 +34,7 @@ public:
      * @param logger Logger handler for status and debug output.
      * @param thread_number Maximum number of threads to use during enumeration.
      */
-    MotifPreprocessor(const ColoredGraph& graph, LoggerHandler logger, uint32_t thread_number = 1U);
+    MotifPreprocessor(const ColoredGraph& graph, LoggerHandler logger, uint32_t thread_number = 10U);
 
     MotifPreprocessor() = delete;
     MotifPreprocessor(const MotifPreprocessor&) = delete;

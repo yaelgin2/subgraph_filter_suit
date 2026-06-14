@@ -61,7 +61,7 @@ public:
      * @param thread_number Maximum number of threads to use during enumeration.
      */
     GroupEnumerationPreprocessor(const ColoredGraph& graph, LoggerHandler logger,
-                                 uint32_t thread_number = 1U);
+                                 uint32_t thread_number = 10U);
 
     GroupEnumerationPreprocessor() = delete;
     GroupEnumerationPreprocessor(const GroupEnumerationPreprocessor&) = delete;

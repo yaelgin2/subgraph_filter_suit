@@ -63,7 +63,7 @@ struct PatternFinderCliArgs
     bool m_is_directed{false};     ///< Treat graphs as directed.
     GraphReaderType m_reader_type{GraphReaderType::GRAPHML};  ///< Graph file format.
     std::string m_log_file_path;                              ///< Optional log file path.
-    uint32_t m_thread_number{1U};                             ///< Maximum threads for preprocessing.
+    uint32_t m_thread_number{10U};                            ///< Maximum threads for preprocessing.
     PatternPreprocessArgs m_preprocess{};                     ///< Preprocessing-stage arguments.
     PatternFilterArgs m_filter{};                             ///< Filter-stage arguments.
 };

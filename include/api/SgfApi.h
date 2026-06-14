@@ -32,7 +32,7 @@ struct EnumerateLibraryParams
     bool m_preprocess_motifs{false};        ///< Enumerate motif signatures.
     bool m_preprocess_paths{false};         ///< Enumerate path signatures.
     bool m_is_directed{false};              ///< Treat graphs as directed.
-    uint32_t m_thread_number{1U};           ///< Maximum threads for preprocessing.
+    uint32_t m_thread_number{10U};           ///< Maximum threads for preprocessing.
     std::optional<std::string> m_log_file;  ///< Log file path; absent = no logging.
 };
 
@@ -69,7 +69,7 @@ struct FilterWithEnumerationParams
     std::optional<std::string> m_path_cache_file;   ///< Required when m_filter_paths is true.
     bool m_is_directed{false};                      ///< Treat graphs as directed.
     bool m_non_induced{false};  ///< Expand motif counts via inclusion DAG (non-induced).
-    uint32_t m_thread_number{1U};                  ///< Maximum threads for preprocessing.
+    uint32_t m_thread_number{10U};                  ///< Maximum threads for preprocessing.
     std::optional<std::string> m_log_file;         ///< Log file path; absent = no logging.
     GraphEnumerationCacheConfig m_cache_config{};  ///< Query graph enumeration caching options.
 };
@@ -117,7 +117,7 @@ struct PreprocessPatternsParams
     uint32_t m_preprocess_multigraph{0U};       ///< Number of multigraph patterns; 0 = disabled.
     double m_multigraph_alive_percent{
         DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs pattern must appear in.
-    uint32_t m_thread_number{1U};           ///< Maximum threads for preprocessing.
+    uint32_t m_thread_number{10U};           ///< Maximum threads for preprocessing.
 };
 
 /**

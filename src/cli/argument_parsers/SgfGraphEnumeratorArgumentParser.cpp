@@ -53,8 +53,8 @@ po::options_description SgfGraphEnumeratorArgumentParser::build_options()
     common_desc.add_options()(KEY_IS_DIRECTED, po::bool_switch(), "Treat graphs as directed")(
         KEY_NON_INDUCED, po::bool_switch(),
         "Expand induced motif counts via inclusion DAG before filtering")(
-        KEY_THREAD_NUMBER, po::value<std::string>()->default_value("1"),
-        "Maximum number of threads to use during preprocessing (default: 1)")(
+        KEY_THREAD_NUMBER, po::value<std::string>()->default_value("10"),
+        "Maximum number of threads to use during preprocessing (default: 10)")(
         KEY_CACHE_TYPE, po::value<std::string>(), "Cache format: binary, csv")(
         KEY_LOG_FILE_PATH, po::value<std::string>(), "(optional) Log file path");
 

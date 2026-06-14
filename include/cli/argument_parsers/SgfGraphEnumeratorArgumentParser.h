@@ -53,7 +53,7 @@ struct CliArgs
     bool m_use_paths{false};          ///< Enable path-based processing.
     bool m_is_directed{false};        ///< Treat graphs as directed.
     bool m_non_induced{false};        ///< Expand induced motif counts via DAG before filtering.
-    uint32_t m_thread_number{1U};     ///< Maximum number of threads for preprocessing.
+    uint32_t m_thread_number{10U};    ///< Maximum number of threads for preprocessing.
     PreprocessArgs m_preprocess{};    ///< Preprocessing-stage arguments.
     FilterArgs m_filter{};            ///< Filter-stage arguments.
 };
