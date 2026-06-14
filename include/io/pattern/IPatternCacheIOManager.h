@@ -64,13 +64,14 @@ public:
      * the BoostGraph using the supplied IPatternWriter and records the covering
      * graph index set in the mapping file.
      *
-     * @param patterns  Mined patterns with their covering library graph indices.
-     * @param timestamp Unique run identifier appended to every output filename.
-     * @param writer    Writer used to serialize each pattern graph.
+     * @param patterns    Mined patterns with their covering library graph indices.
+     * @param timestamp   Unique run identifier appended to every output filename.
+     * @param writer      Writer used to serialize each pattern graph.
+     * @param is_directed When false, reverse edges of undirected pairs are skipped on write.
      * @throws SgfPathExistsException if any file cannot be opened or written.
      */
     void write(const PatternOutput& patterns, const std::string& timestamp,
-               const std::shared_ptr<IPatternWriter>& writer) const;
+               const std::shared_ptr<IPatternWriter>& writer, bool is_directed) const;
 
     /**
      * @brief Reads the pattern→graph-index mapping from a mapping file.
@@ -116,9 +117,6 @@ private:
     [[nodiscard]] std::string build_pattern_full_path(uint32_t index, const std::string& timestamp,
                                                       const IPatternWriter& writer) const;
     [[nodiscard]] std::string build_mapping_path(const std::string& timestamp) const;
-    void write_single_pattern(const PatternPreprocessorResult& result, uint32_t index,
-                              const std::string& timestamp, const IPatternWriter& writer,
-                              PatternMapping& mapping) const;
 };
 
 }  // namespace sgf

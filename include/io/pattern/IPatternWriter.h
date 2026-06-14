@@ -39,13 +39,16 @@ public:
      * Directory creation is delegated to IOUtils::create_directory_if_needed;
      * format-specific serialization is delegated to do_write().
      *
-     * @param graph  The pattern graph to serialize.
-     * @param path   Destination file path.
-     * @param logger Optional logger for diagnostics.
+     * @param graph       The pattern graph to serialize.
+     * @param path        Destination file path.
+     * @param logger      Optional logger for diagnostics.
+     * @param is_directed When false, each undirected edge is stored as both u→v and
+     *                    v→u in the BoostGraph; only one direction is written to avoid
+     *                    duplicates on read-back. When true, all edges are written as-is.
      * @throws SgfPathExistsException if directory creation or file writing fails.
      */
     void write(const BoostGraph& graph, const std::string& path,
-               const LoggerHandler& logger = LoggerHandler::null()) const;
+               const LoggerHandler& logger = LoggerHandler::null(), bool is_directed = true) const;
 
     /**
      * @brief Returns the file extension this writer appends, without a leading dot.
@@ -64,11 +67,13 @@ private:
      *
      * Called by write() after the parent directory has been created.
      *
-     * @param graph The pattern graph to serialize.
-     * @param path Destination file path.
+     * @param graph       The pattern graph to serialize.
+     * @param path        Destination file path.
+     * @param is_directed When false, skip the reverse of each bidirectional edge pair.
      * @throws SgfPathExistsException if the file cannot be opened or written.
      */
-    virtual void do_write(const BoostGraph& graph, const std::string& path) const = 0;
+    virtual void do_write(const BoostGraph& graph, const std::string& path,
+                          bool is_directed) const = 0;
 };
 
 }  // namespace sgf

@@ -409,6 +409,25 @@ run_test "pattern-finder preprocess: negative vertex ID in vertex-edge" 3 \
     --library-input-folder "$TMP/pf_lib_neg_ve" \
     --output-folder "$TMP/pf_out_neg_ve" --pattern-output-type graphml
 
+# multigraph preprocess smoke test
+mkdir -p "$TMP/pf_lib_mg" "$TMP/pf_out_mg"
+cp "$GRAPHML/triangle_same_vertex_color_undirected.graphml" "$TMP/pf_lib_mg/g0.graphml"
+cp "$GRAPHML/triangle_diff_vertex_colors_undirected.graphml" "$TMP/pf_lib_mg/g1.graphml"
+run_test "pattern-finder preprocess: multigraph mode succeeds" 0 \
+    "$BUILD/sgf-pattern-finder" \
+    --preprocess --reader-type graphml \
+    --library-input-folder "$TMP/pf_lib_mg" \
+    --output-folder "$TMP/pf_out_mg" --pattern-output-type graphml \
+    --preprocess-multigraph 1 --multigraph-alive-percent 0.5
+
+EXPECT_OUTPUT="multigraph-alive-percent"
+run_test "pattern-finder preprocess: multigraph alive-percent out of range" 2 \
+    "$BUILD/sgf-pattern-finder" \
+    --preprocess --reader-type graphml \
+    --library-input-folder "$TMP/pf_lib_mg" \
+    --output-folder "$TMP/pf_out_mg" --pattern-output-type graphml \
+    --preprocess-multigraph 1 --multigraph-alive-percent 0.0
+
 # ── sgf-pattern-finder --filter ──────────────────────────────────────────────
 
 echo ""

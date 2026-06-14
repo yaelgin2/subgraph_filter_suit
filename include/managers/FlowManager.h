@@ -134,7 +134,8 @@ public:
         bool preprocess_singlegraph_results_file, const std::string& results_file_path,
         int64_t preprocess_singlegraph, ResultOutputType results_file_type,
         const std::string& background_graph_path, double score_threshold,
-        const SingleGraphFinderConfig& config);
+        const SingleGraphFinderConfig& config, uint32_t preprocess_multigraph,
+        double multigraph_alive_percent);
 
     /// @brief Run the pattern filter stage.
     static std::vector<std::unordered_map<std::string, FilterResult>>

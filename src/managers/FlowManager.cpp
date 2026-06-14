@@ -28,6 +28,7 @@
 #include "MatchOutputWriter.h"
 #include "MotifDagExpander.h"
 #include "MotifPreprocessor.h"
+#include "MultiGraphPatternPreprocessor.h"
 #include "PathProcessor.h"
 #include "PatternGraphFilter.h"
 #include "PatternPreprocessManager.h"
@@ -290,7 +291,8 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const bool preprocess_singlegraph_results_file, const std::string& results_file_path,
     const int64_t preprocess_singlegraph, const ResultOutputType results_file_type,
     const std::string& background_graph_path, const double score_threshold,
-    const SingleGraphFinderConfig& config)
+    const SingleGraphFinderConfig& config, const uint32_t preprocess_multigraph,
+    const double multigraph_alive_percent)
 {
     std::vector<PatternPreprocessorResult> result;
     const LoggerBundle log_bundle(log_file_path);
@@ -299,6 +301,21 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const std::shared_ptr<IPatternWriter> pattern_writer = make_pattern_writer(output_type);
     const std::string timestamp = generate_timestamp();
     PatternPreprocessManager preprocess_manager(library.m_library, log_bundle.handler());
+    if (preprocess_multigraph > 0U)
+    {
+        const PatternOutput multigraph_results = preprocess_manager.preprocess(
+            [preprocess_multigraph, multigraph_alive_percent,
+             is_directed](std::vector<ColoredGraph>& library_ref,
+                          LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
+            {
+                return std::make_unique<MultiGraphPatternPreprocessor>(
+                    library_ref, is_directed, preprocess_multigraph, multigraph_alive_percent,
+                    std::move(logger));
+            });
+        result.insert(result.end(), multigraph_results.begin(), multigraph_results.end());
+        const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
+        cache_manager.write(multigraph_results, timestamp, pattern_writer, is_directed);
+    }
     const bool need_background =
         preprocess_singlegraph != -1 || preprocess_singlegraph_results_file;
     std::optional<ColoredGraph> background_graph_opt;
@@ -324,7 +341,7 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
             });
         result.insert(result.end(), single_graph_results.begin(), single_graph_results.end());
         const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(single_graph_results, timestamp, pattern_writer);
+        cache_manager.write(single_graph_results, timestamp, pattern_writer, is_directed);
     }
     if (preprocess_singlegraph_results_file && background_graph_opt.has_value())
     {
@@ -345,7 +362,7 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
                     std::move(logger));
             });
         const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(single_graph_results, timestamp, pattern_writer);
+        cache_manager.write(single_graph_results, timestamp, pattern_writer, is_directed);
         result.insert(result.end(), single_graph_results.begin(), single_graph_results.end());
     }
     return result;
@@ -532,9 +549,11 @@ LibraryData FlowManager::load_library(const std::string& path, const GraphReader
                                 : all_files;
     library.m_library.reserve(library.m_graph_names.size());
     std::unique_ptr<IColoredGraphReader> reader = make_graph_reader(reader_type);
-    for (const std::string& graph_name : library.m_graph_names)
+    for (uint32_t idx = 0U; idx < static_cast<uint32_t>(library.m_graph_names.size()); ++idx)
     {
-        library.m_library.push_back(reader->read(graph_name, is_directed, logger));
+        logger.log(LogLevel::INFO,
+                   "[load] index=" + std::to_string(idx) + " file=" + library.m_graph_names[idx]);
+        library.m_library.push_back(reader->read(library.m_graph_names[idx], is_directed, logger));
     }
     return library;
 }

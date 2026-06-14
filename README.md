@@ -39,6 +39,24 @@ This produces three executables in `build/`:
 
 > **Note on `--config Release` vs `-DCMAKE_BUILD_TYPE=Release`:** Single-config generators (Unix Makefiles, Ninja) read the build type from `-DCMAKE_BUILD_TYPE` at configure time. Multi-config generators (Visual Studio, Xcode) read it from `--config` at build time. Passing both ensures a Release build on every platform.
 
+> **Note on `--config Release` vs `-DCMAKE_BUILD_TYPE=Release`:** CMake has two generator families.
+> Single-config generators (Unix Makefiles, Ninja — typical on Linux/macOS) read the build type
+> from `-DCMAKE_BUILD_TYPE` at configure time and ignore `--config` at build time.
+> Multi-config generators (Visual Studio, Xcode — typical on Windows/macOS) ignore
+> `-DCMAKE_BUILD_TYPE` and read the build type from `--config` at build time.
+> Passing both, as shown above, ensures a Release build on every platform.
+
+### Building with Ninja
+
+Ninja is a faster alternative to the default Make generator. Install it (`apt install ninja-build` / `brew install ninja` / `conda install ninja`) then pass `-G Ninja` at configure time:
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+Ninja automatically parallelises the build — no `--parallel` flag needed. On large machines this can significantly cut build times compared to Make.
+
 ### Compiler/Boost ABI mismatch
 
 If you see linker errors like `undefined reference to GLIBCXX_*`, your compiler and Boost installation were built against different C++ standard library ABIs. Fix by pointing CMake at the compiler that built Boost:
@@ -193,6 +211,8 @@ Extracts pattern subgraphs from a graph library and filters query graphs against
 | `--results-file-type` | `json` \| `csv` | `json` | Format of the results file. |
 | `--background-graph-path` | string | — | *(optional)* Path to background graph for pattern scoring. Required when `--preprocess-single-graph` is set. |
 | `--score-threshold` | float | `0.0` | Pattern score cutoff; beam search stops below this value. |
+| `--preprocess-multigraph` | integer | `0` | Number of multigraph patterns to extract across the library; `0` disables multigraph mode. |
+| `--multigraph-alive-percent` | float | `0.5` | Fraction of library graphs a pattern must appear in to be kept (range `(0, 1]`). Required when `--preprocess-multigraph` > 0. |
 
 **SingleGraphFinder config flags** (optional, used with `--preprocess`):
 

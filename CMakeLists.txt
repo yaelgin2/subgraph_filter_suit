@@ -90,6 +90,10 @@ foreach(_boost_target Boost::graph Boost::log Boost::log_setup Boost::json Boost
     endif()
 endforeach()
 
+# MotifMap.cpp is a large generated file; full DWARF makes debug builds hang.
+# Strip the default -g from Debug flags and replace with -g1 project-wide.
+string(REPLACE "-g" "-g1" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+
 # ── Compiler warnings ─────────────────────────────────────────────────────────
 # -Wno-maybe-uninitialized: GCC 14 emits false-positive maybe-uninitialized
 # warnings inside Boost 1.85 adjacency_list copy_impl / add_edge inlined paths.

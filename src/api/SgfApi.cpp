@@ -112,7 +112,8 @@ std::vector<PatternPreprocessorResult> preprocess_patterns(const PreprocessPatte
         params.m_pattern_type, optional_or_empty(params.m_log_file), use_results_file,
         optional_or_empty(params.m_results_file_path), single_graph_index,
         params.m_results_file_type, optional_or_empty(params.m_background_graph_path),
-        params.m_score_threshold, params.m_finder_config);
+        params.m_score_threshold, params.m_finder_config, params.m_preprocess_multigraph,
+        params.m_multigraph_alive_percent);
 }
 
 std::vector<std::unordered_map<std::string, FilterResult>>

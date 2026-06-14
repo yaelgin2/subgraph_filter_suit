@@ -40,17 +40,26 @@ boost::json::array JsonPatternWriter::build_nodes_array(const BoostGraph& graph)
     return nodes;
 }
 
-boost::json::array JsonPatternWriter::build_links_array(const BoostGraph& graph)
+boost::json::array JsonPatternWriter::build_links_array(const BoostGraph& graph,
+                                                        const bool is_directed)
 {
     boost::json::array links;
 
     for (const auto edge : boost::make_iterator_range(boost::edges(graph)))
     {
+        const auto src = boost::source(edge, graph);
+        const auto tgt = boost::target(edge, graph);
+
+        if (!is_directed && src > tgt && boost::edge(tgt, src, graph).second)
+        {
+            continue;
+        }
+
         boost::json::object link;
 
-        link[IOConstants::JSON_SOURCE_KEY] = static_cast<int64_t>(boost::source(edge, graph));
+        link[IOConstants::JSON_SOURCE_KEY] = static_cast<int64_t>(src);
 
-        link[IOConstants::JSON_TARGET_KEY] = static_cast<int64_t>(boost::target(edge, graph));
+        link[IOConstants::JSON_TARGET_KEY] = static_cast<int64_t>(tgt);
 
         link[IOConstants::JSON_COLOR_KEY] = static_cast<int64_t>(graph[edge].m_color);
 
@@ -72,12 +81,13 @@ void JsonPatternWriter::write_to_file(const boost::json::object& root, const std
     file << boost::json::serialize(root);
 }
 
-void JsonPatternWriter::do_write(const BoostGraph& graph, const std::string& path) const
+void JsonPatternWriter::do_write(const BoostGraph& graph, const std::string& path,
+                                 const bool is_directed) const
 {
     boost::json::object root;
 
     root[IOConstants::JSON_NODES_KEY] = build_nodes_array(graph);
-    root[IOConstants::JSON_LINKS_KEY] = build_links_array(graph);
+    root[IOConstants::JSON_LINKS_KEY] = build_links_array(graph, is_directed);
 
     write_to_file(root, path);
 }
