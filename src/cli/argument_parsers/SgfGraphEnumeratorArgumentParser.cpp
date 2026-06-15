@@ -56,7 +56,9 @@ po::options_description SgfGraphEnumeratorArgumentParser::build_options()
         KEY_THREAD_NUMBER, po::value<std::string>()->default_value("10"),
         "Maximum number of threads to use during preprocessing (default: 10)")(
         KEY_CACHE_TYPE, po::value<std::string>(), "Cache format: binary, csv")(
-        KEY_LOG_FILE_PATH, po::value<std::string>(), "(optional) Log file path");
+        KEY_LOG_FILE_PATH, po::value<std::string>(), "(optional) Log file path")(
+        KEY_GRAPHML_COLOR_MAP_PATH, po::value<std::string>(),
+        "(optional) Path to a GraphML color map CSV to load as initial mapping");
 
     po::options_description all_desc("sgf-graph-enumerator options");
     all_desc.add(mode_desc)
@@ -157,6 +159,8 @@ SgfGraphEnumeratorArgumentParser::parse_preprocess_args(const po::variables_map&
     result.m_reader_type = parse_reader_type(get_required_string(variables_map, KEY_READER_TYPE));
     result.m_cache_type = parse_cache_type(get_required_string(variables_map, KEY_CACHE_TYPE));
     result.m_log_file_path = get_optional_string(variables_map, KEY_LOG_FILE_PATH);
+    result.m_graphml_color_map_path =
+        get_optional_string(variables_map, KEY_GRAPHML_COLOR_MAP_PATH);
     return result;
 }
 
@@ -179,6 +183,8 @@ SgfGraphEnumeratorArgumentParser::parse_filter_args(const po::variables_map& var
         get_optional_string(variables_map, KEY_LOAD_MOTIF_GRAPH_CACHE);
     result.m_load_path_graph_cache_path =
         get_optional_string(variables_map, KEY_LOAD_PATH_GRAPH_CACHE);
+    result.m_graphml_color_map_path =
+        get_optional_string(variables_map, KEY_GRAPHML_COLOR_MAP_PATH);
     return result;
 }
 

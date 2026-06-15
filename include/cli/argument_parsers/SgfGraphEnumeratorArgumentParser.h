@@ -21,6 +21,7 @@ struct PreprocessArgs
     std::string m_cache_dir;                                  ///< Cache library output directory.
     CacheManagerType m_cache_type{CacheManagerType::BINARY};  ///< Cache format.
     std::string m_log_file_path;                              ///< Optional log file path.
+    std::string m_graphml_color_map_path;  ///< Path to initial GraphML color map CSV; empty = none.
 };
 
 /**
@@ -40,6 +41,7 @@ struct FilterArgs
     std::string m_graph_cache_dir;              ///< Directory for enumeration cache.
     std::string m_load_motif_graph_cache_path;  ///< Existing motif cache path; empty = compute.
     std::string m_load_path_graph_cache_path;   ///< Existing path cache path; empty = compute.
+    std::string m_graphml_color_map_path;  ///< Path to initial GraphML color map CSV; empty = none.
 };
 
 /**
@@ -106,6 +108,7 @@ private:
     static constexpr const char* KEY_GRAPH_CACHE_DIR = "graph-cache-dir";
     static constexpr const char* KEY_LOAD_MOTIF_GRAPH_CACHE = "load-motif-graph-cache";
     static constexpr const char* KEY_LOAD_PATH_GRAPH_CACHE = "load-path-graph-cache";
+    static constexpr const char* KEY_GRAPHML_COLOR_MAP_PATH = "graphml-color-map-path";
 
     static constexpr const char* READER_GRAPHML = "graphml";
     static constexpr const char* READER_JSON = "json";

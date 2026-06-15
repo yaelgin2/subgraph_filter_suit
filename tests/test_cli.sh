@@ -603,4 +603,143 @@ else
     FAIL=$((FAIL + 1))
 fi
 
+# ── full pipeline integration (3 graphml graphs) ─────────────────────────────
+
+echo ""
+echo "=== full pipeline integration (3 graphml graphs) ==="
+
+mkdir -p "$TMP/pipe_lib" "$TMP/pipe_lib_cache" "$TMP/pipe_enum_result" \
+         "$TMP/pipe_query" "$TMP/pipe_pf_out" "$TMP/pipe_pf_result" \
+         "$TMP/pipe_lib_cache_with_map" "$TMP/pipe_pf_out_with_map"
+
+# large: 4-cycle n0(alpha)-n1(beta)-n2(alpha)-n3(beta)-n0
+cat > "$TMP/pipe_lib/large.graphml" << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/graphml">
+  <key id="vcolor" for="node" attr.name="color" attr.type="string"><default>0</default></key>
+  <key id="ecolor" for="edge" attr.name="color" attr.type="string"><default>0</default></key>
+  <graph id="G" edgedefault="undirected">
+    <node id="n0"><data key="vcolor">alpha</data></node>
+    <node id="n1"><data key="vcolor">beta</data></node>
+    <node id="n2"><data key="vcolor">alpha</data></node>
+    <node id="n3"><data key="vcolor">beta</data></node>
+    <edge source="n0" target="n1"><data key="ecolor">0</data></edge>
+    <edge source="n1" target="n2"><data key="ecolor">0</data></edge>
+    <edge source="n2" target="n3"><data key="ecolor">0</data></edge>
+    <edge source="n3" target="n0"><data key="ecolor">0</data></edge>
+  </graph>
+</graphml>
+EOF
+
+# small_in_large: single edge alpha-beta (subgraph of large)
+cat > "$TMP/pipe_query/small_in_large.graphml" << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/graphml">
+  <key id="vcolor" for="node" attr.name="color" attr.type="string"><default>0</default></key>
+  <key id="ecolor" for="edge" attr.name="color" attr.type="string"><default>0</default></key>
+  <graph id="G" edgedefault="undirected">
+    <node id="n0"><data key="vcolor">alpha</data></node>
+    <node id="n1"><data key="vcolor">beta</data></node>
+    <edge source="n0" target="n1"><data key="ecolor">0</data></edge>
+  </graph>
+</graphml>
+EOF
+
+# small_not_in_large: triangle of gamma (color absent from large)
+cat > "$TMP/pipe_query/small_not_in_large.graphml" << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/graphml">
+  <key id="vcolor" for="node" attr.name="color" attr.type="string"><default>0</default></key>
+  <key id="ecolor" for="edge" attr.name="color" attr.type="string"><default>0</default></key>
+  <graph id="G" edgedefault="undirected">
+    <node id="n0"><data key="vcolor">gamma</data></node>
+    <node id="n1"><data key="vcolor">gamma</data></node>
+    <node id="n2"><data key="vcolor">gamma</data></node>
+    <edge source="n0" target="n1"><data key="ecolor">0</data></edge>
+    <edge source="n1" target="n2"><data key="ecolor">0</data></edge>
+    <edge source="n2" target="n0"><data key="ecolor">0</data></edge>
+  </graph>
+</graphml>
+EOF
+
+# graph searcher: small_in_large in large (4 undirected edge-maps)
+EXPECT_OUTPUT="Matches found: 4"
+run_test "pipeline: small_in_large found in large (4 matches)" 0 \
+    "$BUILD/sgf-graph-searcher" \
+    --subgraph-path "$TMP/pipe_query/small_in_large.graphml" \
+    --background-path "$TMP/pipe_lib/large.graphml" \
+    --reader-type graphml --prior-policy subgraph-degree
+
+# graph searcher: small_not_in_large in large (no gamma in large → 0)
+EXPECT_OUTPUT="Matches found: 0"
+run_test "pipeline: small_not_in_large not found in large" 0 \
+    "$BUILD/sgf-graph-searcher" \
+    --subgraph-path "$TMP/pipe_query/small_not_in_large.graphml" \
+    --background-path "$TMP/pipe_lib/large.graphml" \
+    --reader-type graphml --prior-policy subgraph-degree
+
+# enumerator: preprocess library into motif cache
+run_test "pipeline: enumerator preprocess motifs" 0 \
+    "$BUILD/sgf-graph-enumerator" \
+    --preprocess --motifs --reader-type graphml \
+    --library-dir "$TMP/pipe_lib" \
+    --cache-dir "$TMP/pipe_lib_cache" --cache-type binary
+
+PIPE_MOTIF_CACHE=$(find "$TMP/pipe_lib_cache" -name "motif_cache_*" 2>/dev/null | head -1)
+
+# enumerator: filter query graphs against motif cache
+run_test "pipeline: enumerator filter motifs (query dir)" 0 \
+    "$BUILD/sgf-graph-enumerator" \
+    --filter --motifs --graph-input-type graphml \
+    --graph-dir "$TMP/pipe_query" \
+    --motif-cache-file "$PIPE_MOTIF_CACHE" \
+    --cache-type binary \
+    --result-folder "$TMP/pipe_enum_result" --result-type json
+
+# pattern-finder: multigraph preprocess on library
+run_test "pipeline: pattern-finder preprocess multigraph" 0 \
+    "$BUILD/sgf-pattern-finder" \
+    --preprocess --reader-type graphml \
+    --library-input-folder "$TMP/pipe_lib" \
+    --output-folder "$TMP/pipe_pf_out" --pattern-output-type graphml \
+    --preprocess-multigraph 1 --multigraph-alive-percent 0.5
+
+PIPE_PATTERN_CACHE=$(find "$TMP/pipe_pf_out" -name "*.csv" 2>/dev/null | head -1)
+
+# pattern-finder: filter a single background graph against pattern cache
+run_test "pipeline: pattern-finder filter (small_in_large as background)" 0 \
+    "$BUILD/sgf-pattern-finder" \
+    --filter --reader-type graphml \
+    --pattern-mapping-cache "$PIPE_PATTERN_CACHE" \
+    --pattern-type graphml \
+    --background-graph-folder "$TMP/pipe_query/small_in_large.graphml" \
+    --output-path "$TMP/pipe_pf_result" --output-type json \
+    --prior-policy subgraph-degree
+
+# color map: preprocess with initial map → verify saved map
+printf "color_label,color_id\nalpha,0\nbeta,1\n" > "$TMP/pipe_color_map.csv"
+
+run_test "pipeline: enumerator preprocess with --graphml-color-map-path" 0 \
+    "$BUILD/sgf-graph-enumerator" \
+    --preprocess --motifs --reader-type graphml \
+    --library-dir "$TMP/pipe_lib" \
+    --cache-dir "$TMP/pipe_lib_cache_with_map" --cache-type binary \
+    --graphml-color-map-path "$TMP/pipe_color_map.csv"
+
+if find "$TMP/pipe_lib_cache_with_map" -name "color_map_*.csv" 2>/dev/null | grep -q .; then
+    echo "PASS  pipeline: color map CSV saved after preprocess"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL  pipeline: color map CSV not found in cache dir after preprocess"
+    FAIL=$((FAIL + 1))
+fi
+
+run_test "pipeline: pattern-finder preprocess with --graphml-color-map-path" 0 \
+    "$BUILD/sgf-pattern-finder" \
+    --preprocess --reader-type graphml \
+    --library-input-folder "$TMP/pipe_lib" \
+    --output-folder "$TMP/pipe_pf_out_with_map" --pattern-output-type graphml \
+    --preprocess-multigraph 1 --multigraph-alive-percent 0.5 \
+    --graphml-color-map-path "$TMP/pipe_color_map.csv"
+
 [ "$FAIL" -eq 0 ]

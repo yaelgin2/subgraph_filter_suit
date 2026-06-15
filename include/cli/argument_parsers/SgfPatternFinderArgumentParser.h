@@ -37,6 +37,7 @@ struct PatternPreprocessArgs
     double m_multigraph_alive_percent{
         DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs a pattern must appear
                                             ///< in.
+    std::string m_graphml_color_map_path;  ///< Path to initial GraphML color map CSV; empty = none.
 };
 
 /**
@@ -114,6 +115,7 @@ private:
     static constexpr const char* KEY_SCORE_THRESHOLD = "score-threshold";
     static constexpr const char* KEY_PREPROCESS_MULTIGRAPH = "preprocess-multigraph";
     static constexpr const char* KEY_MULTIGRAPH_ALIVE_PERCENT = "multigraph-alive-percent";
+    static constexpr const char* KEY_GRAPHML_COLOR_MAP_PATH = "graphml-color-map-path";
     static constexpr const char* KEY_MAX_ACTIVE_PATTERNS = "max-active-patterns";
     static constexpr const char* KEY_ALPHA_0 = "alpha-0";
     static constexpr const char* KEY_ALPHA_DECAY = "alpha-decay";

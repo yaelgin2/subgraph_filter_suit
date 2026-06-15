@@ -91,7 +91,9 @@ po::options_description SgfPatternFinderArgumentParser::build_preprocess_options
         KEY_PREPROCESS_MULTIGRAPH, po::value<std::string>()->default_value("0"),
         "Number of multigraph patterns to extract; 0 disables multigraph mode (default: 0)")(
         KEY_MULTIGRAPH_ALIVE_PERCENT, po::value<std::string>()->default_value("0.5"),
-        "Fraction of library graphs a pattern must appear in, in (0, 1] (default: 0.5)");
+        "Fraction of library graphs a pattern must appear in, in (0, 1] (default: 0.5)")(
+        KEY_GRAPHML_COLOR_MAP_PATH, po::value<std::string>(),
+        "(optional) Path to a GraphML color map CSV to load as initial mapping");
     return desc;
 }
 
@@ -103,7 +105,7 @@ po::options_description SgfPatternFinderArgumentParser::build_filter_options()
         KEY_PATTERN_TYPE, po::value<std::string>(),
         "Pattern cache file format: graphml, json, vertex-edge")(
         KEY_BACKGROUND_GRAPH_FOLDER, po::value<std::string>(),
-        "Path to the background graph used during filtering")(
+        "Path to a background graph file or directory of background graphs used during filtering")(
         KEY_OUTPUT_PATH, po::value<std::string>(), "Directory where filter results are written")(
         KEY_OUTPUT_TYPE, po::value<std::string>(), "Filter results format: json, csv")(
         KEY_PRIOR_POLICY, po::value<std::string>(),
@@ -199,6 +201,8 @@ SgfPatternFinderArgumentParser::parse_preprocess_args(const po::variables_map& v
     result.m_multigraph_alive_percent =
         parse_double_value(variables_map.at(KEY_MULTIGRAPH_ALIVE_PERCENT).as<std::string>(),
                            KEY_MULTIGRAPH_ALIVE_PERCENT);
+    result.m_graphml_color_map_path =
+        get_optional_string(variables_map, KEY_GRAPHML_COLOR_MAP_PATH);
     return result;
 }
 

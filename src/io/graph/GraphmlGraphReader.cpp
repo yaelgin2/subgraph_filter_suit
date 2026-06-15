@@ -23,6 +23,16 @@
 namespace sgf
 {
 
+GraphmlGraphReader::GraphmlGraphReader(std::map<std::string, uint32_t> initial_color_map)
+    : m_color_map(std::move(initial_color_map))
+{
+}
+
+const std::map<std::string, uint32_t>& GraphmlGraphReader::get_color_map() const
+{
+    return m_color_map;
+}
+
 template <typename GraphType>
 void GraphmlGraphReader::read_graphml_from_file_into_boost_graph(const std::string& path,
                                                                  GraphType& boost_graph)

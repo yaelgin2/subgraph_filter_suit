@@ -34,6 +34,7 @@ struct EnumerateLibraryParams
     bool m_is_directed{false};              ///< Treat graphs as directed.
     uint32_t m_thread_number{10U};           ///< Maximum threads for preprocessing.
     std::optional<std::string> m_log_file;  ///< Log file path; absent = no logging.
+    std::optional<std::string> m_graphml_color_map_path;  ///< GraphML color map CSV; absent = none.
 };
 
 /**
@@ -72,6 +73,7 @@ struct FilterWithEnumerationParams
     uint32_t m_thread_number{10U};                  ///< Maximum threads for preprocessing.
     std::optional<std::string> m_log_file;         ///< Log file path; absent = no logging.
     GraphEnumerationCacheConfig m_cache_config{};  ///< Query graph enumeration caching options.
+    std::optional<std::string> m_graphml_color_map_path;  ///< GraphML color map CSV; absent = none.
 };
 
 /**
@@ -118,6 +120,7 @@ struct PreprocessPatternsParams
     double m_multigraph_alive_percent{
         DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs pattern must appear in.
     uint32_t m_thread_number{10U};           ///< Maximum threads for preprocessing.
+    std::optional<std::string> m_graphml_color_map_path;  ///< GraphML color map CSV; absent = none.
 };
 
 /**

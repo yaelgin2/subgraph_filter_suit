@@ -25,7 +25,7 @@ void run_preprocess(const PatternFinderCliArgs& args)
         args.m_preprocess.m_results_file_type, args.m_preprocess.m_background_graph_path,
         args.m_preprocess.m_score_threshold, args.m_preprocess.m_config,
         args.m_preprocess.m_preprocess_multigraph, args.m_preprocess.m_multigraph_alive_percent,
-        args.m_thread_number);
+        args.m_thread_number, args.m_preprocess.m_graphml_color_map_path);
 }
 
 /**

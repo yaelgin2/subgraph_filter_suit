@@ -61,7 +61,8 @@ std::vector<EnumerationResultVector> enumerate_library(const EnumerateLibraryPar
     return FlowManager::enumerator_preprocess_run(
         params.m_library_path, params.m_is_directed, params.m_reader_type, output_path,
         params.m_cache_type, optional_or_empty(params.m_log_file), params.m_preprocess_paths,
-        params.m_preprocess_motifs, params.m_thread_number);
+        params.m_preprocess_motifs, params.m_thread_number,
+        optional_or_empty(params.m_graphml_color_map_path));
 }
 
 std::vector<std::unordered_map<std::string, FilterResult>>
@@ -101,7 +102,8 @@ filter_with_enumeration(const FilterWithEnumerationParams& params)
         optional_or_empty(params.m_motif_cache_file), optional_or_empty(params.m_path_cache_file),
         params.m_cache_type, output_folder, params.m_result_type,
         optional_or_empty(params.m_log_file), params.m_filter_paths, params.m_filter_motifs,
-        params.m_cache_config, params.m_non_induced, params.m_thread_number);
+        params.m_cache_config, params.m_non_induced, params.m_thread_number,
+        optional_or_empty(params.m_graphml_color_map_path));
 }
 
 std::vector<PatternPreprocessorResult> preprocess_patterns(const PreprocessPatternsParams& params)
@@ -147,7 +149,8 @@ std::vector<PatternPreprocessorResult> preprocess_patterns(const PreprocessPatte
         optional_or_empty(params.m_results_file_path), single_graph_index,
         params.m_results_file_type, optional_or_empty(params.m_background_graph_path),
         params.m_score_threshold, params.m_finder_config, params.m_preprocess_multigraph,
-        params.m_multigraph_alive_percent, params.m_thread_number);
+        params.m_multigraph_alive_percent, params.m_thread_number,
+        optional_or_empty(params.m_graphml_color_map_path));
 }
 
 std::vector<std::unordered_map<std::string, FilterResult>>

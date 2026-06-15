@@ -81,7 +81,7 @@ public:
      * @throws InvalidArgumentException if background_graph has no vertices.
      */
     explicit SingleGraphPatternFinder(
-        ColoredGraph background_graph, uint32_t color_count, bool is_directed,
+        const ColoredGraph& background_graph, uint32_t color_count, bool is_directed,
         uint32_t max_active_patterns = DEFAULT_MAX_ACTIVE_PATTERNS, double alpha_0 = 1.0,
         double alpha_decay = DEFAULT_ALPHA_DECAY,
         LoggerHandler logger = LoggerHandler(std::weak_ptr<ILogger>{}));
@@ -145,7 +145,6 @@ private:
 
     // ── Persistent state (set at construction) ────────────────────────────────
 
-    ColoredGraph m_background_graph;  ///< Pre-remapped background graph G.
     bool m_is_directed;
     double m_background_density;      ///< Edge density of G, precomputed at construction.
     uint32_t m_max_active_patterns;
