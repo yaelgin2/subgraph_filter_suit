@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <exception>
 #include <iterator>
 #include <string>
 #include <thread>
@@ -32,31 +33,47 @@ EnumerationResult PathProcessor::stream_groups_to_counter(
 
     std::atomic<uint32_t> next_idx{0U};
     std::vector<EnumerationResult> local_maps(thread_count);
+    std::vector<std::exception_ptr> thread_exceptions(thread_count);
     std::vector<std::thread> threads;
     threads.reserve(thread_count);
 
     for (uint32_t thread_idx = 0U; thread_idx < thread_count; ++thread_idx)
     {
         EnumerationResult& local_map = local_maps[thread_idx];
+        std::exception_ptr& thread_exception = thread_exceptions[thread_idx];
         threads.emplace_back(
             [&]()
             {
-                const GroupCounterCallback count_group =
-                    [this, &local_map](const uint32_t desc, const std::vector<uint32_t>& group)
+                try
                 {
-                    local_map[calculate_motif_number(desc, group_to_node_colors(group))] += 1U;
-                };
-                uint32_t idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
-                while (idx < order_size)
+                    const GroupCounterCallback count_group =
+                        [this, &local_map](const uint32_t desc, const std::vector<uint32_t>& group)
+                    {
+                        local_map[calculate_motif_number(desc, group_to_node_colors(group))] += 1U;
+                    };
+                    uint32_t idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
+                    while (idx < order_size)
+                    {
+                        stream_groups_to_counter_for_vertex(count_group, m_node_order[idx]);
+                        idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
+                    }
+                }
+                catch (...)
                 {
-                    stream_groups_to_counter_for_vertex(count_group, m_node_order[idx]);
-                    idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
+                    thread_exception = std::current_exception();
                 }
             });
     }
     for (std::thread& thread : threads)
     {
         thread.join();
+    }
+    for (const std::exception_ptr& ex : thread_exceptions)
+    {
+        if (ex)
+        {
+            std::rethrow_exception(ex);
+        }
     }
 
     EnumerationResult merged;

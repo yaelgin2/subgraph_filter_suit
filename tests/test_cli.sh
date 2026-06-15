@@ -508,4 +508,99 @@ run_test "pattern-finder filter: nonexistent --background-graph-folder" 4 \
     --output-path "$TMP/pf_filter_out" --output-type json \
     --prior-policy subgraph-degree-squared
 
+# ── --thread-number flag ──────────────────────────────────────────────────────
+
+echo ""
+echo "=== --thread-number flag ==="
+
+# invalid values rejected before any I/O
+EXPECT_OUTPUT="thread-number"
+run_test "enumerator: --thread-number 0 rejected" 2 \
+    "$BUILD/sgf-graph-enumerator" \
+    --preprocess --motifs \
+    --library-dir "$TMP/lib_empty" --reader-type graphml \
+    --cache-dir "$TMP/cache" --cache-type csv \
+    --thread-number 0
+
+EXPECT_OUTPUT="thread-number"
+run_test "enumerator: --thread-number non-numeric rejected" 2 \
+    "$BUILD/sgf-graph-enumerator" \
+    --preprocess --motifs \
+    --library-dir "$TMP/lib_empty" --reader-type graphml \
+    --cache-dir "$TMP/cache" --cache-type csv \
+    --thread-number abc
+
+EXPECT_OUTPUT="thread-number"
+run_test "pattern-finder: --thread-number 0 rejected" 2 \
+    "$BUILD/sgf-pattern-finder" \
+    --preprocess --reader-type graphml \
+    --library-input-folder "$TMP/pf_lib_empty" \
+    --output-folder "$TMP/pf_out_empty" --pattern-output-type graphml \
+    --thread-number 0
+
+EXPECT_OUTPUT="thread-number"
+run_test "pattern-finder: --thread-number non-numeric rejected" 2 \
+    "$BUILD/sgf-pattern-finder" \
+    --preprocess --reader-type graphml \
+    --library-input-folder "$TMP/pf_lib_empty" \
+    --output-folder "$TMP/pf_out_empty" --pattern-output-type graphml \
+    --thread-number abc
+
+# correctness: single-thread vs multi-thread output must match
+mkdir -p "$TMP/lib_threads"
+cp "$GRAPHML/triangle_same_vertex_color_undirected.graphml" "$TMP/lib_threads/g0.graphml"
+cp "$GRAPHML/triangle_diff_vertex_colors_undirected.graphml" "$TMP/lib_threads/g1.graphml"
+cp "$GRAPHML/two_nodes_bidirectional_same_edge_color_undirected.graphml" "$TMP/lib_threads/g2.graphml"
+
+mkdir -p "$TMP/cache_t1_motif" "$TMP/cache_t4_motif"
+run_test "enumerator preprocess --motifs --thread-number 1" 0 \
+    "$BUILD/sgf-graph-enumerator" \
+    --preprocess --motifs \
+    --library-dir "$TMP/lib_threads" --reader-type graphml \
+    --cache-dir "$TMP/cache_t1_motif" --cache-type csv \
+    --thread-number 1
+
+run_test "enumerator preprocess --motifs --thread-number 4" 0 \
+    "$BUILD/sgf-graph-enumerator" \
+    --preprocess --motifs \
+    --library-dir "$TMP/lib_threads" --reader-type graphml \
+    --cache-dir "$TMP/cache_t4_motif" --cache-type csv \
+    --thread-number 4
+
+# compare cache contents: same files, same content (sort for determinism)
+T1_MOTIF_SORTED=$(sort "$TMP/cache_t1_motif"/*.csv 2>/dev/null | md5sum)
+T4_MOTIF_SORTED=$(sort "$TMP/cache_t4_motif"/*.csv 2>/dev/null | md5sum)
+if [ "$T1_MOTIF_SORTED" = "$T4_MOTIF_SORTED" ]; then
+    echo "PASS  enumerator: motif cache identical for thread-number 1 vs 4"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL  enumerator: motif cache differs between thread-number 1 and 4"
+    FAIL=$((FAIL + 1))
+fi
+
+mkdir -p "$TMP/cache_t1_path" "$TMP/cache_t4_path"
+run_test "enumerator preprocess --paths --thread-number 1" 0 \
+    "$BUILD/sgf-graph-enumerator" \
+    --preprocess --paths \
+    --library-dir "$TMP/lib_threads" --reader-type graphml \
+    --cache-dir "$TMP/cache_t1_path" --cache-type csv \
+    --thread-number 1
+
+run_test "enumerator preprocess --paths --thread-number 4" 0 \
+    "$BUILD/sgf-graph-enumerator" \
+    --preprocess --paths \
+    --library-dir "$TMP/lib_threads" --reader-type graphml \
+    --cache-dir "$TMP/cache_t4_path" --cache-type csv \
+    --thread-number 4
+
+T1_PATH_SORTED=$(sort "$TMP/cache_t1_path"/*.csv 2>/dev/null | md5sum)
+T4_PATH_SORTED=$(sort "$TMP/cache_t4_path"/*.csv 2>/dev/null | md5sum)
+if [ "$T1_PATH_SORTED" = "$T4_PATH_SORTED" ]; then
+    echo "PASS  enumerator: path cache identical for thread-number 1 vs 4"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL  enumerator: path cache differs between thread-number 1 and 4"
+    FAIL=$((FAIL + 1))
+fi
+
 [ "$FAIL" -eq 0 ]

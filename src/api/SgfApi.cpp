@@ -53,6 +53,10 @@ std::vector<EnumerationResultVector> enumerate_library(const EnumerateLibraryPar
         throw InvalidArgumentException(
             "at least one of m_preprocess_motifs or m_preprocess_paths must be true");
     }
+    if (params.m_thread_number == 0U)
+    {
+        throw InvalidArgumentException("m_thread_number must be at least 1");
+    }
     std::string output_path = params.m_output_path;
     return FlowManager::enumerator_preprocess_run(
         params.m_library_path, params.m_is_directed, params.m_reader_type, output_path,
@@ -65,6 +69,10 @@ filter_with_enumeration(const FilterWithEnumerationParams& params)
 {
     require_non_empty(params.m_query_graph_path, "m_query_graph_path");
     require_non_empty(params.m_output_folder, "m_output_folder");
+    if (params.m_thread_number == 0U)
+    {
+        throw InvalidArgumentException("m_thread_number must be at least 1");
+    }
     if (!params.m_filter_motifs && !params.m_filter_paths)
     {
         throw InvalidArgumentException(
@@ -75,9 +83,17 @@ filter_with_enumeration(const FilterWithEnumerationParams& params)
         throw InvalidArgumentException(
             "m_motif_cache_file is required when m_filter_motifs is true");
     }
+    if (params.m_filter_motifs && params.m_motif_cache_file->empty())
+    {
+        throw InvalidArgumentException("m_motif_cache_file must not be empty");
+    }
     if (params.m_filter_paths && !params.m_path_cache_file.has_value())
     {
         throw InvalidArgumentException("m_path_cache_file is required when m_filter_paths is true");
+    }
+    if (params.m_filter_paths && params.m_path_cache_file->empty())
+    {
+        throw InvalidArgumentException("m_path_cache_file must not be empty");
     }
     std::string output_folder = params.m_output_folder;
     return FlowManager::enumerator_filter_run(
@@ -92,6 +108,10 @@ std::vector<PatternPreprocessorResult> preprocess_patterns(const PreprocessPatte
 {
     require_non_empty(params.m_library_path, "m_library_path");
     require_non_empty(params.m_output_path, "m_output_path");
+    if (params.m_thread_number == 0U)
+    {
+        throw InvalidArgumentException("m_thread_number must be at least 1");
+    }
     const bool use_single_index = params.m_single_graph_index.has_value();
     const bool use_results_file = params.m_results_file_path.has_value();
     if (use_single_index && use_results_file)
@@ -103,6 +123,20 @@ std::vector<PatternPreprocessorResult> preprocess_patterns(const PreprocessPatte
     if (single_graph_mode && !params.m_background_graph_path.has_value())
     {
         throw InvalidArgumentException("m_background_graph_path is required in single-graph mode");
+    }
+    if (use_results_file && params.m_results_file_path->empty())
+    {
+        throw InvalidArgumentException("m_results_file_path must not be empty");
+    }
+    if (single_graph_mode && params.m_background_graph_path->empty())
+    {
+        throw InvalidArgumentException("m_background_graph_path must not be empty");
+    }
+    if (params.m_preprocess_multigraph > 0U &&
+        (params.m_multigraph_alive_percent <= 0.0 || params.m_multigraph_alive_percent > 1.0))
+    {
+        throw InvalidArgumentException(
+            "m_multigraph_alive_percent must be in (0, 1] when m_preprocess_multigraph is set");
     }
     std::string output_path = params.m_output_path;
     const int64_t single_graph_index =
