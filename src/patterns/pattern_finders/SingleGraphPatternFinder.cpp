@@ -28,19 +28,21 @@ namespace sgf
 /* ---------- Construction ---------- */
 
 // NOLINTNEXTLINE(readability-function-size)
-SingleGraphPatternFinder::SingleGraphPatternFinder(ColoredGraph background_graph, bool is_directed,
+SingleGraphPatternFinder::SingleGraphPatternFinder(const ColoredGraph& background_graph,
+                                                   const uint32_t color_count, bool is_directed,
                                                    uint32_t max_active_patterns, double alpha_0,
                                                    double alpha_decay, LoggerHandler logger)
-    : m_background_graph(std::move(background_graph))
-    , m_is_directed(is_directed)
-    , m_background_density(PatternUtils::compute_density(m_background_graph.vertex_count(),
-                                                         m_background_graph.edge_count()))
+    : m_is_directed(is_directed)
+    , m_background_density(PatternUtils::compute_density(background_graph.vertex_count(),
+                                                         background_graph.edge_count()))
     , m_max_active_patterns(max_active_patterns)
     , m_alpha_0(alpha_0)
     , m_alpha_decay(alpha_decay)
     , m_logger(std::move(logger))
+    , m_color_count(color_count)
+    , m_color_probability(PatternUtils::compute_color_distribution(color_count, background_graph))
 {
-    if (m_background_graph.vertex_count() == 0)
+    if (background_graph.vertex_count() == 0)
     {
         throw InvalidArgumentException("G has no nodes.");
     }
@@ -269,7 +271,7 @@ SingleGraphPatternFinder::create_beam_from_seeds(const std::vector<SeedInfo>& se
     for (size_t seed_index = 0; seed_index < seeds.size(); ++seed_index)
     {
         SGF_DEBUG_LOG(m_logger,
-                      "Seed colour " + std::to_string(m_color_map[seeds[seed_index].m_color_id]) +
+                      "Seed colour " + std::to_string(seeds[seed_index].m_color_id) +
                           " (p=" + std::to_string(seeds[seed_index].m_probability) + ")  matches=" +
                           std::to_string(seeds[seed_index].m_vertex_matches.size()) +
                           "  keeping=" + std::to_string(seed_state_counts[seed_index]));
@@ -394,7 +396,7 @@ SingleGraphPatternFinder::collect_sorted_colors_with_matches(
     const std::vector<std::vector<uint32_t>>& vertices_by_color) const
 {
     std::vector<std::tuple<double, uint32_t, uint32_t>> sorted_colors;
-    for (uint32_t color_id = 0; color_id < static_cast<uint32_t>(m_color_map.size()); ++color_id)
+    for (uint32_t color_id = 0; color_id < m_color_count; ++color_id)
     {
         if (vertices_by_color[color_id].empty())
         {
@@ -430,8 +432,7 @@ void SingleGraphPatternFinder::build_initial_beam(const ColoredGraph& search_gra
 {
     const uint32_t initial_beam_size = m_max_active_patterns / INITIAL_BEAM_DIVISOR;
     const std::vector<std::vector<uint32_t>> vertices_by_color =
-        PatternUtils::get_all_color_matches(search_graph,
-                                            static_cast<uint32_t>(m_color_map.size()));
+        PatternUtils::get_all_color_matches(search_graph, m_color_count);
     const std::vector<std::tuple<double, uint32_t, uint32_t>> sorted_colors =
         collect_sorted_colors_with_matches(vertices_by_color);
     const std::vector<SeedInfo> seeds =
@@ -525,20 +526,6 @@ void SingleGraphPatternFinder::prune_beam(uint32_t iteration)
     m_beam = std::move(kept_states);
 }
 
-/* ---------- initialise_beam_search ---------- */
-
-void SingleGraphPatternFinder::initialise_beam_search(ColoredGraph& search_graph)
-{
-    // Make a working copy of the background graph for joint colour remapping.
-    // The stored m_background_graph is never modified so subsequent find_pattern
-    // calls always start from the original colours.
-    ColoredGraph background_working = m_background_graph;
-    m_color_map = PatternUtils::map_colors(search_graph, background_working);
-    m_color_probability = PatternUtils::compute_color_distribution(
-        static_cast<uint32_t>(m_color_map.size()), background_working);
-    build_initial_beam(search_graph);
-}
-
 /* ---------- run_beam_expansion ---------- */
 
 void SingleGraphPatternFinder::run_beam_expansion(const ColoredGraph& search_graph,
@@ -576,10 +563,9 @@ std::vector<BoostGraph> SingleGraphPatternFinder::collect_best_patterns()
 
     for (const uint32_t state_index : best_indices)
     {
-        PatternState& state = m_beam[state_index];
         SGF_DEBUG_LOG(m_logger,
-                      "Selected pattern with score: " + std::to_string(score_state(state)));
-        PatternUtils::recolor_pattern(state.m_pattern, m_color_map);
+                      "Selected pattern with score: " +
+                          std::to_string(score_state(m_beam[state_index])));
     }
 
     std::vector<BoostGraph> result;
@@ -593,7 +579,7 @@ std::vector<BoostGraph> SingleGraphPatternFinder::collect_best_patterns()
 
 /* ---------- find_pattern ---------- */
 
-std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(ColoredGraph& search_graph,
+std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(const ColoredGraph& search_graph,
                                                                double score_threshold)
 {
     if (search_graph.vertex_count() == 0)
@@ -605,12 +591,10 @@ std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(ColoredGraph& sea
         std::chrono::high_resolution_clock::now();
 
     SGF_DEBUG_LOG(m_logger, "Initiating beam.");
-    initialise_beam_search(search_graph);
+    build_initial_beam(search_graph);
     if (m_beam.empty())
     {
         m_logger.log(LogLevel::WARNING, "SingleGraphPatternFinder: no valid seed.");
-        m_color_map.clear();
-        m_color_probability.clear();
         return {};
     }
 
@@ -626,8 +610,6 @@ std::vector<BoostGraph> SingleGraphPatternFinder::find_pattern(ColoredGraph& sea
     std::vector<BoostGraph> result = collect_best_patterns();
 
     m_beam.clear();
-    m_color_map.clear();
-    m_color_probability.clear();
 
     return result;
 }

@@ -29,31 +29,22 @@
 namespace sgf
 {
 
-MultiGraphPatternFinder::MultiGraphPatternFinder(std::vector<ColoredGraph>& graph_list,
-                                                 const bool is_directed, LoggerHandler logger)
+MultiGraphPatternFinder::MultiGraphPatternFinder(const std::vector<ColoredGraph>& graph_list,
+                                                 const bool is_directed,
+                                                 const uint32_t color_count,
+                                                 LoggerHandler logger)
     : m_graph_list(graph_list)
     , m_is_directed(is_directed)
+    , m_color_count(color_count)
     , m_logger(std::move(logger))
 {
 }
 
 /* ---------- Initialisation helpers ---------- */
 
-void MultiGraphPatternFinder::build_color_map()
-{
-    m_color_map = PatternUtils::map_colors(m_graph_list);
-    std::string color_map_log = "color_map (remapped→original):";
-    for (uint32_t remapped = 0U; remapped < static_cast<uint32_t>(m_color_map.size()); ++remapped)
-    {
-        color_map_log +=
-            " " + std::to_string(remapped) + "→" + std::to_string(m_color_map[remapped]);
-    }
-    SGF_DEBUG_LOG(m_logger, color_map_log);
-}
-
 std::vector<double> MultiGraphPatternFinder::build_color_distribution() const
 {
-    return PatternUtils::compute_color_distribution(static_cast<uint32_t>(m_color_map.size()),
+    return PatternUtils::compute_color_distribution(m_color_count,
                                                     static_cast<int32_t>(m_graph_list.size()),
                                                     m_graph_list);
 }
@@ -251,7 +242,7 @@ bool MultiGraphPatternFinder::attempt_add_vertex(const double alive_threshold, c
         static_cast<uint32_t>(boost::add_vertex(VertexProperties{new_vertex_color}, m_pattern));
 
     m_logger.log(LogLevel::TRACE,
-                 "Adding vertex color=" + std::to_string(m_color_map[new_vertex_color]) +
+                 "Adding vertex color=" + std::to_string(new_vertex_color) +
                      " connected_to=" + std::to_string(connection_vertex_id) +
                      " reversed=" + (is_edge_reversed ? "true" : "false"));
 
@@ -305,8 +296,6 @@ void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
 std::pair<BoostGraph, std::unordered_set<uint32_t>> MultiGraphPatternFinder::finalize_and_return(
     [[maybe_unused]] const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time)
 {
-    PatternUtils::recolor_pattern(m_pattern, m_color_map);
-
     [[maybe_unused]] const std::chrono::time_point<std::chrono::high_resolution_clock> end_time =
         std::chrono::high_resolution_clock::now();
     SGF_DEBUG_LOG(m_logger,
@@ -315,7 +304,6 @@ std::pair<BoostGraph, std::unordered_set<uint32_t>> MultiGraphPatternFinder::fin
                       "s");
 
     m_match_trees.clear();
-    m_color_map.clear();
 
     return {std::move(m_pattern), std::move(m_alive_graph_indexes)};
 }
@@ -592,7 +580,6 @@ MultiGraphPatternFinder::find_pattern(const double alive_threshold, const bool i
     const std::chrono::time_point<std::chrono::high_resolution_clock> start_time =
         std::chrono::high_resolution_clock::now();
 
-    build_color_map();
     const std::vector<double> color_distribution = build_color_distribution();
 
     if (color_distribution.empty())
@@ -604,7 +591,7 @@ MultiGraphPatternFinder::find_pattern(const double alive_threshold, const bool i
 
     const uint32_t first_color = select_first_color(color_distribution);
     m_logger.log(LogLevel::TRACE,
-                 "Choosing first color: " + std::to_string(m_color_map[first_color]));
+                 "Choosing first color: " + std::to_string(first_color));
 
     seed_initial_matches(first_color, leaf_matches);
     setup_random_engine();

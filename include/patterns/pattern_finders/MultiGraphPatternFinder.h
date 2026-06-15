@@ -27,7 +27,7 @@ using MultiGraphPatternResult = std::pair<BoostGraph, std::unordered_set<uint32_
  * @brief Implements the core pattern-growth algorithm over multiple input graphs.
  *
  * The algorithm:
- *  - Recolors graphs to compact colour IDs (via PatternUtils)
+ *  - Uses pre-remapped graphs and a caller-supplied color_map
  *  - Chooses an initial colour
  *  - Incrementally grows a pattern graph
  *  - Maintains per-graph match trees with backtracking
@@ -37,13 +37,14 @@ class MultiGraphPatternFinder
 
 public:
     /**
-     * @brief Construct a finder over a collection of input graphs.
-     * @param graph_list   Input graphs (colours are remapped in-place during find_pattern).
+     * @brief Construct a finder over a collection of pre-remapped input graphs.
+     * @param graph_list   Input graphs (colours already remapped to compact IDs by caller).
      * @param is_directed  Whether the graphs are directed.
+     * @param color_count  Number of distinct compact colour IDs in the remapped graphs.
      * @param logger       Logger for diagnostics.
      */
-    MultiGraphPatternFinder(std::vector<ColoredGraph>& graph_list, bool is_directed,
-                            LoggerHandler logger);
+    MultiGraphPatternFinder(const std::vector<ColoredGraph>& graph_list, bool is_directed,
+                            uint32_t color_count, LoggerHandler logger);
 
     /**
      * @brief Run the pattern-finding algorithm.
@@ -61,22 +62,17 @@ private:
     static constexpr double NON_RANDOM_PROBABILITY = 0.5;
     static constexpr uint32_t ROOT_DEPTH = 0U;
 
-    std::vector<ColoredGraph>& m_graph_list;
+    const std::vector<ColoredGraph>& m_graph_list;
     bool m_is_directed;
     std::unordered_set<uint32_t> m_alive_graph_indexes;
     std::vector<std::shared_ptr<Tree>> m_match_trees;
     BoostGraph m_pattern;
+    uint32_t m_color_count;
     LoggerHandler m_logger;
-    std::vector<int32_t> m_color_map;
     std::mt19937_64 m_random_engine;
     std::uniform_real_distribution<double> m_uniform_dist{0.0, 1.0};
 
     /* ---------- Initialisation helpers ---------- */
-
-    /**
-     * @brief Remap all graph colours to compact IDs; store the map in m_color_map.
-     */
-    void build_color_map();
 
     /**
      * @brief Compute colour frequency distribution over all graphs.
