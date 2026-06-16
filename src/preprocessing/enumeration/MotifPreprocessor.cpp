@@ -3,6 +3,7 @@
 #include "ColoredGraph.h"
 #include "Constants.h"
 #include "GroupEnumerationPreprocessor.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
 #include "LoggerHandler.h"
 #include "MotifMap.h"
@@ -13,7 +14,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <mutex>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -95,11 +95,11 @@ EnumerationResult MotifPreprocessor::stream_groups_to_counter(
     {
         thread.join();
     }
-    for (const std::exception_ptr& ex : thread_exceptions)
+    for (const std::exception_ptr& thread_exception : thread_exceptions)
     {
-        if (ex)
+        if (thread_exception)
         {
-            std::rethrow_exception(ex);
+            std::rethrow_exception(thread_exception);
         }
     }
 

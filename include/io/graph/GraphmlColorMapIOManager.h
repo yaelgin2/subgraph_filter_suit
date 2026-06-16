@@ -59,7 +59,8 @@ public:
      * @throws SgfPathExistsException if the file cannot be opened for writing.
      * @throws SgfDirectoryCreationException if the output directory cannot be created.
      */
-    void save(const std::string& base_filename, const std::map<std::string, uint32_t>& color_map) const;
+    void save(const std::string& base_filename,
+              const std::map<std::string, uint32_t>& color_map) const;
 
 private:
     static constexpr const char* CSV_COLUMN_LABEL = "color_label";

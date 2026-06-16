@@ -30,8 +30,7 @@ namespace sgf
 {
 
 MultiGraphPatternFinder::MultiGraphPatternFinder(const std::vector<ColoredGraph>& graph_list,
-                                                 const bool is_directed,
-                                                 const uint32_t color_count,
+                                                 const bool is_directed, const uint32_t color_count,
                                                  LoggerHandler logger)
     : m_graph_list(graph_list)
     , m_is_directed(is_directed)
@@ -44,9 +43,8 @@ MultiGraphPatternFinder::MultiGraphPatternFinder(const std::vector<ColoredGraph>
 
 std::vector<double> MultiGraphPatternFinder::build_color_distribution() const
 {
-    return PatternUtils::compute_color_distribution(m_color_count,
-                                                    static_cast<int32_t>(m_graph_list.size()),
-                                                    m_graph_list);
+    return PatternUtils::compute_color_distribution(
+        m_color_count, static_cast<int32_t>(m_graph_list.size()), m_graph_list);
 }
 
 std::vector<std::vector<NodePtr>> MultiGraphPatternFinder::initialize_match_trees()
@@ -241,10 +239,9 @@ bool MultiGraphPatternFinder::attempt_add_vertex(const double alive_threshold, c
     const uint32_t new_vertex_id =
         static_cast<uint32_t>(boost::add_vertex(VertexProperties{new_vertex_color}, m_pattern));
 
-    m_logger.log(LogLevel::TRACE,
-                 "Adding vertex color=" + std::to_string(new_vertex_color) +
-                     " connected_to=" + std::to_string(connection_vertex_id) +
-                     " reversed=" + (is_edge_reversed ? "true" : "false"));
+    m_logger.log(LogLevel::TRACE, "Adding vertex color=" + std::to_string(new_vertex_color) +
+                                      " connected_to=" + std::to_string(connection_vertex_id) +
+                                      " reversed=" + (is_edge_reversed ? "true" : "false"));
 
     PatternUtils::add_edge(m_is_directed, m_pattern,
                            is_edge_reversed ? new_vertex_id : connection_vertex_id,
@@ -590,8 +587,7 @@ MultiGraphPatternFinder::find_pattern(const double alive_threshold, const bool i
     std::vector<std::vector<NodePtr>> leaf_matches = initialize_match_trees();
 
     const uint32_t first_color = select_first_color(color_distribution);
-    m_logger.log(LogLevel::TRACE,
-                 "Choosing first color: " + std::to_string(first_color));
+    m_logger.log(LogLevel::TRACE, "Choosing first color: " + std::to_string(first_color));
 
     seed_initial_matches(first_color, leaf_matches);
     setup_random_engine();

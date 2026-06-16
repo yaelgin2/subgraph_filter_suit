@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Constants.h"
 #include "FlowManager.h"
 
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -49,15 +50,16 @@ struct FilterArgs
  */
 struct CliArgs
 {
-    bool m_run_preprocess{false};     ///< Run the preprocessing stage.
-    bool m_run_filter{false};         ///< Run the filter stage.
-    bool m_use_motifs{false};         ///< Enable motif-based processing.
-    bool m_use_paths{false};          ///< Enable path-based processing.
-    bool m_is_directed{false};        ///< Treat graphs as directed.
-    bool m_non_induced{false};        ///< Expand induced motif counts via DAG before filtering.
-    uint32_t m_thread_number{10U};    ///< Maximum number of threads for preprocessing.
-    PreprocessArgs m_preprocess{};    ///< Preprocessing-stage arguments.
-    FilterArgs m_filter{};            ///< Filter-stage arguments.
+    bool m_run_preprocess{false};  ///< Run the preprocessing stage.
+    bool m_run_filter{false};      ///< Run the filter stage.
+    bool m_use_motifs{false};      ///< Enable motif-based processing.
+    bool m_use_paths{false};       ///< Enable path-based processing.
+    bool m_is_directed{false};     ///< Treat graphs as directed.
+    bool m_non_induced{false};     ///< Expand induced motif counts via DAG before filtering.
+    uint32_t m_thread_number{
+        SgfConstants::DEFAULT_THREAD_NUMBER};  ///< Maximum number of threads for preprocessing.
+    PreprocessArgs m_preprocess{};             ///< Preprocessing-stage arguments.
+    FilterArgs m_filter{};                     ///< Filter-stage arguments.
 };
 
 /**

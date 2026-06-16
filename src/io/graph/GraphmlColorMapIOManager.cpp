@@ -3,6 +3,7 @@
 #include "GraphConstructionException.h"
 #include "IOUtils.h"
 #include "LogLevel.h"
+#include "LoggerHandler.h"
 #include "SgfPathExistsException.h"
 
 #include <cstdint>
@@ -69,8 +70,7 @@ std::map<std::string, uint32_t> GraphmlColorMapIOManager::parse_rows(std::ifstre
     return result;
 }
 
-std::map<std::string, uint32_t>
-GraphmlColorMapIOManager::load(const std::string& file_path) const
+std::map<std::string, uint32_t> GraphmlColorMapIOManager::load(const std::string& file_path) const
 {
     std::ifstream file(file_path);
     if (!file.is_open())
@@ -83,9 +83,8 @@ GraphmlColorMapIOManager::load(const std::string& file_path) const
     try
     {
         const std::map<std::string, uint32_t> result = parse_rows(file);
-        m_logger.log(LogLevel::INFO,
-                     "Loaded " + std::to_string(result.size()) + " colour entries from '" +
-                         file_path + "'");
+        m_logger.log(LogLevel::INFO, "Loaded " + std::to_string(result.size()) +
+                                         " colour entries from '" + file_path + "'");
         return result;
     }
     catch (const std::invalid_argument& ex)
@@ -94,8 +93,8 @@ GraphmlColorMapIOManager::load(const std::string& file_path) const
     }
     catch (const std::out_of_range& ex)
     {
-        throw GraphConstructionException("Color id out of range in '" + file_path + "': " +
-                                         ex.what());
+        throw GraphConstructionException("Color id out of range in '" + file_path +
+                                         "': " + ex.what());
     }
 }
 
@@ -106,9 +105,8 @@ void GraphmlColorMapIOManager::save(const std::string& base_filename,
     const std::string full_path = build_full_path(base_filename);
     m_logger.log(LogLevel::INFO, "Saving GraphML color map to '" + full_path + "'");
     write_to_file(color_map, full_path);
-    m_logger.log(LogLevel::INFO,
-                 "Saved " + std::to_string(color_map.size()) + " colour entries to '" + full_path +
-                     "'");
+    m_logger.log(LogLevel::INFO, "Saved " + std::to_string(color_map.size()) +
+                                     " colour entries to '" + full_path + "'");
 }
 
 }  // namespace sgf

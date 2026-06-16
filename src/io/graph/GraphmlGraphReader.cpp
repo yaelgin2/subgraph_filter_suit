@@ -19,6 +19,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <utility>
 
 namespace sgf
 {

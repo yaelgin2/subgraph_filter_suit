@@ -437,7 +437,8 @@ TEST_F(MultiGraphPatternFinderTest, find_pattern_single_empty_graph_throws)
     graphs.push_back(make_empty_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, false, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, false, static_cast<uint32_t>(color_map.size()),
+                                   null_logger());
 
     EXPECT_THROW(finder.find_pattern(0.5), std::runtime_error);
 }
@@ -453,7 +454,8 @@ TEST_F(MultiGraphPatternFinderTest, path_4_one_graph_found_graph)
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -469,7 +471,8 @@ TEST_F(MultiGraphPatternFinderTest, path_4_directed_one_graph_found_graph)
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -485,7 +488,8 @@ TEST_F(MultiGraphPatternFinderTest, path_4_colored_one_graph_found_graph)
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -501,7 +505,8 @@ TEST_F(MultiGraphPatternFinderTest, path_4_directed_colored_one_graph_found_grap
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -517,7 +522,8 @@ TEST_F(MultiGraphPatternFinderTest, triangle_3_one_graph_found_graph)
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -533,7 +539,8 @@ TEST_F(MultiGraphPatternFinderTest, triangle_3_directed_one_graph_found_graph)
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -549,7 +556,8 @@ TEST_F(MultiGraphPatternFinderTest, triangle_3_colored_one_graph_found_graph)
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -565,7 +573,8 @@ TEST_F(MultiGraphPatternFinderTest, triangle_3_colored_directed_one_graph_found_
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -581,7 +590,8 @@ TEST_F(MultiGraphPatternFinderTest, star_5_one_graph_found_graph)
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -597,7 +607,8 @@ TEST_F(MultiGraphPatternFinderTest, complex_graph_one_graph_found_graph)
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -613,7 +624,8 @@ TEST_F(MultiGraphPatternFinderTest, complex_graph_directed_one_graph_found_graph
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -629,7 +641,8 @@ TEST_F(MultiGraphPatternFinderTest, complex_graph_colored_one_graph_found_graph)
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -645,7 +658,8 @@ TEST_F(MultiGraphPatternFinderTest, complex_graph_colored_directed_one_graph_fou
     graphs.push_back(spec.to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.5, false);
 
@@ -663,7 +677,8 @@ TEST_F(MultiGraphPatternFinderTest, path_4_with_added_vertex_3_graphs_found_grap
     graphs.push_back(make_path_4_with_2_added_vertex().to_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, spec.m_is_directed, static_cast<uint32_t>(color_map.size()), null_logger());
+    MultiGraphPatternFinder finder(graphs, spec.m_is_directed,
+                                   static_cast<uint32_t>(color_map.size()), null_logger());
     const std::pair<BoostGraph, std::unordered_set<uint32_t>> result =
         finder.find_pattern(0.7, false);
 

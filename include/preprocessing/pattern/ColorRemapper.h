@@ -60,7 +60,8 @@ public:
      * @param others   Additional graphs — scanned and remapped in-place.
      * @return color_map where color_map[new_id] == original colour value.
      */
-    static std::vector<int32_t> map_colors(ColoredGraph& primary, std::vector<ColoredGraph>& others);
+    static std::vector<int32_t> map_colors(ColoredGraph& primary,
+                                           std::vector<ColoredGraph>& others);
 
     /**
      * @brief Restore vertex colours from compact IDs back to original values in a graph vector.

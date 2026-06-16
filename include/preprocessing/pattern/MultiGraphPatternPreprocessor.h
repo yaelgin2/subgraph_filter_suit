@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "Constants.h"
 #include "IPatternPreprocessor.h"
 #include "LoggerHandler.h"
 
@@ -33,7 +34,7 @@ public:
     // NOLINTNEXTLINE(readability-function-size)
     MultiGraphPatternPreprocessor(std::vector<ColoredGraph>& graph_library, bool is_directed,
                                   uint32_t pattern_number, double alive_precent,
-                                  uint32_t thread_number = 10U,
+                                  uint32_t thread_number = SgfConstants::DEFAULT_THREAD_NUMBER,
                                   LoggerHandler logger = LoggerHandler::null());
 
     /**

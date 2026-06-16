@@ -2,6 +2,7 @@
 
 #include "ColoredGraph.h"
 #include "GroupEnumerationPreprocessor.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
 #include "LoggerHandler.h"
 
@@ -68,11 +69,11 @@ EnumerationResult PathProcessor::stream_groups_to_counter(
     {
         thread.join();
     }
-    for (const std::exception_ptr& ex : thread_exceptions)
+    for (const std::exception_ptr& pending_exception : thread_exceptions)
     {
-        if (ex)
+        if (pending_exception)
         {
-            std::rethrow_exception(ex);
+            std::rethrow_exception(pending_exception);
         }
     }
 

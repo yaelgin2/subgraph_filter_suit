@@ -8,6 +8,7 @@
 #include "MultiGraphPatternFinder.h"
 #include "PatternUtils.h"
 
+#include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <exception>
@@ -56,13 +57,12 @@ std::vector<PatternPreprocessorResult> MultiGraphPatternPreprocessor::calculate(
                 {
                     MultiGraphPatternFinder local_finder(m_graph_library, M_IS_DIRECTED,
                                                          color_count, m_logger);
-                    uint32_t claimed =
-                        patterns_generated.fetch_add(1U, std::memory_order_relaxed);
+                    uint32_t claimed = patterns_generated.fetch_add(1U, std::memory_order_relaxed);
                     while (claimed < M_PATTERN_NUMBER)
                     {
-                        m_logger.log(LogLevel::INFO,
-                                     "Extracting pattern " + std::to_string(claimed + 1U) +
-                                         "/" + std::to_string(M_PATTERN_NUMBER) + "...");
+                        m_logger.log(LogLevel::INFO, "Extracting pattern " +
+                                                         std::to_string(claimed + 1U) + "/" +
+                                                         std::to_string(M_PATTERN_NUMBER) + "...");
                         local_vec.push_back(local_finder.find_pattern(M_ALIVE_PRECENT, true));
                         PatternUtils::recolor_pattern(local_vec.back().first, color_map);
                         claimed = patterns_generated.fetch_add(1U, std::memory_order_relaxed);
@@ -78,11 +78,11 @@ std::vector<PatternPreprocessorResult> MultiGraphPatternPreprocessor::calculate(
     {
         thread.join();
     }
-    for (const std::exception_ptr& ex : thread_exceptions)
+    for (const std::exception_ptr& thread_exception : thread_exceptions)
     {
-        if (ex)
+        if (thread_exception)
         {
-            std::rethrow_exception(ex);
+            std::rethrow_exception(thread_exception);
         }
     }
 

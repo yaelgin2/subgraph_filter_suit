@@ -41,8 +41,8 @@ std::vector<PatternPreprocessorResult> SingleGraphPatternPreprocessor::calculate
         ColorRemapper::map_colors(m_background_graph, m_graph_library);
     const uint32_t color_count = static_cast<uint32_t>(color_map.size());
     const uint32_t graph_count = static_cast<uint32_t>(m_graph_library.size());
-    const uint32_t graphs_to_process = static_cast<uint32_t>(
-        std::count(m_to_process.begin(), m_to_process.end(), true));
+    const uint32_t graphs_to_process =
+        static_cast<uint32_t>(std::count(m_to_process.begin(), m_to_process.end(), true));
     if (graphs_to_process == 0U)
     {
         ColorRemapper::restore_colors(m_background_graph, m_graph_library, color_map);
@@ -69,14 +69,13 @@ std::vector<PatternPreprocessorResult> SingleGraphPatternPreprocessor::calculate
                                                     M_CONFIG.m_max_active_patterns,
                                                     M_CONFIG.m_alpha_0, M_CONFIG.m_alpha_decay,
                                                     m_logger);
-                    uint32_t graph_idx =
-                        next_graph_index.fetch_add(1U, std::memory_order_relaxed);
+                    uint32_t graph_idx = next_graph_index.fetch_add(1U, std::memory_order_relaxed);
                     while (graph_idx < graph_count)
                     {
                         if (m_to_process[graph_idx])
                         {
-                            std::vector<BoostGraph> patterns = finder.find_pattern(
-                                m_graph_library[graph_idx], M_SCORE_THRESHOLD);
+                            std::vector<BoostGraph> patterns =
+                                finder.find_pattern(m_graph_library[graph_idx], M_SCORE_THRESHOLD);
                             for (BoostGraph& pattern : patterns)
                             {
                                 PatternUtils::recolor_pattern(pattern, color_map);
@@ -97,11 +96,11 @@ std::vector<PatternPreprocessorResult> SingleGraphPatternPreprocessor::calculate
     {
         thread.join();
     }
-    for (const std::exception_ptr& ex : thread_exceptions)
+    for (const std::exception_ptr& thread_exception : thread_exceptions)
     {
-        if (ex)
+        if (thread_exception)
         {
-            std::rethrow_exception(ex);
+            std::rethrow_exception(thread_exception);
         }
     }
 

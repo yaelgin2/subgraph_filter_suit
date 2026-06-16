@@ -413,8 +413,8 @@ protected:
      * @param search_spec GraphSpec for the search graph (remapped to same color space).
      * @return Pair of {constructed finder, remapped search graph}.
      */
-    static std::pair<SingleGraphPatternFinder, ColoredGraph> make_finder(const GraphSpec& bg_spec,
-                                                                         const GraphSpec& search_spec)
+    static std::pair<SingleGraphPatternFinder, ColoredGraph>
+    make_finder(const GraphSpec& bg_spec, const GraphSpec& search_spec)
     {
         ColoredGraph background = bg_spec.to_graph();
         ColoredGraph search = search_spec.to_graph();

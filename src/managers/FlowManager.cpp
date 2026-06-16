@@ -216,8 +216,7 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
     const CacheManagerType cache_reader_type, std::string& output_folder,
     ResultOutputType output_type, const std::string& log_file_path, bool filter_paths,
     bool filter_motifs, const GraphEnumerationCacheConfig& graph_cache_config,
-    const bool non_induced, const uint32_t thread_number,
-    const std::string& graphml_color_map_path)
+    const bool non_induced, const uint32_t thread_number, const std::string& graphml_color_map_path)
 {
     const LoggerBundle log_bundle(log_file_path);
     const std::string timestamp = generate_timestamp();
@@ -369,8 +368,7 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
         SingleGraphFinderConfig results_config_with_threads = config;
         results_config_with_threads.m_thread_number = thread_number;
         const PatternOutput single_graph_results = preprocess_manager.preprocess(
-            [is_directed, &background, &to_process, score_threshold,
-             &results_config_with_threads](
+            [is_directed, &background, &to_process, score_threshold, &results_config_with_threads](
                 std::vector<ColoredGraph>& library_ref,
                 LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
             {
@@ -427,8 +425,10 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::pattern_
         const FilterResult filter_result =
             pattern_filter.filter(background, is_induced, prior_policy);
         const std::string background_stem = std::filesystem::path(bg_file).stem().string();
-        filter_results_writer->write(background_stem + PATTERN_FILTER_RESULT_SUFFIX + timestamp,
-                                     pattern_filenames, filter_result);
+        std::string result_filename = background_stem;
+        result_filename += PATTERN_FILTER_RESULT_SUFFIX;
+        result_filename += timestamp;
+        filter_results_writer->write(result_filename, pattern_filenames, filter_result);
         results.push_back(
             std::unordered_map<std::string, FilterResult>{{background_stem, filter_result}});
     }

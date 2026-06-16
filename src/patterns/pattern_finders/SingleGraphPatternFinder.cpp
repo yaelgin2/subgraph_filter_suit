@@ -270,11 +270,11 @@ SingleGraphPatternFinder::create_beam_from_seeds(const std::vector<SeedInfo>& se
     std::vector<PatternState> beam;
     for (size_t seed_index = 0; seed_index < seeds.size(); ++seed_index)
     {
-        SGF_DEBUG_LOG(m_logger,
-                      "Seed colour " + std::to_string(seeds[seed_index].m_color_id) +
-                          " (p=" + std::to_string(seeds[seed_index].m_probability) + ")  matches=" +
-                          std::to_string(seeds[seed_index].m_vertex_matches.size()) +
-                          "  keeping=" + std::to_string(seed_state_counts[seed_index]));
+        SGF_DEBUG_LOG(m_logger, "Seed colour " + std::to_string(seeds[seed_index].m_color_id) +
+                                    " (p=" + std::to_string(seeds[seed_index].m_probability) +
+                                    ")  matches=" +
+                                    std::to_string(seeds[seed_index].m_vertex_matches.size()) +
+                                    "  keeping=" + std::to_string(seed_state_counts[seed_index]));
 
         for (uint32_t match_index = 0; match_index < seed_state_counts[seed_index]; ++match_index)
         {
@@ -563,9 +563,8 @@ std::vector<BoostGraph> SingleGraphPatternFinder::collect_best_patterns()
 
     for (const uint32_t state_index : best_indices)
     {
-        SGF_DEBUG_LOG(m_logger,
-                      "Selected pattern with score: " +
-                          std::to_string(score_state(m_beam[state_index])));
+        SGF_DEBUG_LOG(m_logger, "Selected pattern with score: " +
+                                    std::to_string(score_state(m_beam[state_index])));
     }
 
     std::vector<BoostGraph> result;

@@ -100,7 +100,8 @@ public:
      * @param log_file_path            Optional log file path.
      * @param preprocess_paths         Preprocess path signatures.
      * @param preprocess_motifs        Preprocess motif signatures.
-     * @param graphml_color_map_path   Path to an initial GraphML color map CSV (empty = start fresh).
+     * @param graphml_color_map_path   Path to an initial GraphML color map CSV (empty = start
+     * fresh).
      */
     static std::vector<EnumerationResultVector>
     enumerator_preprocess_run(const std::string& input_path, bool is_directed,
@@ -122,8 +123,10 @@ public:
      * @param log_file_path            Optional log file path.
      * @param filter_paths             Filter by path signatures.
      * @param filter_motifs            Filter by motif signatures.
-     * @param non_induced              Expand query graph motif counts via inclusion DAG before filtering.
-     * @param graphml_color_map_path   Path to an initial GraphML color map CSV (empty = start fresh).
+     * @param non_induced              Expand query graph motif counts via inclusion DAG before
+     * filtering.
+     * @param graphml_color_map_path   Path to an initial GraphML color map CSV (empty = start
+     * fresh).
      */
     static std::vector<std::unordered_map<std::string, FilterResult>>
     enumerator_filter_run(const std::string& graph_input_path, bool is_directed,

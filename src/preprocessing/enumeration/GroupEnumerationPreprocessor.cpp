@@ -2,6 +2,7 @@
 
 #include "ColoredGraph.h"
 #include "EnumerationOverflowException.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"

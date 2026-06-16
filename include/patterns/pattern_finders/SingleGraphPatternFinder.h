@@ -146,12 +146,12 @@ private:
     // ── Persistent state (set at construction) ────────────────────────────────
 
     bool m_is_directed;
-    double m_background_density;      ///< Edge density of G, precomputed at construction.
+    double m_background_density;  ///< Edge density of G, precomputed at construction.
     uint32_t m_max_active_patterns;
     double m_alpha_0;
     double m_alpha_decay;
     LoggerHandler m_logger;
-    uint32_t m_color_count;                    ///< Number of distinct compact colour IDs.
+    uint32_t m_color_count;                   ///< Number of distinct compact colour IDs.
     std::vector<double> m_color_probability;  ///< P(colour c) from background G.
 
     // ── Transient search state (populated by find_pattern, cleared on return) ─

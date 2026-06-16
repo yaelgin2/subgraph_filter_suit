@@ -42,6 +42,31 @@ std::string optional_or_empty(const std::optional<std::string>& opt)
     return opt.has_value() ? *opt : std::string{};
 }
 
+/**
+ * @brief Validate that a cache file is present and non-empty when the feature is enabled.
+ * @param enabled Whether the feature flag is set.
+ * @param cache_file The optional cache file path.
+ * @param present_msg Error message when the optional has no value.
+ * @param empty_msg Error message when the optional value is empty.
+ * @throws InvalidArgumentException if enabled and the cache file is absent or empty.
+ */
+void require_cache_file(const bool enabled, const std::optional<std::string>& cache_file,
+                        const char* present_msg, const char* empty_msg)
+{
+    if (!enabled)
+    {
+        return;
+    }
+    if (!cache_file.has_value())
+    {
+        throw InvalidArgumentException(present_msg);
+    }
+    if (cache_file->empty())
+    {
+        throw InvalidArgumentException(empty_msg);
+    }
+}
+
 }  // namespace
 
 std::vector<EnumerationResultVector> enumerate_library(const EnumerateLibraryParams& params)
@@ -79,23 +104,12 @@ filter_with_enumeration(const FilterWithEnumerationParams& params)
         throw InvalidArgumentException(
             "at least one of m_filter_motifs or m_filter_paths must be true");
     }
-    if (params.m_filter_motifs && !params.m_motif_cache_file.has_value())
-    {
-        throw InvalidArgumentException(
-            "m_motif_cache_file is required when m_filter_motifs is true");
-    }
-    if (params.m_filter_motifs && params.m_motif_cache_file->empty())
-    {
-        throw InvalidArgumentException("m_motif_cache_file must not be empty");
-    }
-    if (params.m_filter_paths && !params.m_path_cache_file.has_value())
-    {
-        throw InvalidArgumentException("m_path_cache_file is required when m_filter_paths is true");
-    }
-    if (params.m_filter_paths && params.m_path_cache_file->empty())
-    {
-        throw InvalidArgumentException("m_path_cache_file must not be empty");
-    }
+    require_cache_file(params.m_filter_motifs, params.m_motif_cache_file,
+                       "m_motif_cache_file is required when m_filter_motifs is true",
+                       "m_motif_cache_file must not be empty");
+    require_cache_file(params.m_filter_paths, params.m_path_cache_file,
+                       "m_path_cache_file is required when m_filter_paths is true",
+                       "m_path_cache_file must not be empty");
     std::string output_folder = params.m_output_folder;
     return FlowManager::enumerator_filter_run(
         params.m_query_graph_path, params.m_is_directed, params.m_reader_type,
@@ -106,6 +120,7 @@ filter_with_enumeration(const FilterWithEnumerationParams& params)
         optional_or_empty(params.m_graphml_color_map_path));
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 std::vector<PatternPreprocessorResult> preprocess_patterns(const PreprocessPatternsParams& params)
 {
     require_non_empty(params.m_library_path, "m_library_path");

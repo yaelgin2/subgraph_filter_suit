@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "Constants.h"
 #include "GroupEnumerationPreprocessor.h"
 #include "LoggerHandler.h"
 
@@ -33,7 +34,8 @@ public:
      * @param logger Logger handler for status and debug output.
      * @param thread_number Maximum number of threads to use during enumeration.
      */
-    MotifPreprocessor(const ColoredGraph& graph, LoggerHandler logger, uint32_t thread_number = 10U);
+    MotifPreprocessor(const ColoredGraph& graph, LoggerHandler logger,
+                      uint32_t thread_number = SgfConstants::DEFAULT_THREAD_NUMBER);
 
     MotifPreprocessor() = delete;
     MotifPreprocessor(const MotifPreprocessor&) = delete;
@@ -57,8 +59,8 @@ protected:
      * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
      * @param count_group Callback invoked for each discovered group.
      */
-    EnumerationResult
-    stream_groups_to_counter(const std::vector<std::vector<bool>>& graph_adjacency_matrix) const override;
+    EnumerationResult stream_groups_to_counter(
+        const std::vector<std::vector<bool>>& graph_adjacency_matrix) const override;
 
     /**
      * @brief Canonicalize a 4-node group into a unique motif identifier.

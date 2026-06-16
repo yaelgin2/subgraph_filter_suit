@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "Constants.h"
 #include "GroupEnumerationPreprocessor.h"
 #include "LoggerHandler.h"
 
@@ -54,7 +55,8 @@ public:
      * @param logger Logger handler for status and debug output.
      * @param thread_number Maximum number of threads to use during enumeration.
      */
-    PathProcessor(const ColoredGraph& graph, LoggerHandler logger, uint32_t thread_number = 10U);
+    PathProcessor(const ColoredGraph& graph, LoggerHandler logger,
+                  uint32_t thread_number = SgfConstants::DEFAULT_THREAD_NUMBER);
 
     PathProcessor() = delete;
     PathProcessor(const PathProcessor&) = delete;
@@ -80,7 +82,8 @@ protected:
      * @return Map from canonical path identifier to occurrence count.
      */
     EnumerationResult stream_groups_to_counter(
-        [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix) const override;
+        [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix)
+        const override;
 
     /**
      * @brief Encode a 4-edge path into a canonical 128-bit motif identifier.

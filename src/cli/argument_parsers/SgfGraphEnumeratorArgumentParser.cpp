@@ -133,8 +133,8 @@ CliArgs SgfGraphEnumeratorArgumentParser::build_cli_args(const po::variables_map
     result.m_use_paths = variables_map.at(KEY_PATHS).as<bool>();
     result.m_is_directed = variables_map.at(KEY_IS_DIRECTED).as<bool>();
     result.m_non_induced = variables_map.at(KEY_NON_INDUCED).as<bool>();
-    result.m_thread_number =
-        parse_uint32_value(variables_map.at(KEY_THREAD_NUMBER).as<std::string>(), KEY_THREAD_NUMBER);
+    result.m_thread_number = parse_uint32_value(
+        variables_map.at(KEY_THREAD_NUMBER).as<std::string>(), KEY_THREAD_NUMBER);
     if (result.m_thread_number == 0U)
     {
         throw SgfInvalidArgumentException("--thread-number must be at least 1");

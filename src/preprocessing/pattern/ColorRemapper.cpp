@@ -10,8 +10,8 @@ namespace sgf
 {
 
 void ColorRemapper::scan_graph_colors(const ColoredGraph& graph,
-                                     std::map<int32_t, uint32_t>& original_to_remapped_color,
-                                     std::vector<int32_t>& color_map)
+                                      std::map<int32_t, uint32_t>& original_to_remapped_color,
+                                      std::vector<int32_t>& color_map)
 {
     for (uint32_t vertex_index = 0; vertex_index < graph.vertex_count(); ++vertex_index)
     {
@@ -25,7 +25,7 @@ void ColorRemapper::scan_graph_colors(const ColoredGraph& graph,
 }
 
 void ColorRemapper::recolor_graph(const std::map<int32_t, uint32_t>& original_to_remapped_color,
-                                 ColoredGraph& graph)
+                                  ColoredGraph& graph)
 {
     for (uint32_t vertex_index = 0; vertex_index < graph.vertex_count(); ++vertex_index)
     {
@@ -43,7 +43,8 @@ std::vector<int32_t> ColorRemapper::map_colors(ColoredGraph& graph)
     return color_map;
 }
 
-std::vector<int32_t> ColorRemapper::map_colors(ColoredGraph& first_graph, ColoredGraph& second_graph)
+std::vector<int32_t> ColorRemapper::map_colors(ColoredGraph& first_graph,
+                                               ColoredGraph& second_graph)
 {
     std::vector<int32_t> color_map;
     std::map<int32_t, uint32_t> original_to_remapped_color;
