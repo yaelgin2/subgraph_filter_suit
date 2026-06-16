@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "Constants.h"
 #include "IPatternPreprocessor.h"
 #include "LoggerHandler.h"
 
@@ -27,10 +28,13 @@ public:
      * @param is_directed    True if the graphs are directed.
      * @param pattern_number Number of patterns to extract.
      * @param alive_precent  Minimum percentage of graphs (0.0–100.0) a pattern must appear in.
+     * @param thread_number  Maximum number of threads to use during pattern mining.
      * @param logger         Optional logger; defaults to a no-op handler.
      */
+    // NOLINTNEXTLINE(readability-function-size)
     MultiGraphPatternPreprocessor(std::vector<ColoredGraph>& graph_library, bool is_directed,
                                   uint32_t pattern_number, double alive_precent,
+                                  uint32_t thread_number = SgfConstants::DEFAULT_THREAD_NUMBER,
                                   LoggerHandler logger = LoggerHandler::null());
 
     /**
@@ -45,6 +49,7 @@ private:
     const bool M_IS_DIRECTED;                    ///< Whether graphs are directed.
     const uint32_t M_PATTERN_NUMBER;             ///< Number of patterns to extract.
     const double M_ALIVE_PRECENT;                ///< Minimum coverage percentage (0.0–100.0).
+    uint32_t m_thread_number;                    ///< Maximum threads used during pattern mining.
     LoggerHandler m_logger;                      ///< Logger for runtime messages.
 };
 

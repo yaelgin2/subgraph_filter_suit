@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Constants.h"
 #include "FlowManager.h"
 #include "PriorPolicy.h"
 #include "SingleGraphPatternPreprocessor.h"
@@ -37,6 +38,7 @@ struct PatternPreprocessArgs
     double m_multigraph_alive_percent{
         DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs a pattern must appear
                                             ///< in.
+    std::string m_graphml_color_map_path;  ///< Path to initial GraphML color map CSV; empty = none.
 };
 
 /**
@@ -63,8 +65,10 @@ struct PatternFinderCliArgs
     bool m_is_directed{false};     ///< Treat graphs as directed.
     GraphReaderType m_reader_type{GraphReaderType::GRAPHML};  ///< Graph file format.
     std::string m_log_file_path;                              ///< Optional log file path.
-    PatternPreprocessArgs m_preprocess{};                     ///< Preprocessing-stage arguments.
-    PatternFilterArgs m_filter{};                             ///< Filter-stage arguments.
+    uint32_t m_thread_number{
+        SgfConstants::DEFAULT_THREAD_NUMBER};  ///< Maximum threads for preprocessing.
+    PatternPreprocessArgs m_preprocess{};      ///< Preprocessing-stage arguments.
+    PatternFilterArgs m_filter{};              ///< Filter-stage arguments.
 };
 
 /**
@@ -98,6 +102,7 @@ private:
     static constexpr const char* KEY_IS_DIRECTED = "is-directed";
     static constexpr const char* KEY_READER_TYPE = "reader-type";
     static constexpr const char* KEY_LOG_FILE_PATH = "log-file-path";
+    static constexpr const char* KEY_THREAD_NUMBER = "thread-number";
 
     static constexpr const char* KEY_LIBRARY_INPUT_FOLDER = "library-input-folder";
     static constexpr const char* KEY_OUTPUT_FOLDER = "output-folder";
@@ -112,6 +117,7 @@ private:
     static constexpr const char* KEY_SCORE_THRESHOLD = "score-threshold";
     static constexpr const char* KEY_PREPROCESS_MULTIGRAPH = "preprocess-multigraph";
     static constexpr const char* KEY_MULTIGRAPH_ALIVE_PERCENT = "multigraph-alive-percent";
+    static constexpr const char* KEY_GRAPHML_COLOR_MAP_PATH = "graphml-color-map-path";
     static constexpr const char* KEY_MAX_ACTIVE_PATTERNS = "max-active-patterns";
     static constexpr const char* KEY_ALPHA_0 = "alpha-0";
     static constexpr const char* KEY_ALPHA_DECAY = "alpha-decay";

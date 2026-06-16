@@ -102,6 +102,76 @@ All three tools accept the same `--reader-type` values:
 
 ---
 
+### GraphML color maps
+
+When reading GraphML files, string vertex-color labels (e.g. `"alpha"`, `"beta"`) are mapped to consecutive non-negative integer IDs at load time. By default a fresh mapping is built from scratch each run — which means the same label may get a different ID if the library is read in a different order.
+
+Because the preprocessing and filtering stages must agree on what integer each color label represents, you need to **persist and reload** the mapping whenever your pipeline spans more than one invocation.
+
+**How it works**
+
+1. Pass `--graphml-color-map-path <file>` to any preprocessing step.
+2. If the file exists it is loaded as the *initial* mapping before any graphs are read.
+3. After all graphs are read (accumulating any new labels encountered), the updated map is saved to a timestamped CSV in the tool's output directory: `color_map_YYYY-MM-DD_HH-MM-SS.csv`.
+4. Pass that saved CSV to subsequent steps via `--graphml-color-map-path`.
+
+**File format**
+
+A plain two-column CSV with header:
+
+```
+color_label,color_id
+alpha,0
+beta,1
+gamma,2
+```
+
+**Supported tools and modes**
+
+| Tool | Mode | Flag |
+|---|---|---|
+| `sgf-graph-enumerator` | `--preprocess` | `--graphml-color-map-path` |
+| `sgf-graph-enumerator` | `--filter` | `--graphml-color-map-path` |
+| `sgf-pattern-finder` | `--preprocess` | `--graphml-color-map-path` |
+
+**Typical workflow**
+
+```bash
+# Step 1 — preprocess (no prior map; the tool builds one from scratch and saves it)
+./build/sgf-graph-enumerator \
+  --preprocess --motifs \
+  --reader-type graphml \
+  --library-dir ./graphs/library \
+  --cache-dir ./cache \
+  --cache-type binary
+# Writes: ./cache/color_map_2026-06-15_12-00-00.csv
+
+# Step 2 — filter (load the saved map so IDs are consistent with the cache)
+./build/sgf-graph-enumerator \
+  --filter --motifs \
+  --graph-dir ./graphs/queries \
+  --graph-input-type graphml \
+  --motif-cache-file ./cache/motif_cache_2026-06-15_12-00-00 \
+  --cache-type binary \
+  --result-folder ./results \
+  --result-type json \
+  --graphml-color-map-path ./cache/color_map_2026-06-15_12-00-00.csv
+
+# Step 3 — pattern preprocessing (pass the same map so pattern IDs also align)
+./build/sgf-pattern-finder \
+  --preprocess \
+  --reader-type graphml \
+  --library-input-folder ./graphs/library \
+  --output-folder ./patterns \
+  --pattern-output-type graphml \
+  --preprocess-multigraph 5 \
+  --graphml-color-map-path ./cache/color_map_2026-06-15_12-00-00.csv
+```
+
+> **Note:** The flag is optional. Omitting it is safe when you only ever read a graph library once (e.g. preprocessing and filtering in the same invocation), or when you are not using GraphML format.
+
+---
+
 ### `sgf-graph-enumerator`
 
 Preprocesses a graph library into motif/path enumeration caches, then filters query graphs against those caches.
@@ -128,6 +198,7 @@ Preprocesses a graph library into motif/path enumeration caches, then filters qu
 | `--is-directed` | bool switch | Treat all graphs as directed. |
 | `--non-induced` | bool switch | Expand induced motif counts via inclusion DAG before filtering (non-induced subgraph search). |
 | `--log-file-path` | string | *(optional)* Path to log file. |
+| `--graphml-color-map-path` | string | *(optional)* Path to a GraphML color-map CSV to load as the initial label→ID mapping. The updated map is saved to the output directory after loading. See [GraphML color maps](#graphml-color-maps). |
 
 **Preprocess flags** (required with `--preprocess`):
 
@@ -213,6 +284,7 @@ Extracts pattern subgraphs from a graph library and filters query graphs against
 | `--score-threshold` | float | `0.0` | Pattern score cutoff; beam search stops below this value. |
 | `--preprocess-multigraph` | integer | `0` | Number of multigraph patterns to extract across the library; `0` disables multigraph mode. |
 | `--multigraph-alive-percent` | float | `0.5` | Fraction of library graphs a pattern must appear in to be kept (range `(0, 1]`). Required when `--preprocess-multigraph` > 0. |
+| `--graphml-color-map-path` | string | — | *(optional)* Path to a GraphML color-map CSV. Loaded as the initial mapping; updated map is saved to the output folder. See [GraphML color maps](#graphml-color-maps). |
 
 **SingleGraphFinder config flags** (optional, used with `--preprocess`):
 
@@ -228,7 +300,7 @@ Extracts pattern subgraphs from a graph library and filters query graphs against
 |---|---|---|
 | `--pattern-mapping-cache` | string | Full path to the pattern cache produced by `--preprocess`. |
 | `--pattern-type` | `graphml` \| `json` \| `vertex-edge` | Pattern cache file format. |
-| `--background-graph-folder` | string | Directory containing background graphs to filter against. |
+| `--background-graph-folder` | string | Path to a single background graph file **or** a directory of background graphs to filter against. Each graph produces its own result file named `<stem>_pattern_filtering_result_<timestamp>`. |
 | `--output-path` | string | Directory for filter result output. |
 | `--output-type` | `json` \| `csv` | Filter result file format. |
 | `--prior-policy` | string | Vertex ordering heuristic (see values below). |
@@ -332,6 +404,7 @@ const uint64_t count = sgf::find_subgraph(sp);
 | `m_preprocess_paths` | `bool` | at least one | Enumerate path signatures. |
 | `m_is_directed` | `bool` | — | Treat graphs as directed (default `false`). |
 | `m_log_file` | `optional<string>` | — | Log file path. |
+| `m_graphml_color_map_path` | `optional<string>` | — | Path to a GraphML color-map CSV; absent = start fresh. The updated map is saved to `m_output_path` after loading. |
 
 Returns `vector<EnumerationResultVector>`, one element per enabled feature.
 
@@ -354,6 +427,7 @@ Returns `vector<EnumerationResultVector>`, one element per enabled feature.
 | `m_non_induced` | `bool` | — | Expand motif counts via inclusion DAG (default `false`). |
 | `m_cache_config` | `GraphEnumerationCacheConfig` | — | Query graph enumeration caching options. |
 | `m_log_file` | `optional<string>` | — | Log file path. |
+| `m_graphml_color_map_path` | `optional<string>` | — | Path to a GraphML color-map CSV; absent = start fresh. The updated map is saved to `m_output_folder` after loading. |
 
 Returns `vector<unordered_map<string, FilterResult>>`, one map per feature.
 
@@ -375,6 +449,7 @@ Returns `vector<unordered_map<string, FilterResult>>`, one map per feature.
 | `m_score_threshold` | `double` | — | Pattern score cutoff (default `0.0`). |
 | `m_finder_config` | `SingleGraphFinderConfig` | — | Beam search tuning (max patterns, alpha, decay). |
 | `m_log_file` | `optional<string>` | — | Log file path. |
+| `m_graphml_color_map_path` | `optional<string>` | — | Path to a GraphML color-map CSV; absent = start fresh. The updated map is saved to `m_output_path` after loading. |
 
 Returns `vector<PatternPreprocessorResult>`.
 
@@ -386,7 +461,7 @@ Returns `vector<PatternPreprocessorResult>`.
 |---|---|---|---|
 | `m_pattern_cache_path` | `string` | yes | Full path to the pattern cache from `preprocess_patterns`. |
 | `m_pattern_type` | `PatternWriterType` | yes | Pattern cache file format. |
-| `m_background_graph_folder` | `string` | yes | Directory containing background graphs. |
+| `m_background_graph_folder` | `string` | yes | Path to a single background graph file or a directory of background graphs. |
 | `m_reader_type` | `GraphReaderType` | yes | Graph file format. |
 | `m_output_path` | `string` | yes | Directory for filter result output. |
 | `m_result_type` | `ResultOutputType` | yes | Filter result format. |

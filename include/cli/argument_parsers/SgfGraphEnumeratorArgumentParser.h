@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Constants.h"
 #include "FlowManager.h"
 
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include <boost/program_options.hpp>
+#include <cstdint>
 #include <optional>
 #include <string>
 
@@ -20,6 +22,7 @@ struct PreprocessArgs
     std::string m_cache_dir;                                  ///< Cache library output directory.
     CacheManagerType m_cache_type{CacheManagerType::BINARY};  ///< Cache format.
     std::string m_log_file_path;                              ///< Optional log file path.
+    std::string m_graphml_color_map_path;  ///< Path to initial GraphML color map CSV; empty = none.
 };
 
 /**
@@ -39,6 +42,7 @@ struct FilterArgs
     std::string m_graph_cache_dir;              ///< Directory for enumeration cache.
     std::string m_load_motif_graph_cache_path;  ///< Existing motif cache path; empty = compute.
     std::string m_load_path_graph_cache_path;   ///< Existing path cache path; empty = compute.
+    std::string m_graphml_color_map_path;  ///< Path to initial GraphML color map CSV; empty = none.
 };
 
 /**
@@ -46,14 +50,16 @@ struct FilterArgs
  */
 struct CliArgs
 {
-    bool m_run_preprocess{false};   ///< Run the preprocessing stage.
-    bool m_run_filter{false};       ///< Run the filter stage.
-    bool m_use_motifs{false};       ///< Enable motif-based processing.
-    bool m_use_paths{false};        ///< Enable path-based processing.
-    bool m_is_directed{false};      ///< Treat graphs as directed.
-    bool m_non_induced{false};      ///< Expand induced motif counts via DAG before filtering.
-    PreprocessArgs m_preprocess{};  ///< Preprocessing-stage arguments.
-    FilterArgs m_filter{};          ///< Filter-stage arguments.
+    bool m_run_preprocess{false};  ///< Run the preprocessing stage.
+    bool m_run_filter{false};      ///< Run the filter stage.
+    bool m_use_motifs{false};      ///< Enable motif-based processing.
+    bool m_use_paths{false};       ///< Enable path-based processing.
+    bool m_is_directed{false};     ///< Treat graphs as directed.
+    bool m_non_induced{false};     ///< Expand induced motif counts via DAG before filtering.
+    uint32_t m_thread_number{
+        SgfConstants::DEFAULT_THREAD_NUMBER};  ///< Maximum number of threads for preprocessing.
+    PreprocessArgs m_preprocess{};             ///< Preprocessing-stage arguments.
+    FilterArgs m_filter{};                     ///< Filter-stage arguments.
 };
 
 /**
@@ -88,6 +94,7 @@ private:
     static constexpr const char* KEY_PATHS = "paths";
     static constexpr const char* KEY_IS_DIRECTED = "is-directed";
     static constexpr const char* KEY_NON_INDUCED = "non-induced";
+    static constexpr const char* KEY_THREAD_NUMBER = "thread-number";
     static constexpr const char* KEY_LIBRARY_DIR = "library-dir";
     static constexpr const char* KEY_READER_TYPE = "reader-type";
     static constexpr const char* KEY_CACHE_DIR = "cache-dir";
@@ -103,6 +110,7 @@ private:
     static constexpr const char* KEY_GRAPH_CACHE_DIR = "graph-cache-dir";
     static constexpr const char* KEY_LOAD_MOTIF_GRAPH_CACHE = "load-motif-graph-cache";
     static constexpr const char* KEY_LOAD_PATH_GRAPH_CACHE = "load-path-graph-cache";
+    static constexpr const char* KEY_GRAPHML_COLOR_MAP_PATH = "graphml-color-map-path";
 
     static constexpr const char* READER_GRAPHML = "graphml";
     static constexpr const char* READER_JSON = "json";
@@ -233,6 +241,15 @@ private:
     static std::string
     get_optional_string(const boost::program_options::variables_map& variables_map,
                         const std::string& key);
+
+    /**
+     * @brief Parses a uint32_t from a string, throwing on invalid input.
+     * @param val       String value to parse.
+     * @param flag_name CLI flag name shown in the error message.
+     * @return Parsed uint32_t value.
+     * @throws SgfInvalidArgumentException for non-numeric or out-of-range values.
+     */
+    static uint32_t parse_uint32_value(const std::string& val, const char* flag_name);
 
     /**
      * @brief Parses a graph reader type string.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "Constants.h"
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
 #include "LogLevel.h"
@@ -58,8 +59,10 @@ public:
      *
      * @param graph The graph to process.
      * @param logger Logger handler used for status/debug output.
+     * @param thread_number Maximum number of threads to use during enumeration.
      */
-    GroupEnumerationPreprocessor(const ColoredGraph& graph, LoggerHandler logger);
+    GroupEnumerationPreprocessor(const ColoredGraph& graph, LoggerHandler logger,
+                                 uint32_t thread_number = SgfConstants::DEFAULT_THREAD_NUMBER);
 
     GroupEnumerationPreprocessor() = delete;
     GroupEnumerationPreprocessor(const GroupEnumerationPreprocessor&) = delete;
@@ -100,6 +103,11 @@ protected:
     LoggerHandler m_logger;
 
     /**
+     * @brief Maximum number of threads to use during enumeration.
+     */
+    uint32_t m_thread_number;
+
+    /**
      * @brief Node ordering used during enumeration.
      *
      * Populated by sort_nodes() before group discovery begins.
@@ -123,18 +131,18 @@ protected:
     virtual void sort_nodes();
 
     /**
-     * @brief Enumerate groups of vertices and report each one via callback.
+     * @brief Enumerate groups and return their counts keyed by canonical motif identifier.
      *
-     * Derived classes discover candidate groups and invoke @p count_group
-     * exactly once per group as it is found. The base class supplies a
-     * counting callback so no group collection is ever materialized in memory.
+     * Derived classes discover every group, compute its canonical identifier, and
+     * accumulate counts into a local map (which may be the result of merging
+     * per-thread maps). The base class merges the returned map into its own
+     * accumulator with overflow detection.
      *
      * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
-     * @param count_group Callback to invoke for each discovered group.
+     * @return Map from canonical motif identifier to occurrence count.
      */
-    virtual void
-    stream_groups_to_counter(const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-                             const GroupCounterCallback& count_group) const = 0;
+    virtual EnumerationResult stream_groups_to_counter(
+        const std::vector<std::vector<bool>>& graph_adjacency_matrix) const = 0;
 
     /**
      * @brief Convert a group into a unique motif identifier.
@@ -151,15 +159,18 @@ protected:
     virtual UInt128 calculate_motif_number(uint32_t motif_descriptor,
                                            const std::vector<uint32_t>& node_colors) const = 0;
 
-private:
     /**
-     * @brief Convert the full graph into an adjacency matrix.
+     * @brief Extract node colors for a specific group of vertices.
      *
-     * Creates a dense boolean matrix where:
-     * adjacency_matrix[u][v] == true if edge (u,v) exists.
+     * Returns the color label of each vertex in the group, preserving
+     * the order of vertices as supplied.
      *
-     * @param adjacency_matrix Output matrix to populate.
+     * @param group Vertex identifiers belonging to the group.
+     * @return Color labels corresponding to each vertex in @p group.
      */
+    std::vector<uint32_t> group_to_node_colors(const std::vector<uint32_t>& group) const;
+
+private:
     /**
      * @brief Returns the human-readable name of the entity type being enumerated.
      *
@@ -171,17 +182,6 @@ private:
     [[nodiscard]] virtual std::string entity_name() const = 0;
 
     void graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix) const;
-
-    /**
-     * @brief Extract node colors for a specific group of vertices.
-     *
-     * Returns the color label of each vertex in the group, preserving
-     * the order of vertices as supplied.
-     *
-     * @param group Vertex identifiers belonging to the group.
-     * @return Color labels corresponding to each vertex in @p group.
-     */
-    std::vector<uint32_t> group_to_node_colors(const std::vector<uint32_t>& group) const;
 };
 
 }  // namespace sgf

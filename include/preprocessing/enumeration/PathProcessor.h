@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "Constants.h"
 #include "GroupEnumerationPreprocessor.h"
 #include "LoggerHandler.h"
 
@@ -52,8 +53,10 @@ public:
      * @brief Construct a PathProcessor for the given graph.
      * @param graph The colored graph to preprocess.
      * @param logger Logger handler for status and debug output.
+     * @param thread_number Maximum number of threads to use during enumeration.
      */
-    PathProcessor(const ColoredGraph& graph, LoggerHandler logger);
+    PathProcessor(const ColoredGraph& graph, LoggerHandler logger,
+                  uint32_t thread_number = SgfConstants::DEFAULT_THREAD_NUMBER);
 
     PathProcessor() = delete;
     PathProcessor(const PathProcessor&) = delete;
@@ -68,7 +71,7 @@ public:
 
 protected:
     /**
-     * @brief Enumerate all simple 4-edge paths and report each via callback.
+     * @brief Enumerate all simple 4-edge paths and return their counts.
      *
      * Iterates over all vertices in m_node_order. For each root vertex, all pairs
      * of distinct depth-1 neighbours are considered; for each pair, all combinations
@@ -76,11 +79,11 @@ protected:
      *
      * @param graph_adjacency_matrix Dense boolean adjacency matrix (unused; neighbour
      *        lists from ColoredGraph are used directly).
-     * @param count_group Callback invoked once per discovered path.
+     * @return Map from canonical path identifier to occurrence count.
      */
-    void stream_groups_to_counter(
-        [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix,
-        const GroupCounterCallback& count_group) const override;
+    EnumerationResult stream_groups_to_counter(
+        [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix)
+        const override;
 
     /**
      * @brief Encode a 4-edge path into a canonical 128-bit motif identifier.

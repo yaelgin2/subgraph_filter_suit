@@ -65,11 +65,11 @@ class SingleGraphPatternFinder
 {
 public:
     /**
-     * @brief Construct the finder and precompute background graph statistics.
+     * @brief Construct the finder with a pre-remapped background graph.
      *
-     * @param background_graph     Graph G that defines the null model.  Its edge
-     *                             density is computed here and reused in every
-     *                             find_pattern call.  Must be non-empty.
+     * @param background_graph     Graph G that defines the null model, already remapped
+     *                             to compact colour IDs by the caller.  Must be non-empty.
+     * @param color_count          Number of distinct compact colour IDs in the remapped graphs.
      * @param is_directed          When true, treats edges as directed in all
      *                             subsequent find_pattern calls.
      * @param max_active_patterns  Hard cap on simultaneous live beam states.
@@ -81,7 +81,7 @@ public:
      * @throws InvalidArgumentException if background_graph has no vertices.
      */
     explicit SingleGraphPatternFinder(
-        ColoredGraph background_graph, bool is_directed,
+        const ColoredGraph& background_graph, uint32_t color_count, bool is_directed,
         uint32_t max_active_patterns = DEFAULT_MAX_ACTIVE_PATTERNS, double alpha_0 = 1.0,
         double alpha_decay = DEFAULT_ALPHA_DECAY,
         LoggerHandler logger = LoggerHandler(std::weak_ptr<ILogger>{}));
@@ -89,11 +89,10 @@ public:
     /**
      * @brief Find the rarest subgraph patterns in the search graph.
      *
-     * The search graph is modified in-place (colour remapping) during the search
-     * and the patterns are returned with original colour values restored.
-     * The stored background graph is NOT modified.
+     * The search graph must already be remapped to the same compact colour ID
+     * space as the background graph (done once by the caller before any loop).
      *
-     * @param search_graph    Graph S to search in.  Modified in-place (remapped).
+     * @param search_graph    Pre-remapped graph S to search in.
      * @param score_threshold Stop as soon as any beam state's score falls below
      *                        this value.
      *
@@ -102,7 +101,7 @@ public:
      *
      * @throws InvalidArgumentException if search_graph has no vertices.
      */
-    std::vector<BoostGraph> find_pattern(ColoredGraph& search_graph, double score_threshold);
+    std::vector<BoostGraph> find_pattern(const ColoredGraph& search_graph, double score_threshold);
 
 private:
     /// Default maximum number of simultaneously active beam states.
@@ -146,19 +145,18 @@ private:
 
     // ── Persistent state (set at construction) ────────────────────────────────
 
-    ColoredGraph m_background_graph;  ///< Original (unremapped) background graph G.
     bool m_is_directed;
     double m_background_density;  ///< Edge density of G, precomputed at construction.
     uint32_t m_max_active_patterns;
     double m_alpha_0;
     double m_alpha_decay;
     LoggerHandler m_logger;
+    uint32_t m_color_count;                   ///< Number of distinct compact colour IDs.
+    std::vector<double> m_color_probability;  ///< P(colour c) from background G.
 
     // ── Transient search state (populated by find_pattern, cleared on return) ─
 
     std::vector<PatternState> m_beam;
-    std::vector<int32_t> m_color_map;         ///< compact_id → original colour value.
-    std::vector<double> m_color_probability;  ///< P(colour c) from background G.
 
     // ── Internal helper types ─────────────────────────────────────────────────
 
@@ -319,12 +317,6 @@ private:
      * state.m_score_valid = true.
      */
     void prune_beam(uint32_t iteration);
-
-    /**
-     * @brief Remap S and a working copy of G, compute colour probabilities,
-     *        and call build_initial_beam.
-     */
-    void initialise_beam_search(ColoredGraph& search_graph);
 
     /**
      * @brief Run the expand-prune loop until a termination condition fires.

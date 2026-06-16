@@ -8,9 +8,12 @@
 #include "PriorPolicy.h"
 #include "SingleGraphPatternPreprocessor.h"
 
+#include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace sgf
@@ -89,35 +92,41 @@ class FlowManager
 public:
     /**
      * @brief Run the enumeration preprocessing pipeline.
-     * @param input_path        Directory containing the graph library.
-     * @param is_directed       Treat graphs as directed.
-     * @param reader_type       Format of the graph files.
-     * @param output_path       Directory where enumeration caches are written.
-     * @param output_type       Format of the enumeration cache.
-     * @param log_file_path     Optional log file path.
-     * @param preprocess_paths  Preprocess path signatures.
-     * @param preprocess_motifs Preprocess motif signatures.
+     * @param input_path               Directory containing the graph library.
+     * @param is_directed              Treat graphs as directed.
+     * @param reader_type              Format of the graph files.
+     * @param output_path              Directory where enumeration caches are written.
+     * @param output_type              Format of the enumeration cache.
+     * @param log_file_path            Optional log file path.
+     * @param preprocess_paths         Preprocess path signatures.
+     * @param preprocess_motifs        Preprocess motif signatures.
+     * @param graphml_color_map_path   Path to an initial GraphML color map CSV (empty = start
+     * fresh).
      */
     static std::vector<EnumerationResultVector>
     enumerator_preprocess_run(const std::string& input_path, bool is_directed,
                               GraphReaderType reader_type, std::string& output_path,
                               CacheManagerType output_type, const std::string& log_file_path,
-                              bool preprocess_paths, bool preprocess_motifs);
+                              bool preprocess_paths, bool preprocess_motifs, uint32_t thread_number,
+                              const std::string& graphml_color_map_path = "");
 
     /**
      * @brief Run the enumeration filter stage.
-     * @param graph_input_path   Directory containing query graphs.
-     * @param is_directed        Treat graphs as directed.
-     * @param reader_type        Format of the graph files.
-     * @param motif_cache_file   Full path to the motif cache file to read.
-     * @param path_cache_file    Full path to the path cache file to read.
-     * @param cache_reader_type  Format of the cache files.
-     * @param output_folder      Directory for filter result output.
-     * @param output_type        Format of the filter results.
-     * @param log_file_path      Optional log file path.
-     * @param filter_paths       Filter by path signatures.
-     * @param filter_motifs      Filter by motif signatures.
-     * @param non_induced        Expand query graph motif counts via inclusion DAG before filtering.
+     * @param graph_input_path         Directory containing query graphs.
+     * @param is_directed              Treat graphs as directed.
+     * @param reader_type              Format of the graph files.
+     * @param motif_cache_file         Full path to the motif cache file to read.
+     * @param path_cache_file          Full path to the path cache file to read.
+     * @param cache_reader_type        Format of the cache files.
+     * @param output_folder            Directory for filter result output.
+     * @param output_type              Format of the filter results.
+     * @param log_file_path            Optional log file path.
+     * @param filter_paths             Filter by path signatures.
+     * @param filter_motifs            Filter by motif signatures.
+     * @param non_induced              Expand query graph motif counts via inclusion DAG before
+     * filtering.
+     * @param graphml_color_map_path   Path to an initial GraphML color map CSV (empty = start
+     * fresh).
      */
     static std::vector<std::unordered_map<std::string, FilterResult>>
     enumerator_filter_run(const std::string& graph_input_path, bool is_directed,
@@ -125,7 +134,8 @@ public:
                           const std::string& path_cache_file, CacheManagerType cache_reader_type,
                           std::string& output_folder, ResultOutputType output_type,
                           const std::string& log_file_path, bool filter_paths, bool filter_motifs,
-                          const GraphEnumerationCacheConfig& graph_cache_config, bool non_induced);
+                          const GraphEnumerationCacheConfig& graph_cache_config, bool non_induced,
+                          uint32_t thread_number, const std::string& graphml_color_map_path = "");
 
     /// @brief Run the pattern preprocessing stage.
     static std::vector<PatternPreprocessorResult> pattern_preprocess_run(
@@ -135,7 +145,8 @@ public:
         int64_t preprocess_singlegraph, ResultOutputType results_file_type,
         const std::string& background_graph_path, double score_threshold,
         const SingleGraphFinderConfig& config, uint32_t preprocess_multigraph,
-        double multigraph_alive_percent);
+        double multigraph_alive_percent, uint32_t thread_number,
+        const std::string& graphml_color_map_path = "");
 
     /// @brief Run the pattern filter stage.
     static std::vector<std::unordered_map<std::string, FilterResult>>
@@ -230,12 +241,50 @@ private:
 
     /**
      * @brief Load all graphs from @p path using @p reader_type.
-     * @param path        Directory containing the graph files.
-     * @param reader_type Format of the graph files.
+     * @param path               Directory containing the graph files.
+     * @param reader_type        Format of the graph files.
+     * @param initial_color_map  Pre-populated color map for GraphML reader (empty = start fresh).
+     * @return Loaded library data.
+     */
+    /**
+     * @brief Parameters for optional GraphML color-map I/O in load_library.
+     *
+     * If both fields are empty the color-map feature is disabled entirely.
+     */
+    struct ColorMapConfig
+    {
+        std::string m_color_map_path;  ///< Full path to an existing color-map CSV to pre-load.
+        std::string m_output_folder;   ///< Folder where the updated map is saved after loading.
+    };
+
+    /**
+     * @brief Load all graphs from @p path using @p reader_type.
+     *
+     * When @p reader_type is GRAPHML and @p color_map_config.m_output_folder is non-empty the
+     * accumulated color map is saved to a timestamped CSV in that folder.  If
+     * @p color_map_config.m_color_map_path is also non-empty it is loaded first as the initial
+     * mapping.
+     *
+     * @param path              Directory containing the graph files.
+     * @param reader_type       Format of the graph files.
+     * @param is_directed       Treat graphs as directed.
+     * @param logger            Logger for diagnostics.
+     * @param color_map_config  Optional color-map I/O configuration (empty = disabled).
      * @return Loaded library data.
      */
     static LibraryData load_library(const std::string& path, GraphReaderType reader_type,
-                                    bool is_directed, const LoggerHandler& logger);
+                                    bool is_directed, const LoggerHandler& logger,
+                                    const ColorMapConfig& color_map_config = {});
+
+    /**
+     * @brief Read all graphs in @p library from @p reader, logging each by index.
+     * @param reader      Graph reader to use.
+     * @param library     Library whose m_graph_names drive iteration; m_library is populated.
+     * @param is_directed Treat graphs as directed.
+     * @param logger      Logger for diagnostics.
+     */
+    static void read_graphs(IColoredGraphReader& reader, LibraryData& library, bool is_directed,
+                            const LoggerHandler& logger);
 
     /**
      * @brief Extracts base paths for vertex-edge graphs from a directory file listing.
