@@ -197,6 +197,7 @@ Preprocesses a graph library into motif/path enumeration caches, then filters qu
 | `--cache-type` | `binary` \| `csv` | Cache file format. |
 | `--is-directed` | bool switch | Treat all graphs as directed. |
 | `--non-induced` | bool switch | Expand induced motif counts via inclusion DAG before filtering (non-induced subgraph search). |
+| `--thread-number` | integer | Maximum threads used during preprocessing (default `10`). |
 | `--log-file-path` | string | *(optional)* Path to log file. |
 | `--graphml-color-map-path` | string | *(optional)* Path to a GraphML color-map CSV to load as the initial label→ID mapping. The updated map is saved to the output directory after loading. See [GraphML color maps](#graphml-color-maps). |
 
@@ -267,6 +268,7 @@ Extracts pattern subgraphs from a graph library and filters query graphs against
 |---|---|---|
 | `--reader-type` | `graphml` \| `json` \| `vertex-edge` | Graph file format (required). |
 | `--is-directed` | bool switch | Treat all graphs as directed. |
+| `--thread-number` | integer | Maximum threads used during preprocessing (default `10`). |
 | `--log-file-path` | string | *(optional)* Path to log file. |
 
 **Preprocess flags** (required with `--preprocess`):
@@ -403,6 +405,7 @@ const uint64_t count = sgf::find_subgraph(sp);
 | `m_preprocess_motifs` | `bool` | at least one | Enumerate motif signatures. |
 | `m_preprocess_paths` | `bool` | at least one | Enumerate path signatures. |
 | `m_is_directed` | `bool` | — | Treat graphs as directed (default `false`). |
+| `m_thread_number` | `uint32_t` | — | Maximum threads for preprocessing (default `10`). |
 | `m_log_file` | `optional<string>` | — | Log file path. |
 | `m_graphml_color_map_path` | `optional<string>` | — | Path to a GraphML color-map CSV; absent = start fresh. The updated map is saved to `m_output_path` after loading. |
 
@@ -425,6 +428,7 @@ Returns `vector<EnumerationResultVector>`, one element per enabled feature.
 | `m_path_cache_file` | `optional<string>` | if paths | Full path to the path cache file. |
 | `m_is_directed` | `bool` | — | Treat graphs as directed (default `false`). |
 | `m_non_induced` | `bool` | — | Expand motif counts via inclusion DAG (default `false`). |
+| `m_thread_number` | `uint32_t` | — | Maximum threads for preprocessing (default `10`). |
 | `m_cache_config` | `GraphEnumerationCacheConfig` | — | Query graph enumeration caching options. |
 | `m_log_file` | `optional<string>` | — | Log file path. |
 | `m_graphml_color_map_path` | `optional<string>` | — | Path to a GraphML color-map CSV; absent = start fresh. The updated map is saved to `m_output_folder` after loading. |
@@ -448,6 +452,9 @@ Returns `vector<unordered_map<string, FilterResult>>`, one map per feature.
 | `m_background_graph_path` | `optional<string>` | required in single-graph mode | Background graph for pattern scoring. |
 | `m_score_threshold` | `double` | — | Pattern score cutoff (default `0.0`). |
 | `m_finder_config` | `SingleGraphFinderConfig` | — | Beam search tuning (max patterns, alpha, decay). |
+| `m_thread_number` | `uint32_t` | — | Maximum threads for preprocessing (default `10`). |
+| `m_preprocess_multigraph` | `uint32_t` | — | Number of multigraph patterns to extract; `0` disables (default `0`). |
+| `m_multigraph_alive_percent` | `double` | — | Fraction of library graphs a multigraph pattern must appear in, range `(0, 1]` (default `0.5`). |
 | `m_log_file` | `optional<string>` | — | Log file path. |
 | `m_graphml_color_map_path` | `optional<string>` | — | Path to a GraphML color-map CSV; absent = start fresh. The updated map is saved to `m_output_path` after loading. |
 
