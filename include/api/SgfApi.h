@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Constants.h"
 #include "FilteringUtils.h"
 #include "FlowManager.h"
 #include "IPatternPreprocessor.h"
@@ -25,14 +26,17 @@ namespace sgf
  */
 struct EnumerateLibraryParams
 {
-    std::string m_library_path;             ///< [required] Directory containing the graph library.
-    GraphReaderType m_reader_type;          ///< [required] Graph file format.
-    std::string m_output_path;              ///< [required] Directory where caches are written.
-    CacheManagerType m_cache_type;          ///< [required] Cache file format.
-    bool m_preprocess_motifs{false};        ///< Enumerate motif signatures.
-    bool m_preprocess_paths{false};         ///< Enumerate path signatures.
-    bool m_is_directed{false};              ///< Treat graphs as directed.
-    std::optional<std::string> m_log_file;  ///< Log file path; absent = no logging.
+    std::string m_library_path;       ///< [required] Directory containing the graph library.
+    GraphReaderType m_reader_type;    ///< [required] Graph file format.
+    std::string m_output_path;        ///< [required] Directory where caches are written.
+    CacheManagerType m_cache_type;    ///< [required] Cache file format.
+    bool m_preprocess_motifs{false};  ///< Enumerate motif signatures.
+    bool m_preprocess_paths{false};   ///< Enumerate path signatures.
+    bool m_is_directed{false};        ///< Treat graphs as directed.
+    uint32_t m_thread_number{
+        SgfConstants::DEFAULT_THREAD_NUMBER};             ///< Maximum threads for preprocessing.
+    std::optional<std::string> m_log_file;                ///< Log file path; absent = no logging.
+    std::optional<std::string> m_graphml_color_map_path;  ///< GraphML color map CSV; absent = none.
 };
 
 /**
@@ -68,8 +72,11 @@ struct FilterWithEnumerationParams
     std::optional<std::string> m_path_cache_file;   ///< Required when m_filter_paths is true.
     bool m_is_directed{false};                      ///< Treat graphs as directed.
     bool m_non_induced{false};  ///< Expand motif counts via inclusion DAG (non-induced).
+    uint32_t m_thread_number{
+        SgfConstants::DEFAULT_THREAD_NUMBER};      ///< Maximum threads for preprocessing.
     std::optional<std::string> m_log_file;         ///< Log file path; absent = no logging.
     GraphEnumerationCacheConfig m_cache_config{};  ///< Query graph enumeration caching options.
+    std::optional<std::string> m_graphml_color_map_path;  ///< GraphML color map CSV; absent = none.
 };
 
 /**
@@ -97,6 +104,8 @@ filter_with_enumeration(const FilterWithEnumerationParams& params);
  */
 struct PreprocessPatternsParams
 {
+    static constexpr double DEFAULT_MULTIGRAPH_ALIVE_PERCENT = 0.5;
+
     std::string m_library_path;        ///< [required] Directory containing the graph library.
     GraphReaderType m_reader_type;     ///< [required] Graph file format.
     std::string m_output_path;         ///< [required] Directory where pattern files are written.
@@ -110,6 +119,12 @@ struct PreprocessPatternsParams
     double m_score_threshold{0.0};  ///< Pattern score cutoff.
     SingleGraphFinderConfig m_finder_config{};  ///< Beam search tuning parameters.
     std::optional<std::string> m_log_file;      ///< Log file path; absent = no logging.
+    uint32_t m_preprocess_multigraph{0U};       ///< Number of multigraph patterns; 0 = disabled.
+    double m_multigraph_alive_percent{
+        DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs pattern must appear in.
+    uint32_t m_thread_number{
+        SgfConstants::DEFAULT_THREAD_NUMBER};             ///< Maximum threads for preprocessing.
+    std::optional<std::string> m_graphml_color_map_path;  ///< GraphML color map CSV; absent = none.
 };
 
 /**

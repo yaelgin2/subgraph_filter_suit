@@ -6,79 +6,10 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <cstdint>
-#include <map>
 #include <vector>
-
-/* ---------- private helpers ---------- */
 
 namespace sgf
 {
-
-// Extend the colour mapping with any new colours found in graph.
-// The two-pass design (scan all graphs first, then recolor) guarantees that
-// the returned color_map covers every colour across all input graphs before
-// any graph is recoloured, which is required for the shared-ID property.
-void PatternUtils::scan_graph_colors(const ColoredGraph& graph,
-                                     std::map<int32_t, uint32_t>& original_to_remapped_color,
-                                     std::vector<int32_t>& color_map)
-{
-    for (uint32_t vertex_index = 0; vertex_index < graph.vertex_count(); ++vertex_index)
-    {
-        const int32_t original_color = static_cast<int32_t>(graph.get_vertex_color(vertex_index));
-        if (original_to_remapped_color.count(original_color) == 0)
-        {
-            original_to_remapped_color[original_color] = static_cast<uint32_t>(color_map.size());
-            color_map.push_back(original_color);
-        }
-    }
-}
-
-void PatternUtils::recolor_graph(const std::map<int32_t, uint32_t>& original_to_remapped_color,
-                                 ColoredGraph& graph)
-{
-    for (uint32_t vertex_index = 0; vertex_index < graph.vertex_count(); ++vertex_index)
-    {
-        const int32_t original_color = static_cast<int32_t>(graph.get_vertex_color(vertex_index));
-        graph.set_vertex_color(vertex_index, original_to_remapped_color.at(original_color));
-    }
-}
-
-/* ---------- public interface ---------- */
-
-std::vector<int32_t> PatternUtils::map_colors(ColoredGraph& graph)
-{
-    std::vector<int32_t> color_map;
-    std::map<int32_t, uint32_t> original_to_remapped_color;
-    scan_graph_colors(graph, original_to_remapped_color, color_map);
-    recolor_graph(original_to_remapped_color, graph);
-    return color_map;
-}
-
-std::vector<int32_t> PatternUtils::map_colors(ColoredGraph& first_graph, ColoredGraph& second_graph)
-{
-    std::vector<int32_t> color_map;
-    std::map<int32_t, uint32_t> original_to_remapped_color;
-    scan_graph_colors(first_graph, original_to_remapped_color, color_map);
-    scan_graph_colors(second_graph, original_to_remapped_color, color_map);
-    recolor_graph(original_to_remapped_color, first_graph);
-    recolor_graph(original_to_remapped_color, second_graph);
-    return color_map;
-}
-
-std::vector<int32_t> PatternUtils::map_colors(std::vector<ColoredGraph>& graphs)
-{
-    std::vector<int32_t> color_map;
-    std::map<int32_t, uint32_t> original_to_remapped_color;
-    for (const auto& graph : graphs)
-    {
-        scan_graph_colors(graph, original_to_remapped_color, color_map);
-    }
-    for (auto& graph : graphs)
-    {
-        recolor_graph(original_to_remapped_color, graph);
-    }
-    return color_map;
-}
 
 // Translate compact IDs back to original colour values using the inverse map.
 // This is the final step before returning a pattern to the caller so that

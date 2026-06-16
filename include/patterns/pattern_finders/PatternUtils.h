@@ -4,7 +4,6 @@
 #include "ColoredGraph.h"
 
 #include <cstdint>
-#include <map>
 #include <vector>
 
 namespace sgf
@@ -14,50 +13,15 @@ namespace sgf
  * @brief Pure-static utilities shared by MultiGraphPatternFinder and
  *        SingleGraphPatternFinder.
  *
- * ### Colour remapping
- *
- * The scoring pipeline requires compact zero-based colour IDs so that
- * probability vectors can be indexed directly.  The map_colors overloads
- * build this mapping and rewrite vertex colours in-place.  The returned
- * color_map vector is the inverse: color_map[compact_id] == original_value.
- * Call recolor_pattern at the end to restore original colours in the output.
+ * Colour remapping (compacting sparse colour values to dense 0..N-1 IDs) is
+ * handled upstream by ColorRemapper and is performed once by the preprocessors
+ * before graphs are handed to these finders.  PatternUtils covers the remaining
+ * pattern-search operations: restoring original colours, matching, distribution
+ * computation, and edge construction.
  */
 class PatternUtils
 {
 public:
-    /**
-     * @brief Remap vertex colours in a single graph to compact zero-based IDs.
-     *
-     * Colours are assigned new IDs in first-encounter order (i.e. the colour
-     * of vertex 0 becomes 0, the next distinct colour becomes 1, etc.).
-     * The graph is modified in-place.
-     *
-     * @return color_map where color_map[new_id] == original colour value.
-     */
-    static std::vector<int32_t> map_colors(ColoredGraph& graph);
-
-    /**
-     * @brief Remap vertex colours across two graphs to a shared compact ID space.
-     *
-     * Both graphs are scanned together so they share the same compact IDs.
-     * This is required when scoring patterns against a background graph:
-     * the same colour must have the same ID in both graphs.
-     *
-     * @return color_map where color_map[new_id] == original colour value.
-     */
-    static std::vector<int32_t> map_colors(ColoredGraph& first_graph, ColoredGraph& second_graph);
-
-    /**
-     * @brief Remap vertex colours across multiple graphs to a shared compact ID space.
-     *
-     * All graphs are scanned first (building one global colour map), then all
-     * are recoloured in a second pass.  This two-pass approach ensures the
-     * returned color_map covers every colour seen across all graphs.
-     *
-     * @return color_map where color_map[new_id] == original colour value.
-     */
-    static std::vector<int32_t> map_colors(std::vector<ColoredGraph>& graphs);
-
     /**
      * @brief Remap pattern vertex colours from compact IDs back to original values.
      *
@@ -140,33 +104,6 @@ public:
     static void add_edge(bool is_directed, BoostGraph& graph, uint32_t source, uint32_t target);
 
 private:
-    /**
-     * @brief Scan one graph's vertex colours and extend the compact colour mapping.
-     *
-     * For each vertex whose colour has not been seen before, a new compact ID
-     * is assigned (next available slot) and the original colour is appended to
-     * color_map.  Already-seen colours are skipped.
-     *
-     * @param graph                     Graph to scan.
-     * @param original_to_remapped_color  Map updated in-place: original_color → compact_id.
-     * @param color_map                 Inverse map updated in-place: compact_id → original_color.
-     */
-    static void scan_graph_colors(const ColoredGraph& graph,
-                                  std::map<int32_t, uint32_t>& original_to_remapped_color,
-                                  std::vector<int32_t>& color_map);
-
-    /**
-     * @brief Rewrite vertex colours in a graph using the compact mapping.
-     *
-     * Replaces each vertex's original colour with its compact ID.
-     * Throws std::out_of_range if a vertex colour is absent from the map.
-     *
-     * @param original_to_remapped_color  original_color → compact_id.
-     * @param graph                       Graph to recolor in-place.
-     */
-    static void recolor_graph(const std::map<int32_t, uint32_t>& original_to_remapped_color,
-                              ColoredGraph& graph);
-
     /**
      * @brief Tally vertex colours in one graph and accumulate totals.
      *

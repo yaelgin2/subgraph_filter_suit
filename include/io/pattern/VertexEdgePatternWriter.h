@@ -59,7 +59,8 @@ private:
      * @param path Base file path; suffixes are appended automatically.
      * @throws SgfPathExistsException if either output file cannot be opened.
      */
-    void do_write(const BoostGraph& graph, const std::string& path) const override;
+    void do_write(const BoostGraph& graph, const std::string& path,
+                  bool is_directed) const override;
     /**
      * @brief Writes vertex data to @p base_path.node_labels.
      *
@@ -72,11 +73,13 @@ private:
     /**
      * @brief Writes edge data to @p base_path.edge.
      *
-     * @param graph The source graph.
-     * @param base_path Base file path without suffix.
+     * @param graph       The source graph.
+     * @param base_path   Base file path without suffix.
+     * @param is_directed When false, skips the higher-index endpoint of each symmetric edge pair.
      * @throws SgfPathExistsException if the file cannot be opened for writing.
      */
-    static void write_edge_file(const BoostGraph& graph, const std::string& base_path);
+    static void write_edge_file(const BoostGraph& graph, const std::string& base_path,
+                                bool is_directed);
 };
 
 }  // namespace sgf

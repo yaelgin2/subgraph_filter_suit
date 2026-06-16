@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Constants.h"
 #include "FlowManager.h"
 #include "PriorPolicy.h"
 #include "SingleGraphPatternPreprocessor.h"
@@ -18,6 +19,8 @@ namespace sgf
  */
 struct PatternPreprocessArgs
 {
+    static constexpr double DEFAULT_MULTIGRAPH_ALIVE_PERCENT = 0.5;
+
     std::string m_library_input_folder;  ///< Input graph library directory.
     std::string m_output_folder;         ///< Output directory for patterns.
     PatternWriterType m_pattern_output_type{PatternWriterType::GRAPHML};  ///< Pattern file format.
@@ -30,6 +33,12 @@ struct PatternPreprocessArgs
     std::string m_background_graph_path;    ///< Path to the background graph file.
     double m_score_threshold{0.0};          ///< Pattern score cutoff.
     SingleGraphFinderConfig m_config{};     ///< Beam search tuning parameters.
+    uint32_t m_preprocess_multigraph{
+        0U};  ///< Number of multigraph patterns to extract; 0 = disabled.
+    double m_multigraph_alive_percent{
+        DEFAULT_MULTIGRAPH_ALIVE_PERCENT};  ///< Fraction of library graphs a pattern must appear
+                                            ///< in.
+    std::string m_graphml_color_map_path;  ///< Path to initial GraphML color map CSV; empty = none.
 };
 
 /**
@@ -56,8 +65,10 @@ struct PatternFinderCliArgs
     bool m_is_directed{false};     ///< Treat graphs as directed.
     GraphReaderType m_reader_type{GraphReaderType::GRAPHML};  ///< Graph file format.
     std::string m_log_file_path;                              ///< Optional log file path.
-    PatternPreprocessArgs m_preprocess{};                     ///< Preprocessing-stage arguments.
-    PatternFilterArgs m_filter{};                             ///< Filter-stage arguments.
+    uint32_t m_thread_number{
+        SgfConstants::DEFAULT_THREAD_NUMBER};  ///< Maximum threads for preprocessing.
+    PatternPreprocessArgs m_preprocess{};      ///< Preprocessing-stage arguments.
+    PatternFilterArgs m_filter{};              ///< Filter-stage arguments.
 };
 
 /**
@@ -91,6 +102,7 @@ private:
     static constexpr const char* KEY_IS_DIRECTED = "is-directed";
     static constexpr const char* KEY_READER_TYPE = "reader-type";
     static constexpr const char* KEY_LOG_FILE_PATH = "log-file-path";
+    static constexpr const char* KEY_THREAD_NUMBER = "thread-number";
 
     static constexpr const char* KEY_LIBRARY_INPUT_FOLDER = "library-input-folder";
     static constexpr const char* KEY_OUTPUT_FOLDER = "output-folder";
@@ -103,6 +115,9 @@ private:
     static constexpr int64_t SINGLE_GRAPH_DISABLED = -1;  ///< Sentinel: single-graph mode off.
     static constexpr const char* KEY_BACKGROUND_GRAPH_PATH = "background-graph-path";
     static constexpr const char* KEY_SCORE_THRESHOLD = "score-threshold";
+    static constexpr const char* KEY_PREPROCESS_MULTIGRAPH = "preprocess-multigraph";
+    static constexpr const char* KEY_MULTIGRAPH_ALIVE_PERCENT = "multigraph-alive-percent";
+    static constexpr const char* KEY_GRAPHML_COLOR_MAP_PATH = "graphml-color-map-path";
     static constexpr const char* KEY_MAX_ACTIVE_PATTERNS = "max-active-patterns";
     static constexpr const char* KEY_ALPHA_0 = "alpha-0";
     static constexpr const char* KEY_ALPHA_DECAY = "alpha-decay";

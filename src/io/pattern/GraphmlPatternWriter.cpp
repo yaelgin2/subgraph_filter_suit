@@ -47,7 +47,8 @@ void GraphmlPatternWriter::build_vertices(const BoostGraph& graph,
 }
 
 void GraphmlPatternWriter::build_edges(const BoostGraph& graph,
-                                       IOConstants::GraphmlDirectedBoostGraph& out)
+                                       IOConstants::GraphmlDirectedBoostGraph& out,
+                                       const bool is_directed)
 {
     const boost::graph_traits<BoostGraph>::vertices_size_type vertex_count =
         boost::num_vertices(graph);
@@ -64,6 +65,11 @@ void GraphmlPatternWriter::build_edges(const BoostGraph& graph,
             const boost::graph_traits<BoostGraph>::vertex_descriptor dst =
                 boost::target(edge, graph);
 
+            if (!is_directed && src > dst && boost::edge(dst, src, graph).second)
+            {
+                continue;
+            }
+
             boost::graph_traits<IOConstants::GraphmlDirectedBoostGraph>::edge_descriptor new_edge;
             bool edge_added = false;
             std::tie(new_edge, edge_added) = boost::add_edge(src, dst, out);
@@ -74,14 +80,15 @@ void GraphmlPatternWriter::build_edges(const BoostGraph& graph,
     }
 }
 
-void GraphmlPatternWriter::do_write(const BoostGraph& graph, const std::string& path) const
+void GraphmlPatternWriter::do_write(const BoostGraph& graph, const std::string& path,
+                                    const bool is_directed) const
 {
     std::ofstream file = GraphmlUtils::open_output_file(path);
 
     IOConstants::GraphmlDirectedBoostGraph string_graph;
 
     build_vertices(graph, string_graph);
-    build_edges(graph, string_graph);
+    build_edges(graph, string_graph, is_directed);
 
     boost::dynamic_properties props;
 
