@@ -561,16 +561,12 @@ std::vector<BoostGraph> SingleGraphPatternFinder::collect_best_patterns()
 {
     const std::vector<uint32_t> best_indices = select_best_state();
 
-    for (const uint32_t state_index : best_indices)
-    {
-        SGF_DEBUG_LOG(m_logger, "Selected pattern with score: " +
-                                    std::to_string(score_state(m_beam[state_index])));
-    }
-
     std::vector<BoostGraph> result;
     result.reserve(best_indices.size());
     for (const uint32_t state_index : best_indices)
     {
+        SGF_DEBUG_LOG(m_logger, "Selected pattern with score: " +
+                                    std::to_string(score_state(m_beam[state_index])));
         result.push_back(std::move(m_beam[state_index].m_pattern));
     }
     return result;
