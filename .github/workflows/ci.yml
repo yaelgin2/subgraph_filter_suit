@@ -147,3 +147,31 @@ jobs:
         run: |
           cd build
           ctest --output-on-failure -C Release --parallel
+
+  # Compile-only CUDA build — verifies that the GPU source layer compiles
+  # with nvcc. No GPU runner required: the nvidia/cuda Docker image supplies nvcc.
+  build-cuda:
+    runs-on: ubuntu-latest
+    container:
+      image: nvidia/cuda:12.6.0-devel-ubuntu24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y cmake build-essential \
+            libboost-graph-dev libboost-log-dev libboost-json-dev \
+            libboost-program-options-dev
+
+      - name: Configure (CUDA enabled)
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DSGF_ENABLE_CUDA=ON \
+            -DCMAKE_CUDA_ARCHITECTURES="70;80;89"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel

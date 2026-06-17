@@ -69,6 +69,31 @@ target_include_directories(subgraph_filter_suite PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/utils"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/isomorphism"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/api"
+    # INSTALL_INTERFACE paths mirror the above for consumers using find_package.
+    # Paths are relative to CMAKE_INSTALL_PREFIX; headers land under include/
+    # via install(DIRECTORY ...) so the flat #include "Foo.h" style is preserved.
+    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:include/graph>
+    $<INSTALL_INTERFACE:include/exceptions>
+    $<INSTALL_INTERFACE:include/isomorphism>
+    $<INSTALL_INTERFACE:include/io>
+    $<INSTALL_INTERFACE:include/io/graph>
+    $<INSTALL_INTERFACE:include/io/pattern>
+    $<INSTALL_INTERFACE:include/io/cache>
+    $<INSTALL_INTERFACE:include/io/filter>
+    $<INSTALL_INTERFACE:include/logging>
+    $<INSTALL_INTERFACE:include/managers>
+    $<INSTALL_INTERFACE:include/preprocessing>
+    $<INSTALL_INTERFACE:include/preprocessing/enumeration>
+    $<INSTALL_INTERFACE:include/preprocessing/pattern>
+    $<INSTALL_INTERFACE:include/filtering>
+    $<INSTALL_INTERFACE:include/patterns>
+    $<INSTALL_INTERFACE:include/patterns/histograms>
+    $<INSTALL_INTERFACE:include/patterns/pattern>
+    $<INSTALL_INTERFACE:include/patterns/tree>
+    $<INSTALL_INTERFACE:include/patterns/pattern_finders>
+    $<INSTALL_INTERFACE:include/utils>
+    $<INSTALL_INTERFACE:include/api>
 )
 
 target_link_libraries(subgraph_filter_suite PUBLIC
@@ -105,6 +130,37 @@ target_compile_options(subgraph_filter_suite PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
 )
+
+# ── CUDA (optional GPU acceleration) ─────────────────────────────────────────
+# Enable with: cmake -DSGF_ENABLE_CUDA=ON
+# Requires the CUDA Toolkit (nvcc). CPU-only build is the default.
+option(SGF_ENABLE_CUDA "Enable CUDA GPU acceleration" OFF)
+
+if(SGF_ENABLE_CUDA)
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
+
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    # Compile for the GPU present at build time.
+    # Override at configure time for release packages: -DCMAKE_CUDA_ARCHITECTURES="70;80;89"
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+        set(CMAKE_CUDA_ARCHITECTURES native)
+    endif()
+
+    file(GLOB_RECURSE SGF_CUDA_SOURCES CONFIGURE_DEPENDS "src/gpu/*.cu")
+    target_sources(subgraph_filter_suite PRIVATE ${SGF_CUDA_SOURCES})
+    target_link_libraries(subgraph_filter_suite PRIVATE CUDA::cudart)
+    # SGF_CUDA_ENABLED propagates to all downstream targets that link this library.
+    target_compile_definitions(subgraph_filter_suite PUBLIC SGF_CUDA_ENABLED)
+    set_target_properties(subgraph_filter_suite PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON
+    )
+    target_include_directories(subgraph_filter_suite PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/gpu>
+        $<INSTALL_INTERFACE:include/gpu>
+    )
+endif()
 
 # ── CLI tools ─────────────────────────────────────────────────────────────────
 # Set SGF_BUILD_CLI=OFF at configure time to build only the library.
@@ -162,6 +218,32 @@ if(SGF_BUILD_CLI)
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
     )
 endif()
+
+# ── Install / find_package support ───────────────────────────────────────────
+# cmake --install build --prefix /path/to/prefix
+# Downstream: find_package(sgf REQUIRED); target_link_libraries(app sgf::subgraph_filter_suite)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+install(TARGETS subgraph_filter_suite
+    EXPORT SgfTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(EXPORT SgfTargets
+    FILE SgfTargets.cmake
+    NAMESPACE sgf::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/sgf
+)
+configure_package_config_file(
+    cmake/SgfConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/SgfConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/sgf
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/SgfConfig.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/sgf
+)
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 enable_testing()
