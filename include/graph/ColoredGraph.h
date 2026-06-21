@@ -374,6 +374,10 @@ private:
     uint32_t m_edge_count = 0;
     bool m_directed = false;
     bool m_edges_colored = false;
+
+#ifdef SGF_CUDA_ENABLED
+    friend class DeviceGraphBuilder;
+#endif
 };
 
 }  // namespace sgf
