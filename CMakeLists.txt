@@ -37,7 +37,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup json)
 
 # ── Sources ───────────────────────────────────────────────────────────────────
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/**/*.cpp)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*/*.cpp)
 # Exclude the CLI directory so the library remains usable without the CLI tools.
 list(FILTER SOURCES EXCLUDE REGEX ".*/cli/.*")
 add_library(subgraph_filter_suite ${SOURCES})
@@ -45,55 +45,10 @@ add_library(subgraph_filter_suite ${SOURCES})
 # ── Include paths ─────────────────────────────────────────────────────────────
 # Add include/ and every subdirectory under it so headers can be included by
 # filename alone (e.g. #include "ColoredGraph.h") without a path prefix.
-target_include_directories(subgraph_filter_suite PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/graph"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/exceptions"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/isomorphism"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/io"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/io/graph"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/io/pattern"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/io/cache"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/io/filter"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/logging"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/managers"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/preprocessing"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/preprocessing/enumeration"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/preprocessing/pattern"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/filtering"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/histograms"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/pattern"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/tree"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/patterns/pattern_finders"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/utils"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/isomorphism"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/api"
-    # INSTALL_INTERFACE paths mirror the above for consumers using find_package.
-    # Paths are relative to CMAKE_INSTALL_PREFIX; headers land under include/
-    # via install(DIRECTORY ...) so the flat #include "Foo.h" style is preserved.
-    $<INSTALL_INTERFACE:include>
-    $<INSTALL_INTERFACE:include/graph>
-    $<INSTALL_INTERFACE:include/exceptions>
-    $<INSTALL_INTERFACE:include/isomorphism>
-    $<INSTALL_INTERFACE:include/io>
-    $<INSTALL_INTERFACE:include/io/graph>
-    $<INSTALL_INTERFACE:include/io/pattern>
-    $<INSTALL_INTERFACE:include/io/cache>
-    $<INSTALL_INTERFACE:include/io/filter>
-    $<INSTALL_INTERFACE:include/logging>
-    $<INSTALL_INTERFACE:include/managers>
-    $<INSTALL_INTERFACE:include/preprocessing>
-    $<INSTALL_INTERFACE:include/preprocessing/enumeration>
-    $<INSTALL_INTERFACE:include/preprocessing/pattern>
-    $<INSTALL_INTERFACE:include/filtering>
-    $<INSTALL_INTERFACE:include/patterns>
-    $<INSTALL_INTERFACE:include/patterns/histograms>
-    $<INSTALL_INTERFACE:include/patterns/pattern>
-    $<INSTALL_INTERFACE:include/patterns/tree>
-    $<INSTALL_INTERFACE:include/patterns/pattern_finders>
-    $<INSTALL_INTERFACE:include/utils>
-    $<INSTALL_INTERFACE:include/api>
+target_include_directories(subgraph_filter_suite
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
 )
 
 target_link_libraries(subgraph_filter_suite PUBLIC
