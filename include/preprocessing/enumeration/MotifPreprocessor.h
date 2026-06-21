@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef SGF_CUDA_ENABLED
+#define SGF_HD __host__ __device__
+#else
+#define SGF_HD
+#endif
+
 #include "ColoredGraph.h"
 #include "Constants.h"
 #include "GroupEnumerationPreprocessor.h"
@@ -84,13 +90,26 @@ private:
      * Groups all arguments needed by every enumeration helper so they can be
      * forwarded as a single parameter rather than repeated on every call.
      */
-    struct KavoshContext
+    struct CpuKavoshContext
     {
         const std::vector<std::vector<bool>>& m_adjacency_matrix;  ///< Full graph adjacency matrix.
         const GroupCounterCallback& m_count_group;  ///< Callback for emitting groups.
         std::vector<int64_t>& m_bfs_visited;        ///< BFS depth-encoding array.
         int64_t m_run_id;                           ///< Root-unique run identifier.
         uint32_t m_root;                            ///< Current root vertex.
+
+        bool has_fwd_edge(uint32_t src, uint32_t dest) const
+        {
+            return m_adjacency_matrix[src][dest];
+        }
+        bool is_at_depth(uint32_t vertex, int64_t depth) const
+        {
+            return m_bfs_visited[vertex] == m_run_id + depth;
+        }
+        void mark_at_depth(uint32_t vertex, int64_t depth)
+        {
+            m_bfs_visited[vertex] = m_run_id + depth;
+        }
     };
 
     /**
@@ -100,7 +119,7 @@ private:
      * callers can traverse both directions without extra allocation.
      * Set rev_begin == rev_end (empty) for undirected graphs.
      */
-    struct NeighbourRange
+    struct CpuNeighbourRange
     {
         std::vector<uint32_t>::const_iterator m_begin;  ///< First outgoing neighbour.
         std::vector<uint32_t>::const_iterator m_end;    ///< One past last outgoing neighbour.
@@ -194,7 +213,7 @@ private:
      * @param ctx Shared run context; bfs_visited is updated in place.
      * @param depth_one Iterator range over root's direct neighbours.
      */
-    void mark_depth_one_neighbours(KavoshContext& ctx, const NeighbourRange& depth_one) const;
+    void mark_depth_one_neighbours(CpuKavoshContext& ctx, const CpuNeighbourRange& depth_one) const;
 
     /**
      * @brief Emit all groups formed by root and three distinct depth-1 neighbours.
@@ -204,7 +223,7 @@ private:
      * @param ctx Shared run context.
      * @param depth_one Iterator range over root's direct neighbours.
      */
-    void emit_depth_1_1_1_groups(const KavoshContext& ctx, const NeighbourRange& depth_one) const;
+    void emit_depth_1_1_1_groups(const CpuKavoshContext& ctx, const CpuNeighbourRange& depth_one) const;
 
     /**
      * @brief Emit (1,1,1) groups for a fixed first depth-1 neighbour, iterating remaining pairs.
@@ -214,10 +233,44 @@ private:
      * @param first_neighbour The chosen first depth-1 vertex.
      * @param is_first_neighbour_reversed True if first_neighbour was reached via a reverse edge.
      */
-    void emit_depth_1_1_1_groups_first_vertex_chosen(
+    // NOLINTNEXTLINE(readability-function-size)
+    template <typename KavoshContext, typename NeighbourRange>
+    SGF_HD void emit_depth_1_1_1_groups_first_vertex_chosen(
         const KavoshContext& ctx, const NeighbourRange& depth_one,
         std::vector<uint32_t>::const_iterator first_neighbour,
-        bool is_first_neighbour_reversed) const;
+        bool is_first_neighbour_reversed) const
+    {
+        if (m_order_index[*first_neighbour] < m_order_index[ctx.m_root])
+        {
+            return;
+        }
+        if (!is_first_neighbour_reversed)
+        {
+            for (auto second = first_neighbour + 1; second != depth_one.m_end; ++second)
+            {
+                if (m_order_index[*second] < m_order_index[ctx.m_root])
+                {
+                    continue;
+                }
+                emit_depth_1_1_1_groups_second_vertex_chosen(ctx, depth_one, first_neighbour, second,
+                                                            false);
+            }
+        }
+        if (m_graph.is_directed())
+        {
+            auto second = is_first_neighbour_reversed ? first_neighbour + 1 : depth_one.m_rev_begin;
+            for (; second != depth_one.m_rev_end; ++second)
+            {
+                if (m_order_index[*second] < m_order_index[ctx.m_root] ||
+                    ctx.m_adjacency_matrix[ctx.m_root][*second])
+                {
+                    continue;
+                }
+                emit_depth_1_1_1_groups_second_vertex_chosen(ctx, depth_one, first_neighbour, second,
+                                                            true);
+            }
+        }
+    }
 
     /**
      * @brief Emit (1,1,1) groups for fixed first and second depth-1 neighbours.
@@ -228,11 +281,43 @@ private:
      * @param second_neighbour The chosen second depth-1 vertex.
      * @param is_second_neighbour_reversed True if second_neighbour was reached via a reverse edge.
      */
-    void emit_depth_1_1_1_groups_second_vertex_chosen(
+    // NOLINTNEXTLINE(readability-function-size)
+    template <typename KavoshContext, typename NeighbourRange>
+    SGF_HD void emit_depth_1_1_1_groups_second_vertex_chosen(
         const KavoshContext& ctx, const NeighbourRange& depth_one,
         std::vector<uint32_t>::const_iterator first_neighbour,
         std::vector<uint32_t>::const_iterator second_neighbour,
-        bool is_second_neighbour_reversed) const;
+        bool is_second_neighbour_reversed) const
+    {
+        if (!is_second_neighbour_reversed)
+        {
+            for (auto third = second_neighbour + 1; third != depth_one.m_end; ++third)
+            {
+                if (m_order_index[*third] < m_order_index[ctx.m_root])
+                {
+                    continue;
+                }
+                const std::vector<uint32_t> group = {ctx.m_root, *first_neighbour, *second_neighbour,
+                                                    *third};
+                ctx.m_count_group(compute_motif_descriptor(group, ctx.m_adjacency_matrix), group);
+            }
+        }
+        if (m_graph.is_directed())
+        {
+            auto third = is_second_neighbour_reversed ? second_neighbour + 1 : depth_one.m_rev_begin;
+            for (; third != depth_one.m_rev_end; ++third)
+            {
+                if (m_order_index[*third] < m_order_index[ctx.m_root] ||
+                    ctx.m_adjacency_matrix[ctx.m_root][*third])
+                {
+                    continue;
+                }
+                const std::vector<uint32_t> group = {ctx.m_root, *first_neighbour, *second_neighbour,
+                                                    *third};
+                ctx.m_count_group(compute_motif_descriptor(group, ctx.m_adjacency_matrix), group);
+            }
+        }
+    }
 
     /**
      * @brief Mark neighbours of a depth-1 vertex as BFS depth-2 if not yet seen in this run.
@@ -240,7 +325,7 @@ private:
      * @param ctx Shared run context; bfs_visited is updated in place.
      * @param depth_two Iterator range over the depth-1 vertex's neighbours.
      */
-    void mark_depth_two_neighbours(KavoshContext& ctx, const NeighbourRange& depth_two) const;
+    void mark_depth_two_neighbours(CpuKavoshContext& ctx, const CpuNeighbourRange& depth_two) const;
 
     /**
      * @brief Emit groups: root + first_neighbour (depth-1) + n11 (depth-1) + n2 (depth-2).
@@ -254,10 +339,41 @@ private:
      * @param depth_one All of root's depth-1 neighbours (candidates for n11).
      * @param depth_two All neighbours of first_neighbour (depth-2 candidates for n2).
      */
-    void emit_depth_1_1_2_for_first_vertex(const KavoshContext& ctx,
+    template <typename KavoshContext, typename NeighbourRange>
+    SGF_HD void emit_depth_1_1_2_for_first_vertex(const KavoshContext& ctx,
                                            std::vector<uint32_t>::const_iterator first_neighbour,
                                            const NeighbourRange& depth_one,
-                                           const NeighbourRange& depth_two) const;
+                                           const NeighbourRange& depth_two) const
+    {
+        for (auto second_degree_neighbour = depth_two.m_begin;
+            second_degree_neighbour != depth_two.m_end; ++second_degree_neighbour)
+        {
+            if (m_order_index[*(second_degree_neighbour)] < m_order_index[ctx.m_root] ||
+                ctx.m_bfs_visited[*(second_degree_neighbour)] !=
+                    static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET))
+            {
+                continue;
+            }
+            emit_depth_1_1_2_for_second_vertex(ctx, first_neighbour, depth_one,
+                                            second_degree_neighbour);
+        }
+        if (m_graph.is_directed())
+        {
+            for (auto second_degree_neighbour = depth_two.m_rev_begin;
+                second_degree_neighbour != depth_two.m_rev_end; ++second_degree_neighbour)
+            {
+                if (m_order_index[*(second_degree_neighbour)] < m_order_index[ctx.m_root] ||
+                    ctx.m_bfs_visited[*(second_degree_neighbour)] !=
+                        static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET) ||
+                    ctx.m_adjacency_matrix[(*first_neighbour)][*(second_degree_neighbour)])
+                {
+                    continue;
+                }
+                emit_depth_1_1_2_for_second_vertex(ctx, first_neighbour, depth_one,
+                                                second_degree_neighbour);
+            }
+        }
+    }
 
     /**
      * @brief Emit (1,1,2) groups for a single fixed n2 vertex against all n11 candidates.
@@ -270,10 +386,59 @@ private:
      * @param depth_one Combined depth-1 range (fwd + rev).
      * @param second_neighbour The fixed depth-2 vertex.
      */
-    void emit_depth_1_1_2_for_second_vertex(
+    // NOLINTNEXTLINE(readability-function-size)
+    template <typename KavoshContext, typename NeighbourRange>
+    SGF_HD void emit_depth_1_1_2_for_second_vertex(
         const KavoshContext& ctx, std::vector<uint32_t>::const_iterator first_neighbour,
         const NeighbourRange& depth_one,
-        std::vector<uint32_t>::const_iterator second_neighbour) const;
+        std::vector<uint32_t>::const_iterator second_neighbour) const
+    {
+        for (auto second_first_degree_neighbour = depth_one.m_begin;
+            second_first_degree_neighbour != depth_one.m_end; ++second_first_degree_neighbour)
+        {
+            if (m_order_index[*(second_first_degree_neighbour)] < m_order_index[ctx.m_root] ||
+                *first_neighbour == *second_first_degree_neighbour)
+            {
+                continue;
+            }
+            const bool edge_exists =
+                ctx.m_adjacency_matrix[*(second_first_degree_neighbour)][*(second_neighbour)] ||
+                ctx.m_adjacency_matrix[*(second_neighbour)][*(second_first_degree_neighbour)];
+            // avoid double-counting due to two paths from root to n2 - from n1 and from n11.
+            if (!edge_exists || (edge_exists && *(first_neighbour) < *(second_first_degree_neighbour)))
+            {
+                const std::vector<uint32_t> group = {ctx.m_root, *(first_neighbour),
+                                                    *(second_first_degree_neighbour),
+                                                    *(second_neighbour)};
+                ctx.m_count_group(compute_motif_descriptor(group, ctx.m_adjacency_matrix), group);
+            }
+        }
+        if (m_graph.is_directed())
+        {
+            for (auto second_first_degree_neighbour = depth_one.m_rev_begin;
+                second_first_degree_neighbour != depth_one.m_rev_end; ++second_first_degree_neighbour)
+            {
+                if (m_order_index[*(second_first_degree_neighbour)] < m_order_index[ctx.m_root] ||
+                    *first_neighbour == *second_first_degree_neighbour ||
+                    ctx.m_adjacency_matrix[ctx.m_root][*(second_first_degree_neighbour)])
+                {
+                    continue;
+                }
+                const bool edge_exists =
+                    ctx.m_adjacency_matrix[*(second_first_degree_neighbour)][*(second_neighbour)] ||
+                    ctx.m_adjacency_matrix[*(second_neighbour)][*(second_first_degree_neighbour)];
+                // avoid double-counting due to two paths from root to n2 - from n1 and from n11.
+                if (!edge_exists ||
+                    (edge_exists && *(first_neighbour) < *(second_first_degree_neighbour)))
+                {
+                    const std::vector<uint32_t> group = {ctx.m_root, *(first_neighbour),
+                                                        *(second_first_degree_neighbour),
+                                                        *(second_neighbour)};
+                    ctx.m_count_group(compute_motif_descriptor(group, ctx.m_adjacency_matrix), group);
+                }
+            }
+        }
+    }
 
     /**
      * @brief Build combined depth-2 range for @p first_neighbour and run (1,1,2)/(1,2,2) emission.
@@ -285,9 +450,9 @@ private:
      * @param first_neighbour The depth-1 anchor being processed.
      * @param depth_one Combined depth-1 range used as n11 candidates.
      */
-    void process_first_neighbour_112_122(KavoshContext& ctx,
+    void process_first_neighbour_112_122(CpuKavoshContext& ctx,
                                          std::vector<uint32_t>::const_iterator first_neighbour,
-                                         const NeighbourRange& depth_one) const;
+                                         const CpuNeighbourRange& depth_one) const;
 
     /**
      * @brief Emit groups: root + first_neighbour (depth-1) + two distinct depth-2 vertices.
@@ -299,9 +464,40 @@ private:
      * @param first_neighbour The depth-1 anchor vertex (n1).
      * @param depth_two All neighbours of first_neighbour (pool for depth-2 pair selection).
      */
-    void emit_depth_1_2_2_for_first_vertex(const KavoshContext& ctx,
+    template <typename KavoshContext, typename NeighbourRange>
+    SGF_HD void emit_depth_1_2_2_for_first_vertex(const KavoshContext& ctx,
                                            std::vector<uint32_t>::const_iterator first_neighbour,
-                                           const NeighbourRange& depth_two) const;
+                                           const NeighbourRange& depth_two) const
+    {
+        for (auto first_second_degree_neighbour = depth_two.m_begin;
+            first_second_degree_neighbour != depth_two.m_end; ++first_second_degree_neighbour)
+        {
+            if (m_order_index[*(first_second_degree_neighbour)] < m_order_index[ctx.m_root] ||
+                ctx.m_bfs_visited[*(first_second_degree_neighbour)] !=
+                    static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET))
+            {
+                continue;
+            }
+            emit_depth_1_2_2_for_second_vertex(ctx, first_neighbour, depth_two,
+                                            first_second_degree_neighbour, false);
+        }
+        if (m_graph.is_directed())
+        {
+            for (auto first_second_degree_neighbour = depth_two.m_rev_begin;
+                first_second_degree_neighbour != depth_two.m_rev_end; ++first_second_degree_neighbour)
+            {
+                if (m_order_index[*(first_second_degree_neighbour)] < m_order_index[ctx.m_root] ||
+                    (ctx.m_bfs_visited[*(first_second_degree_neighbour)] !=
+                    static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET)) ||
+                    ctx.m_adjacency_matrix[(*first_neighbour)][*(first_second_degree_neighbour)])
+                {
+                    continue;
+                }
+                emit_depth_1_2_2_for_second_vertex(ctx, first_neighbour, depth_two,
+                                                first_second_degree_neighbour, true);
+            }
+        }
+    }
 
     /**
      * @brief Emit (1,2,2) groups for a fixed first depth-2 vertex against remaining candidates.
@@ -312,11 +508,52 @@ private:
      * @param second_neighbour The chosen first depth-2 vertex.
      * @param is_second_vertex_reversed True if second_neighbour was reached via a reverse edge.
      */
-    void emit_depth_1_2_2_for_second_vertex(const KavoshContext& ctx,
+    // NOLINTNEXTLINE(readability-function-size)
+    template <typename KavoshContext, typename NeighbourRange>
+    SGF_HD void emit_depth_1_2_2_for_second_vertex(const KavoshContext& ctx,
                                             std::vector<uint32_t>::const_iterator first_neighbour,
                                             const NeighbourRange& depth_two,
                                             std::vector<uint32_t>::const_iterator second_neighbour,
-                                            bool is_second_vertex_reversed) const;
+                                            bool is_second_vertex_reversed) const
+    {
+        if (!is_second_vertex_reversed)
+        {
+            for (auto second_second_degree_neighbour = second_neighbour + 1;
+                second_second_degree_neighbour != depth_two.m_end; ++second_second_degree_neighbour)
+            {
+                if (m_order_index[*(second_second_degree_neighbour)] < m_order_index[ctx.m_root] ||
+                    (ctx.m_bfs_visited[*(second_second_degree_neighbour)] !=
+                    static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET)))
+                {
+                    continue;
+                }
+                const std::vector<uint32_t> group = {ctx.m_root, *(first_neighbour),
+                                                    *(second_neighbour),
+                                                    *(second_second_degree_neighbour)};
+                ctx.m_count_group(compute_motif_descriptor(group, ctx.m_adjacency_matrix), group);
+            }
+        }
+        if (m_graph.is_directed())
+        {
+            auto second_second_degree_neighbour =
+                is_second_vertex_reversed ? second_neighbour + 1 : depth_two.m_rev_begin;
+            for (; second_second_degree_neighbour != depth_two.m_rev_end;
+                ++second_second_degree_neighbour)
+            {
+                if (m_order_index[*(second_second_degree_neighbour)] < m_order_index[ctx.m_root] ||
+                    (ctx.m_bfs_visited[*(second_second_degree_neighbour)] !=
+                    static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET)) ||
+                    ctx.m_adjacency_matrix[*(first_neighbour)][*(second_second_degree_neighbour)])
+                {
+                    continue;
+                }
+                const std::vector<uint32_t> group = {ctx.m_root, *(first_neighbour),
+                                                    *(second_neighbour),
+                                                    *(second_second_degree_neighbour)};
+                ctx.m_count_group(compute_motif_descriptor(group, ctx.m_adjacency_matrix), group);
+            }
+        }
+    }
 
     /**
      * @brief For each depth-1 anchor, mark depth-2 reachability then emit (1,1,2) and (1,2,2)
@@ -327,8 +564,8 @@ private:
      * @param ctx Shared run context; bfs_visited is updated in place.
      * @param depth_one Iterator range over root's direct neighbours.
      */
-    void emit_depth_1_1_2_and_1_2_2_groups(KavoshContext& ctx,
-                                           const NeighbourRange& depth_one) const;
+    void emit_depth_1_1_2_and_1_2_2_groups(CpuKavoshContext& ctx,
+                                           const CpuNeighbourRange& depth_one) const;
 
     /**
      * @brief Enumerate BFS-depth-2 neighbours of n1 and delegate per-n2 group emission.
@@ -339,8 +576,49 @@ private:
      * @param first_degree_vertex The depth-1 anchor (n1).
      * @param second_degree Iterator range over n1's neighbours (depth-2 candidates).
      */
-    void emit_depth_1_2_3_for_first_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
-                                           const NeighbourRange& second_degree) const;
+    template <typename KavoshContext, typename NeighbourRange>
+    SGF_HD void emit_depth_1_2_3_for_first_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
+                                           const NeighbourRange& second_degree) const
+    {
+        for (auto second_vertex = second_degree.m_begin; second_vertex != second_degree.m_end;
+            ++second_vertex)
+        {
+            if (m_order_index[*second_vertex] < m_order_index[ctx.m_root] ||
+                ctx.m_bfs_visited[*second_vertex] !=
+                    static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET))
+            {
+                continue;
+            }
+            const NeighbourIteratorPair three_fwd = m_graph.get_neighbours(*second_vertex);
+            const NeighbourIteratorPair three_rev =
+                m_graph.is_directed() ? m_graph.get_neighbours(*second_vertex, true)
+                                    : std::make_pair(three_fwd.second, three_fwd.second);
+            emit_depth_1_2_3_for_second_vertex(
+                ctx, first_degree_vertex, *second_vertex,
+                NeighbourRange{three_fwd.first, three_fwd.second, three_rev.first, three_rev.second});
+        }
+        if (m_graph.is_directed())
+        {
+            for (auto second_vertex = second_degree.m_rev_begin;
+                second_vertex != second_degree.m_rev_end; ++second_vertex)
+            {
+                if (m_order_index[*second_vertex] < m_order_index[ctx.m_root] ||
+                    ctx.m_bfs_visited[*second_vertex] !=
+                        static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET) ||
+                    ctx.m_adjacency_matrix[first_degree_vertex][*second_vertex])
+                {
+                    continue;
+                }
+                const NeighbourIteratorPair three_fwd = m_graph.get_neighbours(*second_vertex);
+                const NeighbourIteratorPair three_rev =
+                    m_graph.is_directed() ? m_graph.get_neighbours(*second_vertex, true)
+                                        : std::make_pair(three_fwd.second, three_fwd.second);
+                emit_depth_1_2_3_for_second_vertex(ctx, first_degree_vertex, *second_vertex,
+                                                NeighbourRange{three_fwd.first, three_fwd.second,
+                                                                three_rev.first, three_rev.second});
+            }
+        }
+    }
 
     /**
      * @brief Emit groups: root + n1 + n2 + n3 for each candidate third-degree vertex.
@@ -354,9 +632,36 @@ private:
      * @param second_degree_vertex The depth-2 anchor (n2).
      * @param third_degree Iterator range over n2's neighbours (candidates for n3).
      */
-    void emit_depth_1_2_3_for_second_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
+    template <typename KavoshContext, typename NeighbourRange>
+    SGF_HD void emit_depth_1_2_3_for_second_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
                                             uint32_t second_degree_vertex,
-                                            const NeighbourRange& third_degree) const;
+                                            const NeighbourRange& third_degree) const
+    {
+        for (auto third_vertex = third_degree.m_begin; third_vertex != third_degree.m_end;
+            ++third_vertex)
+        {
+            if (m_order_index[*third_vertex] < m_order_index[ctx.m_root])
+            {
+                continue;
+            }
+            emit_depth_1_2_3_for_third_vertex(ctx, first_degree_vertex, second_degree_vertex,
+                                            *third_vertex);
+        }
+        if (m_graph.is_directed())
+        {
+            for (auto third_vertex = third_degree.m_rev_begin; third_vertex != third_degree.m_rev_end;
+                ++third_vertex)
+            {
+                if (m_order_index[*third_vertex] < m_order_index[ctx.m_root] ||
+                    ctx.m_adjacency_matrix[second_degree_vertex][*third_vertex])
+                {
+                    continue;
+                }
+                emit_depth_1_2_3_for_third_vertex(ctx, first_degree_vertex, second_degree_vertex,
+                                                *third_vertex);
+            }
+        }
+    }
 
     /**
      * @brief Emit one (1,2,3) group for a single n3 candidate, updating bfs_visited as needed.
@@ -368,9 +673,34 @@ private:
      * @param second_degree_vertex The depth-2 anchor.
      * @param third_degree_vertex The candidate depth-3 vertex.
      */
-    void emit_depth_1_2_3_for_third_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
+    template <typename KavoshContext, typename NeighbourRange>
+    SGF_HD void emit_depth_1_2_3_for_third_vertex(KavoshContext& ctx, uint32_t first_degree_vertex,
                                            uint32_t second_degree_vertex,
-                                           uint32_t third_degree_vertex) const;
+                                           uint32_t third_degree_vertex) const
+    {
+        const std::vector<uint32_t> group = {ctx.m_root, first_degree_vertex, second_degree_vertex,
+                                            third_degree_vertex};
+        const bool is_new = (static_cast<uint64_t>(ctx.m_bfs_visited[third_degree_vertex]) >>
+                            BFS_VERTEX_RUN_SHIFT) != static_cast<uint64_t>(ctx.m_root);
+        // Depth-2 vertex reachable via n2 with no direct edge to n1: genuine (1,2,3) path.
+        // Depth-2 vertex with back-edge to n1: already counted by emit_depth_1_1_2, skip.
+        const bool is_depth_two_no_back_edge =
+            (ctx.m_bfs_visited[third_degree_vertex] ==
+            static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_TWO_OFFSET)) &&
+            !ctx.m_adjacency_matrix[first_degree_vertex][third_degree_vertex] &&
+            !ctx.m_adjacency_matrix[third_degree_vertex][first_degree_vertex];
+        const bool is_depth_three = ctx.m_bfs_visited[third_degree_vertex] ==
+                                    static_cast<int64_t>(ctx.m_run_id + BFS_DEPTH_THREE_OFFSET);
+        if (is_new)
+        {
+            ctx.m_bfs_visited[third_degree_vertex] =
+                ctx.m_run_id + static_cast<int64_t>(BFS_DEPTH_THREE_OFFSET);
+        }
+        if (is_new || is_depth_two_no_back_edge || is_depth_three)
+        {
+            ctx.m_count_group(compute_motif_descriptor(group, ctx.m_adjacency_matrix), group);
+        }
+    }
 
     /**
      * @brief Outermost driver for the (1, 2, 3) Kavosh depth variation.
@@ -381,7 +711,7 @@ private:
      * @param ctx Shared run context; bfs_visited may be updated.
      * @param depth_one Iterator range over root's direct neighbours.
      */
-    void emit_depth_1_2_3_groups(KavoshContext& ctx, const NeighbourRange& depth_one) const;
+    void emit_depth_1_2_3_groups(CpuKavoshContext& ctx, const CpuNeighbourRange& depth_one) const;
 };
 
 }  // namespace sgf
