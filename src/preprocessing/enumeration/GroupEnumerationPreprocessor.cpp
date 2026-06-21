@@ -4,6 +4,7 @@
 #include "EnumerationOverflowException.h"
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
+#include "InvalidArgumentException.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 
@@ -64,12 +65,26 @@ void GroupEnumerationPreprocessor::sort_nodes()
               });
 }
 
-std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor::calculate()
+std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor::calculate(
+    const bool use_gpu)
 {
+    sort_nodes();
+
+#ifdef SGF_CUDA_ENABLED
+    if (use_gpu)
+    {
+        return calculate_gpu();
+    }
+#else
+    if (use_gpu)
+    {
+        throw InvalidArgumentException("GPU not available: not compiled with SGF_CUDA_ENABLED.");
+    }
+#endif
+
     std::unordered_map<UInt128, uint32_t, UInt128Hash> motif_count;
     std::vector<std::vector<bool>> graph_adjacency_matrix;
     graph_to_adjacency_matrix(graph_adjacency_matrix);
-    sort_nodes();
 
     const EnumerationResult thread_result = stream_groups_to_counter(graph_adjacency_matrix);
 
@@ -90,6 +105,14 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
                                      entity_name() + ".");
     return motif_count;
 }
+
+#ifdef SGF_CUDA_ENABLED
+EnumerationResult GroupEnumerationPreprocessor::calculate_gpu()
+{
+    throw InvalidArgumentException(
+        "GPU enumeration not implemented for this preprocessor type.");
+}
+#endif
 
 void GroupEnumerationPreprocessor::graph_to_adjacency_matrix(
     std::vector<std::vector<bool>>& adjacency_matrix) const

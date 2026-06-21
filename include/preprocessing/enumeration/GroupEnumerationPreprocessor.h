@@ -87,9 +87,25 @@ public:
      * - computes motif identifiers,
      * - counts occurrences.
      *
+     * @param use_gpu If true, dispatch to the GPU kernel implementation.
+     *                Throws InvalidArgumentException if compiled without SGF_CUDA_ENABLED.
      * @return Map of motif identifier to occurrence count.
      */
-    EnumerationResult calculate() override;
+    EnumerationResult calculate(bool use_gpu = false) override;
+
+#ifdef SGF_CUDA_ENABLED
+    /**
+     * @brief GPU kernel dispatch entry point.
+     *
+     * Derived classes that support GPU acceleration override this to launch
+     * CUDA kernels and return the enumeration result. The default implementation
+     * throws InvalidArgumentException so that preprocessors without GPU support
+     * (e.g. PathProcessor) remain fully instantiatable.
+     *
+     * @return Map of motif identifier to occurrence count.
+     */
+    virtual EnumerationResult calculate_gpu();
+#endif
 
 protected:
     /**
