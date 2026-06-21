@@ -140,6 +140,9 @@ if(SGF_ENABLE_CUDA)
     enable_language(CUDA)
     find_package(CUDAToolkit REQUIRED)
 
+    # ── cuCollections (cuco) — GPU hash map, header-only ──────────────────────
+    find_package(cuco REQUIRED)
+
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     # Compile for the GPU present at build time.
@@ -150,7 +153,7 @@ if(SGF_ENABLE_CUDA)
 
     file(GLOB_RECURSE SGF_CUDA_SOURCES CONFIGURE_DEPENDS "src/gpu/*.cu")
     target_sources(subgraph_filter_suite PRIVATE ${SGF_CUDA_SOURCES})
-    target_link_libraries(subgraph_filter_suite PRIVATE CUDA::cudart)
+    target_link_libraries(subgraph_filter_suite PRIVATE CUDA::cudart cuco)
     # SGF_CUDA_ENABLED propagates to all downstream targets that link this library.
     target_compile_definitions(subgraph_filter_suite PUBLIC SGF_CUDA_ENABLED)
     set_target_properties(subgraph_filter_suite PROPERTIES
