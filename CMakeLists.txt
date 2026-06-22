@@ -37,19 +37,33 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup json)
 
 # ── Sources ───────────────────────────────────────────────────────────────────
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*/*.cpp)
-# Exclude the CLI directory so the library remains usable without the CLI tools.
+# GLOB_RECURSE descends into all subdirectories, so a single *.cpp pattern
+# covers src/graph/, src/preprocessing/enumeration/, src/io/cache/, etc.
+# CLI sources are excluded — they live in their own executables below.
+# GPU .cu files are excluded here and added conditionally in the CUDA block.
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/*/*.cpp")
 list(FILTER SOURCES EXCLUDE REGEX ".*/cli/.*")
+list(FILTER SOURCES EXCLUDE REGEX ".*/gpu/.*")
 add_library(subgraph_filter_suite ${SOURCES})
 
-# ── Include paths ─────────────────────────────────────────────────────────────
-# Add include/ and every subdirectory under it so headers can be included by
-# filename alone (e.g. #include "ColoredGraph.h") without a path prefix.
-target_include_directories(subgraph_filter_suite
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-)
+# ── Include paths (library) ───────────────────────────────────────────────────
+# Discover all subdirectories under include/ that belong to the library.
+# cli/ is excluded — headers there are private to CLI executables.
+# gpu/ is excluded — added conditionally in the CUDA block below.
+file(GLOB_RECURSE _sgf_headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
+set(_sgf_lib_include_dirs "")
+foreach(_header IN LISTS _sgf_headers)
+    get_filename_component(_dir "${_header}" DIRECTORY)
+    list(APPEND _sgf_lib_include_dirs "${_dir}")
+endforeach()
+list(REMOVE_DUPLICATES _sgf_lib_include_dirs)
+list(FILTER _sgf_lib_include_dirs EXCLUDE REGEX ".*/include/cli(/.+)?$")
+list(FILTER _sgf_lib_include_dirs EXCLUDE REGEX ".*/include/gpu(/.+)?$")
+
+target_include_directories(subgraph_filter_suite PUBLIC $<INSTALL_INTERFACE:include>)
+foreach(_dir IN LISTS _sgf_lib_include_dirs)
+    target_include_directories(subgraph_filter_suite PUBLIC $<BUILD_INTERFACE:${_dir}>)
+endforeach()
 
 target_link_libraries(subgraph_filter_suite PUBLIC
     Boost::log
@@ -106,14 +120,14 @@ if(SGF_ENABLE_CUDA)
         set(CMAKE_CUDA_ARCHITECTURES native)
     endif()
 
-    file(GLOB_RECURSE SGF_CUDA_SOURCES CONFIGURE_DEPENDS "src/gpu/*.cu")
+    file(GLOB_RECURSE SGF_CUDA_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/*.cu")
     target_sources(subgraph_filter_suite PRIVATE ${SGF_CUDA_SOURCES})
     target_link_libraries(subgraph_filter_suite PRIVATE CUDA::cudart cuco)
     # SGF_CUDA_ENABLED propagates to all downstream targets that link this library.
     target_compile_definitions(subgraph_filter_suite PUBLIC SGF_CUDA_ENABLED)
-    set_target_properties(subgraph_filter_suite PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON
-    )
+    set_target_properties(subgraph_filter_suite PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    # GPU headers are only meaningful when CUDA is enabled.
     target_include_directories(subgraph_filter_suite PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/gpu>
         $<INSTALL_INTERFACE:include/gpu>
@@ -125,56 +139,40 @@ endif()
 option(SGF_BUILD_CLI "Build the sgf-graph-enumerator CLI tool" ON)
 if(SGF_BUILD_CLI)
     find_package(Boost 1.76 REQUIRED COMPONENTS program_options)
-    add_executable(sgf-graph-enumerator
-        src/cli/SgfGraphEnumerator.cpp
-        src/cli/argument_parsers/SgfGraphEnumeratorArgumentParser.cpp
-    )
-    target_include_directories(sgf-graph-enumerator PRIVATE
+    # CLI-private include directories (not propagated through the library).
+    set(_sgf_cli_includes
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/cli"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/cli/argument_parsers"
     )
-    target_link_libraries(sgf-graph-enumerator PRIVATE
-        subgraph_filter_suite
-        Boost::program_options
-    )
-    target_compile_options(sgf-graph-enumerator PRIVATE
+    set(_sgf_cli_warnings
         $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
         $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
     )
+
+    add_executable(sgf-graph-enumerator
+        src/cli/SgfGraphEnumerator.cpp
+        src/cli/argument_parsers/SgfGraphEnumeratorArgumentParser.cpp
+    )
+    target_include_directories(sgf-graph-enumerator PRIVATE ${_sgf_cli_includes})
+    target_link_libraries(sgf-graph-enumerator PRIVATE subgraph_filter_suite Boost::program_options)
+    target_compile_options(sgf-graph-enumerator PRIVATE ${_sgf_cli_warnings})
 
     add_executable(sgf-graph-searcher
         src/cli/SgfGraphSearcher.cpp
         src/cli/argument_parsers/SgfGraphSearcherArgumentParser.cpp
     )
-    target_include_directories(sgf-graph-searcher PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/cli/argument_parsers"
-    )
-    target_link_libraries(sgf-graph-searcher PRIVATE
-        subgraph_filter_suite
-        Boost::program_options
-    )
-    target_compile_options(sgf-graph-searcher PRIVATE
-        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
-        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
-    )
+    target_include_directories(sgf-graph-searcher PRIVATE ${_sgf_cli_includes})
+    target_link_libraries(sgf-graph-searcher PRIVATE subgraph_filter_suite Boost::program_options)
+    target_compile_options(sgf-graph-searcher PRIVATE ${_sgf_cli_warnings})
 
     add_executable(sgf-pattern-finder
         src/cli/SgfPatternFinder.cpp
         src/cli/argument_parsers/SgfPatternFinderArgumentParser.cpp
     )
-    target_include_directories(sgf-pattern-finder PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/cli/argument_parsers"
-    )
-    target_link_libraries(sgf-pattern-finder PRIVATE
-        subgraph_filter_suite
-        Boost::program_options
-    )
-    target_compile_options(sgf-pattern-finder PRIVATE
-        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
-        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
-    )
+    target_include_directories(sgf-pattern-finder PRIVATE ${_sgf_cli_includes})
+    target_link_libraries(sgf-pattern-finder PRIVATE subgraph_filter_suite Boost::program_options)
+    target_compile_options(sgf-pattern-finder PRIVATE ${_sgf_cli_warnings})
 endif()
 
 # ── Install / find_package support ───────────────────────────────────────────

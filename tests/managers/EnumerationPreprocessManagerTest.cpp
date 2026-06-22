@@ -43,7 +43,7 @@ public:
      * @brief Return the fixed result supplied at construction.
      * @return Preconfigured frequency-signature map.
      */
-    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate() override
+    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate(bool /*use_gpu*/ = false) override
     {
         return m_result;
     }
@@ -71,7 +71,7 @@ public:
      * @brief Increment the external counter and return an empty map.
      * @return Empty frequency-signature map.
      */
-    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate() override
+    std::unordered_map<UInt128, uint32_t, UInt128Hash> calculate(bool /*use_gpu*/ = false) override
     {
         ++m_call_count;
         return {};

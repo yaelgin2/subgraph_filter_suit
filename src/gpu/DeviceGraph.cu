@@ -20,9 +20,7 @@ void DeviceGraphBuilder::copy_array_to_managed_memory(uint32_t** const dest,
     std::memcpy(*dest, src, byte_count);
 }
 
-DeviceGraph DeviceGraphBuilder::build(const ColoredGraph& graph,
-                                       const std::vector<uint32_t>& order_index,
-                                       const std::vector<uint32_t>& sorted_nodes)
+DeviceGraph DeviceGraphBuilder::build(const ColoredGraph& graph)
 {
     const uint32_t vertex_count = static_cast<uint32_t>(graph.m_colors.size());
 
@@ -37,8 +35,6 @@ DeviceGraph DeviceGraphBuilder::build(const ColoredGraph& graph,
     copy_array_to_managed_memory(&dg.d_fwd_neighbors, graph.m_neighbours.data(),
                                   dg.num_fwd_edges);
     copy_array_to_managed_memory(&dg.d_colors, graph.m_colors.data(), vertex_count);
-    copy_array_to_managed_memory(&dg.d_order_index, order_index.data(), vertex_count);
-    copy_array_to_managed_memory(&dg.d_sorted_nodes, sorted_nodes.data(), vertex_count);
 
     if (graph.m_directed)
     {
@@ -63,8 +59,6 @@ void DeviceGraphBuilder::free_graph(DeviceGraph& device_graph)
     cudaFree(device_graph.d_fwd_offsets);
     cudaFree(device_graph.d_fwd_neighbors);
     cudaFree(device_graph.d_colors);
-    cudaFree(device_graph.d_order_index);
-    cudaFree(device_graph.d_sorted_nodes);
     if (device_graph.is_directed)
     {
         cudaFree(device_graph.d_rev_offsets);
@@ -73,8 +67,6 @@ void DeviceGraphBuilder::free_graph(DeviceGraph& device_graph)
     device_graph.d_fwd_offsets = nullptr;
     device_graph.d_fwd_neighbors = nullptr;
     device_graph.d_colors = nullptr;
-    device_graph.d_order_index = nullptr;
-    device_graph.d_sorted_nodes = nullptr;
     device_graph.d_rev_offsets = nullptr;
     device_graph.d_rev_neighbors = nullptr;
 }

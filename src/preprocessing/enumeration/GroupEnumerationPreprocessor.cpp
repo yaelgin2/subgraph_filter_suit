@@ -83,10 +83,8 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
 #endif
 
     std::unordered_map<UInt128, uint32_t, UInt128Hash> motif_count;
-    std::vector<std::vector<bool>> graph_adjacency_matrix;
-    graph_to_adjacency_matrix(graph_adjacency_matrix);
 
-    const EnumerationResult thread_result = stream_groups_to_counter(graph_adjacency_matrix);
+    const EnumerationResult thread_result = stream_groups_to_counter();
 
     uint32_t groups_counted = 0U;
     for (const auto& [motif_id, count] : thread_result)
@@ -114,27 +112,6 @@ EnumerationResult GroupEnumerationPreprocessor::calculate_gpu()
 }
 #endif
 
-void GroupEnumerationPreprocessor::graph_to_adjacency_matrix(
-    std::vector<std::vector<bool>>& adjacency_matrix) const
-{
-    const uint32_t vertex_count = m_graph.vertex_count();
-
-    adjacency_matrix.resize(vertex_count);
-    for (uint32_t vertex_index = 0; vertex_index < vertex_count; ++vertex_index)
-    {
-        adjacency_matrix[vertex_index].resize(vertex_count, false);
-    }
-
-    for (uint32_t node = 0; node < vertex_count; ++node)
-    {
-        const NeighbourIteratorPair neighbours = m_graph.get_neighbours(node);
-        for (std::vector<uint32_t>::const_iterator neighbour_it = neighbours.first;
-             neighbour_it != neighbours.second; ++neighbour_it)
-        {
-            adjacency_matrix[node][*neighbour_it] = true;
-        }
-    }
-}
 
 std::vector<uint32_t>
 GroupEnumerationPreprocessor::group_to_node_colors(const std::vector<uint32_t>& group) const

@@ -150,15 +150,12 @@ protected:
      * @brief Enumerate groups and return their counts keyed by canonical motif identifier.
      *
      * Derived classes discover every group, compute its canonical identifier, and
-     * accumulate counts into a local map (which may be the result of merging
-     * per-thread maps). The base class merges the returned map into its own
-     * accumulator with overflow detection.
+     * accumulate counts into a local map. The base class merges the returned map
+     * into its own accumulator with overflow detection.
      *
-     * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
      * @return Map from canonical motif identifier to occurrence count.
      */
-    virtual EnumerationResult stream_groups_to_counter(
-        const std::vector<std::vector<bool>>& graph_adjacency_matrix) const = 0;
+    virtual EnumerationResult stream_groups_to_counter() const = 0;
 
     /**
      * @brief Convert a group into a unique motif identifier.
@@ -197,7 +194,6 @@ private:
      */
     [[nodiscard]] virtual std::string entity_name() const = 0;
 
-    void graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix) const;
 };
 
 }  // namespace sgf

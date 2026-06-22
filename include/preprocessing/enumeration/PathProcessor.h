@@ -81,9 +81,7 @@ protected:
      *        lists from ColoredGraph are used directly).
      * @return Map from canonical path identifier to occurrence count.
      */
-    EnumerationResult stream_groups_to_counter(
-        [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix)
-        const override;
+    EnumerationResult stream_groups_to_counter() const override;
 
     /**
      * @brief Encode a 4-edge path into a canonical 128-bit motif identifier.

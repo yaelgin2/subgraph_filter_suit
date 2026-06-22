@@ -25,8 +25,6 @@ struct DeviceGraph
     uint32_t* d_rev_offsets;    ///< CSR row offsets for reverse edges (directed only), or nullptr.
     uint32_t* d_rev_neighbors;  ///< CSR column indices for reverse edges (directed only), or nullptr.
     uint32_t* d_colors;         ///< Vertex color array, length num_nodes.
-    uint32_t* d_order_index;    ///< Position of each vertex in the degree-sorted order, length num_nodes.
-    uint32_t* d_sorted_nodes;   ///< Vertices listed in degree-sorted order, length num_nodes.
     uint32_t  num_nodes;        ///< Number of vertices.
     uint32_t  num_fwd_edges;    ///< Number of forward CSR entries.
     uint32_t  num_rev_edges;    ///< Number of reverse CSR entries (0 for undirected).
@@ -48,13 +46,9 @@ public:
      * Accesses ColoredGraph's private CSR arrays directly via friendship.
      *
      * @param graph Source colored graph.
-     * @param order_index Mapping from vertex id to its position in degree-sorted order.
-     * @param sorted_nodes Vertices in degree-sorted order (m_node_order).
      * @return Populated DeviceGraph with all arrays in managed memory.
      */
-    static DeviceGraph build(const ColoredGraph& graph,
-                              const std::vector<uint32_t>& order_index,
-                              const std::vector<uint32_t>& sorted_nodes);
+    static DeviceGraph build(const ColoredGraph& graph);
 
     /**
      * @brief Free all managed memory arrays in a DeviceGraph.
