@@ -23,13 +23,6 @@
 namespace sgf
 {
 
-namespace
-{
-
-using NeighbourIteratorPair =
-    std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>;
-
-}  // namespace
 
 MotifPreprocessor::MotifPreprocessor(const ColoredGraph& graph, LoggerHandler logger,
                                      const uint32_t thread_number)
@@ -130,8 +123,8 @@ void MotifPreprocessor::mark_depth_one_neighbours(CpuKavoshContext& ctx,
     }
 }
 
-void MotifPreprocessor::emit_depth_1_1_1_groups(const CpuKavoshContext& ctx,
-                                                const CpuNeighbourRange& depth_one) const
+void MotifPreprocessor::emit_depth_1_1_1_groups_cpu(const CpuKavoshContext& ctx,
+                                                    const CpuNeighbourRange& depth_one) const
 {
     for (auto first = depth_one.m_begin; first != depth_one.m_end; ++first)
     {
@@ -180,22 +173,9 @@ void MotifPreprocessor::mark_depth_two_neighbours(CpuKavoshContext& ctx,
     }
 }
 
-void MotifPreprocessor::process_first_neighbour_112_122(
-    CpuKavoshContext& ctx, std::vector<uint32_t>::const_iterator first_neighbour,
-    const CpuNeighbourRange& depth_one) const
-{
-    const NeighbourIteratorPair two_fwd = m_graph.get_neighbours(*first_neighbour);
-    const NeighbourIteratorPair two_rev = m_graph.is_directed()
-                                              ? m_graph.get_neighbours(*first_neighbour, true)
-                                              : std::make_pair(two_fwd.second, two_fwd.second);
-    const CpuNeighbourRange depth_two{two_fwd.first, two_fwd.second, two_rev.first, two_rev.second};
-    mark_depth_two_neighbours(ctx, depth_two);
-    emit_depth_1_1_2_for_first_vertex(ctx, first_neighbour, depth_one, depth_two);
-    emit_depth_1_2_2_for_first_vertex(ctx, first_neighbour, depth_two);
-}
 
-void MotifPreprocessor::emit_depth_1_1_2_and_1_2_2_groups(CpuKavoshContext& ctx,
-                                                          const CpuNeighbourRange& depth_one) const
+void MotifPreprocessor::emit_depth_1_1_2_and_1_2_2_groups_cpu(
+    CpuKavoshContext& ctx, const CpuNeighbourRange& depth_one) const
 {
     for (auto first = depth_one.m_begin; first != depth_one.m_end; ++first)
     {
@@ -219,8 +199,8 @@ void MotifPreprocessor::emit_depth_1_1_2_and_1_2_2_groups(CpuKavoshContext& ctx,
     }
 }
 
-void MotifPreprocessor::emit_depth_1_2_3_groups(CpuKavoshContext& ctx,
-                                                const CpuNeighbourRange& depth_one) const
+void MotifPreprocessor::emit_depth_1_2_3_groups_cpu(CpuKavoshContext& ctx,
+                                                    const CpuNeighbourRange& depth_one) const
 {
     for (auto first_vertex = depth_one.m_begin; first_vertex != depth_one.m_end; ++first_vertex)
     {
@@ -276,9 +256,9 @@ void MotifPreprocessor::stream_groups_to_counter_for_vertex(
 
     CpuKavoshContext ctx{graph_adjacency_matrix, count_group, bfs_visited_vertices, run_id, root};
     mark_depth_one_neighbours(ctx, depth_one);
-    emit_depth_1_1_1_groups(ctx, depth_one);
-    emit_depth_1_1_2_and_1_2_2_groups(ctx, depth_one);
-    emit_depth_1_2_3_groups(ctx, depth_one);
+    emit_depth_1_1_1_groups_cpu(ctx, depth_one);
+    emit_depth_1_1_2_and_1_2_2_groups_cpu(ctx, depth_one);
+    emit_depth_1_2_3_groups_cpu(ctx, depth_one);
 }
 
 UInt128 MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,
