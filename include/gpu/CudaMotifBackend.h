@@ -42,18 +42,24 @@ struct GpuNeighbourRange
  */
 struct UInt128DeviceHash
 {
-    using result_type = uint32_t;
-
-    /**
-     * @brief Hash a UInt128 value to a 32-bit bucket index.
-     * @param key Value to hash.
-     * @return Hash result.
-     */
-    __host__ __device__ uint32_t operator()(const UInt128& key) const noexcept
+    __host__ __device__
+    static inline uint64_t fmix64(uint64_t x)
     {
-        constexpr uint64_t FNV_PRIME = 1099511628211ULL;
-        const uint64_t mixed = key.m_low ^ (key.m_high * FNV_PRIME);
-        return static_cast<uint32_t>(mixed ^ (mixed >> 32U));
+        x ^= x >> 33;
+        x *= 0xff51afd7ed558ccdULL;
+        x ^= x >> 33;
+        x *= 0xc4ceb9fe1a85ec53ULL;
+        x ^= x >> 33;
+        return x;
+    }
+
+    __host__ __device__
+    uint32_t operator()(const UInt128& key) const noexcept
+    {
+        uint64_t h = key.m_low;
+        h ^= fmix64(key.m_high + 0x9e3779b97f4a7c15ULL);
+        h = fmix64(h);
+        return static_cast<uint32_t>(h ^ (h >> 32));
     }
 };
 
