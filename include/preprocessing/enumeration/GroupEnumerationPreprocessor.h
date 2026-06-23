@@ -157,20 +157,20 @@ protected:
      */
     virtual EnumerationResult stream_groups_to_counter() const = 0;
 
-    /**
-     * @brief Convert a group into a unique motif identifier.
-     *
-     * Implementations must deterministically encode:
-     * - node colors or labels,
-     * - internal edge structure.
-     *
-     * @param motif_descriptor Numeric motif/color/group descriptor for the group.
-     * @param node_colors Color labels of the group's vertices in traversal order.
-     *
-     * @return Unique numeric motif identifier.
-     */
-    virtual UInt128 calculate_motif_number(uint32_t motif_descriptor,
-                                           const std::vector<uint32_t>& node_colors) const = 0;
+    // /**
+    //  * @brief Convert a group into a unique motif identifier.
+    //  *
+    //  * Implementations must deterministically encode:
+    //  * - node colors or labels,
+    //  * - internal edge structure.
+    //  *
+    //  * @param motif_descriptor Numeric motif/color/group descriptor for the group.
+    //  * @param node_colors Color labels of the group's vertices in traversal order.
+    //  *
+    //  * @return Unique numeric motif identifier.
+    //  */
+    // virtual UInt128 calculate_motif_number(uint32_t motif_descriptor,
+    //                                        const std::vector<uint32_t>& node_colors) const = 0;
 
     /**
      * @brief Extract node colors for a specific group of vertices.

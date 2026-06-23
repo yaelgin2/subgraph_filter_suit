@@ -95,9 +95,9 @@ string(REPLACE "-g" "-g1" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 # clang-tidy uses -Wno-unknown-warning-option (set in .clang-tidy ExtraArgsBefore)
 # to silently ignore this GCC-only flag when Clang parses compile_commands.json.
 target_compile_options(subgraph_filter_suite PRIVATE
-    $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
-    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
-    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
+    $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
+    $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:-Wall -Wextra -Wpedantic -Werror>
+    $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/W4 /WX /EHsc>
 )
 
 # ── CUDA (optional GPU acceleration) ─────────────────────────────────────────
@@ -110,15 +110,31 @@ if(SGF_ENABLE_CUDA)
     find_package(CUDAToolkit REQUIRED)
 
     # ── cuCollections (cuco) — GPU hash map, header-only ──────────────────────
-    find_package(cuco REQUIRED)
+    # Use the bundled source tree instead of an installed package.
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuCollections/include/cuco")
+        set(_cccl_root "${CMAKE_CURRENT_SOURCE_DIR}/cuCollections/build/_deps/cccl-src")
+        add_library(cuco INTERFACE)
+        target_include_directories(cuco INTERFACE
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cuCollections/include>
+            $<BUILD_INTERFACE:${_cccl_root}/libcudacxx/include>
+            $<BUILD_INTERFACE:${_cccl_root}/thrust>
+            $<BUILD_INTERFACE:${_cccl_root}/cub>
+            $<INSTALL_INTERFACE:include/cuco>
+        )
+        install(TARGETS cuco EXPORT SgfTargets)
+        install(DIRECTORY cuCollections/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cuco)
+    else()
+        find_package(cuco REQUIRED)
+    endif()
 
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-    # Compile for the GPU present at build time.
-    # Override at configure time for release packages: -DCMAKE_CUDA_ARCHITECTURES="70;80;89"
+    # Keys are uint64_t (8 bytes), supported on all architectures from sm_70+.
+    # "native" targets the GPU installed on the build machine (e.g. sm_89 for L40S).
     if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
         set(CMAKE_CUDA_ARCHITECTURES native)
     endif()
+    set_target_properties(subgraph_filter_suite PROPERTIES CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}")
 
     file(GLOB_RECURSE SGF_CUDA_SOURCES CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/*.cu")
@@ -127,6 +143,9 @@ if(SGF_ENABLE_CUDA)
     # SGF_CUDA_ENABLED propagates to all downstream targets that link this library.
     target_compile_definitions(subgraph_filter_suite PUBLIC SGF_CUDA_ENABLED)
     set_target_properties(subgraph_filter_suite PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    target_compile_options(subgraph_filter_suite PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>
+    )
     # GPU headers are only meaningful when CUDA is enabled.
     target_include_directories(subgraph_filter_suite PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/gpu>
@@ -145,9 +164,9 @@ if(SGF_BUILD_CLI)
         "${CMAKE_CURRENT_SOURCE_DIR}/include/cli/argument_parsers"
     )
     set(_sgf_cli_warnings
-        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
-        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Werror>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
+        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra -Wpedantic -Werror -Wno-maybe-uninitialized>
+        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:-Wall -Wextra -Wpedantic -Werror>
+        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/W4 /WX /EHsc>
     )
 
     add_executable(sgf-graph-enumerator

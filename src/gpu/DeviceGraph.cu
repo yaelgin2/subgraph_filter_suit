@@ -26,7 +26,7 @@ DeviceGraph DeviceGraphBuilder::build(const ColoredGraph& graph)
 
     DeviceGraph dg{};
     dg.num_nodes = vertex_count;
-    dg.is_directed = graph.m_directed;
+    dg.m_directed = graph.m_directed;
     dg.num_fwd_edges = static_cast<uint32_t>(graph.m_neighbours.size());
     dg.num_rev_edges = 0U;
 
@@ -59,7 +59,7 @@ void DeviceGraphBuilder::free_graph(DeviceGraph& device_graph)
     cudaFree(device_graph.d_fwd_offsets);
     cudaFree(device_graph.d_fwd_neighbors);
     cudaFree(device_graph.d_colors);
-    if (device_graph.is_directed)
+    if (device_graph.m_directed)
     {
         cudaFree(device_graph.d_rev_offsets);
         cudaFree(device_graph.d_rev_neighbors);

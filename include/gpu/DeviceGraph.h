@@ -28,7 +28,21 @@ struct DeviceGraph
     uint32_t  num_nodes;        ///< Number of vertices.
     uint32_t  num_fwd_edges;    ///< Number of forward CSR entries.
     uint32_t  num_rev_edges;    ///< Number of reverse CSR entries (0 for undirected).
-    bool      is_directed;      ///< True for directed graphs.
+    bool      m_directed;       ///< True for directed graphs.
+
+    /**
+     * @brief Return true if graph is directed.
+     */
+    __host__ __device__ bool is_directed() const noexcept { return m_directed; }
+
+    /**
+     * @brief Return the color label of @p vertex.
+     * @param vertex Vertex id to query.
+     */
+    __host__ __device__ uint32_t get_vertex_color(const uint32_t vertex) const noexcept
+    {
+        return d_colors[vertex];
+    }
 };
 
 /**

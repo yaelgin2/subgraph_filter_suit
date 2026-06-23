@@ -95,22 +95,10 @@ EnumerationResult MotifPreprocessor::stream_groups_to_counter() const
                 try
                 {
                     std::vector<int64_t> bfs_visited(vertex_count, -1);
-                    const GroupCounterCallback thread_count_fn =
-                        [canonical_ptr, canonical_size, &local_map, this](
-                            const uint32_t desc, const std::vector<uint32_t>& group)
-                    {
-                        uint32_t node_colors[SgfConstants::MOTIF_SIZE];
-                        for (uint32_t ci = 0U; ci < SgfConstants::MOTIF_SIZE; ++ci)
-                        {
-                            node_colors[ci] = m_graph.get_vertex_color(group[ci]);
-                        }
-                        local_map[calculate_motif_number_from_arrays(
-                            desc, node_colors, canonical_ptr, canonical_size)] += 1U;
-                    };
                     uint32_t idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
                     while (idx < order_size)
                     {
-                        stream_groups_to_counter_for_vertex(thread_count_fn, bfs_visited,
+                        stream_groups_to_counter_for_vertex(local_map, bfs_visited,
                                                             canonical_ptr, canonical_size,
                                                             m_node_order[idx]);
                         idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
@@ -145,7 +133,7 @@ EnumerationResult MotifPreprocessor::stream_groups_to_counter() const
     return merged;
 }
 
-void MotifPreprocessor::emit_depth_1_1_1_groups_cpu(const CpuKavoshContext& ctx,
+void MotifPreprocessor::emit_depth_1_1_1_groups_cpu(CpuKavoshContext& ctx,
                                                      const CpuNeighbourRange& depth_one) const
 {
     for (auto first = depth_one.m_begin; first != depth_one.m_end; ++first)
@@ -233,8 +221,14 @@ void MotifPreprocessor::emit_depth_1_2_3_groups_cpu(CpuKavoshContext& ctx,
     }
 }
 
+void MotifPreprocessor::cpu_add_motif_to_count(CpuKavoshContext& ctx,
+                                                const UInt128 motif_id) noexcept
+{
+    ctx.m_result[motif_id] += 1U;
+}
+
 void MotifPreprocessor::stream_groups_to_counter_for_vertex(
-    const GroupCounterCallback& count_group,
+    EnumerationResult& result,
     std::vector<int64_t>& bfs_visited_vertices,
     const MotifCanonical* const canonical,
     const uint32_t canonical_size,
@@ -250,63 +244,33 @@ void MotifPreprocessor::stream_groups_to_counter_for_vertex(
                                               : std::make_pair(one_fwd.second, one_fwd.second);
     const CpuNeighbourRange depth_one{one_fwd.first, one_fwd.second, one_rev.first, one_rev.second};
 
-    CpuKavoshContext ctx{m_graph, count_group, bfs_visited_vertices, run_id, root,
-                         canonical, canonical_size, m_order_index};
+    CpuKavoshContext ctx{run_id, root, canonical, canonical_size,
+                         m_graph, result, bfs_visited_vertices, m_order_index,
+                         cpu_add_motif_to_count};
     ctx.mark_neighbours(depth_one, BFS_DEPTH_ONE_OFFSET);
     emit_depth_1_1_1_groups_cpu(ctx, depth_one);
     emit_depth_1_1_2_and_1_2_2_groups_cpu(ctx, depth_one);
     emit_depth_1_2_3_groups_cpu(ctx, depth_one);
 }
 
-// NOLINTNEXTLINE(readability-function-size)
-SGF_HD UInt128 MotifPreprocessor::calculate_motif_number_from_arrays(
-    const uint32_t descriptor,
-    const uint32_t* const node_colors,
-    const MotifCanonical* const canonical_array,
-    const uint32_t canonical_size) noexcept
-{
-    if (descriptor >= canonical_size || canonical_array[descriptor].m_permutation_count == 0U)
-    {
-        return UInt128{};
-    }
-    const MotifCanonical& canonical = canonical_array[descriptor];
-    UInt128 minimal_colors = ~UInt128{};
-    for (uint32_t perm = 0U; perm < canonical.m_permutation_count; ++perm)
-    {
-        UInt128 encoded{};
-        for (uint32_t ci = 0U; ci < SgfConstants::MOTIF_SIZE; ++ci)
-        {
-            encoded += UInt128{node_colors[canonical.m_color_permutations[perm][ci]]}
-                       << (ci * static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR));
-        }
-        if (encoded < minimal_colors)
-        {
-            minimal_colors = encoded;
-        }
-    }
-    return (UInt128{static_cast<uint64_t>(canonical.m_minimal_motif_num)}
-            << static_cast<uint32_t>(SgfConstants::MOTIF_SIZE * SgfConstants::BITS_PER_COLOR)) |
-           minimal_colors;
-}
-
-UInt128 MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,
-                                                   const std::vector<uint32_t>& node_colors) const
-{
-    // Build a one-shot flat array from the unordered_map for the single lookup.
-    // In normal usage this path is not called — stream_groups_to_counter uses
-    // the pre-built flat array via calculate_motif_number_from_arrays directly.
-    const std::unordered_map<uint32_t, MotifCanonical>& canonical_map =
-        m_graph.is_directed() ? DIRECTED_MOTIF_CANONICAL_MAP : UNDIRECTED_MOTIF_CANONICAL_MAP;
-    std::vector<MotifCanonical> canonical_array;
-    const uint32_t canonical_size = build_canonical_array(canonical_map, canonical_array);
-    uint32_t colors[SgfConstants::MOTIF_SIZE];
-    for (uint32_t ci = 0U; ci < SgfConstants::MOTIF_SIZE; ++ci)
-    {
-        colors[ci] = node_colors[ci];
-    }
-    return calculate_motif_number_from_arrays(motif_descriptor, colors,
-                                              canonical_array.data(), canonical_size);
-}
+// UInt128 MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,
+//                                                    const std::vector<uint32_t>& node_colors) const
+// {
+//     // Build a one-shot flat array from the unordered_map for the single lookup.
+//     // In normal usage this path is not called — stream_groups_to_counter uses
+//     // the pre-built flat array via calculate_motif_number_from_arrays directly.
+//     const std::unordered_map<uint32_t, MotifCanonical>& canonical_map =
+//         m_graph.is_directed() ? DIRECTED_MOTIF_CANONICAL_MAP : UNDIRECTED_MOTIF_CANONICAL_MAP;
+//     std::vector<MotifCanonical> canonical_array;
+//     const uint32_t canonical_size = build_canonical_array(canonical_map, canonical_array);
+//     uint32_t colors[SgfConstants::MOTIF_SIZE];
+//     for (uint32_t ci = 0U; ci < SgfConstants::MOTIF_SIZE; ++ci)
+//     {
+//         colors[ci] = node_colors[ci];
+//     }
+//     return calculate_motif_number_from_arrays(motif_descriptor, colors,
+//                                               canonical_array.data(), canonical_size);
+// }
 
 std::string MotifPreprocessor::entity_name() const
 {

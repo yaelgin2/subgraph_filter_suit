@@ -1,13 +1,17 @@
 #pragma once
 
-#ifdef SGF_CUDA_ENABLED
+#ifndef SGF_HD
+#ifdef __CUDACC__
 #define SGF_HD __host__ __device__
 #else
 #define SGF_HD
 #endif
+#endif
 
 #include "ColoredGraph.h"
 #include "Constants.h"
+#include "CpuKavoshContext.h"
+#include "CpuNeighbourRange.h"
 #include "GroupEnumerationPreprocessor.h"
 #include "LoggerHandler.h"
 #include "MotifMap.h"
@@ -17,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#ifdef SGF_CUDA_ENABLED
+#ifdef __CUDACC__
 #include "CudaMotifBackend.h"
 #endif
 
@@ -111,127 +115,20 @@ protected:
      */
     EnumerationResult stream_groups_to_counter() const override;
 
-    /**
-     * @brief Canonicalize a 4-node group into a unique motif identifier.
-     *
-     * Wraps calculate_motif_number_from_arrays using the precomputed flat
-     * canonical array built once at the start of stream_groups_to_counter.
-     *
-     * @param motif_descriptor Raw edge-structure number for the group.
-     * @param node_colors Color labels of the four vertices in group order.
-     * @return Canonical 128-bit motif identifier.
-     */
-    UInt128 calculate_motif_number(uint32_t motif_descriptor,
-                                   const std::vector<uint32_t>& node_colors) const override;
+    // /**
+    //  * @brief Canonicalize a 4-node group into a unique motif identifier.
+    //  *
+    //  * Wraps calculate_motif_number_from_arrays using the precomputed flat
+    //  * canonical array built once at the start of stream_groups_to_counter.
+    //  *
+    //  * @param motif_descriptor Raw edge-structure number for the group.
+    //  * @param node_colors Color labels of the four vertices in group order.
+    //  * @return Canonical 128-bit motif identifier.
+    //  */
+    // UInt128 calculate_motif_number(uint32_t motif_descriptor,
+    //                                const std::vector<uint32_t>& node_colors) const override;
 
 private:
-    // ── CpuNeighbourRange ─────────────────────────────────────────────────────
-
-    /**
-     * @brief A half-open iterator range over a vertex's sorted neighbour list.
-     *
-     * For directed graphs, @p rev_begin / @p rev_end carry incoming neighbours.
-     * Set rev_begin == rev_end for undirected graphs.
-     */
-    struct CpuNeighbourRange
-    {
-        std::vector<uint32_t>::const_iterator m_begin;     ///< First outgoing neighbour.
-        std::vector<uint32_t>::const_iterator m_end;       ///< One past last outgoing neighbour.
-        std::vector<uint32_t>::const_iterator m_rev_begin; ///< First incoming neighbour (directed).
-        std::vector<uint32_t>::const_iterator m_rev_end;   ///< One past last incoming neighbour.
-    };
-
-    // ── CpuKavoshContext ──────────────────────────────────────────────────────
-
-    /**
-     * @brief Shared mutable state for one Kavosh BFS run rooted at a single vertex.
-     *
-     * Edge checks use binary search on the sorted ColoredGraph neighbour lists —
-     * identical O(log d) complexity to the GPU CSR path.
-     */
-    struct CpuKavoshContext
-    {
-        const ColoredGraph& m_graph;          ///< Graph for neighbour/edge lookups.
-        const GroupCounterCallback& m_count_group;  ///< Callback for emitting groups.
-        std::vector<int64_t>& m_bfs_visited;  ///< BFS depth-encoding array.
-        int64_t  m_run_id;                    ///< Root-unique run identifier.
-        uint32_t m_root;                      ///< Current root vertex.
-        const MotifCanonical* m_canonical;    ///< Flat canonical array (owned by caller).
-        uint32_t m_canonical_size;            ///< Number of entries in m_canonical.
-        const std::vector<uint32_t>& m_order_index;        ///< Vertex position in degree-sorted order (m_order_index.data()).
-
-        /**
-         * @brief Return true if @p dest is a forward neighbour of @p src.
-         *
-         * Binary search on the sorted neighbour list returned by get_neighbours.
-         */
-        bool has_fwd_edge(const uint32_t src, const uint32_t dest) const
-        {
-            const auto [begin, end] = m_graph.get_neighbours(src);
-            return std::binary_search(begin, end, dest);
-        }
-
-        /**
-         * @brief Return true if @p vertex was marked at @p depth in this run.
-         */
-        bool is_at_depth(const uint32_t vertex, const int64_t depth) const
-        {
-            return m_bfs_visited[vertex] == m_run_id + depth;
-        }
-
-        /**
-         * @brief Return true if @p vertex was visited at any depth in this run.
-         */
-        bool is_visited_in_run(const uint32_t vertex) const
-        {
-            return (static_cast<uint64_t>(m_bfs_visited[vertex]) >> BFS_VERTEX_RUN_SHIFT) ==
-                   static_cast<uint64_t>(m_root);
-        }
-
-        /**
-         * @brief Mark @p vertex at @p depth for this run.
-         */
-        void mark_at_depth(const uint32_t vertex, const int64_t depth)
-        {
-            m_bfs_visited[vertex] = m_run_id + depth;
-        }
-
-        void mark_neighbours(const CpuNeighbourRange& neighbours_range, const uint32_t depth) {
-            for (auto it = neighbours_range.m_begin; it != neighbours_range.m_end; ++it) {
-                if (!is_visited_in_run(*it)) {
-                    mark_at_depth(*it, depth);
-                }
-            }
-            if (m_graph.is_directed()) {
-                for (auto it = neighbours_range.m_rev_begin; it != neighbours_range.m_rev_end; ++it) {
-                    if (!is_visited_in_run(*it)) {
-                        mark_at_depth(*it, depth);
-                    }
-                }
-            }
-        }
-        /**
-         * @brief Compute descriptor and emit a (root, n1, n2, n3) group.
-         *
-         * Computes the motif descriptor via binary-search edge checks, then calls
-         * m_count_group which internally calls calculate_motif_number_from_arrays
-         * via the stored canonical array.
-         */
-        void count_group_by_ids(const uint32_t n1, const uint32_t n2, const uint32_t n3) const
-        {
-            const uint32_t group[4] = {m_root, n1, n2, n3};
-            const uint32_t desc = compute_motif_descriptor(
-                group, m_graph.is_directed(),
-                [this](const uint32_t src, const uint32_t dest)
-                { return has_fwd_edge(src, dest); });
-            const std::vector<uint32_t> group_vec(group, group + 4U);
-            m_count_group(desc, group_vec);
-        }
-
-        // ── Constant shift (replicated from MotifPreprocessor outer class) ──
-        static constexpr uint64_t BFS_VERTEX_RUN_SHIFT = 2U;
-    };
-
     /** @brief Iterator pair returned by ColoredGraph::get_neighbours(). */
     using NeighbourIteratorPair = std::pair<std::vector<uint32_t>::const_iterator,
                                             std::vector<uint32_t>::const_iterator>;
@@ -276,18 +173,49 @@ private:
      * @brief Enumerate one root vertex's 4-node groups across all Kavosh BFS depth variations.
      */
     void stream_groups_to_counter_for_vertex(
-        const GroupCounterCallback& count_group,
+        EnumerationResult& result,
         std::vector<int64_t>& bfs_visited_vertices,
         const MotifCanonical* canonical,
         uint32_t canonical_size,
         uint32_t root) const;
+
+    // ── count_group_by_ids — shared SGF_HD template ───────────────────────────
+
+    /**
+     * @brief Compute the motif descriptor for a 4-vertex group then record it.
+     *
+     * Builds the group array from ctx.m_root and the three supplied vertices,
+     * computes the edge-structure descriptor, then delegates recording to
+     * ctx.m_add_motif_fn (cpu_add_motif_to_count on CPU, gpu_add_motif_to_count
+     * on GPU).
+     *
+     * @tparam KavoshContext  CpuKavoshContext or GpuKavoshContext.
+     * @param ctx Shared run context for the current root.
+     * @param n1  First non-root group member.
+     * @param n2  Second non-root group member.
+     * @param n3  Third non-root group member.
+     */
+    template <typename KavoshContext>
+    static SGF_HD void count_group_by_ids(KavoshContext& ctx,
+                                           uint32_t n1,
+                                           uint32_t n2,
+                                           uint32_t n3) noexcept;
+
+    // ── Backend-specific motif recording ─────────────────────────────────────
+
+    /**
+     * @brief CPU recording: record a pre-computed canonical motif id.
+     * @param ctx      CPU run context.
+     * @param motif_id Canonical 128-bit motif identifier.
+     */
+    static void cpu_add_motif_to_count(CpuKavoshContext& ctx, UInt128 motif_id) noexcept;
 
     // ── CPU-only outer driver declarations ────────────────────────────────────
 
     /**
      * @brief Emit all groups formed by root and three distinct depth-1 neighbours.
      */
-    void emit_depth_1_1_1_groups_cpu(const CpuKavoshContext& ctx,
+    void emit_depth_1_1_1_groups_cpu(CpuKavoshContext& ctx,
                                      const CpuNeighbourRange& depth_one) const;
 
     /**
@@ -328,7 +256,7 @@ private:
     template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
     // NOLINTNEXTLINE(readability-function-size)
     static SGF_HD void emit_depth_1_1_1_groups_first_vertex_chosen(
-        const KavoshContext& ctx,
+        KavoshContext& ctx,
         const NeighbourRange& depth_one,
         NeighIter first_neighbour,
         bool is_first_neighbour_reversed);
@@ -346,7 +274,7 @@ private:
     template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
     // NOLINTNEXTLINE(readability-function-size)
     static SGF_HD void emit_depth_1_1_1_groups_second_vertex_chosen(
-        const KavoshContext& ctx,
+        KavoshContext& ctx,
         const NeighbourRange& depth_one,
         NeighIter first_neighbour,
         NeighIter second_neighbour,
@@ -363,7 +291,7 @@ private:
      */
     template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
     static SGF_HD void emit_depth_1_1_2_for_first_vertex(
-        const KavoshContext& ctx,
+        KavoshContext& ctx,
         NeighIter first_neighbour,
         const NeighbourRange& depth_one,
         const NeighbourRange& depth_two);
@@ -380,7 +308,7 @@ private:
     template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
     // NOLINTNEXTLINE(readability-function-size)
     static SGF_HD void emit_depth_1_1_2_for_second_vertex(
-        const KavoshContext& ctx,
+        KavoshContext& ctx,
         NeighIter first_neighbour,
         const NeighbourRange& depth_one,
         NeighIter second_neighbour);
@@ -395,7 +323,7 @@ private:
      */
     template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
     static SGF_HD void emit_depth_1_2_2_for_first_vertex(
-        const KavoshContext& ctx,
+        KavoshContext& ctx,
         NeighIter first_neighbour,
         const NeighbourRange& depth_two);
 
@@ -412,7 +340,7 @@ private:
     template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
     // NOLINTNEXTLINE(readability-function-size)
     static SGF_HD void emit_depth_1_2_2_for_second_vertex(
-        const KavoshContext& ctx,
+        KavoshContext& ctx,
         NeighIter first_neighbour,
         const NeighbourRange& depth_two,
         NeighIter second_neighbour,
@@ -460,34 +388,45 @@ private:
                                                           uint32_t second_degree_vertex,
                                                           uint32_t third_degree_vertex);
 
-#ifdef SGF_CUDA_ENABLED
+#ifdef __CUDACC__
     // ── GPU overrides and drivers ─────────────────────────────────────────────
 
     /**
      * @brief GPU override: full motif enumeration via CUDA kernel.
      */
     EnumerationResult calculate_gpu() override;
+#endif
 
+public:
+#ifdef __CUDACC__
     /**
      * @brief GPU driver for (1,1,1) groups; strides depth-1 neighbours by @p stride_y.
      */
     static __device__ void emit_depth_1_1_1_groups_gpu(GpuKavoshContext& ctx,
-                                                 uint32_t thread_y_offset,
-                                                 uint32_t stride_y);
+                                                        uint32_t thread_y_offset,
+                                                        uint32_t stride_y);
 
     /**
      * @brief GPU driver for (1,1,2)/(1,2,2) groups; strides by @p stride_y.
      */
     static __device__ void emit_depth_1_1_2_and_1_2_2_groups_gpu(GpuKavoshContext& ctx,
-                                                            uint32_t thread_y_offset,
-                                                            uint32_t stride_y);
+                                                                   uint32_t thread_y_offset,
+                                                                   uint32_t stride_y);
 
     /**
      * @brief GPU driver for (1,2,3) groups; strides by @p stride_y.
      */
     static __device__ void emit_depth_1_2_3_groups_gpu(GpuKavoshContext& ctx,
-                                                 uint32_t thread_y_offset,
-                                                 uint32_t stride_y);
+                                                        uint32_t thread_y_offset,
+                                                        uint32_t stride_y);
+
+    /**
+     * @brief GPU recording: atomically insert a pre-computed motif id into the cuco maps.
+     * @param ctx      GPU run context.
+     * @param motif_id Canonical 128-bit motif identifier.
+     */
+    static __device__ void gpu_add_motif_to_count(GpuKavoshContext& ctx,
+                                                   UInt128 motif_id) noexcept;
 #endif
 };
 
@@ -525,7 +464,7 @@ SGF_HD uint32_t MotifPreprocessor::compute_motif_descriptor(const uint32_t* cons
 template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
 // NOLINTNEXTLINE(readability-function-size)
 SGF_HD void MotifPreprocessor::emit_depth_1_1_1_groups_first_vertex_chosen(
-    const KavoshContext& ctx,
+    KavoshContext& ctx,
     const NeighbourRange& depth_one,
     const NeighIter first_neighbour,
     const bool is_first_neighbour_reversed)
@@ -565,7 +504,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_1_1_groups_first_vertex_chosen(
 template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
 // NOLINTNEXTLINE(readability-function-size)
 SGF_HD void MotifPreprocessor::emit_depth_1_1_1_groups_second_vertex_chosen(
-    const KavoshContext& ctx,
+    KavoshContext& ctx,
     const NeighbourRange& depth_one,
     const NeighIter first_neighbour,
     const NeighIter second_neighbour,
@@ -579,7 +518,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_1_1_groups_second_vertex_chosen(
             {
                 continue;
             }
-            ctx.count_group_by_ids(*first_neighbour, *second_neighbour, *third);
+            count_group_by_ids(ctx, *first_neighbour, *second_neighbour, *third);
         }
     }
     if (ctx.m_graph.is_directed())
@@ -592,7 +531,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_1_1_groups_second_vertex_chosen(
             {
                 continue;
             }
-            ctx.count_group_by_ids(*first_neighbour, *second_neighbour, *third);
+            count_group_by_ids(ctx, *first_neighbour, *second_neighbour, *third);
         }
     }
 }
@@ -614,7 +553,7 @@ void MotifPreprocessor::process_first_neighbour_112_122(Ctx& ctx,
 
 template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
 SGF_HD void MotifPreprocessor::emit_depth_1_1_2_for_first_vertex(
-    const KavoshContext& ctx,
+    KavoshContext& ctx,
     const NeighIter first_neighbour,
     const NeighbourRange& depth_one,
     const NeighbourRange& depth_two)
@@ -651,7 +590,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_1_2_for_first_vertex(
 template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
 // NOLINTNEXTLINE(readability-function-size)
 SGF_HD void MotifPreprocessor::emit_depth_1_1_2_for_second_vertex(
-    const KavoshContext& ctx,
+    KavoshContext& ctx,
     const NeighIter first_neighbour,
     const NeighbourRange& depth_one,
     const NeighIter second_neighbour)
@@ -667,7 +606,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_1_2_for_second_vertex(
         // avoid double-counting due to two paths from root to n2 - from n1 and from n11.
         if (!edge_exists || (edge_exists && *first_neighbour < *n11))
         {
-            ctx.count_group_by_ids(*first_neighbour, *n11, *second_neighbour);
+            count_group_by_ids(ctx, *first_neighbour, *n11, *second_neighbour);
         }
     }
     if (ctx.m_graph.is_directed())
@@ -685,7 +624,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_1_2_for_second_vertex(
             // avoid double-counting due to two paths from root to n2 - from n1 and from n11.
             if (!edge_exists || (edge_exists && *first_neighbour < *n11))
             {
-                ctx.count_group_by_ids(*first_neighbour, *n11, *second_neighbour);
+                count_group_by_ids(ctx, *first_neighbour, *n11, *second_neighbour);
             }
         }
     }
@@ -693,7 +632,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_1_2_for_second_vertex(
 
 template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
 SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_first_vertex(
-    const KavoshContext& ctx,
+    KavoshContext& ctx,
     const NeighIter first_neighbour,
     const NeighbourRange& depth_two)
 {
@@ -724,7 +663,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_first_vertex(
 template <typename KavoshContext, typename NeighbourRange, typename NeighIter>
 // NOLINTNEXTLINE(readability-function-size)
 SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(
-    const KavoshContext& ctx,
+    KavoshContext& ctx,
     const NeighIter first_neighbour,
     const NeighbourRange& depth_two,
     const NeighIter second_neighbour,
@@ -739,7 +678,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(
             {
                 continue;
             }
-            ctx.count_group_by_ids(*first_neighbour, *second_neighbour, *second_n2);
+            count_group_by_ids(ctx, *first_neighbour, *second_neighbour, *second_n2);
         }
     }
     if (ctx.m_graph.is_directed())
@@ -753,7 +692,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(
             {
                 continue;
             }
-            ctx.count_group_by_ids(*first_neighbour, *second_neighbour, *second_n2);
+            count_group_by_ids(ctx, *first_neighbour, *second_neighbour, *second_n2);
         }
     }
 }
@@ -856,8 +795,69 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_3_for_third_vertex(
     }
     if (is_new || is_depth_two_no_back_edge || is_depth_three)
     {
-        ctx.count_group_by_ids(first_degree_vertex, second_degree_vertex, third_degree_vertex);
+        count_group_by_ids(ctx, first_degree_vertex, second_degree_vertex, third_degree_vertex);
     }
+}
+
+// ============================================================================
+// calculate_motif_number_from_arrays — inline SGF_HD body
+// ============================================================================
+
+// NOLINTNEXTLINE(readability-function-size)
+inline SGF_HD UInt128 MotifPreprocessor::calculate_motif_number_from_arrays(
+    const uint32_t descriptor,
+    const uint32_t* const node_colors,
+    const MotifCanonical* const canonical_array,
+    const uint32_t canonical_size) noexcept
+{
+    if (descriptor >= canonical_size || canonical_array[descriptor].m_permutation_count == 0U)
+    {
+        return UInt128{};
+    }
+    const MotifCanonical& canonical = canonical_array[descriptor];
+    UInt128 minimal_colors = ~UInt128{};
+    for (uint32_t perm = 0U; perm < canonical.m_permutation_count; ++perm)
+    {
+        UInt128 encoded{};
+        for (uint32_t ci = 0U; ci < SgfConstants::MOTIF_SIZE; ++ci)
+        {
+            encoded += UInt128{node_colors[canonical.m_color_permutations[perm][ci]]}
+                       << (ci * static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR));
+        }
+        if (encoded < minimal_colors)
+        {
+            minimal_colors = encoded;
+        }
+    }
+    return (UInt128{static_cast<uint64_t>(canonical.m_minimal_motif_num)}
+            << static_cast<uint32_t>(SgfConstants::MOTIF_SIZE * SgfConstants::BITS_PER_COLOR)) |
+           minimal_colors;
+}
+
+// ============================================================================
+// count_group_by_ids — template body
+// ============================================================================
+
+template <typename KavoshContext>
+SGF_HD void MotifPreprocessor::count_group_by_ids(KavoshContext& ctx,
+                                                    const uint32_t n1,
+                                                    const uint32_t n2,
+                                                    const uint32_t n3) noexcept
+{
+    const uint32_t group[SgfConstants::MOTIF_SIZE] = {ctx.m_root, n1, n2, n3};
+    const uint32_t desc = compute_motif_descriptor(
+        group, ctx.m_graph.is_directed(),
+        [&ctx](const uint32_t src, const uint32_t dest) noexcept
+        { return ctx.has_fwd_edge(src, dest); });
+    const uint32_t colors[SgfConstants::MOTIF_SIZE] = {
+        ctx.m_graph.get_vertex_color(group[0U]),
+        ctx.m_graph.get_vertex_color(group[1U]),
+        ctx.m_graph.get_vertex_color(group[2U]),
+        ctx.m_graph.get_vertex_color(group[3U])
+    };
+    const UInt128 motif_id = calculate_motif_number_from_arrays(
+        desc, colors, ctx.m_canonical, ctx.m_canonical_size);
+    ctx.m_add_motif_fn(ctx, motif_id);
 }
 
 }  // namespace sgf
