@@ -26,8 +26,7 @@ PathProcessor::PathProcessor(const ColoredGraph& graph, LoggerHandler logger,
 }
 
 // NOLINTNEXTLINE(readability-function-size)
-EnumerationResult PathProcessor::stream_groups_to_counter(
-    [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix) const
+EnumerationResult PathProcessor::stream_groups_to_counter() const
 {
     const uint32_t order_size = static_cast<uint32_t>(m_node_order.size());
     const uint32_t thread_count = std::min(m_thread_number, order_size);

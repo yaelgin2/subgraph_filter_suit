@@ -56,6 +56,7 @@ struct CliArgs
     bool m_use_paths{false};       ///< Enable path-based processing.
     bool m_is_directed{false};     ///< Treat graphs as directed.
     bool m_non_induced{false};     ///< Expand induced motif counts via DAG before filtering.
+    bool m_use_gpu{false};         ///< Offload motif enumeration to GPU kernels.
     uint32_t m_thread_number{
         SgfConstants::DEFAULT_THREAD_NUMBER};  ///< Maximum number of threads for preprocessing.
     PreprocessArgs m_preprocess{};             ///< Preprocessing-stage arguments.
@@ -111,6 +112,7 @@ private:
     static constexpr const char* KEY_LOAD_MOTIF_GRAPH_CACHE = "load-motif-graph-cache";
     static constexpr const char* KEY_LOAD_PATH_GRAPH_CACHE = "load-path-graph-cache";
     static constexpr const char* KEY_GRAPHML_COLOR_MAP_PATH = "graphml-color-map-path";
+    static constexpr const char* KEY_GPU = "gpu";
 
     static constexpr const char* READER_GRAPHML = "graphml";
     static constexpr const char* READER_JSON = "json";

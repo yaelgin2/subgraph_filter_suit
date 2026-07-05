@@ -4,6 +4,12 @@
 #include <cstdint>
 #include <functional>
 
+#ifdef __CUDACC__
+#define SGF_HD __host__ __device__
+#else
+#define SGF_HD
+#endif
+
 namespace sgf
 {
 
@@ -22,13 +28,13 @@ struct UInt128
     /**
      * @brief Default-construct (value zero).
      */
-    constexpr UInt128() noexcept = default;
+    SGF_HD constexpr UInt128() noexcept = default;
 
     /**
      * @brief Construct from a single 32-bit value (high word = 0).
      * @param low The value placed in the low word.
      */
-    constexpr explicit UInt128(const uint32_t low) noexcept
+    SGF_HD constexpr explicit UInt128(const uint32_t low) noexcept
         : m_low(static_cast<uint64_t>(low))
     {
     }
@@ -37,7 +43,7 @@ struct UInt128
      * @brief Construct from a single 64-bit value (high word = 0).
      * @param low The value placed in the low word.
      */
-    constexpr explicit UInt128(const uint64_t low) noexcept
+    SGF_HD constexpr explicit UInt128(const uint64_t low) noexcept
         : m_low(low)
     {
     }
@@ -47,26 +53,26 @@ struct UInt128
      * @param high The high 64 bits.
      * @param low The low 64 bits.
      */
-    constexpr UInt128(const uint64_t high, const uint64_t low) noexcept
+    SGF_HD constexpr UInt128(const uint64_t high, const uint64_t low) noexcept
         : m_high(high)
         , m_low(low)
     {
     }
 
     /** @brief Extract the low 32 bits. */
-    constexpr explicit operator uint32_t() const noexcept
+    SGF_HD constexpr explicit operator uint32_t() const noexcept
     {
         return static_cast<uint32_t>(m_low);
     }
 
     /** @brief Extract the low 64 bits. */
-    constexpr explicit operator uint64_t() const noexcept
+    SGF_HD constexpr explicit operator uint64_t() const noexcept
     {
         return m_low;
     }
 
     /** @brief True if value is non-zero. */
-    constexpr explicit operator bool() const noexcept
+    SGF_HD constexpr explicit operator bool() const noexcept
     {
         return m_high != 0U || m_low != 0U;
     }
@@ -78,7 +84,7 @@ struct UInt128
      * @param other Value to compare against.
      * @return True if both words are equal.
      */
-    constexpr bool operator==(const UInt128& other) const noexcept
+    SGF_HD constexpr bool operator==(const UInt128& other) const noexcept
     {
         return m_high == other.m_high && m_low == other.m_low;
     }
@@ -88,7 +94,7 @@ struct UInt128
      * @param other Value to compare against.
      * @return True if any word differs.
      */
-    constexpr bool operator!=(const UInt128& other) const noexcept
+    SGF_HD constexpr bool operator!=(const UInt128& other) const noexcept
     {
         return !(*this == other);
     }
@@ -97,7 +103,7 @@ struct UInt128
      * @brief Less-than comparison.
      * @param other Value to compare against.
      */
-    constexpr bool operator<(const UInt128& other) const noexcept
+    SGF_HD constexpr bool operator<(const UInt128& other) const noexcept
     {
         return m_high < other.m_high || (m_high == other.m_high && m_low < other.m_low);
     }
@@ -106,7 +112,7 @@ struct UInt128
      * @brief Greater-than comparison.
      * @param other Value to compare against.
      */
-    constexpr bool operator>(const UInt128& other) const noexcept
+    SGF_HD constexpr bool operator>(const UInt128& other) const noexcept
     {
         return other < *this;
     }
@@ -115,7 +121,7 @@ struct UInt128
      * @brief Less-than-or-equal comparison.
      * @param other Value to compare against.
      */
-    constexpr bool operator<=(const UInt128& other) const noexcept
+    SGF_HD constexpr bool operator<=(const UInt128& other) const noexcept
     {
         return !(other < *this);
     }
@@ -124,7 +130,7 @@ struct UInt128
      * @brief Greater-than-or-equal comparison.
      * @param other Value to compare against.
      */
-    constexpr bool operator>=(const UInt128& other) const noexcept
+    SGF_HD constexpr bool operator>=(const UInt128& other) const noexcept
     {
         return !(*this < other);
     }
@@ -135,7 +141,7 @@ struct UInt128
      * @brief Bitwise NOT.
      * @return Complement of every bit.
      */
-    constexpr UInt128 operator~() const noexcept
+    SGF_HD constexpr UInt128 operator~() const noexcept
     {
         return UInt128{~m_high, ~m_low};
     }
@@ -145,7 +151,7 @@ struct UInt128
      * @param other Operand.
      * @return Reference to this.
      */
-    constexpr UInt128& operator|=(const UInt128& other) noexcept
+    SGF_HD constexpr UInt128& operator|=(const UInt128& other) noexcept
     {
         m_high |= other.m_high;
         m_low |= other.m_low;
@@ -157,7 +163,7 @@ struct UInt128
      * @param other Operand.
      * @return Result.
      */
-    constexpr UInt128 operator|(const UInt128& other) const noexcept
+    SGF_HD constexpr UInt128 operator|(const UInt128& other) const noexcept
     {
         UInt128 result = *this;
         result |= other;
@@ -169,7 +175,7 @@ struct UInt128
      * @param value Value to OR into the low word.
      * @return Reference to this.
      */
-    constexpr UInt128& operator|=(const uint32_t value) noexcept
+    SGF_HD constexpr UInt128& operator|=(const uint32_t value) noexcept
     {
         m_low |= static_cast<uint64_t>(value);
         return *this;
@@ -180,7 +186,7 @@ struct UInt128
      * @param other Operand.
      * @return Reference to this.
      */
-    constexpr UInt128& operator&=(const UInt128& other) noexcept
+    SGF_HD constexpr UInt128& operator&=(const UInt128& other) noexcept
     {
         m_high &= other.m_high;
         m_low &= other.m_low;
@@ -192,7 +198,7 @@ struct UInt128
      * @param other Operand.
      * @return Result.
      */
-    constexpr UInt128 operator&(const UInt128& other) const noexcept
+    SGF_HD constexpr UInt128 operator&(const UInt128& other) const noexcept
     {
         UInt128 result = *this;
         result &= other;
@@ -206,7 +212,7 @@ struct UInt128
      * @param shift Number of bit positions to shift (0–127).
      * @return Reference to this.
      */
-    constexpr UInt128& operator<<=(const uint32_t shift) noexcept
+    SGF_HD constexpr UInt128& operator<<=(const uint32_t shift) noexcept
     {
         constexpr uint32_t word_bits = 64U;
         if (shift == 0U)
@@ -236,7 +242,7 @@ struct UInt128
      * @param shift Number of bit positions to shift (0–127).
      * @return Shifted result.
      */
-    constexpr UInt128 operator<<(const uint32_t shift) const noexcept
+    SGF_HD constexpr UInt128 operator<<(const uint32_t shift) const noexcept
     {
         UInt128 result = *this;
         result <<= shift;
@@ -248,7 +254,7 @@ struct UInt128
      * @param shift Number of bit positions to shift (0–127).
      * @return Reference to this.
      */
-    constexpr UInt128& operator>>=(const uint32_t shift) noexcept
+    SGF_HD constexpr UInt128& operator>>=(const uint32_t shift) noexcept
     {
         constexpr uint32_t word_bits = 64U;
         if (shift == 0U)
@@ -278,7 +284,7 @@ struct UInt128
      * @param shift Number of bit positions to shift (0–127).
      * @return Shifted result.
      */
-    constexpr UInt128 operator>>(const uint32_t shift) const noexcept
+    SGF_HD constexpr UInt128 operator>>(const uint32_t shift) const noexcept
     {
         UInt128 result = *this;
         result >>= shift;
@@ -292,7 +298,7 @@ struct UInt128
      * @param other Addend.
      * @return Reference to this.
      */
-    constexpr UInt128& operator+=(const UInt128& other) noexcept
+    SGF_HD constexpr UInt128& operator+=(const UInt128& other) noexcept
     {
         const uint64_t prev_low = m_low;
         m_low += other.m_low;
@@ -309,7 +315,7 @@ struct UInt128
      * @param other Addend.
      * @return Sum.
      */
-    constexpr UInt128 operator+(const UInt128& other) const noexcept
+    SGF_HD constexpr UInt128 operator+(const UInt128& other) const noexcept
     {
         UInt128 result = *this;
         result += other;
@@ -321,7 +327,7 @@ struct UInt128
      * @param other Subtrahend.
      * @return Difference (wraps on underflow).
      */
-    constexpr UInt128 operator-(const UInt128& other) const noexcept
+    SGF_HD constexpr UInt128 operator-(const UInt128& other) const noexcept
     {
         const UInt128 negated = ~other + UInt128{0U, 1U};
         return *this + negated;

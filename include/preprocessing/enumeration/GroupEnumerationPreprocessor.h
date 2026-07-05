@@ -87,9 +87,23 @@ public:
      * - computes motif identifiers,
      * - counts occurrences.
      *
+     * @param use_gpu If true, dispatch to the GPU kernel implementation.
+     *                Throws InvalidArgumentException if compiled without SGF_CUDA_ENABLED.
      * @return Map of motif identifier to occurrence count.
      */
-    EnumerationResult calculate() override;
+    EnumerationResult calculate(bool use_gpu = false) override;
+
+    /**
+     * @brief GPU kernel dispatch entry point.
+     *
+     * Derived classes that support GPU acceleration override this to launch
+     * CUDA kernels and return the enumeration result. The default implementation
+     * throws InvalidArgumentException so that preprocessors without GPU support
+     * (e.g. PathProcessor) remain fully instantiatable.
+     *
+     * @return Map of motif identifier to occurrence count.
+     */
+    virtual EnumerationResult calculate_gpu();
 
 protected:
     /**
@@ -134,30 +148,27 @@ protected:
      * @brief Enumerate groups and return their counts keyed by canonical motif identifier.
      *
      * Derived classes discover every group, compute its canonical identifier, and
-     * accumulate counts into a local map (which may be the result of merging
-     * per-thread maps). The base class merges the returned map into its own
-     * accumulator with overflow detection.
+     * accumulate counts into a local map. The base class merges the returned map
+     * into its own accumulator with overflow detection.
      *
-     * @param graph_adjacency_matrix Dense boolean adjacency matrix of the graph.
      * @return Map from canonical motif identifier to occurrence count.
      */
-    virtual EnumerationResult stream_groups_to_counter(
-        const std::vector<std::vector<bool>>& graph_adjacency_matrix) const = 0;
+    virtual EnumerationResult stream_groups_to_counter() const = 0;
 
-    /**
-     * @brief Convert a group into a unique motif identifier.
-     *
-     * Implementations must deterministically encode:
-     * - node colors or labels,
-     * - internal edge structure.
-     *
-     * @param motif_descriptor Numeric motif/color/group descriptor for the group.
-     * @param node_colors Color labels of the group's vertices in traversal order.
-     *
-     * @return Unique numeric motif identifier.
-     */
-    virtual UInt128 calculate_motif_number(uint32_t motif_descriptor,
-                                           const std::vector<uint32_t>& node_colors) const = 0;
+    // /**
+    //  * @brief Convert a group into a unique motif identifier.
+    //  *
+    //  * Implementations must deterministically encode:
+    //  * - node colors or labels,
+    //  * - internal edge structure.
+    //  *
+    //  * @param motif_descriptor Numeric motif/color/group descriptor for the group.
+    //  * @param node_colors Color labels of the group's vertices in traversal order.
+    //  *
+    //  * @return Unique numeric motif identifier.
+    //  */
+    // virtual UInt128 calculate_motif_number(uint32_t motif_descriptor,
+    //                                        const std::vector<uint32_t>& node_colors) const = 0;
 
     /**
      * @brief Extract node colors for a specific group of vertices.
@@ -180,8 +191,6 @@ private:
      * @return Entity name string, e.g. "motifs" or "paths".
      */
     [[nodiscard]] virtual std::string entity_name() const = 0;
-
-    void graph_to_adjacency_matrix(std::vector<std::vector<bool>>& adjacency_matrix) const;
 };
 
 }  // namespace sgf

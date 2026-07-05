@@ -108,7 +108,7 @@ public:
                               GraphReaderType reader_type, std::string& output_path,
                               CacheManagerType output_type, const std::string& log_file_path,
                               bool preprocess_paths, bool preprocess_motifs, uint32_t thread_number,
-                              const std::string& graphml_color_map_path = "");
+                              const std::string& graphml_color_map_path = "", bool use_gpu = false);
 
     /**
      * @brief Run the enumeration filter stage.
@@ -135,7 +135,8 @@ public:
                           std::string& output_folder, ResultOutputType output_type,
                           const std::string& log_file_path, bool filter_paths, bool filter_motifs,
                           const GraphEnumerationCacheConfig& graph_cache_config, bool non_induced,
-                          uint32_t thread_number, const std::string& graphml_color_map_path = "");
+                          uint32_t thread_number, const std::string& graphml_color_map_path = "",
+                          bool use_gpu = false);
 
     /// @brief Run the pattern preprocessing stage.
     static std::vector<PatternPreprocessorResult> pattern_preprocess_run(
@@ -211,7 +212,7 @@ private:
                           const std::shared_ptr<ICacheIOManager>& cache_manager,
                           EnumerationPreprocessManager& preprocess_manager,
                           const LibraryData& library, const PreprocessorFactory& factory,
-                          const std::string& timestamp);
+                          const std::string& timestamp, bool use_gpu = false);
 
     static std::unordered_map<std::string, FilterResult> run_enumeration_filter_stage(
         const std::string& result_file_base_name, const EnumerationResultVector& graphs_enumeration,
@@ -359,16 +360,15 @@ private:
      * @param logger               Logger for diagnostics.
      * @param post_process         Applied to the enumeration vector before filtering.
      */
-    static std::unordered_map<std::string, FilterResult>
-    enumerate_and_filter(const std::string& library_cache_file, bool load_graph_cache,
-                         const std::string& graphs_cache_path,
-                         const std::string& run_type_file_base_name,
-                         const PreprocessorFactory& factory, CacheManagerType cache_reader_type,
-                         const std::shared_ptr<ICacheIOManager>& graphs_cache_manager,
-                         LibraryData& graphs_to_find_in,
-                         const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
-                         IFilterIOManager& filter_results_writer, const std::string& timestamp,
-                         const LoggerHandler& logger, const EnumerationTransformer& post_process);
+    static std::unordered_map<std::string, FilterResult> enumerate_and_filter(
+        const std::string& library_cache_file, bool load_graph_cache,
+        const std::string& graphs_cache_path, const std::string& run_type_file_base_name,
+        const PreprocessorFactory& factory, CacheManagerType cache_reader_type,
+        const std::shared_ptr<ICacheIOManager>& graphs_cache_manager,
+        LibraryData& graphs_to_find_in,
+        const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
+        IFilterIOManager& filter_results_writer, const std::string& timestamp,
+        const LoggerHandler& logger, bool use_gpu, const EnumerationTransformer& post_process);
 };
 
 }  // namespace sgf

@@ -81,9 +81,7 @@ protected:
      *        lists from ColoredGraph are used directly).
      * @return Map from canonical path identifier to occurrence count.
      */
-    EnumerationResult stream_groups_to_counter(
-        [[maybe_unused]] const std::vector<std::vector<bool>>& graph_adjacency_matrix)
-        const override;
+    EnumerationResult stream_groups_to_counter() const override;
 
     /**
      * @brief Encode a 4-edge path into a canonical 128-bit motif identifier.
@@ -99,7 +97,7 @@ protected:
      * @return Canonical 128-bit path identifier.
      */
     UInt128 calculate_motif_number(uint32_t motif_descriptor,
-                                   const std::vector<uint32_t>& node_colors) const override;
+                                   const std::vector<uint32_t>& node_colors) const;  // override;
 
     /**
      * @brief Enumerate all 4-edge paths rooted at @p root.

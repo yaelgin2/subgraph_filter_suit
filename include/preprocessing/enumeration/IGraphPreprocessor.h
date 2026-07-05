@@ -38,9 +38,12 @@ public:
     /**
      * @brief Run the full preprocessing pipeline and return a frequency signature.
      *
+     * @param use_gpu If true, offload enumeration to CUDA GPU kernels.
+     *                Requires the library to be compiled with SGF_CUDA_ENABLED.
+     *                Throws InvalidArgumentException if called as true without CUDA support.
      * @return Map of motif identifier to occurrence count.
      */
-    virtual EnumerationResult calculate() = 0;
+    virtual EnumerationResult calculate(bool use_gpu = false) = 0;
 };
 
 }  // namespace sgf
