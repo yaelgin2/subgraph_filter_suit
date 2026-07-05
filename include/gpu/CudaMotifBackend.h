@@ -10,8 +10,8 @@
 #include "MotifMap.h"
 
 #include <cstdint>
-#include <cuda/std/functional>
 #include <cuco/static_map.cuh>
+#include <cuda/std/functional>
 #include <thrust/functional.h>
 
 namespace sgf
@@ -30,10 +30,10 @@ namespace sgf
  */
 struct GpuNeighbourRange
 {
-    const uint32_t* m_begin;     ///< Pointer to first forward neighbour in CSR slice.
-    const uint32_t* m_end;       ///< One past last forward neighbour.
-    const uint32_t* m_rev_begin; ///< Pointer to first reverse neighbour (directed only).
-    const uint32_t* m_rev_end;   ///< One past last reverse neighbour.
+    const uint32_t* m_begin;      ///< Pointer to first forward neighbour in CSR slice.
+    const uint32_t* m_end;        ///< One past last forward neighbour.
+    const uint32_t* m_rev_begin;  ///< Pointer to first reverse neighbour (directed only).
+    const uint32_t* m_rev_end;    ///< One past last reverse neighbour.
 };
 
 // ── MurmurHash3 64-bit finaliser (UInt128 → uint64_t) ────────────────────────
@@ -54,15 +54,13 @@ struct UInt128MurmurHash
      * @param seed 0 for the primary slot key; 1 for the double-hash probe step.
      * @return 64-bit hash value.
      */
-    __host__ __device__
-    static uint64_t hash(const UInt128& key, const uint64_t seed) noexcept
+    __host__ __device__ static uint64_t hash(const UInt128& key, const uint64_t seed) noexcept
     {
         const cuco::detail::MurmurHash3_x64_128<uint64_t> hasher{seed};
         return hasher(key.m_high)[0] ^ hasher(key.m_low)[0];
     }
 
-    __host__ __device__
-    uint64_t operator()(const UInt128& key) const noexcept
+    __host__ __device__ uint64_t operator()(const UInt128& key) const noexcept
     {
         return hash(key, 0ULL);
     }
@@ -71,8 +69,7 @@ struct UInt128MurmurHash
 /** @brief MurmurHash3 hasher for uint64_t slot keys used by cuco linear probing. */
 struct UInt64Hash
 {
-    __host__ __device__
-    uint32_t operator()(const uint64_t key) const noexcept
+    __host__ __device__ uint32_t operator()(const uint64_t key) const noexcept
     {
         const cuco::detail::MurmurHash3_x64_128<uint64_t> hasher{0ULL};
         return static_cast<uint32_t>(hasher(key)[0]);
@@ -82,30 +79,22 @@ struct UInt64Hash
 // ── cuco map type aliases ─────────────────────────────────────────────────────
 
 /** @brief Count map: MurmurHash3(UInt128) → occurrence count. */
-using CucoMotifMap = cuco::static_map<
-    uint64_t,
-    uint32_t,
-    cuco::extent<std::size_t>,
-    cuda::thread_scope_device,
-    thrust::equal_to<uint64_t>,
-    cuco::linear_probing<1U, UInt64Hash>>;
+using CucoMotifMap =
+    cuco::static_map<uint64_t, uint32_t, cuco::extent<std::size_t>, cuda::thread_scope_device,
+                     thrust::equal_to<uint64_t>, cuco::linear_probing<1U, UInt64Hash>>;
 
 /** @brief Auxiliary map: MurmurHash3(UInt128) → one 64-bit half of the original key. */
-using CucoAuxMap = cuco::static_map<
-    uint64_t,
-    uint64_t,
-    cuco::extent<std::size_t>,
-    cuda::thread_scope_device,
-    thrust::equal_to<uint64_t>,
-    cuco::linear_probing<1U, UInt64Hash>>;
+using CucoAuxMap =
+    cuco::static_map<uint64_t, uint64_t, cuco::extent<std::size_t>, cuda::thread_scope_device,
+                     thrust::equal_to<uint64_t>, cuco::linear_probing<1U, UInt64Hash>>;
 
 /** @brief Device-side ref type for count updates (insert_or_apply). */
 using CucoMotifMapRef =
     decltype(std::declval<CucoMotifMap&>().ref(cuco::op::insert_or_apply_tag{}));
 
-/** @brief Device-side ref type for auxiliary half-key storage (insert_and_find for collision check). */
-using CucoAuxMapRef =
-    decltype(std::declval<CucoAuxMap&>().ref(cuco::op::insert_and_find_tag{}));
+/** @brief Device-side ref type for auxiliary half-key storage (insert_and_find for collision
+ * check). */
+using CucoAuxMapRef = decltype(std::declval<CucoAuxMap&>().ref(cuco::op::insert_and_find_tag{}));
 
 // ── GpuKavoshContext ──────────────────────────────────────────────────────────
 
@@ -126,12 +115,12 @@ struct GpuKavoshContext : IKavoshContext
     /** @brief Function pointer type for backend-specific motif recording. */
     using AddMotifFn = void (*)(GpuKavoshContext& ctx, UInt128 motif_id);
 
-    const DeviceGraph&   m_graph;          ///< Graph arrays (CSR, colors).
-    CucoMotifMapRef      m_count_ref;      ///< Count map ref (insert_or_apply).
-    CucoAuxMapRef        m_high_ref;       ///< High-half map ref (insert only).
-    CucoAuxMapRef        m_low_ref;        ///< Low-half map ref (insert only).
-    const uint32_t*      m_order_index;    ///< Position of each vertex in degree-sorted order.
-    AddMotifFn           m_add_motif_fn;   ///< Set by MotifPreprocessor to gpu_add_motif_to_count.
+    const DeviceGraph& m_graph;     ///< Graph arrays (CSR, colors).
+    CucoMotifMapRef m_count_ref;    ///< Count map ref (insert_or_apply).
+    CucoAuxMapRef m_high_ref;       ///< High-half map ref (insert only).
+    CucoAuxMapRef m_low_ref;        ///< Low-half map ref (insert only).
+    const uint32_t* m_order_index;  ///< Position of each vertex in degree-sorted order.
+    AddMotifFn m_add_motif_fn;      ///< Set by MotifPreprocessor to gpu_add_motif_to_count.
 
     /**
      * @brief Construct context, binding the DeviceGraph reference and all scalar/map fields.
@@ -146,23 +135,19 @@ struct GpuKavoshContext : IKavoshContext
      * @param order_index    Device pointer to degree-sorted order array.
      * @param add_motif_fn   Backend motif recording callback.
      */
-    __host__ __device__ GpuKavoshContext(const int64_t run_id,
-                                const uint32_t root,
-                                const MotifCanonical* canonical,
-                                const uint32_t canonical_size,
-                                const DeviceGraph& graph,
-                                const CucoMotifMapRef count_ref,
-                                const CucoAuxMapRef high_ref,
-                                const CucoAuxMapRef low_ref,
-                                const uint32_t* order_index,
-                                const AddMotifFn add_motif_fn)
-        : IKavoshContext(run_id, root, canonical, canonical_size),
-          m_graph(graph),
-          m_count_ref(count_ref),
-          m_high_ref(high_ref),
-          m_low_ref(low_ref),
-          m_order_index(order_index),
-          m_add_motif_fn(add_motif_fn)
+    __host__ __device__ GpuKavoshContext(const int64_t run_id, const uint32_t root,
+                                         const MotifCanonical* canonical,
+                                         const uint32_t canonical_size, const DeviceGraph& graph,
+                                         const CucoMotifMapRef count_ref,
+                                         const CucoAuxMapRef high_ref, const CucoAuxMapRef low_ref,
+                                         const uint32_t* order_index, const AddMotifFn add_motif_fn)
+        : IKavoshContext(run_id, root, canonical, canonical_size)
+        , m_graph(graph)
+        , m_count_ref(count_ref)
+        , m_high_ref(high_ref)
+        , m_low_ref(low_ref)
+        , m_order_index(order_index)
+        , m_add_motif_fn(add_motif_fn)
     {
     }
 
@@ -208,7 +193,9 @@ struct GpuKavoshContext : IKavoshContext
      * @param vertex Vertex id to mark.
      * @param depth  BFS depth offset.
      */
-    __host__ __device__ void mark_at_depth(uint32_t vertex, int64_t depth) noexcept override {}
+    __host__ __device__ void mark_at_depth(uint32_t vertex, int64_t depth) noexcept override
+    {
+    }
 
     /**
      * @brief Build a GpuNeighbourRange covering fwd and rev neighbours of @p vertex.
@@ -216,15 +203,15 @@ struct GpuKavoshContext : IKavoshContext
      */
     __host__ __device__ GpuNeighbourRange get_neighbour_range(const uint32_t vertex) const noexcept
     {
-        const uint32_t* const nbr     = m_graph.d_fwd_neighbors;
-        const uint32_t fwd_start      = m_graph.d_fwd_offsets[vertex];
-        const uint32_t fwd_end        = m_graph.d_fwd_offsets[vertex + 1U];
-        const bool directed           = m_graph.is_directed();
+        const uint32_t* const nbr = m_graph.d_fwd_neighbors;
+        const uint32_t fwd_start = m_graph.d_fwd_offsets[vertex];
+        const uint32_t fwd_end = m_graph.d_fwd_offsets[vertex + 1U];
+        const bool directed = m_graph.is_directed();
         const uint32_t* const rev_nbr = directed ? m_graph.d_rev_neighbors : nbr;
-        const uint32_t rev_start      = directed ? m_graph.d_rev_offsets[vertex]      : fwd_end;
-        const uint32_t rev_end        = directed ? m_graph.d_rev_offsets[vertex + 1U] : fwd_end;
-        return GpuNeighbourRange{nbr + fwd_start, nbr + fwd_end,
-                                  rev_nbr + rev_start, rev_nbr + rev_end};
+        const uint32_t rev_start = directed ? m_graph.d_rev_offsets[vertex] : fwd_end;
+        const uint32_t rev_end = directed ? m_graph.d_rev_offsets[vertex + 1U] : fwd_end;
+        return GpuNeighbourRange{nbr + fwd_start, nbr + fwd_end, rev_nbr + rev_start,
+                                 rev_nbr + rev_end};
     }
 
     /**
@@ -233,7 +220,7 @@ struct GpuKavoshContext : IKavoshContext
      * @param depth            BFS depth offset.
      */
     __host__ __device__ void mark_neighbours(const GpuNeighbourRange& neighbours_range,
-                                     const uint32_t depth) noexcept
+                                             const uint32_t depth) noexcept
     {
     }
 };
@@ -263,8 +250,8 @@ CucoAuxMap make_cuco_aux_map(uint32_t num_nodes);
  * @param low_map   Map from hash key to low 64 bits of UInt128.
  */
 EnumerationResult cuco_maps_to_enumeration_result(const CucoMotifMap& count_map,
-                                                   const CucoAuxMap& high_map,
-                                                   const CucoAuxMap& low_map);
+                                                  const CucoAuxMap& high_map,
+                                                  const CucoAuxMap& low_map);
 
 }  // namespace sgf
 

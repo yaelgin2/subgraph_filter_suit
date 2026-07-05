@@ -14,10 +14,11 @@ namespace sgf
  */
 struct CpuNeighbourRange
 {
-    std::vector<uint32_t>::const_iterator m_begin;     ///< First outgoing neighbour.
-    std::vector<uint32_t>::const_iterator m_end;       ///< One past last outgoing neighbour.
-    std::vector<uint32_t>::const_iterator m_rev_begin; ///< First incoming neighbour (directed only).
-    std::vector<uint32_t>::const_iterator m_rev_end;   ///< One past last incoming neighbour.
+    std::vector<uint32_t>::const_iterator m_begin;  ///< First outgoing neighbour.
+    std::vector<uint32_t>::const_iterator m_end;    ///< One past last outgoing neighbour.
+    std::vector<uint32_t>::const_iterator
+        m_rev_begin;                                  ///< First incoming neighbour (directed only).
+    std::vector<uint32_t>::const_iterator m_rev_end;  ///< One past last incoming neighbour.
 };
 
 }  // namespace sgf

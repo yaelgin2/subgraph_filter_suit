@@ -65,8 +65,8 @@ void GroupEnumerationPreprocessor::sort_nodes()
               });
 }
 
-std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor::calculate(
-    const bool use_gpu)
+std::unordered_map<UInt128, uint32_t, UInt128Hash>
+GroupEnumerationPreprocessor::calculate(const bool use_gpu)
 {
     sort_nodes();
 
@@ -99,10 +99,8 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
 
 EnumerationResult GroupEnumerationPreprocessor::calculate_gpu()
 {
-    throw InvalidArgumentException(
-        "GPU enumeration not implemented for this preprocessor type.");
+    throw InvalidArgumentException("GPU enumeration not implemented for this preprocessor type.");
 }
-
 
 std::vector<uint32_t>
 GroupEnumerationPreprocessor::group_to_node_colors(const std::vector<uint32_t>& group) const

@@ -23,17 +23,21 @@ struct DeviceGraph
     uint32_t* d_fwd_offsets;    ///< CSR row offsets for forward edges, length num_nodes + 1.
     uint32_t* d_fwd_neighbors;  ///< CSR column indices for forward edges, length num_fwd_edges.
     uint32_t* d_rev_offsets;    ///< CSR row offsets for reverse edges (directed only), or nullptr.
-    uint32_t* d_rev_neighbors;  ///< CSR column indices for reverse edges (directed only), or nullptr.
-    uint32_t* d_colors;         ///< Vertex color array, length num_nodes.
-    uint32_t  num_nodes;        ///< Number of vertices.
-    uint32_t  num_fwd_edges;    ///< Number of forward CSR entries.
-    uint32_t  num_rev_edges;    ///< Number of reverse CSR entries (0 for undirected).
-    bool      m_directed;       ///< True for directed graphs.
+    uint32_t*
+        d_rev_neighbors;     ///< CSR column indices for reverse edges (directed only), or nullptr.
+    uint32_t* d_colors;      ///< Vertex color array, length num_nodes.
+    uint32_t num_nodes;      ///< Number of vertices.
+    uint32_t num_fwd_edges;  ///< Number of forward CSR entries.
+    uint32_t num_rev_edges;  ///< Number of reverse CSR entries (0 for undirected).
+    bool m_directed;         ///< True for directed graphs.
 
     /**
      * @brief Return true if graph is directed.
      */
-    __host__ __device__ bool is_directed() const noexcept { return m_directed; }
+    __host__ __device__ bool is_directed() const noexcept
+    {
+        return m_directed;
+    }
 
     /**
      * @brief Return the color label of @p vertex.
@@ -77,8 +81,7 @@ private:
      * @param src Source host data.
      * @param count Number of elements.
      */
-    static void copy_array_to_managed_memory(uint32_t** dest, const uint32_t* src,
-                                              uint32_t count);
+    static void copy_array_to_managed_memory(uint32_t** dest, const uint32_t* src, uint32_t count);
 
     /**
      * @brief Allocate managed memory for a CSR offset array with a sentinel.
@@ -93,8 +96,7 @@ private:
      * @param total_edges  Total edge count written as the sentinel at index num_vertices.
      */
     static void copy_csr_offsets_to_managed_memory(uint32_t** dest, const uint32_t* src,
-                                                    uint32_t num_vertices,
-                                                    uint32_t total_edges);
+                                                   uint32_t num_vertices, uint32_t total_edges);
 };
 
 }  // namespace sgf

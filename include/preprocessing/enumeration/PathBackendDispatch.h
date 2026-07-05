@@ -15,7 +15,7 @@
  */
 
 #ifdef SGF_CUDA_ENABLED
-#    include "CudaPathBackend.h"
+#include "CudaPathBackend.h"
 
 namespace sgf
 {
@@ -24,7 +24,7 @@ using PathBackend = CudaPathBackend;
 }  // namespace sgf
 
 #else
-#    include "PathProcessor.h"
+#include "PathProcessor.h"
 
 namespace sgf
 {

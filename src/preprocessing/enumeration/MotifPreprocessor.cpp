@@ -1,8 +1,10 @@
 #include "MotifPreprocessor.h"
 
 #include "ColoredGraph.h"
-#include "Constants.h"
+#include "CpuKavoshContext.h"
+#include "CpuNeighbourRange.h"
 #include "GroupEnumerationPreprocessor.h"
+#include "IGraphPreprocessor.h"
 #include "Int128.h"
 #include "LoggerHandler.h"
 #include "MotifMap.h"
@@ -69,7 +71,7 @@ uint32_t MotifPreprocessor::build_canonical_array(
 EnumerationResult MotifPreprocessor::stream_groups_to_counter() const
 {
     const uint32_t vertex_count = m_graph.vertex_count();
-    const uint32_t order_size   = static_cast<uint32_t>(m_node_order.size());
+    const uint32_t order_size = static_cast<uint32_t>(m_node_order.size());
     const uint32_t thread_count = std::min(m_thread_number, order_size);
 
     // Build flat canonical array once — shared read-only across all threads.
@@ -87,7 +89,7 @@ EnumerationResult MotifPreprocessor::stream_groups_to_counter() const
 
     for (uint32_t thread_idx = 0U; thread_idx < thread_count; ++thread_idx)
     {
-        EnumerationResult& local_map      = local_maps[thread_idx];
+        EnumerationResult& local_map = local_maps[thread_idx];
         std::exception_ptr& thread_exception = thread_exceptions[thread_idx];
         threads.emplace_back(
             [&]()
@@ -98,9 +100,8 @@ EnumerationResult MotifPreprocessor::stream_groups_to_counter() const
                     uint32_t idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
                     while (idx < order_size)
                     {
-                        stream_groups_to_counter_for_vertex(local_map, bfs_visited,
-                                                            canonical_ptr, canonical_size,
-                                                            m_node_order[idx]);
+                        stream_groups_to_counter_for_vertex(local_map, bfs_visited, canonical_ptr,
+                                                            canonical_size, m_node_order[idx]);
                         idx = next_idx.fetch_add(1U, std::memory_order_relaxed);
                     }
                 }
@@ -134,7 +135,7 @@ EnumerationResult MotifPreprocessor::stream_groups_to_counter() const
 }
 
 void MotifPreprocessor::emit_depth_1_1_1_groups_cpu(CpuKavoshContext& ctx,
-                                                     const CpuNeighbourRange& depth_one) const
+                                                    const CpuNeighbourRange& depth_one) const
 {
     for (auto first = depth_one.m_begin; first != depth_one.m_end; ++first)
     {
@@ -184,7 +185,7 @@ void MotifPreprocessor::emit_depth_1_1_2_and_1_2_2_groups_cpu(
 }
 
 void MotifPreprocessor::emit_depth_1_2_3_groups_cpu(CpuKavoshContext& ctx,
-                                                     const CpuNeighbourRange& depth_one) const
+                                                    const CpuNeighbourRange& depth_one) const
 {
     for (auto first_vertex = depth_one.m_begin; first_vertex != depth_one.m_end; ++first_vertex)
     {
@@ -193,9 +194,9 @@ void MotifPreprocessor::emit_depth_1_2_3_groups_cpu(CpuKavoshContext& ctx,
             continue;
         }
         const NeighbourIteratorPair sec_fwd = m_graph.get_neighbours(*first_vertex);
-        const NeighbourIteratorPair sec_rev =
-            m_graph.is_directed() ? m_graph.get_neighbours(*first_vertex, true)
-                                  : std::make_pair(sec_fwd.second, sec_fwd.second);
+        const NeighbourIteratorPair sec_rev = m_graph.is_directed()
+                                                  ? m_graph.get_neighbours(*first_vertex, true)
+                                                  : std::make_pair(sec_fwd.second, sec_fwd.second);
         emit_depth_1_2_3_for_first_vertex(
             ctx, *first_vertex,
             CpuNeighbourRange{sec_fwd.first, sec_fwd.second, sec_rev.first, sec_rev.second});
@@ -222,17 +223,14 @@ void MotifPreprocessor::emit_depth_1_2_3_groups_cpu(CpuKavoshContext& ctx,
 }
 
 void MotifPreprocessor::cpu_add_motif_to_count(CpuKavoshContext& ctx,
-                                                const UInt128 motif_id) noexcept
+                                               const UInt128 motif_id) noexcept
 {
     ctx.m_result[motif_id] += 1U;
 }
 
 void MotifPreprocessor::stream_groups_to_counter_for_vertex(
-    EnumerationResult& result,
-    std::vector<int64_t>& bfs_visited_vertices,
-    const MotifCanonical* const canonical,
-    const uint32_t canonical_size,
-    const uint32_t root) const
+    EnumerationResult& result, std::vector<int64_t>& bfs_visited_vertices,
+    const MotifCanonical* const canonical, const uint32_t canonical_size, const uint32_t root) const
 {
     const int64_t run_id =
         static_cast<int64_t>(static_cast<uint64_t>(root) << BFS_VERTEX_RUN_SHIFT);
@@ -244,8 +242,14 @@ void MotifPreprocessor::stream_groups_to_counter_for_vertex(
                                               : std::make_pair(one_fwd.second, one_fwd.second);
     const CpuNeighbourRange depth_one{one_fwd.first, one_fwd.second, one_rev.first, one_rev.second};
 
-    CpuKavoshContext ctx{run_id, root, canonical, canonical_size,
-                         m_graph, result, bfs_visited_vertices, m_order_index,
+    CpuKavoshContext ctx{run_id,
+                         root,
+                         canonical,
+                         canonical_size,
+                         m_graph,
+                         result,
+                         bfs_visited_vertices,
+                         m_order_index,
                          cpu_add_motif_to_count};
     ctx.mark_neighbours(depth_one, BFS_DEPTH_ONE_OFFSET);
     emit_depth_1_1_1_groups_cpu(ctx, depth_one);
@@ -254,7 +258,8 @@ void MotifPreprocessor::stream_groups_to_counter_for_vertex(
 }
 
 // UInt128 MotifPreprocessor::calculate_motif_number(const uint32_t motif_descriptor,
-//                                                    const std::vector<uint32_t>& node_colors) const
+//                                                    const std::vector<uint32_t>& node_colors)
+//                                                    const
 // {
 //     // Build a one-shot flat array from the unordered_map for the single lookup.
 //     // In normal usage this path is not called — stream_groups_to_counter uses

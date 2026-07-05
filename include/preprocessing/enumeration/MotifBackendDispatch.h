@@ -15,7 +15,7 @@
  */
 
 #ifdef SGF_CUDA_ENABLED
-#    include "CudaMotifBackend.h"
+#include "CudaMotifBackend.h"
 
 namespace sgf
 {
@@ -24,7 +24,7 @@ using MotifBackend = CudaMotifBackend;
 }  // namespace sgf
 
 #else
-#    include "MotifPreprocessor.h"
+#include "MotifPreprocessor.h"
 
 namespace sgf
 {

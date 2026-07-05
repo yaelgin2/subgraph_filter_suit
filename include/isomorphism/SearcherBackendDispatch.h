@@ -15,7 +15,7 @@
  */
 
 #ifdef SGF_CUDA_ENABLED
-#    include "CudaSearcherBackend.h"
+#include "CudaSearcherBackend.h"
 
 namespace sgf
 {
@@ -24,7 +24,7 @@ using SearcherBackend = CudaSearcherBackend;
 }  // namespace sgf
 
 #else
-#    include "SubgraphSearcher.h"
+#include "SubgraphSearcher.h"
 
 namespace sgf
 {

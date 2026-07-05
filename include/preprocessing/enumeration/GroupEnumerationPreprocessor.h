@@ -191,7 +191,6 @@ private:
      * @return Entity name string, e.g. "motifs" or "paths".
      */
     [[nodiscard]] virtual std::string entity_name() const = 0;
-
 };
 
 }  // namespace sgf

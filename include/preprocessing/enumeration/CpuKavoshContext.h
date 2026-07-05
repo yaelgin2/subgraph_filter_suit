@@ -29,11 +29,11 @@ struct CpuKavoshContext : IKavoshContext
     /** @brief Function pointer type for backend-specific motif recording. */
     using AddMotifFn = void (*)(CpuKavoshContext& ctx, UInt128 motif_id);
 
-    const ColoredGraph&          m_graph;          ///< Graph for neighbour/edge lookups.
-    EnumerationResult&           m_result;         ///< Per-thread result map; updated by cpu_add_motif_to_count.
-    std::vector<int64_t>&        m_bfs_visited;    ///< BFS depth-encoding array.
-    const std::vector<uint32_t>& m_order_index;    ///< Vertex position in degree-sorted order.
-    AddMotifFn                   m_add_motif_fn;   ///< Set by MotifPreprocessor to cpu_add_motif_to_count.
+    const ColoredGraph& m_graph;  ///< Graph for neighbour/edge lookups.
+    EnumerationResult& m_result;  ///< Per-thread result map; updated by cpu_add_motif_to_count.
+    std::vector<int64_t>& m_bfs_visited;         ///< BFS depth-encoding array.
+    const std::vector<uint32_t>& m_order_index;  ///< Vertex position in degree-sorted order.
+    AddMotifFn m_add_motif_fn;  ///< Set by MotifPreprocessor to cpu_add_motif_to_count.
 
     /**
      * @brief Construct a context, binding all reference members.
@@ -47,21 +47,16 @@ struct CpuKavoshContext : IKavoshContext
      * @param order_index    Vertex position in degree-sorted order.
      * @param add_motif_fn   Backend motif recording callback.
      */
-    CpuKavoshContext(const int64_t run_id,
-                     const uint32_t root,
-                     const MotifCanonical* canonical,
-                     const uint32_t canonical_size,
-                     const ColoredGraph& graph,
-                     EnumerationResult& result,
-                     std::vector<int64_t>& bfs_visited,
-                     const std::vector<uint32_t>& order_index,
-                     const AddMotifFn add_motif_fn)
-        : IKavoshContext{run_id, root, canonical, canonical_size},
-          m_graph(graph),
-          m_result(result),
-          m_bfs_visited(bfs_visited),
-          m_order_index(order_index),
-          m_add_motif_fn(add_motif_fn)
+    CpuKavoshContext(const int64_t run_id, const uint32_t root, const MotifCanonical* canonical,
+                     const uint32_t canonical_size, const ColoredGraph& graph,
+                     EnumerationResult& result, std::vector<int64_t>& bfs_visited,
+                     const std::vector<uint32_t>& order_index, const AddMotifFn add_motif_fn)
+        : IKavoshContext{run_id, root, canonical, canonical_size}
+        , m_graph(graph)
+        , m_result(result)
+        , m_bfs_visited(bfs_visited)
+        , m_order_index(order_index)
+        , m_add_motif_fn(add_motif_fn)
     {
     }
 
@@ -108,12 +103,11 @@ struct CpuKavoshContext : IKavoshContext
      */
     CpuNeighbourRange get_neighbour_range(const uint32_t vertex) const
     {
-        using IterPair = std::pair<std::vector<uint32_t>::const_iterator,
-                                   std::vector<uint32_t>::const_iterator>;
+        using IterPair =
+            std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>;
         const IterPair fwd = m_graph.get_neighbours(vertex);
-        const IterPair rev = m_graph.is_directed()
-            ? m_graph.get_neighbours(vertex, true)
-            : std::make_pair(fwd.second, fwd.second);
+        const IterPair rev = m_graph.is_directed() ? m_graph.get_neighbours(vertex, true)
+                                                   : std::make_pair(fwd.second, fwd.second);
         return CpuNeighbourRange{fwd.first, fwd.second, rev.first, rev.second};
     }
 

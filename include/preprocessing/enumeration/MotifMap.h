@@ -26,8 +26,8 @@ struct MotifCanonical
     /// Maximum number of color permutations for any 4-node motif.
     static constexpr uint32_t MAX_PERMUTATIONS = 24U;
 
-    uint32_t m_minimal_motif_num{0U};   ///< Canonical motif number.
-    uint32_t m_permutation_count{0U};   ///< Number of active entries in m_color_permutations.
+    uint32_t m_minimal_motif_num{0U};  ///< Canonical motif number.
+    uint32_t m_permutation_count{0U};  ///< Number of active entries in m_color_permutations.
 
     /// Color reorder indices; only [0, m_permutation_count) are valid.
     std::array<std::array<uint32_t, SgfConstants::MOTIF_SIZE>, MAX_PERMUTATIONS>
@@ -45,16 +45,15 @@ struct MotifCanonical
      * @param min_motif Canonical motif number.
      * @param perms     Color permutation entries; must not exceed MAX_PERMUTATIONS.
      */
-    MotifCanonical(
-        uint32_t min_motif,
-        std::initializer_list<std::array<uint32_t, SgfConstants::MOTIF_SIZE>> perms)
+    MotifCanonical(uint32_t min_motif,
+                   std::initializer_list<std::array<uint32_t, SgfConstants::MOTIF_SIZE>> perms)
         : m_minimal_motif_num(min_motif)
         , m_permutation_count(static_cast<uint32_t>(perms.size()))
     {
         uint32_t idx = 0U;
         for (const auto& perm : perms)
         {
-            m_color_permutations[idx++] = perm;
+            m_color_permutations.at(idx++) = perm;
         }
     }
 };

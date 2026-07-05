@@ -166,6 +166,17 @@ jobs:
             libboost-graph-dev libboost-log-dev libboost-json-dev \
             libboost-program-options-dev
 
+      - name: Fetch cuco and CCCL headers
+        run: |
+          git clone --depth=1 --filter=blob:none --sparse \
+            https://github.com/NVIDIA/cuCollections.git
+          cd cuCollections && git sparse-checkout set include && cd ..
+          mkdir -p cuCollections/build/_deps
+          git clone --depth=1 --filter=blob:none --sparse \
+            https://github.com/NVIDIA/cccl.git cuCollections/build/_deps/cccl-src
+          cd cuCollections/build/_deps/cccl-src && \
+            git sparse-checkout set libcudacxx/include thrust cub
+
       - name: Configure (CUDA enabled)
         run: |
           cmake -S . -B build \
