@@ -356,9 +356,9 @@ private:
      * @param second_degree       Iterator range over n1's neighbours (depth-2 candidates).
      */
     template <typename KavoshContext, typename NeighbourRange>
-    static void emit_depth_1_2_3_for_first_vertex(KavoshContext& ctx,
-                                            uint32_t first_degree_vertex,
-                                            const NeighbourRange& second_degree);
+    static SGF_HD void emit_depth_1_2_3_for_first_vertex(KavoshContext& ctx,
+                                                          uint32_t first_degree_vertex,
+                                                          const NeighbourRange& second_degree);
 
     /**
      * @brief Emit groups: root + n1 + n2 + n3 for each candidate third-degree vertex.
@@ -388,7 +388,7 @@ private:
                                                           uint32_t second_degree_vertex,
                                                           uint32_t third_degree_vertex);
 
-#ifdef __CUDACC__
+#ifdef SGF_CUDA_ENABLED
     // ── GPU overrides and drivers ─────────────────────────────────────────────
 
     /**
@@ -562,7 +562,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_1_2_for_first_vertex(
          second_degree_neighbour != depth_two.m_end; ++second_degree_neighbour)
     {
         if (ctx.m_order_index[*second_degree_neighbour] < ctx.m_order_index[ctx.m_root] ||
-            !ctx.is_at_depth(*second_degree_neighbour, static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)))
+            !ctx.is_not_at_depth_one(*second_degree_neighbour))
         {
             continue;
         }
@@ -575,8 +575,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_1_2_for_first_vertex(
              second_degree_neighbour != depth_two.m_rev_end; ++second_degree_neighbour)
         {
             if (ctx.m_order_index[*second_degree_neighbour] < ctx.m_order_index[ctx.m_root] ||
-                !ctx.is_at_depth(*second_degree_neighbour,
-                                 static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)) ||
+                !ctx.is_not_at_depth_one(*second_degree_neighbour) ||
                 ctx.has_fwd_edge(*first_neighbour, *second_degree_neighbour))
             {
                 continue;
@@ -639,7 +638,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_first_vertex(
     for (auto first_n2 = depth_two.m_begin; first_n2 != depth_two.m_end; ++first_n2)
     {
         if (ctx.m_order_index[*first_n2] < ctx.m_order_index[ctx.m_root] ||
-            !ctx.is_at_depth(*first_n2, static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)))
+            !ctx.is_not_at_depth_one(*first_n2))
         {
             continue;
         }
@@ -650,7 +649,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_first_vertex(
         for (auto first_n2 = depth_two.m_rev_begin; first_n2 != depth_two.m_rev_end; ++first_n2)
         {
             if (ctx.m_order_index[*first_n2] < ctx.m_order_index[ctx.m_root] ||
-                !ctx.is_at_depth(*first_n2, static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)) ||
+                !ctx.is_not_at_depth_one(*first_n2) ||
                 ctx.has_fwd_edge(*first_neighbour, *first_n2))
             {
                 continue;
@@ -674,7 +673,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(
         for (auto second_n2 = second_neighbour + 1; second_n2 != depth_two.m_end; ++second_n2)
         {
             if (ctx.m_order_index[*second_n2] < ctx.m_order_index[ctx.m_root] ||
-                !ctx.is_at_depth(*second_n2, static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)))
+                !ctx.is_not_at_depth_one(*second_n2))
             {
                 continue;
             }
@@ -687,7 +686,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(
         for (; second_n2 != depth_two.m_rev_end; ++second_n2)
         {
             if (ctx.m_order_index[*second_n2] < ctx.m_order_index[ctx.m_root] ||
-                !ctx.is_at_depth(*second_n2, static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)) ||
+                !ctx.is_not_at_depth_one(*second_n2) ||
                 ctx.has_fwd_edge(*first_neighbour, *second_n2))
             {
                 continue;
@@ -698,7 +697,7 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_2_for_second_vertex(
 }
 
 template <typename KavoshContext, typename NeighbourRange>
-void MotifPreprocessor::emit_depth_1_2_3_for_first_vertex(
+SGF_HD void MotifPreprocessor::emit_depth_1_2_3_for_first_vertex(
     KavoshContext& ctx,
     const uint32_t first_degree_vertex,
     const NeighbourRange& second_degree)
@@ -707,17 +706,12 @@ void MotifPreprocessor::emit_depth_1_2_3_for_first_vertex(
          ++second_vertex)
     {
         if (ctx.m_order_index[*second_vertex] < ctx.m_order_index[ctx.m_root] ||
-            !ctx.is_at_depth(*second_vertex, static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)))
+            !ctx.is_not_at_depth_one(*second_vertex))
         {
             continue;
         }
-        const NeighbourIteratorPair three_fwd = ctx.m_graph.get_neighbours(*second_vertex);
-        const NeighbourIteratorPair three_rev =
-            ctx.m_graph.is_directed() ? ctx.m_graph.get_neighbours(*second_vertex, true)
-                                  : std::make_pair(three_fwd.second, three_fwd.second);
-        emit_depth_1_2_3_for_second_vertex(
-            ctx, first_degree_vertex, *second_vertex,
-            NeighbourRange{three_fwd.first, three_fwd.second, three_rev.first, three_rev.second});
+        emit_depth_1_2_3_for_second_vertex(ctx, first_degree_vertex, *second_vertex,
+                                            ctx.get_neighbour_range(*second_vertex));
     }
     if (ctx.m_graph.is_directed())
     {
@@ -725,19 +719,13 @@ void MotifPreprocessor::emit_depth_1_2_3_for_first_vertex(
              second_vertex != second_degree.m_rev_end; ++second_vertex)
         {
             if (ctx.m_order_index[*second_vertex] < ctx.m_order_index[ctx.m_root] ||
-                !ctx.is_at_depth(*second_vertex, static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)) ||
+                !ctx.is_not_at_depth_one(*second_vertex) ||
                 ctx.has_fwd_edge(first_degree_vertex, *second_vertex))
             {
                 continue;
             }
-            const NeighbourIteratorPair three_fwd = ctx.m_graph.get_neighbours(*second_vertex);
-            const NeighbourIteratorPair three_rev =
-                ctx.m_graph.is_directed() ? ctx.m_graph.get_neighbours(*second_vertex, true)
-                                      : std::make_pair(three_fwd.second, three_fwd.second);
-            emit_depth_1_2_3_for_second_vertex(
-                ctx, first_degree_vertex, *second_vertex,
-                NeighbourRange{three_fwd.first, three_fwd.second, three_rev.first,
-                               three_rev.second});
+            emit_depth_1_2_3_for_second_vertex(ctx, first_degree_vertex, *second_vertex,
+                                                ctx.get_neighbour_range(*second_vertex));
         }
     }
 }
@@ -782,21 +770,14 @@ SGF_HD void MotifPreprocessor::emit_depth_1_2_3_for_third_vertex(
     const uint32_t second_degree_vertex,
     const uint32_t third_degree_vertex)
 {
-    const bool is_new            = !ctx.is_visited_in_run(third_degree_vertex);
-    const bool is_depth_two_no_back_edge =
-        ctx.is_at_depth(third_degree_vertex, static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)) &&
-        !ctx.has_fwd_edge(first_degree_vertex, third_degree_vertex) &&
-        !ctx.has_fwd_edge(third_degree_vertex, first_degree_vertex);
-    const bool is_depth_three =
-        ctx.is_at_depth(third_degree_vertex, static_cast<int64_t>(BFS_DEPTH_THREE_OFFSET));
-    if (is_new)
+    ctx.mark_at_depth(third_degree_vertex, static_cast<int64_t>(BFS_DEPTH_THREE_OFFSET));
+    if (!ctx.is_not_at_depth_one(third_degree_vertex) ||
+        ctx.has_fwd_edge(first_degree_vertex, third_degree_vertex) ||
+        ctx.has_fwd_edge(third_degree_vertex, first_degree_vertex))
     {
-        ctx.mark_at_depth(third_degree_vertex, static_cast<int64_t>(BFS_DEPTH_THREE_OFFSET));
+        return;
     }
-    if (is_new || is_depth_two_no_back_edge || is_depth_three)
-    {
-        count_group_by_ids(ctx, first_degree_vertex, second_degree_vertex, third_degree_vertex);
-    }
+    count_group_by_ids(ctx, first_degree_vertex, second_degree_vertex, third_degree_vertex);
 }
 
 // ============================================================================

@@ -70,17 +70,10 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
 {
     sort_nodes();
 
-#ifdef SGF_CUDA_ENABLED
     if (use_gpu)
     {
         return calculate_gpu();
     }
-#else
-    if (use_gpu)
-    {
-        throw InvalidArgumentException("GPU not available: not compiled with SGF_CUDA_ENABLED.");
-    }
-#endif
 
     std::unordered_map<UInt128, uint32_t, UInt128Hash> motif_count;
 
@@ -104,13 +97,11 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
     return motif_count;
 }
 
-#ifdef SGF_CUDA_ENABLED
 EnumerationResult GroupEnumerationPreprocessor::calculate_gpu()
 {
     throw InvalidArgumentException(
         "GPU enumeration not implemented for this preprocessor type.");
 }
-#endif
 
 
 std::vector<uint32_t>

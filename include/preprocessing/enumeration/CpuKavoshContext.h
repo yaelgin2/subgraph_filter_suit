@@ -77,9 +77,9 @@ struct CpuKavoshContext : IKavoshContext
     /**
      * @brief Return true if @p vertex was marked at @p depth in this run.
      */
-    SGF_HD bool is_at_depth(const uint32_t vertex, const int64_t depth) const noexcept override
+    SGF_HD bool is_not_at_depth_one(const uint32_t vertex) const noexcept override
     {
-        return m_bfs_visited[vertex] == m_run_id + depth;
+        return (m_root != vertex) && (m_bfs_visited[vertex] != m_run_id + 1);
     }
 
     /**
@@ -96,7 +96,25 @@ struct CpuKavoshContext : IKavoshContext
      */
     SGF_HD void mark_at_depth(const uint32_t vertex, const int64_t depth) noexcept override
     {
-        m_bfs_visited[vertex] = m_run_id + depth;
+        if (!is_visited_in_run(vertex))
+        {
+            m_bfs_visited[vertex] = m_run_id + depth;
+        }
+    }
+
+    /**
+     * @brief Build a CpuNeighbourRange covering fwd and rev neighbours of @p vertex.
+     * @param vertex Vertex id to look up.
+     */
+    CpuNeighbourRange get_neighbour_range(const uint32_t vertex) const
+    {
+        using IterPair = std::pair<std::vector<uint32_t>::const_iterator,
+                                   std::vector<uint32_t>::const_iterator>;
+        const IterPair fwd = m_graph.get_neighbours(vertex);
+        const IterPair rev = m_graph.is_directed()
+            ? m_graph.get_neighbours(vertex, true)
+            : std::make_pair(fwd.second, fwd.second);
+        return CpuNeighbourRange{fwd.first, fwd.second, rev.first, rev.second};
     }
 
     /**

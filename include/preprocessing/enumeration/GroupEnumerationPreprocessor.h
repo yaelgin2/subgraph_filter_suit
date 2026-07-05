@@ -93,7 +93,6 @@ public:
      */
     EnumerationResult calculate(bool use_gpu = false) override;
 
-#ifdef SGF_CUDA_ENABLED
     /**
      * @brief GPU kernel dispatch entry point.
      *
@@ -105,7 +104,6 @@ public:
      * @return Map of motif identifier to occurrence count.
      */
     virtual EnumerationResult calculate_gpu();
-#endif
 
 protected:
     /**

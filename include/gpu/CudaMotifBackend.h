@@ -88,7 +88,7 @@ using CucoMotifMap = cuco::static_map<
     cuco::extent<std::size_t>,
     cuda::thread_scope_device,
     thrust::equal_to<uint64_t>,
-    cuco::linear_probing<4U, UInt64Hash>>;
+    cuco::linear_probing<1U, UInt64Hash>>;
 
 /** @brief Auxiliary map: MurmurHash3(UInt128) → one 64-bit half of the original key. */
 using CucoAuxMap = cuco::static_map<
@@ -97,7 +97,7 @@ using CucoAuxMap = cuco::static_map<
     cuco::extent<std::size_t>,
     cuda::thread_scope_device,
     thrust::equal_to<uint64_t>,
-    cuco::linear_probing<4U, UInt64Hash>>;
+    cuco::linear_probing<1U, UInt64Hash>>;
 
 /** @brief Device-side ref type for count updates (insert_or_apply). */
 using CucoMotifMapRef =
@@ -174,20 +174,31 @@ struct GpuKavoshContext : IKavoshContext
     __host__ __device__ bool has_fwd_edge(uint32_t src, uint32_t dest) const noexcept override;
 
     /**
-     * @brief Return true if @p vertex was marked at @p depth in this run.
+     * @brief Return true if @p vertex is not a BFS depth-1 neighbour of root.
+     *
+     * GPU has no BFS visited array.  Depth-1 from root means adjacent via any
+     * edge: forward (root→vertex) OR, for directed graphs, reverse (vertex→root).
+     *
      * @param vertex Vertex id to query.
-     * @param depth  BFS depth offset (e.g. BFS_DEPTH_TWO_OFFSET).
      */
-    __host__ __device__ bool is_at_depth(uint32_t vertex, int64_t depth) const noexcept override
+    __host__ __device__ bool is_not_at_depth_one(const uint32_t vertex) const noexcept override
     {
-        return false;
+        if (vertex == m_root || has_fwd_edge(m_root, vertex))
+        {
+            return false;
+        }
+        return !m_graph.is_directed() || !has_fwd_edge(vertex, m_root);
     }
 
     /**
      * @brief Return true if @p vertex was visited at any depth in this run.
+     *
+     * GPU has no BFS visited array; always returns false. The (1,2,3) GPU path
+     * does not rely on this method.
+     *
      * @param vertex Vertex id to query.
      */
-    __host__ __device__ bool is_visited_in_run(uint32_t vertex) const noexcept override
+    __host__ __device__ bool is_visited_in_run(const uint32_t /*vertex*/) const noexcept override
     {
         return false;
     }
@@ -198,6 +209,23 @@ struct GpuKavoshContext : IKavoshContext
      * @param depth  BFS depth offset.
      */
     __host__ __device__ void mark_at_depth(uint32_t vertex, int64_t depth) noexcept override {}
+
+    /**
+     * @brief Build a GpuNeighbourRange covering fwd and rev neighbours of @p vertex.
+     * @param vertex Vertex id to look up.
+     */
+    __host__ __device__ GpuNeighbourRange get_neighbour_range(const uint32_t vertex) const noexcept
+    {
+        const uint32_t* const nbr     = m_graph.d_fwd_neighbors;
+        const uint32_t fwd_start      = m_graph.d_fwd_offsets[vertex];
+        const uint32_t fwd_end        = m_graph.d_fwd_offsets[vertex + 1U];
+        const bool directed           = m_graph.is_directed();
+        const uint32_t* const rev_nbr = directed ? m_graph.d_rev_neighbors : nbr;
+        const uint32_t rev_start      = directed ? m_graph.d_rev_offsets[vertex]      : fwd_end;
+        const uint32_t rev_end        = directed ? m_graph.d_rev_offsets[vertex + 1U] : fwd_end;
+        return GpuNeighbourRange{nbr + fwd_start, nbr + fwd_end,
+                                  rev_nbr + rev_start, rev_nbr + rev_end};
+    }
 
     /**
      * @brief Mark all vertices in @p neighbours_range at @p depth.

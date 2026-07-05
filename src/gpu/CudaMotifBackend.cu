@@ -1,6 +1,6 @@
 #include "CudaMotifBackend.h"
 
-#ifdef SGF_CUDA_ENABLED
+#ifdef __CUDACC__
 
 // Include MotifPreprocessor AFTER CudaMotifBackend.h so GpuKavoshContext is already
 // defined when the SGF_HD templates in MotifPreprocessor.h are instantiated here.
@@ -30,6 +30,9 @@ constexpr uint32_t BLOCK_DIM = 16U;
 
 /// Sentinel key for empty cuco map slots (max uint64_t, never a valid MurmurHash3 output).
 constexpr uint64_t EMPTY_HASH_KEY = std::numeric_limits<uint64_t>::max();
+
+/// Fixed capacity for all cuco motif maps (distinct canonical motif count upper bound).
+constexpr std::size_t MOTIF_MAP_CAPACITY = 1'000'000UL;
 
 /// Seed for the primary slot key: hash(motif, PRIMARY_HASH_SEED).
 constexpr uint64_t PRIMARY_HASH_SEED = 0ULL;
@@ -105,7 +108,7 @@ __device__ bool GpuKavoshContext::has_fwd_edge(const uint32_t src,
 __device__ void MotifPreprocessor::gpu_add_motif_to_count(GpuKavoshContext& ctx,
                                                            const UInt128 motif_id) noexcept
 {
-    auto tile = cooperative_groups::tiled_partition<4>(
+    auto tile = cooperative_groups::tiled_partition<1>(
         cooperative_groups::this_thread_block());
 
     uint64_t key = UInt128MurmurHash::hash(motif_id, PRIMARY_HASH_SEED);
@@ -115,7 +118,7 @@ __device__ void MotifPreprocessor::gpu_add_motif_to_count(GpuKavoshContext& ctx,
     }
     const uint64_t step = UInt128MurmurHash::hash(motif_id, STEP_HASH_SEED) | 1ULL;
 
-    while (true)
+    for (uint32_t probe = 0U; probe < static_cast<uint32_t>(MOTIF_MAP_CAPACITY); ++probe)
     {
         const auto [high_it, high_inserted] =
             ctx.m_high_ref.insert_and_find(tile, cuco::pair<uint64_t, uint64_t>{key, motif_id.m_high});
@@ -145,6 +148,7 @@ __device__ void MotifPreprocessor::gpu_add_motif_to_count(GpuKavoshContext& ctx,
             key ^= 1ULL;
         }
     }
+    // Map is full — silently discard this motif to avoid infinite looping.
 }
 
 // ── GPU first-layer driver functions ─────────────────────────────────────────
@@ -160,23 +164,30 @@ __device__ void MotifPreprocessor::emit_depth_1_1_1_groups_gpu(
     const uint32_t thread_y_offset,
     const uint32_t stride_y)
 {
-    const uint32_t root_start = ctx.m_graph.d_fwd_offsets[ctx.m_root];
-    const uint32_t root_end   = ctx.m_graph.d_fwd_offsets[ctx.m_root + 1U];
-    const uint32_t* const nbr = ctx.m_graph.d_fwd_neighbors;
-
-    const GpuNeighbourRange depth_one{nbr + root_start, nbr + root_end,
-                                       nbr + root_end,   nbr + root_end};
-
+    const GpuNeighbourRange depth_one = ctx.get_neighbour_range(ctx.m_root);
     ctx.mark_neighbours(depth_one, static_cast<uint32_t>(BFS_DEPTH_ONE_OFFSET));
 
-    for (uint32_t n1_idx = root_start + thread_y_offset; n1_idx < root_end; n1_idx += stride_y)
+    for (const uint32_t* n1_ptr = depth_one.m_begin + thread_y_offset;
+         n1_ptr < depth_one.m_end; n1_ptr += stride_y)
     {
-        const uint32_t n1 = nbr[n1_idx];
-        if (ctx.m_order_index[n1] < ctx.m_order_index[ctx.m_root])
+        if (ctx.m_order_index[*n1_ptr] < ctx.m_order_index[ctx.m_root])
         {
             continue;
         }
-        emit_depth_1_1_1_groups_first_vertex_chosen(ctx, depth_one, nbr + n1_idx, false);
+        emit_depth_1_1_1_groups_first_vertex_chosen(ctx, depth_one, n1_ptr, false);
+    }
+    if (ctx.m_graph.is_directed())
+    {
+        for (const uint32_t* n1_ptr = depth_one.m_rev_begin + thread_y_offset;
+             n1_ptr < depth_one.m_rev_end; n1_ptr += stride_y)
+        {
+            if (ctx.m_order_index[*n1_ptr] < ctx.m_order_index[ctx.m_root] ||
+                ctx.has_fwd_edge(ctx.m_root, *n1_ptr))
+            {
+                continue;
+            }
+            emit_depth_1_1_1_groups_first_vertex_chosen(ctx, depth_one, n1_ptr, true);
+        }
     }
 }
 
@@ -186,35 +197,42 @@ __device__ void MotifPreprocessor::emit_depth_1_1_1_groups_gpu(
  * @param thread_y_offset Y-dimension thread offset.
  * @param stride_y        Total y-dimension stride.
  */
-// NOLINTNEXTLINE(readability-function-size)
 __device__ void MotifPreprocessor::emit_depth_1_1_2_and_1_2_2_groups_gpu(
     GpuKavoshContext& ctx,
     const uint32_t thread_y_offset,
     const uint32_t stride_y)
 {
-    const uint32_t root_start = ctx.m_graph.d_fwd_offsets[ctx.m_root];
-    const uint32_t root_end   = ctx.m_graph.d_fwd_offsets[ctx.m_root + 1U];
-    const uint32_t* const nbr = ctx.m_graph.d_fwd_neighbors;
+    const GpuNeighbourRange depth_one = ctx.get_neighbour_range(ctx.m_root);
 
-    const GpuNeighbourRange depth_one{nbr + root_start, nbr + root_end,
-                                       nbr + root_end,   nbr + root_end};
-
-    for (uint32_t n1_idx = root_start + thread_y_offset; n1_idx < root_end; n1_idx += stride_y)
+    for (const uint32_t* n1_ptr = depth_one.m_begin + thread_y_offset;
+         n1_ptr < depth_one.m_end; n1_ptr += stride_y)
     {
-        const uint32_t n1 = nbr[n1_idx];
+        const uint32_t n1 = *n1_ptr;
         if (ctx.m_order_index[n1] < ctx.m_order_index[ctx.m_root])
         {
             continue;
         }
-
-        const uint32_t n2_start = ctx.m_graph.d_fwd_offsets[n1];
-        const uint32_t n2_end   = ctx.m_graph.d_fwd_offsets[n1 + 1U];
-        const GpuNeighbourRange depth_two{nbr + n2_start, nbr + n2_end,
-                                           nbr + n2_end,   nbr + n2_end};
-
+        const GpuNeighbourRange depth_two = ctx.get_neighbour_range(n1);
         ctx.mark_neighbours(depth_two, static_cast<uint32_t>(BFS_DEPTH_TWO_OFFSET));
-        emit_depth_1_1_2_for_first_vertex(ctx, nbr + n1_idx, depth_one, depth_two);
-        emit_depth_1_2_2_for_first_vertex(ctx, nbr + n1_idx, depth_two);
+        emit_depth_1_1_2_for_first_vertex(ctx, n1_ptr, depth_one, depth_two);
+        emit_depth_1_2_2_for_first_vertex(ctx, n1_ptr, depth_two);
+    }
+    if (ctx.m_graph.is_directed())
+    {
+        for (const uint32_t* n1_ptr = depth_one.m_rev_begin + thread_y_offset;
+             n1_ptr < depth_one.m_rev_end; n1_ptr += stride_y)
+        {
+            const uint32_t n1 = *n1_ptr;
+            if (ctx.m_order_index[n1] < ctx.m_order_index[ctx.m_root] ||
+                ctx.has_fwd_edge(ctx.m_root, n1))
+            {
+                continue;
+            }
+            const GpuNeighbourRange depth_two = ctx.get_neighbour_range(n1);
+            ctx.mark_neighbours(depth_two, static_cast<uint32_t>(BFS_DEPTH_TWO_OFFSET));
+            emit_depth_1_1_2_for_first_vertex(ctx, n1_ptr, depth_one, depth_two);
+            emit_depth_1_2_2_for_first_vertex(ctx, n1_ptr, depth_two);
+        }
     }
 }
 
@@ -229,34 +247,30 @@ __device__ void MotifPreprocessor::emit_depth_1_2_3_groups_gpu(
     const uint32_t thread_y_offset,
     const uint32_t stride_y)
 {
-    const uint32_t root_start = ctx.m_graph.d_fwd_offsets[ctx.m_root];
-    const uint32_t root_end   = ctx.m_graph.d_fwd_offsets[ctx.m_root + 1U];
-    const uint32_t* const nbr = ctx.m_graph.d_fwd_neighbors;
+    const GpuNeighbourRange depth_one = ctx.get_neighbour_range(ctx.m_root);
 
-    for (uint32_t n1_idx = root_start + thread_y_offset; n1_idx < root_end; n1_idx += stride_y)
+    for (const uint32_t* n1_ptr = depth_one.m_begin + thread_y_offset;
+         n1_ptr < depth_one.m_end; n1_ptr += stride_y)
     {
-        const uint32_t n1 = nbr[n1_idx];
+        const uint32_t n1 = *n1_ptr;
         if (ctx.m_order_index[n1] < ctx.m_order_index[ctx.m_root])
         {
             continue;
         }
-
-        const uint32_t n2_start = ctx.m_graph.d_fwd_offsets[n1];
-        const uint32_t n2_end   = ctx.m_graph.d_fwd_offsets[n1 + 1U];
-
-        for (const uint32_t* n2_ptr = nbr + n2_start; n2_ptr != nbr + n2_end; ++n2_ptr)
+        emit_depth_1_2_3_for_first_vertex(ctx, n1, ctx.get_neighbour_range(n1));
+    }
+    if (ctx.m_graph.is_directed())
+    {
+        for (const uint32_t* n1_ptr = depth_one.m_rev_begin + thread_y_offset;
+             n1_ptr < depth_one.m_rev_end; n1_ptr += stride_y)
         {
-            const uint32_t n2 = *n2_ptr;
-            if (ctx.m_order_index[n2] < ctx.m_order_index[ctx.m_root] ||
-                !ctx.is_at_depth(n2, static_cast<int64_t>(BFS_DEPTH_TWO_OFFSET)))
+            const uint32_t n1 = *n1_ptr;
+            if (ctx.m_order_index[n1] < ctx.m_order_index[ctx.m_root] ||
+                ctx.has_fwd_edge(ctx.m_root, n1))
             {
                 continue;
             }
-            const uint32_t n3_start = ctx.m_graph.d_fwd_offsets[n2];
-            const uint32_t n3_end   = ctx.m_graph.d_fwd_offsets[n2 + 1U];
-            const GpuNeighbourRange depth_three{nbr + n3_start, nbr + n3_end,
-                                                 nbr + n3_end,   nbr + n3_end};
-            emit_depth_1_2_3_for_second_vertex(ctx, n1, n2, depth_three);
+            emit_depth_1_2_3_for_first_vertex(ctx, n1, ctx.get_neighbour_range(n1));
         }
     }
 }
@@ -312,6 +326,12 @@ __global__ void motif4_kernel(const DeviceGraph graph,
 
 EnumerationResult MotifPreprocessor::calculate_gpu()
 {
+    constexpr uint32_t MIN_VERTICES_FOR_MOTIF = 4U;
+    if (m_graph.vertex_count() < MIN_VERTICES_FOR_MOTIF)
+    {
+        return {};
+    }
+
     DeviceGraph device_graph = DeviceGraphBuilder::build(m_graph);
 
     uint32_t* d_order_index  = nullptr;
@@ -337,10 +357,40 @@ EnumerationResult MotifPreprocessor::calculate_gpu()
     const uint32_t canonical_size = max_descriptor + 1U;
 
     MotifCanonical* device_canonical = nullptr;
-    cudaMallocManaged(&device_canonical, canonical_size * sizeof(MotifCanonical));
+    const std::size_t canonical_bytes = canonical_size * sizeof(MotifCanonical);
+    cudaMallocManaged(&device_canonical, canonical_bytes);
+    // cudaMallocManaged does not call constructors — zero-init so unoccupied slots
+    // have m_permutation_count == 0, which calculate_motif_number_from_arrays checks.
+    std::memset(device_canonical, 0, canonical_bytes);
     for (const auto& [descriptor, entry] : canonical_map)
     {
         device_canonical[descriptor] = entry;
+    }
+
+    // Y-grid must cover max degree, not all N nodes — otherwise (N-degree)/N threads are idle.
+    uint32_t max_fwd_degree = 0U;
+    for (uint32_t v = 0U; v < device_graph.num_nodes; ++v)
+    {
+        const uint32_t deg = device_graph.d_fwd_offsets[v + 1U] - device_graph.d_fwd_offsets[v];
+        if (deg > max_fwd_degree)
+        {
+            max_fwd_degree = deg;
+        }
+    }
+
+    // Prefetch all managed arrays to device before kernel launch.
+    int cuda_device = -1;
+    cudaGetDevice(&cuda_device);
+    cudaMemPrefetchAsync(d_order_index,                vertex_bytes,                              cuda_device, nullptr);
+    cudaMemPrefetchAsync(d_sorted_nodes,               vertex_bytes,                              cuda_device, nullptr);
+    cudaMemPrefetchAsync(device_canonical,             canonical_bytes,                            cuda_device, nullptr);
+    cudaMemPrefetchAsync(device_graph.d_fwd_offsets,   (device_graph.num_nodes + 1U) * sizeof(uint32_t), cuda_device, nullptr);
+    cudaMemPrefetchAsync(device_graph.d_fwd_neighbors, device_graph.num_fwd_edges * sizeof(uint32_t),    cuda_device, nullptr);
+    cudaMemPrefetchAsync(device_graph.d_colors,        device_graph.num_nodes * sizeof(uint32_t),        cuda_device, nullptr);
+    if (device_graph.d_rev_offsets != nullptr)
+    {
+        cudaMemPrefetchAsync(device_graph.d_rev_offsets,   (device_graph.num_nodes + 1U) * sizeof(uint32_t), cuda_device, nullptr);
+        cudaMemPrefetchAsync(device_graph.d_rev_neighbors, device_graph.num_rev_edges * sizeof(uint32_t),    cuda_device, nullptr);
     }
 
     CucoMotifMap count_map = make_cuco_motif_map(device_graph.num_nodes);
@@ -353,7 +403,7 @@ EnumerationResult MotifPreprocessor::calculate_gpu()
 
     const dim3 block_size(BLOCK_DIM, BLOCK_DIM);
     const dim3 num_blocks(ceil_div(device_graph.num_nodes, BLOCK_DIM),
-                           ceil_div(device_graph.num_nodes, BLOCK_DIM));
+                           std::max(1U, ceil_div(max_fwd_degree, BLOCK_DIM)));
 
     motif4_kernel<<<num_blocks, block_size>>>(device_graph, count_ref, high_ref, low_ref,
                                                device_canonical, canonical_size,
@@ -370,72 +420,90 @@ EnumerationResult MotifPreprocessor::calculate_gpu()
 
 // ── Helper implementations ────────────────────────────────────────────────────
 
-CucoMotifMap make_cuco_motif_map(const uint32_t num_nodes)
+CucoMotifMap make_cuco_motif_map(const uint32_t /*num_nodes*/)
 {
-    const std::size_t capacity =
-        static_cast<std::size_t>(num_nodes) *
-        static_cast<std::size_t>(num_nodes) * 2UL;
-    return CucoMotifMap{cuco::extent<std::size_t>(capacity),
+    return CucoMotifMap{cuco::extent<std::size_t>(MOTIF_MAP_CAPACITY),
                          cuco::empty_key{EMPTY_HASH_KEY},
                          cuco::empty_value{uint32_t{0U}},
                          thrust::equal_to<uint64_t>{},
-                         cuco::linear_probing<4U, UInt64Hash>{}};
+                         cuco::linear_probing<1U, UInt64Hash>{}};
 }
 
-CucoAuxMap make_cuco_aux_map(const uint32_t num_nodes)
+CucoAuxMap make_cuco_aux_map(const uint32_t /*num_nodes*/)
 {
-    const std::size_t capacity =
-        static_cast<std::size_t>(num_nodes) *
-        static_cast<std::size_t>(num_nodes) * 2UL;
-    return CucoAuxMap{cuco::extent<std::size_t>(capacity),
+    // empty_value must differ from every valid stored motif half.
+    // UINT64_MAX is safe: m_high encodes (min_motif_num<<32)|color_bits; with
+    // at most ~100 distinct 4-node motifs, min_motif_num << 32 << UINT64_MAX.
+    // Using 0 as sentinel deadlocked via maybe_wait_for_payload when m_low == 0
+    // (all-zero vertex colors), so UINT64_MAX is used instead.
+    return CucoAuxMap{cuco::extent<std::size_t>(MOTIF_MAP_CAPACITY),
                        cuco::empty_key{EMPTY_HASH_KEY},
-                       cuco::empty_value{uint64_t{0U}},
+                       cuco::empty_value{~uint64_t{0U}},
                        thrust::equal_to<uint64_t>{},
-                       cuco::linear_probing<4U, UInt64Hash>{}};
+                       cuco::linear_probing<1U, UInt64Hash>{}};
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 EnumerationResult cuco_maps_to_enumeration_result(const CucoMotifMap& count_map,
                                                    const CucoAuxMap& high_map,
                                                    const CucoAuxMap& low_map)
 {
-    // All three maps live in managed memory (cuco default allocator).
-    // After cudaDeviceSynchronize in calculate_gpu(), data() is safe to read on host.
-    // Iterate raw slots directly — skip empty slots via the sentinel key.
-    const CucoMotifMap::value_type* count_slots = count_map.data();
-    const CucoAuxMap::value_type*   high_slots  = high_map.data();
-    const CucoAuxMap::value_type*   low_slots   = low_map.data();
-    const std::size_t capacity = count_map.capacity();
-
-    // Build lookup tables from hash_key → high/low half using the aux map slots.
-    std::unordered_map<uint64_t, uint64_t> high_lookup;
-    std::unordered_map<uint64_t, uint64_t> low_lookup;
-    for (std::size_t idx = std::size_t{0}; idx < capacity; ++idx)
+    const std::size_t entry_count = static_cast<std::size_t>(count_map.size());
+    if (entry_count == 0)
     {
-        if (high_slots[idx].first != EMPTY_HASH_KEY)
-        {
-            high_lookup[high_slots[idx].first] = high_slots[idx].second;
-        }
-        if (low_slots[idx].first != EMPTY_HASH_KEY)
-        {
-            low_lookup[low_slots[idx].first] = low_slots[idx].second;
-        }
+        return {};
     }
 
+    // Allocate managed memory for retrieve_all/find output — accessible from both GPU and CPU.
+    uint64_t* count_keys = nullptr;
+    uint32_t* count_vals = nullptr;
+    uint64_t* high_vals  = nullptr;
+    uint64_t* low_vals   = nullptr;
+    cudaMallocManaged(&count_keys, entry_count * sizeof(uint64_t));
+    cudaMallocManaged(&count_vals, entry_count * sizeof(uint32_t));
+    cudaMallocManaged(&high_vals,  entry_count * sizeof(uint64_t));
+    cudaMallocManaged(&low_vals,   entry_count * sizeof(uint64_t));
+
+    // Prefetch to device so retrieve_all and find kernels can write without page faults.
+    int cuda_device = -1;
+    cudaGetDevice(&cuda_device);
+    cudaMemPrefetchAsync(count_keys, entry_count * sizeof(uint64_t), cuda_device, nullptr);
+    cudaMemPrefetchAsync(count_vals, entry_count * sizeof(uint32_t), cuda_device, nullptr);
+    cudaMemPrefetchAsync(high_vals,  entry_count * sizeof(uint64_t), cuda_device, nullptr);
+    cudaMemPrefetchAsync(low_vals,   entry_count * sizeof(uint64_t), cuda_device, nullptr);
+
+    // Dump count_map to managed memory, then look up high/low halves using those same keys.
+    count_map.retrieve_all(count_keys, count_vals);
+    high_map.find(count_keys, count_keys + entry_count, high_vals);
+    low_map.find(count_keys, count_keys + entry_count, low_vals);
+    cudaDeviceSynchronize();
+
+    // Prefetch back to CPU for host-side result assembly.
+    cudaMemPrefetchAsync(count_keys, entry_count * sizeof(uint64_t), cudaCpuDeviceId, nullptr);
+    cudaMemPrefetchAsync(count_vals, entry_count * sizeof(uint32_t), cudaCpuDeviceId, nullptr);
+    cudaMemPrefetchAsync(high_vals,  entry_count * sizeof(uint64_t), cudaCpuDeviceId, nullptr);
+    cudaMemPrefetchAsync(low_vals,   entry_count * sizeof(uint64_t), cudaCpuDeviceId, nullptr);
+    cudaDeviceSynchronize();
+
+    constexpr uint64_t AUX_NOT_FOUND = ~uint64_t{0U};
     EnumerationResult result;
-    for (std::size_t idx = std::size_t{0}; idx < capacity; ++idx)
+    for (std::size_t idx = std::size_t{0}; idx < entry_count; ++idx)
     {
-        if (count_slots[idx].first == EMPTY_HASH_KEY)
+        if (high_vals[idx] == AUX_NOT_FOUND || low_vals[idx] == AUX_NOT_FOUND)
         {
             continue;
         }
-        const uint64_t hash_key = count_slots[idx].first;
-        const UInt128 motif_id{high_lookup.at(hash_key), low_lookup.at(hash_key)};
-        result[motif_id] += count_slots[idx].second;
+        result[UInt128{high_vals[idx], low_vals[idx]}] += count_vals[idx];
     }
+
+    cudaFree(count_keys);
+    cudaFree(count_vals);
+    cudaFree(high_vals);
+    cudaFree(low_vals);
 
     return result;
 }
 
 }  // namespace sgf
 
-#endif  // SGF_CUDA_ENABLED
+#endif  // __CUDACC__

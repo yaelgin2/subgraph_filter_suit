@@ -65,11 +65,15 @@ struct IKavoshContext
     virtual SGF_HD bool has_fwd_edge(uint32_t src, uint32_t dest) const noexcept = 0;
 
     /**
-     * @brief Return true if @p vertex was marked at @p depth in this run.
+     * @brief Return true if @p vertex is at BFS depth 2 (not a direct neighbour of root).
+     *
+     * All shared BFS helpers call this exclusively to distinguish depth-2 candidates
+     * from depth-1 neighbours of root. The depth parameter has been removed because
+     * every call site passes BFS_DEPTH_TWO_OFFSET.
+     *
      * @param vertex Vertex id to query.
-     * @param depth  BFS depth offset.
      */
-    virtual SGF_HD bool is_at_depth(uint32_t vertex, int64_t depth) const noexcept = 0;
+    virtual SGF_HD bool is_not_at_depth_one(uint32_t vertex) const noexcept = 0;
 
     /**
      * @brief Return true if @p vertex was visited at any depth in this run.

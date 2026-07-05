@@ -79,6 +79,22 @@ private:
      */
     static void copy_array_to_managed_memory(uint32_t** dest, const uint32_t* src,
                                               uint32_t count);
+
+    /**
+     * @brief Allocate managed memory for a CSR offset array with a sentinel.
+     *
+     * ColoredGraph stores only @p num_vertices offsets (no sentinel). This
+     * function allocates num_vertices+1 entries, copies the source, then
+     * appends @p total_edges as the CSR sentinel so the kernel can compute
+     * the last vertex's degree as d_offsets[num_vertices] - d_offsets[num_vertices-1].
+     * @param dest         Output pointer set to the newly allocated managed block.
+     * @param src          Source host offset array (length num_vertices).
+     * @param num_vertices Number of vertices; source array length.
+     * @param total_edges  Total edge count written as the sentinel at index num_vertices.
+     */
+    static void copy_csr_offsets_to_managed_memory(uint32_t** dest, const uint32_t* src,
+                                                    uint32_t num_vertices,
+                                                    uint32_t total_edges);
 };
 
 }  // namespace sgf

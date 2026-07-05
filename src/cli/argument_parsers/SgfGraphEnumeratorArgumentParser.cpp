@@ -53,6 +53,7 @@ po::options_description SgfGraphEnumeratorArgumentParser::build_options()
     common_desc.add_options()(KEY_IS_DIRECTED, po::bool_switch(), "Treat graphs as directed")(
         KEY_NON_INDUCED, po::bool_switch(),
         "Expand induced motif counts via inclusion DAG before filtering")(
+        KEY_GPU, po::bool_switch(), "Offload motif enumeration to GPU kernels (requires CUDA)")(
         KEY_THREAD_NUMBER, po::value<std::string>()->default_value("10"),
         "Maximum number of threads to use during preprocessing (default: 10)")(
         KEY_CACHE_TYPE, po::value<std::string>(), "Cache format: binary, csv")(
@@ -133,6 +134,7 @@ CliArgs SgfGraphEnumeratorArgumentParser::build_cli_args(const po::variables_map
     result.m_use_paths = variables_map.at(KEY_PATHS).as<bool>();
     result.m_is_directed = variables_map.at(KEY_IS_DIRECTED).as<bool>();
     result.m_non_induced = variables_map.at(KEY_NON_INDUCED).as<bool>();
+    result.m_use_gpu = variables_map.at(KEY_GPU).as<bool>();
     result.m_thread_number = parse_uint32_value(
         variables_map.at(KEY_THREAD_NUMBER).as<std::string>(), KEY_THREAD_NUMBER);
     if (result.m_thread_number == 0U)
