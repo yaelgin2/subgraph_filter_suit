@@ -30,8 +30,16 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake clang-tidy-17 clang-format-17 \
+          sudo apt-get install -y build-essential cmake ccache clang-tidy-17 clang-format-17 \
             libboost-graph-dev libboost-log-dev libboost-json-dev libboost-program-options-dev
+
+      - name: Cache ccache objects (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-
 
       - name: Add MinGW-w64 to PATH (Windows)
         if: runner.os == 'Windows'
@@ -70,7 +78,7 @@ jobs:
 
       - name: Configure (Linux)
         if: runner.os == 'Linux'
-        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Configure (Windows)
         if: runner.os == 'Windows'
@@ -100,7 +108,8 @@ jobs:
       - name: Run clang-tidy (Linux)
         if: runner.os == 'Linux'
         run: |
-          find src -name '*.cpp' | xargs clang-tidy-17 -p build/ --quiet
+          find src -name '*.cpp' -print0 \
+            | xargs -0 -n 1 -P $(nproc) clang-tidy-17 -p build/ --quiet
 
   build-and-test-msvc:
     runs-on: windows-latest
