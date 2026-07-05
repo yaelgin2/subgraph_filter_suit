@@ -53,7 +53,7 @@ struct MotifCanonical
         uint32_t idx = 0U;
         for (const auto& perm : perms)
         {
-            m_color_permutations.at(idx++) = perm;
+            m_color_permutations[idx++] = perm; // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
         }
     }
 };
