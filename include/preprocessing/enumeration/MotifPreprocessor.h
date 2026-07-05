@@ -431,9 +431,8 @@ SGF_HD uint32_t MotifPreprocessor::compute_motif_descriptor(
                 continue;
             }
             descriptor <<= 1U;
-            descriptor += has_edge(group[row], group[col])
-                              ? 1U
-                              : 0U;  // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
+            descriptor += has_edge(group[row], group[col]) ? 1U : 0U;
         }
     }
     return descriptor;
@@ -752,22 +751,21 @@ inline SGF_HD UInt128 MotifPreprocessor::calculate_motif_number_from_arrays(
     const uint32_t descriptor, const std::array<uint32_t, SgfConstants::MOTIF_SIZE>& node_colors,
     const MotifCanonical* const canonical_array, const uint32_t canonical_size) noexcept
 {
-    if (descriptor >= canonical_size ||
-        canonical_array[descriptor].m_permutation_count ==
-            0U)  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    if (descriptor >= canonical_size || canonical_array[descriptor].m_permutation_count == 0U)
     {
         return UInt128{};
     }
-    const MotifCanonical& canonical =
-        canonical_array[descriptor];  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    const MotifCanonical& canonical = canonical_array[descriptor];
     UInt128 minimal_colors = ~UInt128{};
     for (uint32_t perm = 0U; perm < canonical.m_permutation_count; ++perm)
     {
         UInt128 encoded{};
         for (uint32_t ci = 0U; ci < SgfConstants::MOTIF_SIZE; ++ci)
         {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
             encoded += UInt128{node_colors[canonical.m_color_permutations[perm][ci]]}
-                       // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
                        << (ci * static_cast<uint32_t>(SgfConstants::BITS_PER_COLOR));
         }
         if (encoded < minimal_colors)
