@@ -72,6 +72,15 @@ if(SGF_ENABLE_CUDA)
         $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)
 endif()
 add_sgf_test(path_processor_tests                       preprocessing/PathProcessorTest.cpp)
+if(SGF_ENABLE_CUDA)
+    add_sgf_test(gpu_path_processor_tests               preprocessing/GpuPathProcessorTest.cu)
+    set_target_properties(gpu_path_processor_tests PROPERTIES
+        CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}"
+        CUDA_SEPARABLE_COMPILATION ON)
+    target_link_libraries(gpu_path_processor_tests PRIVATE cuco CUDA::cudart)
+    target_compile_options(gpu_path_processor_tests PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)
+endif()
 add_sgf_test(single_graph_pattern_preprocessor_tests    preprocessing/SingleGraphPatternPreprocessorTest.cpp)
 
 add_sgf_test(enumeration_preprocess_manager_tests       managers/EnumerationPreprocessManagerTest.cpp)

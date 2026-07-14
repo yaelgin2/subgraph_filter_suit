@@ -50,6 +50,43 @@ struct DeviceGraph
 };
 
 /**
+ * @brief Raw-pointer neighbour range into a DeviceGraph's CSR arrays.
+ *
+ * GPU equivalent of CpuNeighbourRange: uses const uint32_t* pointers into the
+ * DeviceGraph CSR arrays instead of vector iterators. Shared by every CUDA
+ * enumeration backend (motif, path, ...) that slices DeviceGraph's forward and
+ * reverse adjacency for a single vertex.
+ *
+ * For undirected graphs set m_rev_begin == m_rev_end.
+ */
+struct GpuNeighbourRange
+{
+    const uint32_t* m_begin;      ///< Pointer to first forward neighbour in CSR slice.
+    const uint32_t* m_end;        ///< One past last forward neighbour.
+    const uint32_t* m_rev_begin;  ///< Pointer to first reverse neighbour (directed only).
+    const uint32_t* m_rev_end;    ///< One past last reverse neighbour.
+};
+
+/**
+ * @brief Build a GpuNeighbourRange covering forward and reverse neighbours of @p vertex.
+ * @param graph  Device graph to query.
+ * @param vertex Vertex id to look up.
+ */
+__host__ __device__ inline GpuNeighbourRange get_neighbour_range(const DeviceGraph& graph,
+                                                                 const uint32_t vertex) noexcept
+{
+    const uint32_t* const nbr = graph.d_fwd_neighbors;
+    const uint32_t fwd_start = graph.d_fwd_offsets[vertex];
+    const uint32_t fwd_end = graph.d_fwd_offsets[vertex + 1U];
+    const bool directed = graph.is_directed();
+    const uint32_t* const rev_nbr = directed ? graph.d_rev_neighbors : nbr;
+    const uint32_t rev_start = directed ? graph.d_rev_offsets[vertex] : fwd_end;
+    const uint32_t rev_end = directed ? graph.d_rev_offsets[vertex + 1U] : fwd_end;
+    return GpuNeighbourRange{nbr + fwd_start, nbr + fwd_end, rev_nbr + rev_start,
+                             rev_nbr + rev_end};
+}
+
+/**
  * @brief Builds and releases GPU-accessible DeviceGraph instances.
  *
  * Declared as a friend of ColoredGraph so it can copy the private CSR arrays
