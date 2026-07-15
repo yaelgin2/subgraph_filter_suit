@@ -330,7 +330,8 @@ EnumerationResult MotifPreprocessor::calculate_gpu()
             motif4_kernel<<<num_blocks, block_size>>>(
                 device_graph, count_ref, high_ref, low_ref, overflow_flag, device_canonical,
                 canonical_size, d_sorted_nodes, d_order_index);
-        });
+        },
+        SgfConstants::GPU_MOTIF_MAP_INITIAL_CAPACITY);
 
     cudaFree(d_order_index);
     cudaFree(d_sorted_nodes);

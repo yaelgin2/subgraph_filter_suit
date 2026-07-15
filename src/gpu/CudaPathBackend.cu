@@ -119,7 +119,8 @@ EnumerationResult PathProcessor::calculate_gpu()
         {
             path_kernel<<<num_blocks, block_size>>>(device_graph, count_ref, high_ref, low_ref,
                                                     overflow_flag);
-        });
+        },
+        SgfConstants::GPU_PATH_MAP_INITIAL_CAPACITY);
 
     DeviceGraphBuilder::free_graph(device_graph);
 

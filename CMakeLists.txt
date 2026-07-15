@@ -143,6 +143,16 @@ if(SGF_ENABLE_CUDA)
     # SGF_CUDA_ENABLED propagates to all downstream targets that link this library.
     target_compile_definitions(subgraph_filter_suite PUBLIC SGF_CUDA_ENABLED)
     set_target_properties(subgraph_filter_suite PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    # Several .cu files in this static library call each other's device functions
+    # across translation units (e.g. CudaMotifBackend.cu / CudaPathBackend.cu both
+    # call CucoUInt128CountMap.cu's atomic_insert_uint128_count). CMake does not
+    # device-link static libraries by default (CUDA_RESOLVE_DEVICE_SYMBOLS defaults
+    # to OFF for STATIC targets), leaving each consuming executable's own device-link
+    # step to somehow resolve every .cu.o's relocatable device code from inside the
+    # archive — which fails with "undefined reference to __cudaRegisterLinkedBinary_*"
+    # for any .cu.o beyond the one directly needed. Resolving device symbols here,
+    # once, on the static library itself avoids that.
+    set_target_properties(subgraph_filter_suite PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
     target_compile_options(subgraph_filter_suite PRIVATE
         $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>
     )

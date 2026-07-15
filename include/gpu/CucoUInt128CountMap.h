@@ -145,26 +145,34 @@ __device__ bool atomic_insert_uint128_count(CucoAuxMapRef high_ref, CucoAuxMapRe
 /**
  * @brief Run a GPU enumeration kernel, growing the cuco map capacity on overflow.
  *
- * Allocates count/high/low cuco maps starting at
- * SgfConstants::GPU_UINT128_MAP_CAPACITY slots, invokes @p launch_kernel with
- * their device refs, the chosen capacity, and a managed overflow flag, then
- * synchronizes. If the kernel reported overflow (any thread's
- * atomic_insert_uint128_count call filled its map), the maps are freed and
- * capacity is multiplied by SgfConstants::GPU_MAP_GROWTH_FACTOR before
- * retrying, up to SgfConstants::GPU_MAP_GROWTH_MAX_ATTEMPTS times.
+ * Allocates count/high/low cuco maps starting at @p initial_capacity slots,
+ * invokes @p launch_kernel with their device refs, the chosen capacity, and a
+ * managed overflow flag, then synchronizes. If the kernel reported overflow
+ * (any thread's atomic_insert_uint128_count call filled its map), the maps
+ * are freed and capacity is multiplied by SgfConstants::GPU_MAP_GROWTH_FACTOR
+ * before retrying, up to SgfConstants::GPU_MAP_GROWTH_MAX_ATTEMPTS times.
+ *
+ * Callers should pass a starting capacity sized for their own distinct-value
+ * cardinality (e.g. SgfConstants::GPU_MOTIF_MAP_INITIAL_CAPACITY or
+ * SgfConstants::GPU_PATH_MAP_INITIAL_CAPACITY) rather than sharing one
+ * constant — starting below the true distinct-key count makes every insert
+ * probe the entire (already-overfull) map before the first overflow retry
+ * even triggers.
  *
  * @tparam KernelLauncher Callable with signature
  *         void(CucoMotifMapRef, CucoAuxMapRef, CucoAuxMapRef, uint32_t* overflow_flag)
  *         that launches the kernel and does not itself call cudaDeviceSynchronize().
- * @param launch_kernel Launches the enumeration kernel for one attempt.
+ * @param launch_kernel    Launches the enumeration kernel for one attempt.
+ * @param initial_capacity Slot count to start the first attempt with.
  * @return Reconstructed EnumerationResult from the first successful attempt.
  * @throws EnumerationOverflowException if the map still overflows after the
  *         maximum number of growth attempts.
  */
 template <typename KernelLauncher>
-EnumerationResult run_gpu_enumeration_with_growth(KernelLauncher&& launch_kernel)
+EnumerationResult run_gpu_enumeration_with_growth(KernelLauncher&& launch_kernel,
+                                                  const uint64_t initial_capacity)
 {
-    uint64_t capacity = SgfConstants::GPU_UINT128_MAP_CAPACITY;
+    uint64_t capacity = initial_capacity;
     for (uint32_t attempt = 0U; attempt < SgfConstants::GPU_MAP_GROWTH_MAX_ATTEMPTS; ++attempt)
     {
         CucoMotifMap count_map = make_cuco_motif_map(capacity);
