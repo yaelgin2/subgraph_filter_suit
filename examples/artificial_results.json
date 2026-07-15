@@ -1,0 +1,7 @@
+{
+  "lib_1_in_path3": false,
+  "lib_2_not_in_rare_color_edge": true,
+  "lib_3_not_in_missing_color": true,
+  "lib_4_not_in_triangle": true,
+  "lib_5_not_in_high_degree": true
+}
