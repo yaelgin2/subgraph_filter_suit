@@ -65,13 +65,16 @@ public:
      * @brief Preprocess every library graph and return their frequency signatures.
      *
      * For each graph in m_library the manager calls @p factory to obtain a
-     * concrete IGraphPreprocessor, invokes calculate() on it, and appends the
-     * result.  The returned vector is index-aligned with m_library.
+     * concrete IGraphPreprocessor, invokes calculate(@p use_gpu) on it, and
+     * appends the result.  The returned vector is index-aligned with m_library.
      *
-     * @param factory Callable that constructs an IGraphPreprocessor for one graph.
+     * @param factory  Callable that constructs an IGraphPreprocessor for one graph.
+     * @param use_gpu  If true, offload enumeration to GPU kernels.
+     *                 Only supported by MotifPreprocessor; PathProcessor ignores this.
      * @return One frequency-signature map per library graph.
      */
-    EnumerationResultVector preprocess(const PreprocessorFactory& factory) const;
+    EnumerationResultVector preprocess(const PreprocessorFactory& factory,
+                                       bool use_gpu = false) const;
 
 private:
     std::vector<ColoredGraph> m_library;

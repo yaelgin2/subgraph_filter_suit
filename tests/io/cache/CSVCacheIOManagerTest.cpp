@@ -26,11 +26,13 @@ TEST(CSVCacheIOManagerTest, empty_data_roundtrip)
     EXPECT_TRUE(result.empty());
 }
 
-// CSV stores only (graph, motif, count) triples; a graph with no motifs writes
-// no rows, so reading back yields an empty map rather than a one-element map
-// containing an empty EnumerationResult.
+// CSV stores only (graph, motif, count) triples; a graph with no motifs would
+// naively write no rows, making it indistinguishable from "not part of the
+// library at all" when read back. write_rows() writes one sentinel row
+// (motif_number 0, appearances 0) for such graphs so their name — and the
+// fact that they matched nothing — survives the round trip.
 
-TEST(CSVCacheIOManagerTest, single_graph_empty_map_reads_back_as_empty)
+TEST(CSVCacheIOManagerTest, single_graph_empty_map_reads_back_with_sentinel_entry)
 {
     TempCacheFile temp{"single_empty_map", "csv"};
     const CSVCacheIOManager manager{temp.m_folder};
@@ -41,7 +43,9 @@ TEST(CSVCacheIOManagerTest, single_graph_empty_map_reads_back_as_empty)
 
     const std::unordered_map<std::string, EnumerationResult> result =
         manager.read(temp.m_base_name);
-    EXPECT_TRUE(result.empty());
+    ASSERT_EQ(result.size(), 1U);
+    ASSERT_EQ(result.at("graph_a").size(), 1U);
+    EXPECT_EQ(result.at("graph_a").at(UInt128{}), 0U);
 }
 
 TEST(CSVCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
@@ -58,7 +62,9 @@ TEST(CSVCacheIOManagerTest, two_graphs_first_empty_second_nonempty_roundtrip)
 
     const std::unordered_map<std::string, EnumerationResult> result =
         manager.read(temp.m_base_name);
-    ASSERT_EQ(result.size(), 1U);
+    ASSERT_EQ(result.size(), 2U);
+    ASSERT_EQ(result.at("graph_a").size(), 1U);
+    EXPECT_EQ(result.at("graph_a").at(UInt128{}), 0U);
     ASSERT_EQ(result.at("graph_b").size(), 1U);
     EXPECT_EQ(result.at("graph_b").at(key), value);
 }

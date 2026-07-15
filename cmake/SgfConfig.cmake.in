@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/SgfTargets.cmake")
+
+# Whether this install was built with CUDA GPU acceleration.
+set(SGF_CUDA_ENABLED @SGF_ENABLE_CUDA@)
+
+check_required_components(sgf)

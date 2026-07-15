@@ -37,14 +37,26 @@ This produces three executables in `build/`:
 - `sgf-pattern-finder` — pattern preprocessing and filtering
 - `sgf-graph-searcher` — exact subgraph isomorphism
 
-> **Note on `--config Release` vs `-DCMAKE_BUILD_TYPE=Release`:** Single-config generators (Unix Makefiles, Ninja) read the build type from `-DCMAKE_BUILD_TYPE` at configure time. Multi-config generators (Visual Studio, Xcode) read it from `--config` at build time. Passing both ensures a Release build on every platform.
-
 > **Note on `--config Release` vs `-DCMAKE_BUILD_TYPE=Release`:** CMake has two generator families.
 > Single-config generators (Unix Makefiles, Ninja — typical on Linux/macOS) read the build type
 > from `-DCMAKE_BUILD_TYPE` at configure time and ignore `--config` at build time.
 > Multi-config generators (Visual Studio, Xcode — typical on Windows/macOS) ignore
 > `-DCMAKE_BUILD_TYPE` and read the build type from `--config` at build time.
 > Passing both, as shown above, ensures a Release build on every platform.
+
+### Building with CUDA (optional GPU acceleration)
+
+`sgf-graph-enumerator`'s `--gpu` flag offloads motif and/or path enumeration (`--motifs`/`--paths`)
+to GPU kernels. It requires an installed CUDA Toolkit and building with `-DSGF_ENABLE_CUDA=ON`:
+
+```bash
+cmake -S . -B build -DSGF_ENABLE_CUDA=ON -DCMAKE_CXX_COMPILER=$CONDA_PREFIX/bin/g++
+cmake --build build --config Release --parallel
+```
+
+`SGF_ENABLE_CUDA` defaults to `OFF` (CPU-only build). With it off, passing `--gpu` at runtime fails
+with an error rather than silently falling back to CPU. `CMAKE_CUDA_ARCHITECTURES` defaults to
+`native` (the GPU installed on the build machine) if not set explicitly.
 
 ### Building with Ninja
 
@@ -197,6 +209,7 @@ Preprocesses a graph library into motif/path enumeration caches, then filters qu
 | `--cache-type` | `binary` \| `csv` | Cache file format. |
 | `--is-directed` | bool switch | Treat all graphs as directed. |
 | `--non-induced` | bool switch | Expand induced motif counts via inclusion DAG before filtering (non-induced subgraph search). |
+| `--gpu` | bool switch | Offload enumeration for whichever of `--motifs`/`--paths` is enabled to GPU kernels. Requires building with `-DSGF_ENABLE_CUDA=ON` (see [Building with CUDA](#building-with-cuda-optional-gpu-acceleration)); otherwise fails at runtime. |
 | `--thread-number` | integer | Maximum threads used during preprocessing (default `10`). |
 | `--log-file-path` | string | *(optional)* Path to log file. |
 | `--graphml-color-map-path` | string | *(optional)* Path to a GraphML color-map CSV to load as the initial label→ID mapping. The updated map is saved to the output directory after loading. See [GraphML color maps](#graphml-color-maps). |
@@ -319,6 +332,33 @@ Extracts pattern subgraphs from a graph library and filters query graphs against
 | `constant` | Fixed ordering (no reordering). |
 | `random` | Random ordering. |
 
+**Example — extract multigraph patterns from a library:**
+
+```bash
+./build/sgf-pattern-finder \
+  --preprocess \
+  --reader-type json \
+  --library-input-folder ./graphs/library \
+  --output-folder ./patterns \
+  --pattern-output-type json \
+  --preprocess-multigraph 5 \
+  --multigraph-alive-percent 0.5
+```
+
+**Example — filter background graphs against a pattern cache:**
+
+```bash
+./build/sgf-pattern-finder \
+  --filter \
+  --reader-type json \
+  --pattern-mapping-cache ./patterns/pattern_cache_2024-01-01_12-00-00 \
+  --pattern-type json \
+  --background-graph-folder ./graphs/background \
+  --output-path ./results \
+  --output-type json \
+  --prior-policy subgraph-degree
+```
+
 ---
 
 ### `sgf-graph-searcher`
@@ -333,13 +373,15 @@ Runs exact subgraph isomorphism between a query subgraph and a background graph 
 | `--background-path` | string | Path to the background graph file (required). |
 | `--reader-type` | `graphml` \| `json` \| `vertex-edge` | Graph file format (required). |
 | `--prior-policy` | string | Vertex ordering heuristic (same values as `sgf-pattern-finder`, required). |
-| `--is-directed` | bool switch | Treat graphs as directed. |
-| `--is-induced` | bool switch | Search for induced subgraph matches only. |
+| `--directed` | bool switch | Treat graphs as directed. |
+| `--induced` | bool switch | Search for induced subgraph matches only. |
 | `--stop-on-first-match` | bool switch | Stop after the first match is found (returns 1). |
 | `--output-path` | string | *(optional)* File to write match vertex mappings to. |
 | `--log-file-path` | string | *(optional)* Path to log file. |
 
-**Example:**
+> **Note:** unlike `sgf-graph-enumerator` and `sgf-pattern-finder`, this tool's flags are `--directed`/`--induced` (not `--is-directed`/`--is-induced`).
+
+**Example — basic search:**
 
 ```bash
 ./build/sgf-graph-searcher \
@@ -347,6 +389,20 @@ Runs exact subgraph isomorphism between a query subgraph and a background graph 
   --background-path ./background.json \
   --reader-type json \
   --prior-policy subgraph-degree
+```
+
+**Example — directed, induced-only, stop at first match, save the mapping:**
+
+```bash
+./build/sgf-graph-searcher \
+  --subgraph-path ./query.json \
+  --background-path ./background.json \
+  --reader-type json \
+  --prior-policy combined \
+  --directed \
+  --induced \
+  --stop-on-first-match \
+  --output-path ./match_result.json
 ```
 
 ---

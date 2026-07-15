@@ -4,6 +4,7 @@
 #include "EnumerationOverflowException.h"
 #include "IGraphPreprocessor.h"
 #include "Int128.h"
+#include "InvalidArgumentException.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 
@@ -64,14 +65,19 @@ void GroupEnumerationPreprocessor::sort_nodes()
               });
 }
 
-std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor::calculate()
+std::unordered_map<UInt128, uint32_t, UInt128Hash>
+GroupEnumerationPreprocessor::calculate(const bool use_gpu)
 {
-    std::unordered_map<UInt128, uint32_t, UInt128Hash> motif_count;
-    std::vector<std::vector<bool>> graph_adjacency_matrix;
-    graph_to_adjacency_matrix(graph_adjacency_matrix);
     sort_nodes();
 
-    const EnumerationResult thread_result = stream_groups_to_counter(graph_adjacency_matrix);
+    if (use_gpu)
+    {
+        return calculate_gpu();
+    }
+
+    std::unordered_map<UInt128, uint32_t, UInt128Hash> motif_count;
+
+    const EnumerationResult thread_result = stream_groups_to_counter();
 
     uint32_t groups_counted = 0U;
     for (const auto& [motif_id, count] : thread_result)
@@ -91,26 +97,9 @@ std::unordered_map<UInt128, uint32_t, UInt128Hash> GroupEnumerationPreprocessor:
     return motif_count;
 }
 
-void GroupEnumerationPreprocessor::graph_to_adjacency_matrix(
-    std::vector<std::vector<bool>>& adjacency_matrix) const
+EnumerationResult GroupEnumerationPreprocessor::calculate_gpu()
 {
-    const uint32_t vertex_count = m_graph.vertex_count();
-
-    adjacency_matrix.resize(vertex_count);
-    for (uint32_t vertex_index = 0; vertex_index < vertex_count; ++vertex_index)
-    {
-        adjacency_matrix[vertex_index].resize(vertex_count, false);
-    }
-
-    for (uint32_t node = 0; node < vertex_count; ++node)
-    {
-        const NeighbourIteratorPair neighbours = m_graph.get_neighbours(node);
-        for (std::vector<uint32_t>::const_iterator neighbour_it = neighbours.first;
-             neighbour_it != neighbours.second; ++neighbour_it)
-        {
-            adjacency_matrix[node][*neighbour_it] = true;
-        }
-    }
+    throw InvalidArgumentException("GPU enumeration not implemented for this preprocessor type.");
 }
 
 std::vector<uint32_t>
