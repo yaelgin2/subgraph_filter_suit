@@ -103,12 +103,7 @@ struct CpuKavoshContext : IKavoshContext
      */
     CpuNeighbourRange get_neighbour_range(const uint32_t vertex) const
     {
-        using IterPair =
-            std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>;
-        const IterPair fwd = m_graph.get_neighbours(vertex);
-        const IterPair rev = m_graph.is_directed() ? m_graph.get_neighbours(vertex, true)
-                                                   : std::make_pair(fwd.second, fwd.second);
-        return CpuNeighbourRange{fwd.first, fwd.second, rev.first, rev.second};
+        return sgf::get_neighbour_range(m_graph, vertex);
     }
 
     /**
