@@ -71,6 +71,12 @@ void CSVCacheIOManager::write_rows(const EnumerationResultVector& data,
 {
     for (size_t graph_index = 0U; graph_index < data.size(); ++graph_index)
     {
+        if (data[graph_index].empty())
+        {
+            file << graph_names[graph_index] << "," << uint128_to_decimal(UInt128{}) << ","
+                 << EMPTY_RESULT_APPEARANCES << "\n";
+            continue;
+        }
         for (const auto& entry : data[graph_index])
         {
             file << graph_names[graph_index] << "," << uint128_to_decimal(entry.first) << ","
