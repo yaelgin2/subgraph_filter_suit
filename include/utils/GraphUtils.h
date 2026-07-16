@@ -3,6 +3,7 @@
 #include "ColoredGraph.h"
 #include "Constants.h"
 #include "GraphConstructionException.h"
+#include "LoggerHandler.h"
 
 #include <boost/any/bad_any_cast.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -43,6 +44,7 @@ public:
      * @param boost_graph The source Boost graph.
      * @param is_directed Whether to build a directed ColoredGraph.
      * @param color_map Accumulates the string→uint mapping built during conversion.
+     * @param logger Logger forwarded to the ColoredGraph constructor.
      * @return The resulting ColoredGraph.
      * @throws GraphConstructionException if too many distinct colors or a
      *         uint32_t color exceeds @c MAX_VERTEX_COLOR.
@@ -52,7 +54,8 @@ public:
               typename EdgePropertyType = typename boost::edge_bundle_type<GraphType>::type>
     static ColoredGraph
     convert_boost_graph_to_colored_graph(const GraphType& boost_graph, bool is_directed,
-                                         std::map<std::string, uint32_t>& color_map);
+                                         std::map<std::string, uint32_t>& color_map,
+                                         LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Converts a Boost graph into a ColoredGraph (no color map output).
@@ -65,6 +68,7 @@ public:
      * @tparam EdgePropertyType Bundled edge property struct.
      * @param boost_graph The source Boost graph.
      * @param is_directed Whether to build a directed ColoredGraph.
+     * @param logger Logger forwarded to the ColoredGraph constructor.
      * @return The resulting ColoredGraph.
      * @throws GraphConstructionException if too many distinct colors or a
      *         uint32_t color exceeds @c MAX_VERTEX_COLOR.
@@ -72,8 +76,9 @@ public:
     template <typename GraphType,
               typename VertexPropertyType = typename boost::vertex_bundle_type<GraphType>::type,
               typename EdgePropertyType = typename boost::edge_bundle_type<GraphType>::type>
-    static ColoredGraph convert_boost_graph_to_colored_graph(const GraphType& boost_graph,
-                                                             bool is_directed);
+    static ColoredGraph
+    convert_boost_graph_to_colored_graph(const GraphType& boost_graph, bool is_directed,
+                                         LoggerHandler logger = LoggerHandler::null());
 
 private:
     /**
@@ -158,10 +163,9 @@ private:
 };
 
 template <typename GraphType, typename VertexPropertyType, typename EdgePropertyType>
-ColoredGraph
-GraphUtils::convert_boost_graph_to_colored_graph(const GraphType& boost_graph,
-                                                 const bool is_directed,
-                                                 std::map<std::string, uint32_t>& color_map)
+ColoredGraph GraphUtils::convert_boost_graph_to_colored_graph(
+    const GraphType& boost_graph, const bool is_directed,
+    std::map<std::string, uint32_t>& color_map, LoggerHandler logger)
 {
     const uint32_t num_vertices = static_cast<uint32_t>(boost::num_vertices(boost_graph));
     const std::vector<uint32_t> vertex_colors = extract_vertex_colors(
@@ -182,19 +186,20 @@ GraphUtils::convert_boost_graph_to_colored_graph(const GraphType& boost_graph,
     {
         std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> colored_edges =
             extract_colored_edges(boost_graph, get_edge_color);
-        return {num_vertices, colored_edges, vertex_colors, is_directed};
+        return {num_vertices, colored_edges, vertex_colors, is_directed, std::move(logger)};
     }
     std::vector<std::pair<uint32_t, uint32_t>> edges = extract_uncolored_edges(boost_graph);
-    return {num_vertices, edges, vertex_colors, is_directed};
+    return {num_vertices, edges, vertex_colors, is_directed, std::move(logger)};
 }
 
 template <typename GraphType, typename VertexPropertyType, typename EdgePropertyType>
 ColoredGraph GraphUtils::convert_boost_graph_to_colored_graph(const GraphType& boost_graph,
-                                                              const bool is_directed)
+                                                              const bool is_directed,
+                                                              LoggerHandler logger)
 {
     std::map<std::string, uint32_t> color_map;
     return convert_boost_graph_to_colored_graph<GraphType, VertexPropertyType, EdgePropertyType>(
-        boost_graph, is_directed, color_map);
+        boost_graph, is_directed, color_map, std::move(logger));
 }
 
 template <typename GraphType>

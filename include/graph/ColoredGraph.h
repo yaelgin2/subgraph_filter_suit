@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LogLevel.h"
+#include "LoggerHandler.h"
 #include "exceptions/GraphConstructionException.h"
 #include "exceptions/InvalidArgumentException.h"
 
@@ -17,9 +19,13 @@ namespace sgf
  * provides O(degree) edge queries and O(1) neighbour-range access.
  *
  * Construction rules enforced at runtime:
- * - The @p vertex_colors vector must have exactly @p num_vertices entries.
- * - Self-loops (edges where source == destination) are not allowed and throw
- *   InvalidArgumentException.
+ * - The @p vertex_colors vector must have exactly @p num_vertices entries,
+ *   otherwise InvalidArgumentException is thrown (logged at ERROR level first).
+ * - Self-loops (edges where source == destination) are not allowed as real
+ *   edges: they are silently discarded from the edge list, and a single
+ *   WARNING is logged (via the supplied logger) if any were discarded.
+ * - An edge referencing a vertex ID >= num_vertices throws
+ *   InvalidArgumentException (logged at ERROR level first).
  * - For uncolored graphs, duplicate edges are silently removed.
  * - For edge-colored graphs, exact duplicate tuples are silently removed.
  *   Duplicate (source, destination) pairs with different colors throw
@@ -39,13 +45,16 @@ public:
      * @brief Constructs an uncolored ColoredGraph (edges carry no color labels).
      * @param num_vertices Number of vertices in the graph.
      * @param edges List of (source, destination) pairs. Modified in place:
-     *              reverse edges are appended for undirected graphs, then the
-     *              list is sorted and de-duplicated internally.
+     *              self-loops are discarded, reverse edges are appended for
+     *              undirected graphs, then the list is sorted and de-duplicated
+     *              internally.
      * @param vertex_colors Per-vertex color labels; must have exactly @p num_vertices entries.
      * @param is_directed If true, treat edges as directed.
+     * @param logger Logger used to report discarded self-loops and thrown errors.
      */
     ColoredGraph(uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& edges,
-                 const std::vector<uint32_t>& vertex_colors, bool is_directed = false);
+                 const std::vector<uint32_t>& vertex_colors, bool is_directed = false,
+                 LoggerHandler logger = LoggerHandler::null());
 
     /**
      * @brief Constructs an edge-colored ColoredGraph.
@@ -57,16 +66,19 @@ public:
      *
      * @param num_vertices Number of vertices in the graph.
      * @param edges List of (source, destination, edge_color) tuples. Modified in place:
-     *              reverse edges are appended for undirected graphs, then the
-     *              list is sorted and de-duplicated internally.
+     *              self-loops are discarded, reverse edges are appended for
+     *              undirected graphs, then the list is sorted and de-duplicated
+     *              internally.
      * @param vertex_colors Per-vertex color labels; must have exactly @p num_vertices entries.
      * @param is_directed If true, treat edges as directed.
+     * @param logger Logger used to report discarded self-loops and thrown errors.
      * @throws InvalidArgumentException if any two tuples share the same (source,
      *         destination) but carry different colors.
      */
     ColoredGraph(uint32_t num_vertices,
                  std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges,
-                 const std::vector<uint32_t>& vertex_colors, bool is_directed = false);
+                 const std::vector<uint32_t>& vertex_colors, bool is_directed = false,
+                 LoggerHandler logger = LoggerHandler::null());
 
     ColoredGraph(const ColoredGraph&) = default;
     ColoredGraph(ColoredGraph&&) = default;
@@ -98,7 +110,8 @@ public:
      * @param reversed If true and the graph is directed, return colors for
      *                 in-edges instead of out-edges.
      * @return A pair of const iterators [begin, end) over the edge color list.
-     * @throws InvalidArgumentException if the graph has no edge colors.
+     * @throws InvalidArgumentException if the graph has no edge colors (logged at
+     *         ERROR level before throwing).
      */
     std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
     get_neighbour_edge_colors(uint32_t vertex, bool reversed = false) const;
@@ -171,7 +184,7 @@ public:
      * @param dest_vertex The destination endpoint.
      * @return The edge color.
      * @throws InvalidArgumentException if the graph has no edge colors or the
-     *         edge does not exist.
+     *         edge does not exist (logged at ERROR level before throwing).
      */
     uint32_t get_edge_color(uint32_t source_vertex, uint32_t dest_vertex) const;
 
@@ -185,7 +198,8 @@ public:
      * @param neighbour_it A valid non-end iterator from get_neighbours().
      * @param reversed Must match the @p reversed argument used when obtaining the iterator.
      * @return The edge color at that iterator position.
-     * @throws InvalidArgumentException if the graph has no edge colors.
+     * @throws InvalidArgumentException if the graph has no edge colors (logged at
+     *         ERROR level before throwing).
      */
     uint32_t get_edge_color_at(std::vector<uint32_t>::const_iterator neighbour_it,
                                bool reversed = false) const;
@@ -217,22 +231,35 @@ private:
      * @brief Validates that the vertex color vector length matches the vertex count.
      * @param vertex_colors The color vector to validate.
      * @param num_vertices Expected number of vertices.
+     * @param logger Logger used to report the error before throwing.
      * @throws InvalidArgumentException if the sizes do not match.
      */
     static void validate_vertex_colors_size(const std::vector<uint32_t>& vertex_colors,
-                                            uint32_t num_vertices);
+                                            uint32_t num_vertices, const LoggerHandler& logger);
 
     /**
-     * @brief Validates a single edge, throwing if it is illegal.
+     * @brief Validates a batch of edges, discarding self-loops and rejecting out-of-range ones.
      *
-     * An edge is illegal if it is a self-loop (source == destination) or if
-     * either endpoint is out of range (>= num_vertices).
+     * Self-loops (source == destination) are silently discarded from the
+     * returned vector; a single WARNING is logged via @p logger if any were
+     * discarded. An edge referencing a vertex ID >= num_vertices is illegal
+     * and throws InvalidArgumentException (logged at ERROR level first).
      *
-     * @param edge The (source, destination) pair to validate.
+     * @tparam EdgeType Edge representation, e.g. std::pair or std::tuple.
+     * @tparam SourceGetter Callable returning the source vertex ID for an EdgeType.
+     * @tparam DestGetter Callable returning the destination vertex ID for an EdgeType.
+     * @param edges The edge list to validate.
      * @param num_vertices The total number of vertices in the graph.
-     * @throws InvalidArgumentException if the edge is a self-loop or out of range.
+     * @param get_source Accessor returning the source endpoint of an edge.
+     * @param get_dest Accessor returning the destination endpoint of an edge.
+     * @param logger Logger used to report discarded self-loops and thrown errors.
+     * @return A copy of @p edges with self-loops removed.
+     * @throws InvalidArgumentException if any edge references a vertex ID >= num_vertices.
      */
-    static void validate_edge(const std::pair<uint32_t, uint32_t>& edge, uint32_t num_vertices);
+    template <typename EdgeType, typename SourceGetter, typename DestGetter>
+    static std::vector<EdgeType> validate_edges(const std::vector<EdgeType>& edges,
+                                                uint32_t num_vertices, SourceGetter get_source,
+                                                DestGetter get_dest, const LoggerHandler& logger);
 
     /**
      * @brief Dispatches to build_undirected_structures or build_directed_structures.
@@ -326,10 +353,12 @@ private:
      * color 0, so no conflict is possible and duplicates are silently removed.
      *
      * @param edges The tuple edge vector to sort and de-duplicate in place.
+     * @param logger Logger used to report a color conflict before throwing.
      * @throws InvalidArgumentException if two tuples share the same (source, destination)
      *         but carry different colors.
      */
-    static void sort_and_deduplicate(std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges);
+    static void sort_and_deduplicate(std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges,
+                                     const LoggerHandler& logger);
 
     /**
      * @brief Extracts parallel pair and color vectors from a tuple edge vector.
@@ -361,6 +390,19 @@ private:
     to_edge_tuples(const std::vector<std::pair<uint32_t, uint32_t>>& pairs,
                    const std::vector<uint32_t>& colors, bool reversed);
 
+    /**
+     * @brief Throws InvalidArgumentException if this graph has no edge colors.
+     *
+     * Centralizes the "graph has no edge colors" check shared by
+     * get_neighbour_edge_colors(), get_edge_color(), and get_edge_color_at().
+     * Uncolored graphs (built from the pair-edge constructor) are otherwise
+     * fully supported; this check only guards the edge-color accessors.
+     *
+     * @throws InvalidArgumentException if is_edges_colored() is false (logged
+     *         at ERROR level before throwing).
+     */
+    void ensure_edges_colored() const;
+
     std::vector<uint32_t> m_neighbours;
     std::vector<uint32_t> m_index_of_neighbours;
     std::vector<uint32_t> m_edge_colors;
@@ -375,9 +417,46 @@ private:
     bool m_directed = false;
     bool m_edges_colored = false;
 
+    LoggerHandler m_logger = LoggerHandler::null();
+
 #ifdef SGF_CUDA_ENABLED
     friend class DeviceGraphBuilder;
 #endif
 };
+
+template <typename EdgeType, typename SourceGetter, typename DestGetter>
+std::vector<EdgeType> ColoredGraph::validate_edges(const std::vector<EdgeType>& edges,
+                                                   uint32_t num_vertices, SourceGetter get_source,
+                                                   DestGetter get_dest, const LoggerHandler& logger)
+{
+    std::vector<EdgeType> filtered_edges;
+    filtered_edges.reserve(edges.size());
+    bool self_loop_discarded = false;
+    for (const EdgeType& edge : edges)
+    {
+        const uint32_t source_vertex = get_source(edge);
+        const uint32_t dest_vertex = get_dest(edge);
+        if (source_vertex >= num_vertices || dest_vertex >= num_vertices)
+        {
+            const std::string message =
+                "edge (" + std::to_string(source_vertex) + ", " + std::to_string(dest_vertex) +
+                ") references a vertex ID >= num_vertices (" + std::to_string(num_vertices) + ")";
+            logger.log(LogLevel::ERROR, message);
+            throw InvalidArgumentException(message);
+        }
+        if (source_vertex == dest_vertex)
+        {
+            self_loop_discarded = true;
+            continue;
+        }
+        filtered_edges.push_back(edge);
+    }
+    if (self_loop_discarded)
+    {
+        logger.log(LogLevel::WARNING,
+                   "self-loop edge(s) discarded during ColoredGraph construction");
+    }
+    return filtered_edges;
+}
 
 }  // namespace sgf

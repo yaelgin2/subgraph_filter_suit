@@ -1,15 +1,48 @@
 #pragma once
 
 #include "ColoredGraph.h"
+#include "ILogger.h"
+#include "LogLevel.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <gtest/gtest.h>
+#include <mutex>
+#include <string>
 #include <utility>
 #include <vector>
 
 namespace test_helpers
 {
+
+/**
+ * @brief ILogger implementation that captures all log messages into a vector.
+ *
+ * Thread-safe: multiple threads may call log() concurrently.
+ */
+class CapturingLogger : public sgf::ILogger
+{
+public:
+    void log(const sgf::LogLevel level, const std::string& message) override
+    {
+        const std::lock_guard<std::mutex> lock{m_mutex};
+        m_messages.emplace_back(level, message);
+    }
+
+    /**
+     * @brief Returns a snapshot of all captured (level, message) pairs.
+     * @return All entries in the order they were received.
+     */
+    [[nodiscard]] std::vector<std::pair<sgf::LogLevel, std::string>> messages() const
+    {
+        const std::lock_guard<std::mutex> lock{m_mutex};
+        return m_messages;
+    }
+
+private:
+    std::vector<std::pair<sgf::LogLevel, std::string>> m_messages;
+    mutable std::mutex m_mutex;
+};
 
 /**
  * @brief Asserts that the neighbour list of @p vertex equals @p expected.

@@ -190,8 +190,8 @@ ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_
     const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
     const ColoredGraph result =
         edge_data.m_colored.empty()
-            ? ColoredGraph{vertex_count, edge_data.m_uncolored, vertex_colors, is_directed}
-            : ColoredGraph{vertex_count, edge_data.m_colored, vertex_colors, is_directed};
+            ? ColoredGraph{vertex_count, edge_data.m_uncolored, vertex_colors, is_directed, logger}
+            : ColoredGraph{vertex_count, edge_data.m_colored, vertex_colors, is_directed, logger};
     logger.log(LogLevel::INFO, "read vertex-edge graph from '" + path + "'");
     return result;
 }

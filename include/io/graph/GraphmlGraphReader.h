@@ -114,11 +114,13 @@ private:
      * @param file_is_directed Whether the file declares directed edges.
      * @param is_directed Whether to build a directed ColoredGraph.
      * @param color_map Receives the string→uint color registry built during parsing.
+     * @param logger Logger forwarded to the ColoredGraph constructor.
      * @return The parsed ColoredGraph.
      */
     static ColoredGraph read_graphml_from_file(const std::string& path, bool file_is_directed,
                                                bool is_directed,
-                                               std::map<std::string, uint32_t>& color_map);
+                                               std::map<std::string, uint32_t>& color_map,
+                                               const LoggerHandler& logger);
 
     /**
      * @brief Logs direction mismatch warning and the color map.
