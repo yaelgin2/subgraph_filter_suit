@@ -50,18 +50,20 @@ void GraphmlGraphReader::read_graphml_from_file_into_boost_graph(const std::stri
 ColoredGraph GraphmlGraphReader::read_graphml_from_file(const std::string& path,
                                                         const bool file_is_directed,
                                                         const bool is_directed,
-                                                        std::map<std::string, uint32_t>& color_map)
+                                                        std::map<std::string, uint32_t>& color_map,
+                                                        const LoggerHandler& logger)
 {
     if (file_is_directed)
     {
         IOConstants::GraphmlDirectedBoostGraph boost_graph;
         read_graphml_from_file_into_boost_graph(path, boost_graph);
-        return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed,
-                                                                color_map);
+        return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed, color_map,
+                                                                logger);
     }
     IOConstants::GraphmlUndirectedBoostGraph boost_graph;
     read_graphml_from_file_into_boost_graph(path, boost_graph);
-    return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed, color_map);
+    return GraphUtils::convert_boost_graph_to_colored_graph(boost_graph, is_directed, color_map,
+                                                            logger);
 }
 
 void GraphmlGraphReader::log_read_result(const LoggerHandler& logger, const std::string& path,
@@ -101,7 +103,7 @@ ColoredGraph GraphmlGraphReader::read(const std::string& path, const bool is_dir
                 "undirected.");
         }
         const ColoredGraph graph =
-            read_graphml_from_file(path, file_is_directed, is_directed, m_color_map);
+            read_graphml_from_file(path, file_is_directed, is_directed, m_color_map, logger);
         log_read_result(logger, path, file_is_directed, is_directed, m_color_map);
         return graph;
     }

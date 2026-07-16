@@ -1,6 +1,8 @@
 #include "ColoredGraph.h"
 
 #include "InvalidArgumentException.h"
+#include "LogLevel.h"
+#include "LoggerHandler.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -15,15 +17,24 @@ namespace sgf
 {
 
 ColoredGraph::ColoredGraph(uint32_t num_vertices, std::vector<std::pair<uint32_t, uint32_t>>& edges,
-                           const std::vector<uint32_t>& vertex_colors, bool is_directed)
+                           const std::vector<uint32_t>& vertex_colors, bool is_directed,
+                           LoggerHandler logger)
     : m_colors(vertex_colors)
     , m_directed(is_directed)
+    , m_logger(std::move(logger))
 {
-    validate_vertex_colors_size(vertex_colors, num_vertices);
-    for (const auto& edge : edges)
-    {
-        validate_edge(edge, num_vertices);
-    }
+    validate_vertex_colors_size(vertex_colors, num_vertices, m_logger);
+    edges = validate_edges<std::pair<uint32_t, uint32_t>>(
+        edges, num_vertices,
+        [](const std::pair<uint32_t, uint32_t>& edge)
+        {
+            return edge.first;
+        },
+        [](const std::pair<uint32_t, uint32_t>& edge)
+        {
+            return edge.second;
+        },
+        m_logger);
     std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> edge_tuples =
         to_edge_tuples(edges, {}, false);
     build_structures(num_vertices, edge_tuples);
@@ -31,42 +42,47 @@ ColoredGraph::ColoredGraph(uint32_t num_vertices, std::vector<std::pair<uint32_t
 
 ColoredGraph::ColoredGraph(uint32_t num_vertices,
                            std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges,
-                           const std::vector<uint32_t>& vertex_colors, bool is_directed)
+                           const std::vector<uint32_t>& vertex_colors, bool is_directed,
+                           LoggerHandler logger)
     : m_colors(vertex_colors)
     , m_directed(is_directed)
     , m_edges_colored(true)
+    , m_logger(std::move(logger))
 {
-    validate_vertex_colors_size(vertex_colors, num_vertices);
-    for (const auto& edge : edges)
-    {
-        validate_edge({std::get<0>(edge), std::get<1>(edge)}, num_vertices);
-    }
+    validate_vertex_colors_size(vertex_colors, num_vertices, m_logger);
+    edges = validate_edges<std::tuple<uint32_t, uint32_t, uint32_t>>(
+        edges, num_vertices,
+        [](const std::tuple<uint32_t, uint32_t, uint32_t>& edge)
+        {
+            return std::get<0>(edge);
+        },
+        [](const std::tuple<uint32_t, uint32_t, uint32_t>& edge)
+        {
+            return std::get<1>(edge);
+        },
+        m_logger);
     build_structures(num_vertices, edges);
 }
 
 void ColoredGraph::validate_vertex_colors_size(const std::vector<uint32_t>& vertex_colors,
-                                               uint32_t num_vertices)
+                                               uint32_t num_vertices, const LoggerHandler& logger)
 {
     if (vertex_colors.size() != static_cast<size_t>(num_vertices))
     {
-        throw InvalidArgumentException(
-            "vertex_colors size (" + std::to_string(vertex_colors.size()) +
-            ") does not match num_vertices (" + std::to_string(num_vertices) + ")");
+        const std::string message = "vertex_colors size (" + std::to_string(vertex_colors.size()) +
+                                    ") does not match num_vertices (" +
+                                    std::to_string(num_vertices) + ")";
+        logger.log(LogLevel::ERROR, message);
+        throw InvalidArgumentException(message);
     }
 }
 
-void ColoredGraph::validate_edge(const std::pair<uint32_t, uint32_t>& edge, uint32_t num_vertices)
+void ColoredGraph::ensure_edges_colored() const
 {
-    if (edge.first == edge.second)
+    if (!m_edges_colored)
     {
-        throw InvalidArgumentException("self-loop at vertex " + std::to_string(edge.first) +
-                                       " is not allowed");
-    }
-    if (edge.first >= num_vertices || edge.second >= num_vertices)
-    {
-        throw InvalidArgumentException(
-            "edge (" + std::to_string(edge.first) + ", " + std::to_string(edge.second) +
-            ") references a vertex ID >= num_vertices (" + std::to_string(num_vertices) + ")");
+        m_logger.log(LogLevel::ERROR, "graph has no edge colors");
+        throw InvalidArgumentException("graph has no edge colors");
     }
 }
 
@@ -93,7 +109,7 @@ void ColoredGraph::build_undirected_structures(
                                    std::get<0>(colored_edges.at(idx)),
                                    std::get<2>(colored_edges.at(idx)));
     }
-    sort_and_deduplicate(colored_edges);
+    sort_and_deduplicate(colored_edges, m_logger);
     m_edge_count = static_cast<uint32_t>(colored_edges.size()) / UNDIRECTED_EDGE_FACTOR;
     std::vector<std::pair<uint32_t, uint32_t>> pairs;
     std::vector<uint32_t> edge_colors;
@@ -106,7 +122,7 @@ void ColoredGraph::build_directed_structures(
     const uint32_t num_vertices,
     std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& colored_edges)
 {
-    sort_and_deduplicate(colored_edges);
+    sort_and_deduplicate(colored_edges, m_logger);
     std::vector<std::pair<uint32_t, uint32_t>> pairs;
     std::vector<uint32_t> edge_colors;
     extract_edges(colored_edges, pairs, edge_colors, m_edges_colored);
@@ -115,7 +131,7 @@ void ColoredGraph::build_directed_structures(
     m_edge_count = static_cast<uint32_t>(m_neighbours.size());
     std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> reversed_tuples =
         to_edge_tuples(pairs, edge_colors, true);
-    sort_and_deduplicate(reversed_tuples);
+    sort_and_deduplicate(reversed_tuples, m_logger);
     std::vector<std::pair<uint32_t, uint32_t>> reversed_pairs;
     std::vector<uint32_t> reversed_colors;
     extract_edges(reversed_tuples, reversed_pairs, reversed_colors, m_edges_colored);
@@ -125,7 +141,7 @@ void ColoredGraph::build_directed_structures(
 }
 
 void ColoredGraph::sort_and_deduplicate(
-    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges)
+    std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& edges, const LoggerHandler& logger)
 {
     std::sort(edges.begin(), edges.end());
     for (size_t idx = 1; idx < edges.size(); ++idx)
@@ -134,9 +150,11 @@ void ColoredGraph::sort_and_deduplicate(
             std::get<1>(edges.at(idx - 1)) == std::get<1>(edges.at(idx)) &&
             std::get<2>(edges.at(idx - 1)) != std::get<2>(edges.at(idx)))
         {
-            throw InvalidArgumentException(
+            const std::string message =
                 "duplicate edge (" + std::to_string(std::get<0>(edges.at(idx))) + ", " +
-                std::to_string(std::get<1>(edges.at(idx))) + ") with conflicting colors");
+                std::to_string(std::get<1>(edges.at(idx))) + ") with conflicting colors";
+            logger.log(LogLevel::ERROR, message);
+            throw InvalidArgumentException(message);
         }
     }
     edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
@@ -240,10 +258,7 @@ ColoredGraph::get_neighbours(uint32_t vertex, bool reversed) const
 std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
 ColoredGraph::get_neighbour_edge_colors(uint32_t vertex, bool reversed) const
 {
-    if (!m_edges_colored)
-    {
-        throw InvalidArgumentException("graph has no edge colors");
-    }
+    ensure_edges_colored();
     if (reversed && m_directed)
     {
         return compute_range(vertex, m_reversed_edge_colors, m_reversed_index_of_neighbours);
@@ -296,18 +311,17 @@ bool ColoredGraph::is_edges_colored() const
 
 uint32_t ColoredGraph::get_edge_color(uint32_t source_vertex, uint32_t dest_vertex) const
 {
-    if (!m_edges_colored)
-    {
-        throw InvalidArgumentException("graph has no edge colors");
-    }
+    ensure_edges_colored();
     const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
         neighbour_range = get_neighbours(source_vertex, false);
     const std::vector<uint32_t>::const_iterator found =
         std::find(neighbour_range.first, neighbour_range.second, dest_vertex);
     if (found == neighbour_range.second)
     {
-        throw InvalidArgumentException("edge (" + std::to_string(source_vertex) + ", " +
-                                       std::to_string(dest_vertex) + ") does not exist");
+        const std::string message = "edge (" + std::to_string(source_vertex) + ", " +
+                                    std::to_string(dest_vertex) + ") does not exist";
+        m_logger.log(LogLevel::ERROR, message);
+        throw InvalidArgumentException(message);
     }
     return get_edge_color_at(found, false);
 }
@@ -315,10 +329,7 @@ uint32_t ColoredGraph::get_edge_color(uint32_t source_vertex, uint32_t dest_vert
 uint32_t ColoredGraph::get_edge_color_at(const std::vector<uint32_t>::const_iterator neighbour_it,
                                          bool reversed) const
 {
-    if (!m_edges_colored)
-    {
-        throw InvalidArgumentException("graph has no edge colors");
-    }
+    ensure_edges_colored();
     const std::vector<uint32_t>& edge_colors = reversed ? m_reversed_edge_colors : m_edge_colors;
     const std::vector<uint32_t>& neighbours = reversed ? m_reversed_neighbours : m_neighbours;
     const size_t offset = static_cast<size_t>(neighbour_it - neighbours.cbegin());

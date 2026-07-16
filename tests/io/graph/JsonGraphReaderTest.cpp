@@ -237,21 +237,23 @@ TEST_F(JsonGraphReaderTest, nonnumeric_edge_color_throws_graph_construction)
 /**
  * @brief An uncolored self-loop (source == target) must throw InvalidArgumentException.
  */
-TEST_F(JsonGraphReaderTest, self_loop_uncolored_throws_invalid_argument)
+TEST_F(JsonGraphReaderTest, self_loop_uncolored_is_discarded)
 {
-    EXPECT_THROW(m_reader.read(data("self_loop_uncolored.json"), false,
-                               LoggerHandler(std::weak_ptr<ILogger>{})),
-                 InvalidArgumentException);
+    const ColoredGraph graph = m_reader.read(data("self_loop_uncolored.json"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 1U);
+    EXPECT_EQ(graph.edge_count(), 0U);
 }
 
 /**
- * @brief A colored self-loop (source == target) must throw InvalidArgumentException.
+ * @brief A colored self-loop (source == target) is silently discarded, not an error.
  */
-TEST_F(JsonGraphReaderTest, self_loop_colored_throws_invalid_argument)
+TEST_F(JsonGraphReaderTest, self_loop_colored_is_discarded)
 {
-    EXPECT_THROW(m_reader.read(data("self_loop_colored.json"), false,
-                               LoggerHandler(std::weak_ptr<ILogger>{})),
-                 InvalidArgumentException);
+    const ColoredGraph graph = m_reader.read(data("self_loop_colored.json"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 1U);
+    EXPECT_EQ(graph.edge_count(), 0U);
 }
 
 // ── Duplicate node ID errors ──────────────────────────────────────────────────
