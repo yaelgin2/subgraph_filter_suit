@@ -60,6 +60,12 @@ public:
     bool is_empty() const;
 
     /**
+     * @brief Return the total number of nodes currently in the tree, including the root.
+     * @return Current node count.
+     */
+    uint32_t size() const;
+
+    /**
      * @brief Add a new level of children to the tree.
      * @param vertex_parent_pairs Pairs of (vertex index, parent node) for each new child.
      * @return Vector of newly created nodes.
@@ -114,6 +120,7 @@ private:
     LoggerHandler m_logger;       ///< Logger.
     const ColoredGraph& m_graph;  ///< Source graph for neighbour lookups.
     bool m_is_directed;           ///< Whether the source graph is directed (inferred from m_graph).
+    uint32_t m_node_count;        ///< Total number of nodes currently in the tree.
 
     /**
      * @brief Insert a new child node under @p parent.
@@ -152,17 +159,17 @@ private:
     attach_all_new_nodes(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs);
 
     /**
-     * @brief Accumulate neighbour counts in one edge direction for every vertex in @p path.
+     * @brief Accumulate neighbour counts in one edge direction for a single frontier vertex.
      *
-     * For each vertex in @p path, every graph neighbour reachable via @p is_reversed edges
-     * that is NOT already in @p path_set is counted under {colour, pattern_index, is_reversed}.
+     * Every graph neighbour of @p vertex_node reachable via @p is_reversed edges that is NOT
+     * already in @p path_set is counted under {colour, depth-1, is_reversed}.
      *
-     * @param path        Vertex indices indexed by pattern depth.
-     * @param path_set    Set of vertex indices currently in @p path.
+     * @param vertex_node Frontier node whose neighbours are counted.
+     * @param path_set    Set of vertex indices to exclude.
      * @param is_reversed False for out-edges, true for in-edges.
      * @param counts      Accumulator updated in-place.
      */
-    void accumulate_direction_neighbour_counts(const std::vector<uint32_t>& path,
+    void accumulate_direction_neighbour_counts(const NodePtr& vertex_node,
                                                const std::unordered_set<uint32_t>& path_set,
                                                bool is_reversed, CountsMap& counts) const;
 
@@ -172,32 +179,61 @@ private:
      * Calls accumulate_direction_neighbour_counts for out-edges and, when the
      * source graph is directed, again for in-edges.
      *
-     * @param path     Vertex indices indexed by pattern depth.
-     * @param path_set Set of vertex indices currently in @p path.
-     * @param counts   Accumulator updated in-place.
+     * @param vertex_node Frontier node whose neighbours are counted.
+     * @param path_set    Set of vertex indices to exclude.
+     * @param counts      Accumulator updated in-place.
      */
-    void accumulate_path_neighbour_counts(const std::vector<uint32_t>& path,
-                                          const std::unordered_set<uint32_t>& path_set,
-                                          CountsMap& counts) const;
+    void accumulate_vertex_neighbour_counts(const NodePtr& vertex_node,
+                                            const std::unordered_set<uint32_t>& path_set,
+                                            CountsMap& counts) const;
 
     /**
-     * @brief Seed path_vec and path_set from a leaf's ancestor chain (root excluded).
+     * @brief Build the initial per-leaf frontier: one entry per leaf, each with its own
+     *        full ancestor path (root excluded).
+     * @param leaves         Current match-tree leaves, siblings consecutive.
+     * @param frontier_nodes Filled with a copy of @p leaves.
+     * @param frontier_paths Filled with each leaf's own ancestor-path set.
+     */
+    void build_leaf_frontier_paths(const std::vector<NodePtr>& leaves,
+                                   std::vector<NodePtr>& frontier_nodes,
+                                   std::vector<std::unordered_set<uint32_t>>& frontier_paths) const;
+
+    /**
+     * @brief Count every frontier vertex's unreached neighbours into @p counts.
+     * @param frontier_nodes Current frontier vertices.
+     * @param frontier_paths Matching per-vertex exclusion sets.
+     * @param counts         Accumulator updated in-place.
+     */
+    void accumulate_frontier_neighbour_counts(
+        const std::vector<NodePtr>& frontier_nodes,
+        const std::vector<std::unordered_set<uint32_t>>& frontier_paths, CountsMap& counts) const;
+
+    /**
+     * @brief Climb the frontier one level, merging siblings that share a parent.
+     *
+     * Consecutive frontier entries with the same parent collapse into one entry
+     * whose path set is the intersection of the merged entries' path sets.
+     *
+     * @param frontier_nodes Updated in-place to the parent frontier.
+     * @param frontier_paths Updated in-place to match.
+     */
+    void advance_frontier_to_parents(std::vector<NodePtr>& frontier_nodes,
+                                     std::vector<std::unordered_set<uint32_t>>& frontier_paths) const;
+
+    /**
+     * @brief Seed path_set from a leaf's ancestor chain (root excluded).
      * @param leaf      Leaf node to walk up from.
-     * @param path_vec  Filled with vertex indices indexed by depth-1.
-     * @param path_set  Filled with the same vertex indices for O(1) lookup.
+     * @param path_set  Filled with the leaf's ancestor-chain vertex indices.
      */
-    static void seed_path_from_leaf(const NodePtr& leaf, std::vector<uint32_t>& path_vec,
-                                    std::unordered_set<uint32_t>& path_set);
+    static void seed_path_from_leaf(const NodePtr& leaf, std::unordered_set<uint32_t>& path_set);
 
     /**
-     * @brief Advance path state from @p prev_leaf to @p curr_leaf via their common ancestor.
+     * @brief Advance path_set from @p prev_leaf to @p curr_leaf via their common ancestor.
      * @param prev_leaf  Leaf from the previous iteration.
      * @param curr_leaf  Leaf for the current iteration.
-     * @param path_vec   Updated in-place.
      * @param path_set   Updated in-place.
      */
     static void update_path_to_next_leaf(const NodePtr& prev_leaf, const NodePtr& curr_leaf,
-                                         std::vector<uint32_t>& path_vec,
                                          std::unordered_set<uint32_t>& path_set);
 };
 
