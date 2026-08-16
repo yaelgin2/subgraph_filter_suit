@@ -33,6 +33,14 @@ endif()
 # Export compile_commands.json for clang-tidy and IDE tooling
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Serialize link steps (Ninja only; ignored by other generators). Every test
+# executable links the full Boost DLL set, and vcpkg's post-link applocal step
+# copies those DLLs next to each .exe — with unbounded link parallelism on
+# Windows, two targets' copy steps can race on the same DLL and fail with
+# "The process cannot access the file because it is being used by another process."
+set_property(GLOBAL PROPERTY JOB_POOLS link_pool=1)
+set(CMAKE_JOB_POOL_LINK link_pool)
+
 # ── Boost ─────────────────────────────────────────────────────────────────────
 find_package(Boost 1.76 REQUIRED COMPONENTS graph log log_setup json)
 
