@@ -21,6 +21,32 @@
 namespace sgf
 {
 
+namespace
+{
+
+/**
+ * @brief Prefetches a managed buffer to a device, skipping empty buffers.
+ *
+ * A zero-byte cudaMallocManaged allocation returns a null pointer. Prefetching
+ * that null/empty buffer fails and leaves a pending CUDA error that surfaces
+ * on the next unrelated CUDA call, so empty buffers are skipped instead.
+ *
+ * @param managed_ptr Managed memory pointer to prefetch.
+ * @param byte_count Number of bytes to prefetch.
+ * @param device Destination device ordinal.
+ */
+void prefetch_managed_buffer(const void* const managed_ptr, const std::size_t byte_count,
+                             const int32_t device)
+{
+    if (byte_count == 0U)
+    {
+        return;
+    }
+    cudaMemPrefetchAsync(managed_ptr, byte_count, device, nullptr);
+}
+
+}  // namespace
+
 // ── GpuKavoshContext device method implementations ────────────────────────────
 
 /**
@@ -300,22 +326,21 @@ EnumerationResult MotifPreprocessor::calculate_gpu()
     // Prefetch all managed arrays to device before kernel launch.
     int cuda_device = -1;
     cudaGetDevice(&cuda_device);
-    cudaMemPrefetchAsync(d_order_index, vertex_bytes, cuda_device, nullptr);
-    cudaMemPrefetchAsync(d_sorted_nodes, vertex_bytes, cuda_device, nullptr);
-    cudaMemPrefetchAsync(device_canonical, canonical_bytes, cuda_device, nullptr);
-    cudaMemPrefetchAsync(device_graph.d_fwd_offsets,
-                         (device_graph.num_nodes + 1U) * sizeof(uint32_t), cuda_device, nullptr);
-    cudaMemPrefetchAsync(device_graph.d_fwd_neighbors,
-                         device_graph.num_fwd_edges * sizeof(uint32_t), cuda_device, nullptr);
-    cudaMemPrefetchAsync(device_graph.d_colors, device_graph.num_nodes * sizeof(uint32_t),
-                         cuda_device, nullptr);
+    prefetch_managed_buffer(d_order_index, vertex_bytes, cuda_device);
+    prefetch_managed_buffer(d_sorted_nodes, vertex_bytes, cuda_device);
+    prefetch_managed_buffer(device_canonical, canonical_bytes, cuda_device);
+    prefetch_managed_buffer(device_graph.d_fwd_offsets,
+                            (device_graph.num_nodes + 1U) * sizeof(uint32_t), cuda_device);
+    prefetch_managed_buffer(device_graph.d_fwd_neighbors,
+                            device_graph.num_fwd_edges * sizeof(uint32_t), cuda_device);
+    prefetch_managed_buffer(device_graph.d_colors, device_graph.num_nodes * sizeof(uint32_t),
+                            cuda_device);
     if (device_graph.d_rev_offsets != nullptr)
     {
-        cudaMemPrefetchAsync(device_graph.d_rev_offsets,
-                             (device_graph.num_nodes + 1U) * sizeof(uint32_t), cuda_device,
-                             nullptr);
-        cudaMemPrefetchAsync(device_graph.d_rev_neighbors,
-                             device_graph.num_rev_edges * sizeof(uint32_t), cuda_device, nullptr);
+        prefetch_managed_buffer(device_graph.d_rev_offsets,
+                                (device_graph.num_nodes + 1U) * sizeof(uint32_t), cuda_device);
+        prefetch_managed_buffer(device_graph.d_rev_neighbors,
+                                device_graph.num_rev_edges * sizeof(uint32_t), cuda_device);
     }
 
     const dim3 block_size(SgfConstants::GPU_KERNEL_BLOCK_DIM, SgfConstants::GPU_KERNEL_BLOCK_DIM);
