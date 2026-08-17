@@ -9,7 +9,6 @@
 #include "LoggerHandler.h"
 #include "Node.h"
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -64,11 +63,7 @@ void intersect_path_set_in_place(std::unordered_set<uint32_t>& target,
         {
             ++element_it;
         }
-        const uint32_t parent_index = pairs[idx].second ? pairs[idx].second->m_index : 0U;
-        result += "(" + std::to_string(pairs[idx].first) + "," + std::to_string(parent_index) + ")";
     }
-    result += "]";
-    return result;
 }
 
 }  // namespace
@@ -255,8 +250,6 @@ bool Tree::is_empty() const
 std::vector<NodePtr>
 Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs)
 {
-    SGF_DEBUG_LOG(m_logger, "add_tree_level: root=" + std::to_string(m_root->m_index) +
-                                " pairs=" + format_vertex_parent_pairs(vertex_parent_pairs));
     if (vertex_parent_pairs.empty())
     {
         return {};
@@ -269,9 +262,6 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_par
 
 void Tree::remove_node(const NodePtr& node)
 {
-    SGF_DEBUG_LOG(m_logger, "remove_node: root=" + std::to_string(m_root->m_index) +
-                                " vertex=" + std::to_string(node->m_index) +
-                                " depth=" + std::to_string(node->m_depth));
     NodePtr node_to_remove = node;
 
     while (node_to_remove)

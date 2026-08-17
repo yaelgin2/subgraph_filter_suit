@@ -5,7 +5,6 @@
 #include "IPatternPreprocessor.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
-#include "LogLevel.h"
 #include "MultiGraphPatternFinder.h"
 #include "PatternUtils.h"
 
