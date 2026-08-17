@@ -23,9 +23,9 @@ struct TupleHash
      */
     size_t operator()(const std::tuple<uint32_t, uint32_t, bool>& key) const noexcept
     {
-        static constexpr uint32_t UPPER_HALF_SHIFT = 32U;
+        static constexpr uint32_t upper_half_shift = 32U;
         const size_t color_depth_hash = std::hash<uint64_t>{}(
-            (static_cast<uint64_t>(std::get<0>(key)) << UPPER_HALF_SHIFT) | std::get<1>(key));
+            (static_cast<uint64_t>(std::get<0>(key)) << upper_half_shift) | std::get<1>(key));
         return color_depth_hash ^ (std::hash<bool>{}(std::get<2>(key)) << 1U);
     }
 };

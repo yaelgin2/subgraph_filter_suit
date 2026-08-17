@@ -25,17 +25,22 @@ std::pair<uint32_t, uint32_t> VertexEdgeGraphReader::parse_vertex_line(const std
                                                                        const std::string& file_path)
 {
     std::istringstream stream(line);
-    uint32_t vertex_id = 0;
+    int64_t vertex_id_raw = 0;
     uint32_t color = 0;
-    if (!(stream >> vertex_id >> color))
+    if (!(stream >> vertex_id_raw >> color))
     {
         throw GraphConstructionException(
             "Malformed vertex line in '" + file_path + "': '" + line + "' (expected " +
             std::to_string(IOConstants::VERTEX_EDGE_TOKENS_PER_VERTEX_LINE) + " tokens)");
     }
+    if (vertex_id_raw < 0)
+    {
+        throw GraphConstructionException("Negative vertex ID " + std::to_string(vertex_id_raw) +
+                                         " in '" + file_path + "'");
+    }
     VertexEdgeUtils::throw_if_extra_tokens(stream, "Malformed vertex line in '" + file_path + "'",
                                            line, IOConstants::VERTEX_EDGE_TOKENS_PER_VERTEX_LINE);
-    return {vertex_id, color};
+    return {static_cast<uint32_t>(vertex_id_raw), color};
 }
 
 std::unordered_map<uint32_t, uint32_t>
@@ -185,8 +190,8 @@ ColoredGraph VertexEdgeGraphReader::read(const std::string& path, const bool is_
     const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
     const ColoredGraph result =
         edge_data.m_colored.empty()
-            ? ColoredGraph{vertex_count, edge_data.m_uncolored, vertex_colors, is_directed}
-            : ColoredGraph{vertex_count, edge_data.m_colored, vertex_colors, is_directed};
+            ? ColoredGraph{vertex_count, edge_data.m_uncolored, vertex_colors, is_directed, logger}
+            : ColoredGraph{vertex_count, edge_data.m_colored, vertex_colors, is_directed, logger};
     logger.log(LogLevel::INFO, "read vertex-edge graph from '" + path + "'");
     return result;
 }

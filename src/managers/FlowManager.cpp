@@ -7,12 +7,14 @@
 #include "ColoredGraph.h"
 #include "EnumerationPreprocessManager.h"
 #include "FilteringUtils.h"
+#include "GraphmlColorMapIOManager.h"
 #include "GraphmlGraphReader.h"
 #include "GraphmlPatternWriter.h"
 #include "GroupEnumerationGraphFilter.h"
 #include "IColoredGraphReader.h"
 #include "IFilterIOManager.h"
 #include "IGraphPreprocessor.h"
+#include "IOConstants.h"
 #include "IOUtils.h"
 #include "IPatternCacheIOManager.h"
 #include "IPatternPreprocessor.h"
@@ -42,6 +44,7 @@
 #include <cstdint>
 #include <ctime>
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -137,37 +140,40 @@ FlowManager::make_filter_results_io_manager(const ResultOutputType type, const s
 std::vector<EnumerationResultVector> FlowManager::enumerator_preprocess_run(
     const std::string& input_path, const bool is_directed, const GraphReaderType reader_type,
     std::string& output_path, CacheManagerType output_type, const std::string& log_file_path,
-    bool preprocess_paths, bool preprocess_motifs)
+    bool preprocess_paths, bool preprocess_motifs, const uint32_t thread_number,
+    const std::string& graphml_color_map_path, const bool use_gpu)
 {
     std::vector<EnumerationResultVector> result;
     const LoggerBundle log_bundle(log_file_path);
+    const std::string timestamp = generate_timestamp();
+    const std::string color_map_save_folder = graphml_color_map_path.empty() ? "" : output_path;
     const LibraryData library =
-        load_library(input_path, reader_type, is_directed, log_bundle.handler());
+        load_library(input_path, reader_type, is_directed, log_bundle.handler(),
+                     ColorMapConfig{graphml_color_map_path, color_map_save_folder});
     EnumerationPreprocessManager preprocess_manager(library.m_library, log_bundle.handler());
     const std::shared_ptr<ICacheIOManager> cache_manager =
         make_cache_manager(output_type, output_path, log_bundle.handler());
-    const std::string timestamp = generate_timestamp();
     if (preprocess_paths)
     {
         result.push_back(get_graph_enumeration(
             true, std::string(PATH_CACHE_BASE_NAME), cache_manager, preprocess_manager, library,
-            [](const ColoredGraph& graph,
-               const LoggerHandler& logger) -> std::unique_ptr<IGraphPreprocessor>
+            [thread_number](const ColoredGraph& graph,
+                            const LoggerHandler& logger) -> std::unique_ptr<IGraphPreprocessor>
             {
-                return std::make_unique<PathProcessor>(graph, logger);
+                return std::make_unique<PathProcessor>(graph, logger, thread_number);
             },
-            timestamp));
+            timestamp, use_gpu));
     }
     if (preprocess_motifs)
     {
         result.push_back(get_graph_enumeration(
             true, std::string(MOTIF_CACHE_BASE_NAME), cache_manager, preprocess_manager, library,
-            [](const ColoredGraph& graph,
-               const LoggerHandler& logger) -> std::unique_ptr<IGraphPreprocessor>
+            [thread_number](const ColoredGraph& graph,
+                            const LoggerHandler& logger) -> std::unique_ptr<IGraphPreprocessor>
             {
-                return std::make_unique<MotifPreprocessor>(graph, logger);
+                return std::make_unique<MotifPreprocessor>(graph, logger, thread_number);
             },
-            timestamp));
+            timestamp, use_gpu));
     }
     return result;
 }
@@ -180,7 +186,7 @@ std::unordered_map<std::string, FilterResult> FlowManager::enumerate_and_filter(
     const std::shared_ptr<ICacheIOManager>& graphs_cache_manager, LibraryData& graphs_to_find_in,
     const std::unique_ptr<EnumerationPreprocessManager>& preprocess_manager,
     IFilterIOManager& filter_results_writer, const std::string& timestamp,
-    const LoggerHandler& logger, const EnumerationTransformer& post_process)
+    const LoggerHandler& logger, const bool use_gpu, const EnumerationTransformer& post_process)
 {
     EnumerationResultVector graph_enumeration;
     if (load_graph_cache)
@@ -192,7 +198,7 @@ std::unordered_map<std::string, FilterResult> FlowManager::enumerate_and_filter(
     {
         graph_enumeration = get_graph_enumeration(
             graphs_cache_manager != nullptr, run_type_file_base_name, graphs_cache_manager,
-            *preprocess_manager, graphs_to_find_in, factory, timestamp);
+            *preprocess_manager, graphs_to_find_in, factory, timestamp, use_gpu);
     }
     post_process(graph_enumeration);
     const std::filesystem::path lib_cache(library_cache_file);
@@ -210,9 +216,11 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
     const CacheManagerType cache_reader_type, std::string& output_folder,
     ResultOutputType output_type, const std::string& log_file_path, bool filter_paths,
     bool filter_motifs, const GraphEnumerationCacheConfig& graph_cache_config,
-    const bool non_induced)
+    const bool non_induced, const uint32_t thread_number, const std::string& graphml_color_map_path,
+    const bool use_gpu)
 {
     const LoggerBundle log_bundle(log_file_path);
+    const std::string timestamp = generate_timestamp();
     LibraryData graphs_to_find_in;
     std::unique_ptr<EnumerationPreprocessManager> preprocess_manager = nullptr;
     const bool need_path_compute =
@@ -221,14 +229,16 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
         filter_motifs && graph_cache_config.m_graphs_motif_cache_path.empty();
     if (need_path_compute || need_motif_compute)
     {
+        const std::string color_map_save_folder =
+            graphml_color_map_path.empty() ? "" : output_folder;
         graphs_to_find_in =
-            load_library(graph_input_path, reader_type, is_directed, log_bundle.handler());
+            load_library(graph_input_path, reader_type, is_directed, log_bundle.handler(),
+                         ColorMapConfig{graphml_color_map_path, color_map_save_folder});
         preprocess_manager = std::make_unique<EnumerationPreprocessManager>(
             graphs_to_find_in.m_library, log_bundle.handler());
     }
     std::unique_ptr<IFilterIOManager> filter_results_writer =
         make_filter_results_io_manager(output_type, output_folder, log_bundle.handler());
-    const std::string timestamp = generate_timestamp();
     std::shared_ptr<ICacheIOManager> graphs_cache_manager = nullptr;
     if (graph_cache_config.m_cache_enumeration)
     {
@@ -248,13 +258,13 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
         filter_results.push_back(enumerate_and_filter(
             path_cache_file, !graph_cache_config.m_graphs_path_cache_path.empty(),
             graph_cache_config.m_graphs_path_cache_path, std::string(PATH_CACHE_BASE_NAME),
-            [](const ColoredGraph& graph,
-               const LoggerHandler& logger) -> std::unique_ptr<IGraphPreprocessor>
+            [thread_number](const ColoredGraph& graph,
+                            const LoggerHandler& logger) -> std::unique_ptr<IGraphPreprocessor>
             {
-                return std::make_unique<PathProcessor>(graph, logger);
+                return std::make_unique<PathProcessor>(graph, logger, thread_number);
             },
             cache_reader_type, graphs_cache_manager, graphs_to_find_in, preprocess_manager,
-            *filter_results_writer, timestamp, log_bundle.handler(), no_op));
+            *filter_results_writer, timestamp, log_bundle.handler(), use_gpu, no_op));
     }
     if (filter_motifs)
     {
@@ -272,13 +282,13 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
         filter_results.push_back(enumerate_and_filter(
             motif_cache_file, !graph_cache_config.m_graphs_motif_cache_path.empty(),
             graph_cache_config.m_graphs_motif_cache_path, std::string(MOTIF_CACHE_BASE_NAME),
-            [](const ColoredGraph& graph,
-               const LoggerHandler& logger) -> std::unique_ptr<IGraphPreprocessor>
+            [thread_number](const ColoredGraph& graph,
+                            const LoggerHandler& logger) -> std::unique_ptr<IGraphPreprocessor>
             {
-                return std::make_unique<MotifPreprocessor>(graph, logger);
+                return std::make_unique<MotifPreprocessor>(graph, logger, thread_number);
             },
             cache_reader_type, graphs_cache_manager, graphs_to_find_in, preprocess_manager,
-            *filter_results_writer, timestamp, log_bundle.handler(), motif_transform));
+            *filter_results_writer, timestamp, log_bundle.handler(), use_gpu, motif_transform));
     }
     return filter_results;
 }
@@ -287,33 +297,36 @@ std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::enumerat
 std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
     const std::string& input_path, const bool is_directed, GraphReaderType reader_type,
     std::string& output_path, const PatternWriterType output_type, const std::string& log_file_path,
-    const uint32_t preprocess_multigraph, const double multigraph_alive_percent,
     const bool preprocess_singlegraph_results_file, const std::string& results_file_path,
     const int64_t preprocess_singlegraph, const ResultOutputType results_file_type,
     const std::string& background_graph_path, const double score_threshold,
-    const SingleGraphFinderConfig& config)
+    const SingleGraphFinderConfig& config, const uint32_t preprocess_multigraph,
+    const double multigraph_alive_percent, const uint32_t thread_number,
+    const std::string& graphml_color_map_path)
 {
     std::vector<PatternPreprocessorResult> result;
     const LoggerBundle log_bundle(log_file_path);
-    const LibraryData library =
-        load_library(input_path, reader_type, is_directed, log_bundle.handler());
-    const std::shared_ptr<IPatternWriter> pattern_writer = make_pattern_writer(output_type);
     const std::string timestamp = generate_timestamp();
+    const std::string color_map_save_folder = graphml_color_map_path.empty() ? "" : output_path;
+    const LibraryData library =
+        load_library(input_path, reader_type, is_directed, log_bundle.handler(),
+                     ColorMapConfig{graphml_color_map_path, color_map_save_folder});
+    const std::shared_ptr<IPatternWriter> pattern_writer = make_pattern_writer(output_type);
     PatternPreprocessManager preprocess_manager(library.m_library, log_bundle.handler());
     if (preprocess_multigraph > 0U)
     {
         const PatternOutput multigraph_results = preprocess_manager.preprocess(
-            [preprocess_multigraph, multigraph_alive_percent,
-             is_directed](std::vector<ColoredGraph>& library_ref,
-                          LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
+            [preprocess_multigraph, multigraph_alive_percent, is_directed,
+             thread_number](std::vector<ColoredGraph>& library_ref,
+                            LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
             {
                 return std::make_unique<MultiGraphPatternPreprocessor>(
                     library_ref, is_directed, preprocess_multigraph, multigraph_alive_percent,
-                    std::move(logger));
+                    thread_number, std::move(logger));
             });
         result.insert(result.end(), multigraph_results.begin(), multigraph_results.end());
         const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(multigraph_results, timestamp, pattern_writer);
+        cache_manager.write(multigraph_results, timestamp, pattern_writer, is_directed);
     }
     const bool need_background =
         preprocess_singlegraph != -1 || preprocess_singlegraph_results_file;
@@ -329,18 +342,20 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
         std::vector<bool> to_process(library.m_library.size(), false);
         to_process[static_cast<size_t>(preprocess_singlegraph)] = true;
         const ColoredGraph& background = *background_graph_opt;
+        SingleGraphFinderConfig config_with_threads = config;
+        config_with_threads.m_thread_number = thread_number;
         const PatternOutput single_graph_results = preprocess_manager.preprocess(
             [is_directed, &background, &to_process, score_threshold,
-             &config](std::vector<ColoredGraph>& library_ref,
-                      LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
+             &config_with_threads](std::vector<ColoredGraph>& library_ref,
+                                   LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
             {
                 return std::make_unique<SingleGraphPatternPreprocessor>(
-                    library_ref, is_directed, background, to_process, score_threshold, config,
-                    std::move(logger));
+                    library_ref, is_directed, background, to_process, score_threshold,
+                    config_with_threads, std::move(logger));
             });
         result.insert(result.end(), single_graph_results.begin(), single_graph_results.end());
         const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(single_graph_results, timestamp, pattern_writer);
+        cache_manager.write(single_graph_results, timestamp, pattern_writer, is_directed);
     }
     if (preprocess_singlegraph_results_file && background_graph_opt.has_value())
     {
@@ -351,24 +366,26 @@ std::vector<PatternPreprocessorResult> FlowManager::pattern_preprocess_run(
             result_reader->read(results_path.stem().string());
         std::vector<bool> to_process = build_to_process(library.m_graph_names, filter_map);
         const ColoredGraph& background = *background_graph_opt;
+        SingleGraphFinderConfig results_config_with_threads = config;
+        results_config_with_threads.m_thread_number = thread_number;
         const PatternOutput single_graph_results = preprocess_manager.preprocess(
-            [is_directed, &background, &to_process, score_threshold,
-             &config](std::vector<ColoredGraph>& library_ref,
-                      LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
+            [is_directed, &background, &to_process, score_threshold, &results_config_with_threads](
+                std::vector<ColoredGraph>& library_ref,
+                LoggerHandler logger) -> std::unique_ptr<IPatternPreprocessor>
             {
                 return std::make_unique<SingleGraphPatternPreprocessor>(
-                    library_ref, is_directed, background, to_process, score_threshold, config,
-                    std::move(logger));
+                    library_ref, is_directed, background, to_process, score_threshold,
+                    results_config_with_threads, std::move(logger));
             });
         const CSVPatternCacheIOManager cache_manager(output_path, log_bundle.handler());
-        cache_manager.write(single_graph_results, timestamp, pattern_writer);
+        cache_manager.write(single_graph_results, timestamp, pattern_writer, is_directed);
         result.insert(result.end(), single_graph_results.begin(), single_graph_results.end());
     }
     return result;
 }
 
 // NOLINTNEXTLINE(readability-function-size)
-std::unordered_map<std::string, FilterResult> FlowManager::pattern_filter_run(
+std::vector<std::unordered_map<std::string, FilterResult>> FlowManager::pattern_filter_run(
     const std::string& pattern_to_filter_cache, const PatternWriterType pattern_type,
     const std::string& background_graph_path, const GraphReaderType reader_type,
     const bool is_directed, std::string& output_path, const ResultOutputType output_type,
@@ -377,10 +394,8 @@ std::unordered_map<std::string, FilterResult> FlowManager::pattern_filter_run(
     const LoggerBundle log_bundle(log_file_path);
     const std::filesystem::path cache_path_obj(pattern_to_filter_cache);
     const std::string cache_folder = cache_path_obj.parent_path().string();
-    const std::string timestamp =
-        cache_path_obj.stem().string().substr(std::char_traits<char>::length(PATTERN_INDEX_PREFIX));
     const CSVPatternCacheIOManager cache_manager(cache_folder, log_bundle.handler());
-    const PatternMapping pattern_mapping = cache_manager.read(timestamp);
+    const PatternMapping pattern_mapping = cache_manager.read(pattern_to_filter_cache);
     const std::unique_ptr<IColoredGraphReader> pattern_reader =
         make_graph_reader(pattern_witer_type_to_graph_reader_type(pattern_type));
     std::vector<ColoredGraphPatternResult> library_cache;
@@ -396,25 +411,28 @@ std::unordered_map<std::string, FilterResult> FlowManager::pattern_filter_run(
     }
     const PatternGraphFilter pattern_filter(std::move(library_cache), log_bundle.handler());
     const std::unique_ptr<IColoredGraphReader> graph_reader = make_graph_reader(reader_type);
-    LibraryData graph_to_find_in =
-        load_library(background_graph_path, reader_type, is_directed, log_bundle.handler());
-    std::unordered_map<std::string, FilterResult> results;
-    results.reserve(graph_to_find_in.m_library.size());
-    for (uint32_t graph_index = 0U;
-         graph_index < static_cast<uint32_t>(graph_to_find_in.m_library.size()); graph_index++)
+    std::unique_ptr<IFilterIOManager> filter_results_writer =
+        make_filter_results_io_manager(output_type, output_path, log_bundle.handler());
+    const std::string timestamp = generate_timestamp();
+    const std::vector<std::string> bg_files =
+        std::filesystem::is_directory(background_graph_path)
+            ? IOUtils::get_files_in_directory(background_graph_path)
+            : std::vector<std::string>{background_graph_path};
+    std::vector<std::unordered_map<std::string, FilterResult>> results;
+    for (const std::string& bg_file : bg_files)
     {
-        const FilterResult filter_result = pattern_filter.filter(
-            graph_to_find_in.m_library[graph_index], is_induced, prior_policy);
-        std::unique_ptr<IFilterIOManager> filter_results_writer =
-            make_filter_results_io_manager(output_type, output_path, log_bundle.handler());
-        const std::string background_stem =
-            std::filesystem::path(graph_to_find_in.m_graph_names[graph_index]).stem().string();
-        filter_results_writer->write(background_stem + PATTERN_FILTER_RESULT_SUFFIX +
-                                         generate_timestamp(),
-                                     pattern_filenames, filter_result);
-        results[graph_to_find_in.m_graph_names[graph_index]] = filter_result;
+        const ColoredGraph background =
+            graph_reader->read(bg_file, is_directed, log_bundle.handler());
+        const FilterResult filter_result =
+            pattern_filter.filter(background, is_induced, prior_policy);
+        const std::string background_stem = std::filesystem::path(bg_file).stem().string();
+        std::string result_filename = background_stem;
+        result_filename += PATTERN_FILTER_RESULT_SUFFIX;
+        result_filename += timestamp;
+        filter_results_writer->write(result_filename, pattern_filenames, filter_result);
+        results.push_back(
+            std::unordered_map<std::string, FilterResult>{{background_stem, filter_result}});
     }
-
     return results;
 }
 
@@ -485,9 +503,9 @@ FlowManager::get_graph_enumeration(const bool write_to_cache, const std::string&
                                    const std::shared_ptr<ICacheIOManager>& cache_manager,
                                    EnumerationPreprocessManager& preprocess_manager,
                                    const LibraryData& library, const PreprocessorFactory& factory,
-                                   const std::string& timestamp)
+                                   const std::string& timestamp, const bool use_gpu)
 {
-    EnumerationResultVector result = preprocess_manager.preprocess(factory);
+    EnumerationResultVector result = preprocess_manager.preprocess(factory, use_gpu);
     if (write_to_cache && cache_manager)
     {
         cache_manager->write(std::string(cache_base_name) + "_" + timestamp, result,
@@ -549,20 +567,62 @@ FlowManager::build_to_process(const std::vector<std::string>& graph_names,
     return to_process;
 }
 
-LibraryData FlowManager::load_library(const std::string& path, const GraphReaderType reader_type,
-                                      const bool is_directed, const LoggerHandler& logger)
+void FlowManager::read_graphs(IColoredGraphReader& reader, LibraryData& library,
+                              const bool is_directed, const LoggerHandler& logger)
 {
-    LibraryData library;
-    library.m_graph_names = IOUtils::get_files_in_directory(path);
-    library.m_library.reserve(library.m_graph_names.size());
-    std::unique_ptr<IColoredGraphReader> reader = make_graph_reader(reader_type);
     for (uint32_t idx = 0U; idx < static_cast<uint32_t>(library.m_graph_names.size()); ++idx)
     {
-        logger.log(LogLevel::INFO, "[load] index=" + std::to_string(idx) +
-                                       " file=" + library.m_graph_names[idx]);
-        library.m_library.push_back(reader->read(library.m_graph_names[idx], is_directed, logger));
+        logger.log(LogLevel::INFO,
+                   "[load] index=" + std::to_string(idx) + " file=" + library.m_graph_names[idx]);
+        library.m_library.push_back(reader.read(library.m_graph_names[idx], is_directed, logger));
+    }
+}
+
+LibraryData FlowManager::load_library(const std::string& path, const GraphReaderType reader_type,
+                                      const bool is_directed, const LoggerHandler& logger,
+                                      const ColorMapConfig& color_map_config)
+{
+    LibraryData library;
+    const std::vector<std::string> all_files = IOUtils::get_files_in_directory(path);
+    library.m_graph_names = reader_type == GraphReaderType::VERTEX_EDGE
+                                ? collect_vertex_edge_base_paths(all_files)
+                                : all_files;
+    library.m_library.reserve(library.m_graph_names.size());
+    if (reader_type != GraphReaderType::GRAPHML)
+    {
+        const std::unique_ptr<IColoredGraphReader> reader = make_graph_reader(reader_type);
+        read_graphs(*reader, library, is_directed, logger);
+        return library;
+    }
+    std::map<std::string, uint32_t> initial_color_map;
+    if (!color_map_config.m_color_map_path.empty())
+    {
+        initial_color_map =
+            GraphmlColorMapIOManager("", logger).load(color_map_config.m_color_map_path);
+    }
+    GraphmlGraphReader graphml_reader(initial_color_map);
+    read_graphs(graphml_reader, library, is_directed, logger);
+    if (!color_map_config.m_output_folder.empty())
+    {
+        GraphmlColorMapIOManager(color_map_config.m_output_folder, logger)
+            .save("color_map_" + generate_timestamp(), graphml_reader.get_color_map());
     }
     return library;
+}
+
+std::vector<std::string>
+FlowManager::collect_vertex_edge_base_paths(const std::vector<std::string>& all_files)
+{
+    std::vector<std::string> base_paths;
+    for (const std::string& file : all_files)
+    {
+        const std::filesystem::path file_path(file);
+        if (file_path.extension() == IOConstants::NODE_LABELS_SUFFIX)
+        {
+            base_paths.push_back((file_path.parent_path() / file_path.stem()).string());
+        }
+    }
+    return base_paths;
 }
 
 }  // namespace sgf

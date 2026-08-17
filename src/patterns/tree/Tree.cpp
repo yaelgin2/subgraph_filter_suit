@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -27,8 +28,8 @@ namespace
  * @param pairs Vector of (vertex index, parent node) pairs.
  * @return Formatted string.
  */
-[[maybe_unused]] std::string format_vertex_parent_pairs(
-    const std::vector<std::pair<uint32_t, sgf::NodePtr>>& pairs)
+[[maybe_unused]] std::string
+format_vertex_parent_pairs(const std::vector<std::pair<uint32_t, sgf::NodePtr>>& pairs)
 {
     std::string result = "[";
     for (size_t idx = 0; idx < pairs.size(); ++idx)
@@ -44,18 +45,70 @@ namespace
     return result;
 }
 
+/**
+ * @brief Keep only elements of @p target that are also present in @p other.
+ * @param target Set intersected in-place.
+ * @param other  Set to intersect against.
+ */
+void intersect_path_set_in_place(std::unordered_set<uint32_t>& target,
+                                 const std::unordered_set<uint32_t>& other)
+{
+    for (std::unordered_set<uint32_t>::iterator element_it = target.begin();
+         element_it != target.end();)
+    {
+        if (other.find(*element_it) == other.end())
+        {
+            element_it = target.erase(element_it);
+        }
+        else
+        {
+            ++element_it;
+        }
+        const uint32_t parent_index = pairs[idx].second ? pairs[idx].second->m_index : 0U;
+        result += "(" + std::to_string(pairs[idx].first) + "," + std::to_string(parent_index) + ")";
+    }
+    result += "]";
+    return result;
+}
+
 }  // namespace
 
 namespace sgf
 {
 
-Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, const LoggerHandler& logger)
-    : m_root(std::make_shared<Node>(root_vertex_index, 0U))
-    , m_logger(logger)
+Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, LoggerHandler logger)
+    : m_root()
+    , m_logger(std::move(logger))
     , m_graph(graph)
     , m_is_directed(graph.is_directed())
 {
     SGF_DEBUG_LOG(m_logger, "Tree: root=" + std::to_string(root_vertex_index));
+}
+
+Tree::~Tree()
+{
+    if (m_root)
+    {
+        detach_subtree(m_root);
+    }
+}
+
+void Tree::detach_subtree(const NodePtr& node)
+{
+    const NodePtr first_child = node->m_son;
+    if (first_child)
+    {
+        NodePtr current_child = first_child;
+        do
+        {
+            const NodePtr next_child = current_child->m_right;
+            detach_subtree(current_child);
+            current_child->m_left.reset();
+            current_child->m_right.reset();
+            current_child = next_child;
+        } while (current_child && current_child != first_child);
+    }
+    node->m_son.reset();
 }
 
 NodePtr Tree::add_node(const NodePtr& parent, const uint32_t vertex_index)
@@ -135,6 +188,9 @@ void Tree::delete_node(const NodePtr& node)
     {
         parent_node->m_son = node->m_left;
     }
+
+    node->m_left.reset();
+    node->m_right.reset();
 }
 
 void Tree::validate_parent_ordering(
@@ -195,6 +251,7 @@ bool Tree::is_empty() const
     return m_root == nullptr;
 }
 
+
 std::vector<NodePtr>
 Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs)
 {
@@ -206,7 +263,8 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_par
     }
 
     validate_parent_ordering(vertex_parent_pairs);
-    return attach_all_new_nodes(vertex_parent_pairs);
+    std::vector<NodePtr> added_nodes = attach_all_new_nodes(vertex_parent_pairs);
+    return added_nodes;
 }
 
 void Tree::remove_node(const NodePtr& node)
@@ -256,102 +314,147 @@ NodePtr Tree::get_node_by_depth(const NodePtr& lowest_node_in_match, const uint3
     return current_node;
 }
 
-void Tree::accumulate_direction_neighbour_counts(const std::vector<uint32_t>& path,
+void Tree::accumulate_direction_neighbour_counts(const NodePtr& vertex_node,
                                                  const std::unordered_set<uint32_t>& path_set,
-                                                 const bool is_reversed,
-                                                 CountsMap& counts) const
+                                                 const bool is_reversed, CountsMap& counts) const
 {
-    for (uint32_t pattern_index = 0U;
-         pattern_index < static_cast<uint32_t>(path.size()); ++pattern_index)
-    {
-        const std::pair<std::vector<uint32_t>::const_iterator,
-                        std::vector<uint32_t>::const_iterator>
-            neighbour_range = m_graph.get_neighbours(path[pattern_index], is_reversed);
+    const uint32_t pattern_index = vertex_node->m_depth - 1U;
+    const std::pair<std::vector<uint32_t>::const_iterator, std::vector<uint32_t>::const_iterator>
+        neighbour_range = m_graph.get_neighbours(vertex_node->m_index, is_reversed);
 
-        for (std::vector<uint32_t>::const_iterator neighbour_it = neighbour_range.first;
-             neighbour_it != neighbour_range.second; ++neighbour_it)
+    for (std::vector<uint32_t>::const_iterator neighbour_it = neighbour_range.first;
+         neighbour_it != neighbour_range.second; ++neighbour_it)
+    {
+        if (path_set.find(*neighbour_it) == path_set.end())
         {
-            if (path_set.find(*neighbour_it) == path_set.end())
-            {
-                ++counts[std::make_tuple(
-                    m_graph.get_vertex_color(*neighbour_it), pattern_index, is_reversed)];
-            }
+            ++counts[std::make_tuple(m_graph.get_vertex_color(*neighbour_it), pattern_index,
+                                     is_reversed)];
         }
     }
 }
 
-void Tree::accumulate_path_neighbour_counts(const std::vector<uint32_t>& path,
-                                            const std::unordered_set<uint32_t>& path_set,
-                                            CountsMap& counts) const
+void Tree::accumulate_vertex_neighbour_counts(const NodePtr& vertex_node,
+                                              const std::unordered_set<uint32_t>& path_set,
+                                              CountsMap& counts) const
 {
-    accumulate_direction_neighbour_counts(path, path_set, false, counts);
+    accumulate_direction_neighbour_counts(vertex_node, path_set, false, counts);
     if (m_is_directed)
     {
-        accumulate_direction_neighbour_counts(path, path_set, true, counts);
+        accumulate_direction_neighbour_counts(vertex_node, path_set, true, counts);
     }
+}
+
+void Tree::seed_path_from_leaf(const NodePtr& leaf, std::unordered_set<uint32_t>& path_set)
+{
+    NodePtr ancestor = leaf;
+    while (ancestor && !ancestor->m_parent.expired())
+    {
+        path_set.insert(ancestor->m_index);
+        ancestor = ancestor->m_parent.lock();
+    }
+}
+
+void Tree::update_path_to_next_leaf(const NodePtr& prev_leaf, const NodePtr& curr_leaf,
+                                    std::unordered_set<uint32_t>& path_set)
+{
+    NodePtr prev_ancestor = prev_leaf;
+    NodePtr curr_ancestor = curr_leaf;
+    std::vector<NodePtr> to_remove;
+    std::vector<NodePtr> to_add;
+    while (prev_ancestor != curr_ancestor)
+    {
+        to_remove.push_back(prev_ancestor);
+        to_add.push_back(curr_ancestor);
+        prev_ancestor = prev_ancestor->m_parent.lock();
+        curr_ancestor = curr_ancestor->m_parent.lock();
+    }
+    for (const NodePtr& node : to_remove)
+    {
+        path_set.erase(node->m_index);
+    }
+    for (const NodePtr& node : to_add)
+    {
+        path_set.insert(node->m_index);
+    }
+}
+
+void Tree::build_leaf_frontier_paths(
+    const std::vector<NodePtr>& leaves, std::vector<NodePtr>& frontier_nodes,
+    std::vector<std::unordered_set<uint32_t>>& frontier_paths) const
+{
+    frontier_nodes = leaves;
+    frontier_paths.reserve(leaves.size());
+
+    std::unordered_set<uint32_t> running_path;
+    seed_path_from_leaf(leaves.front(), running_path);
+    frontier_paths.push_back(running_path);
+
+    for (uint32_t leaf_idx = 1U; leaf_idx < static_cast<uint32_t>(leaves.size()); ++leaf_idx)
+    {
+        update_path_to_next_leaf(leaves[leaf_idx - 1U], leaves[leaf_idx], running_path);
+        frontier_paths.push_back(running_path);
+    }
+}
+
+void Tree::accumulate_frontier_neighbour_counts(
+    const std::vector<NodePtr>& frontier_nodes,
+    const std::vector<std::unordered_set<uint32_t>>& frontier_paths, CountsMap& counts) const
+{
+    for (uint32_t node_idx = 0U; node_idx < static_cast<uint32_t>(frontier_nodes.size());
+         ++node_idx)
+    {
+        accumulate_vertex_neighbour_counts(frontier_nodes[node_idx], frontier_paths[node_idx],
+                                           counts);
+    }
+}
+
+void Tree::advance_frontier_to_parents(
+    std::vector<NodePtr>& frontier_nodes, std::vector<std::unordered_set<uint32_t>>& frontier_paths) const
+{
+    std::vector<NodePtr> parent_nodes;
+    std::vector<std::unordered_set<uint32_t>> parent_paths;
+    parent_nodes.reserve(frontier_nodes.size());
+    parent_paths.reserve(frontier_paths.size());
+
+    for (uint32_t node_idx = 0U; node_idx < static_cast<uint32_t>(frontier_nodes.size());
+         ++node_idx)
+    {
+        const NodePtr parent_node = frontier_nodes[node_idx]->m_parent.lock();
+        if (!parent_nodes.empty() && parent_nodes.back() == parent_node)
+        {
+            intersect_path_set_in_place(parent_paths.back(), frontier_paths[node_idx]);
+        }
+        else
+        {
+            parent_nodes.push_back(parent_node);
+            parent_paths.push_back(frontier_paths[node_idx]);
+        }
+    }
+
+    frontier_nodes = std::move(parent_nodes);
+    frontier_paths = std::move(parent_paths);
 }
 
 void Tree::get_color_by_depth_neighbour_counts(const std::vector<NodePtr>& leaves,
                                                CountsMap& counts) const
 {
-
     if (leaves.empty())
     {
         return;
     }
 
-    // All frontier leaves are at the same depth — fix the vector size once.
-    const uint32_t frontier_depth = leaves.at(0)->m_depth;
+    std::vector<NodePtr> frontier_nodes;
+    std::vector<std::unordered_set<uint32_t>> frontier_paths;
+    build_leaf_frontier_paths(leaves, frontier_nodes, frontier_paths);
 
-    // path_vec[i] = vertex index matched at pattern depth i+1 (1-indexed depths).
-    std::vector<uint32_t> path_vec(frontier_depth, 0U);
-
-    // path_set mirrors path_vec for O(1) "is this neighbour committed?" checks.
-    std::unordered_set<uint32_t> path_set;
-
-    // Seed path from the first leaf's ancestor chain (root excluded).
+    while (true)
     {
-        NodePtr ancestor = leaves.at(0);
-        while (ancestor && !ancestor->m_parent.expired())
+        accumulate_frontier_neighbour_counts(frontier_nodes, frontier_paths, counts);
+        if (frontier_nodes.front()->m_depth == 1U)
         {
-            path_vec[ancestor->m_depth - 1U] = ancestor->m_index;
-            path_set.insert(ancestor->m_index);
-            ancestor = ancestor->m_parent.lock();
+            break;
         }
-    }
-    accumulate_path_neighbour_counts(path_vec, path_set, counts);
-
-    for (uint32_t current_leaf_idx = 1U;
-         current_leaf_idx < static_cast<uint32_t>(leaves.size()); ++current_leaf_idx)
-    {
-        const NodePtr& leaf = leaves[current_leaf_idx];
-
-        // Walk both ancestor chains to the common ancestor.
-        // Collect diverging nodes into to_remove / to_add.
-        // Remove old first, then add new, to avoid premature eviction from path_set.
-        std::vector<NodePtr> to_remove;
-        std::vector<NodePtr> to_add;
-        NodePtr prev_ancestor = leaves[current_leaf_idx - 1U];
-        NodePtr curr_ancestor = leaf;
-        while (prev_ancestor != curr_ancestor)
-        {
-            to_remove.push_back(prev_ancestor);
-            to_add.push_back(curr_ancestor);
-            prev_ancestor = prev_ancestor->m_parent.lock();
-            curr_ancestor = curr_ancestor->m_parent.lock();
-        }
-
-        for (const NodePtr& node : to_remove)
-        {
-            path_set.erase(node->m_index);
-        }
-        for (const NodePtr& node : to_add)
-        {
-            path_vec[node->m_depth - 1U] = node->m_index;
-            path_set.insert(node->m_index);
-        }
-
-        accumulate_path_neighbour_counts(path_vec, path_set, counts);
+        advance_frontier_to_parents(frontier_nodes, frontier_paths);
     }
 }
 

@@ -42,6 +42,7 @@
 
 # build folder
 build/*
+local_tests/*
 
-graphify-out/*
-temp/*
+# scratch output from running examples/README.md commands
+examples/output/

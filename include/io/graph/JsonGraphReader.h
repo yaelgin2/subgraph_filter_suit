@@ -161,20 +161,21 @@ private:
      * @brief Constructs the ColoredGraph from parsed node and link data.
      *
      * Calls detect_edge_colors() to decide between the edge-colored and
-     * uncolored ColoredGraph constructors.
+     * uncolored ColoredGraph constructors. The vertex count is derived from
+     * @p vertex_colors.size(), so it is not passed separately.
      *
      * @param links The JSON "links" array.
      * @param consecutive_index_by_original_id Mapping from original node ID to consecutive index.
-     * @param vertex_count Number of vertices.
      * @param vertex_colors Per-vertex color labels.
      * @param is_directed Whether to build a directed graph.
+     * @param logger Logger forwarded to the ColoredGraph constructor.
      * @return The constructed ColoredGraph.
      */
     static ColoredGraph
     build_graph(const boost::json::array& links,
                 const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-                uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors,
-                bool is_directed);
+                const std::vector<uint32_t>& vertex_colors, bool is_directed,
+                const LoggerHandler& logger);
 };
 
 }  // namespace sgf

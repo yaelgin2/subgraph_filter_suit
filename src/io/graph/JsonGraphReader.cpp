@@ -236,17 +236,18 @@ std::vector<std::pair<uint32_t, uint32_t>> JsonGraphReader::extract_uncolored_ed
 ColoredGraph JsonGraphReader::build_graph(
     const boost::json::array& links,
     const std::unordered_map<uint32_t, uint32_t>& consecutive_index_by_original_id,
-    uint32_t vertex_count, const std::vector<uint32_t>& vertex_colors, bool is_directed)
+    const std::vector<uint32_t>& vertex_colors, bool is_directed, const LoggerHandler& logger)
 {
+    const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
     if (detect_edge_colors(links))
     {
         std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> colored_edges =
             extract_colored_edges(links, consecutive_index_by_original_id);
-        return {vertex_count, colored_edges, vertex_colors, is_directed};
+        return {vertex_count, colored_edges, vertex_colors, is_directed, logger};
     }
     std::vector<std::pair<uint32_t, uint32_t>> uncolored_edges =
         extract_uncolored_edges(links, consecutive_index_by_original_id);
-    return {vertex_count, uncolored_edges, vertex_colors, is_directed};
+    return {vertex_count, uncolored_edges, vertex_colors, is_directed, logger};
 }
 
 ColoredGraph JsonGraphReader::read(const std::string& path, bool is_directed,
@@ -266,9 +267,8 @@ ColoredGraph JsonGraphReader::read(const std::string& path, bool is_directed,
     SGF_DEBUG_LOG(logger, id_remap_log);
     const std::vector<uint32_t> vertex_colors =
         build_vertex_colors(color_by_id, consecutive_index_by_original_id);
-    const uint32_t vertex_count = static_cast<uint32_t>(vertex_colors.size());
-    const ColoredGraph graph = build_graph(links, consecutive_index_by_original_id, vertex_count,
-                                           vertex_colors, is_directed);
+    const ColoredGraph graph =
+        build_graph(links, consecutive_index_by_original_id, vertex_colors, is_directed, logger);
     logger.log(LogLevel::INFO, "read JSON graph from '" + path + "'");
     return graph;
 }

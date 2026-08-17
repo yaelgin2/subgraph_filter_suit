@@ -40,7 +40,8 @@ boost::json::array JsonPatternWriter::build_nodes_array(const BoostGraph& graph)
     return nodes;
 }
 
-boost::json::array JsonPatternWriter::build_links_array(const BoostGraph& graph)
+boost::json::array JsonPatternWriter::build_links_array(const BoostGraph& graph,
+                                                        const bool is_directed)
 {
     boost::json::array links;
 
@@ -49,9 +50,7 @@ boost::json::array JsonPatternWriter::build_links_array(const BoostGraph& graph)
         const auto src = boost::source(edge, graph);
         const auto tgt = boost::target(edge, graph);
 
-        // For undirected patterns both (u,v) and (v,u) are stored; emit only the
-        // canonical direction (src < tgt) to avoid writing each edge twice.
-        if (src > tgt && boost::edge(tgt, src, graph).second)
+        if (!is_directed && src > tgt && boost::edge(tgt, src, graph).second)
         {
             continue;
         }
@@ -82,12 +81,13 @@ void JsonPatternWriter::write_to_file(const boost::json::object& root, const std
     file << boost::json::serialize(root);
 }
 
-void JsonPatternWriter::do_write(const BoostGraph& graph, const std::string& path) const
+void JsonPatternWriter::do_write(const BoostGraph& graph, const std::string& path,
+                                 const bool is_directed) const
 {
     boost::json::object root;
 
     root[IOConstants::JSON_NODES_KEY] = build_nodes_array(graph);
-    root[IOConstants::JSON_LINKS_KEY] = build_links_array(graph);
+    root[IOConstants::JSON_LINKS_KEY] = build_links_array(graph, is_directed);
 
     write_to_file(root, path);
 }

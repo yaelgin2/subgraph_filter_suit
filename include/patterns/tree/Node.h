@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <utility>
 
 namespace sgf
 {
@@ -15,25 +16,30 @@ namespace sgf
  */
 struct Node
 {
-    /**
-     * @brief Construct a tree node.
-     * @param vertex_index Index of the source-graph vertex this node represents.
-     * @param tree_depth Depth of this node within the tree (root is 0).
-     */
-    explicit Node(const uint32_t vertex_index, const uint32_t tree_depth = 0U)
-        : m_index(vertex_index)
-        , m_depth(tree_depth)
-    {
-    }
+    uint32_t m_index;                       ///< Source-graph vertex index.
+    uint32_t m_depth;                       ///< Depth within the tree (root = 0).
 
     std::shared_ptr<Node> m_left;   ///< Left sibling in the child ring.
     std::shared_ptr<Node> m_right;  ///< Right sibling in the child ring.
     std::shared_ptr<Node> m_son;    ///< First child of this node.
     std::weak_ptr<Node> m_parent;   ///< Non-owning back-reference to parent.
 
-    uint32_t m_index;                  ///< Source-graph vertex index.
-    uint32_t m_depth;                  ///< Depth within the tree (root = 0).
-    uint32_t m_match_edge_count = 0U;  ///< Accumulated matching-edge count along path from root.
+    /**
+     * @brief Construct a tree node and record it as live in @p tree_stats.
+     * @param vertex_index Index of the source-graph vertex this node represents.
+     * @param tree_depth Depth of this node within the tree (root is 0).
+     * @param tree_stats Non-owning handle to the owning Tree's live-memory counters.
+     */
+    explicit Node(const uint32_t vertex_index, const uint32_t tree_depth)
+        : m_index(vertex_index)
+        , m_depth(tree_depth)
+    {
+    }
+
+    Node(const Node&) = delete;
+    Node& operator=(const Node&) = delete;
+    Node(Node&&) = delete;
+    Node& operator=(Node&&) = delete;
 };
 
 using NodePtr = std::shared_ptr<Node>;

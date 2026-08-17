@@ -2,6 +2,7 @@
 
 #include "BoostGraph.h"
 #include "ColoredGraph.h"
+#include "CountsMap.h"
 #include "DebugLog.h"
 #include "LogLevel.h"
 #include "LoggerHandler.h"
@@ -27,32 +28,23 @@
 namespace sgf
 {
 
-MultiGraphPatternFinder::MultiGraphPatternFinder(std::vector<ColoredGraph>& graph_list,
-                                                 const bool is_directed, LoggerHandler logger)
+MultiGraphPatternFinder::MultiGraphPatternFinder(const std::vector<ColoredGraph>& graph_list,
+                                                 const bool is_directed, const uint32_t color_count,
+                                                 const uint32_t thread_index, LoggerHandler logger)
     : m_graph_list(graph_list)
     , m_is_directed(is_directed)
+    , m_color_count(color_count)
+    , m_thread_index(thread_index)
     , m_logger(std::move(logger))
 {
 }
 
 /* ---------- Initialisation helpers ---------- */
 
-void MultiGraphPatternFinder::build_color_map()
-{
-    m_color_map = PatternUtils::map_colors(m_graph_list);
-    std::string color_map_log = "color_map (remapped→original):";
-    for (uint32_t remapped = 0U; remapped < static_cast<uint32_t>(m_color_map.size()); ++remapped)
-    {
-        color_map_log += " " + std::to_string(remapped) + "→" + std::to_string(m_color_map[remapped]);
-    }
-    SGF_DEBUG_LOG(m_logger, color_map_log);
-}
-
 std::vector<double> MultiGraphPatternFinder::build_color_distribution() const
 {
-    return PatternUtils::compute_color_distribution(static_cast<uint32_t>(m_color_map.size()),
-                                                    static_cast<int32_t>(m_graph_list.size()),
-                                                    m_graph_list);
+    return PatternUtils::compute_color_distribution(
+        m_color_count, static_cast<int32_t>(m_graph_list.size()), m_graph_list);
 }
 
 std::vector<std::vector<NodePtr>> MultiGraphPatternFinder::initialize_match_trees()
@@ -135,49 +127,24 @@ void MultiGraphPatternFinder::setup_random_engine()
 
 /* ---------- Growth loop helpers ---------- */
 
-std::optional<std::tuple<uint32_t, uint32_t, bool>> MultiGraphPatternFinder::choose_next_vertex(
-    const CountsMap& combined_counts, const CountsMap& tree_support,
-    const uint32_t min_alive_count, const bool is_random)
+std::vector<MultiGraphPatternFinder::Entry> MultiGraphPatternFinder::build_candidates(
+    const CountsMap& combined_counts, const CountsMap& tree_support, const uint32_t min_alive_count)
 {
-    using Entry = std::pair<std::tuple<uint32_t, uint32_t, bool>, uint32_t>;
     std::vector<Entry> candidates;
     for (const auto& entry : combined_counts)
     {
         const CountsMap::const_iterator support_it = tree_support.find(entry.first);
-        if (support_it != tree_support.cend() &&
-            support_it->second >= min_alive_count)
+        if (support_it != tree_support.cend() && support_it->second >= min_alive_count)
         {
             candidates.emplace_back(entry.first, entry.second);
         }
     }
+    return candidates;
+}
 
-    if (candidates.empty())
-    {
-        SGF_DEBUG_LOG(m_logger, "choose_next_vertex: no candidates");
-        return std::nullopt;
-    }
-
-    std::string candidates_log = "choose_next_vertex: " +
-                                 std::to_string(candidates.size()) +
-                                 " candidates is_random=" + (is_random ? "true" : "false");
-    for (const Entry& candidate : candidates)
-    {
-        candidates_log += " (color=" + std::to_string(std::get<0>(candidate.first)) +
-                          " depth=" + std::to_string(std::get<1>(candidate.first)) +
-                          " reversed=" + (std::get<2>(candidate.first) ? "true" : "false") +
-                          " count=" + std::to_string(candidate.second) + ")";
-    }
-    SGF_DEBUG_LOG(m_logger, candidates_log);
-
-    if (!is_random)
-    {
-        const std::vector<Entry>::const_iterator best_it =
-            std::max_element(candidates.cbegin(), candidates.cend(),
-                             [](const Entry& left, const Entry& right)
-                             { return left.second < right.second; });
-        return best_it->first;
-    }
-
+std::tuple<uint32_t, uint32_t, bool>
+MultiGraphPatternFinder::sample_candidate_random(const std::vector<Entry>& candidates)
+{
     std::vector<double> weights;
     weights.reserve(candidates.size());
     for (const Entry& candidate : candidates)
@@ -189,14 +156,9 @@ std::optional<std::tuple<uint32_t, uint32_t, bool>> MultiGraphPatternFinder::cho
     return candidates[sampled_idx].first;
 }
 
-bool MultiGraphPatternFinder::attempt_add_vertex(const double alive_threshold,
-                                                 const bool is_random,
-                                                 std::vector<std::vector<NodePtr>>& leaf_matches)
+std::pair<CountsMap, CountsMap> MultiGraphPatternFinder::accumulate_vertex_counts(
+    const std::vector<std::vector<NodePtr>>& leaf_matches) const
 {
-    m_logger.log(LogLevel::TRACE, "Attempting to add vertex.");
-    const uint32_t min_alive_count = std::max(
-        1U, static_cast<uint32_t>(static_cast<double>(m_graph_list.size()) * alive_threshold));
-
     CountsMap combined_counts;
     CountsMap tree_support;
     for (const uint32_t graph_idx : m_alive_graph_indexes)
@@ -206,17 +168,66 @@ bool MultiGraphPatternFinder::attempt_add_vertex(const double alive_threshold,
             continue;
         }
         CountsMap per_tree_counts;
-        m_match_trees[graph_idx]->get_color_by_depth_neighbour_counts(
-            leaf_matches[graph_idx], per_tree_counts);
+        m_match_trees[graph_idx]->get_color_by_depth_neighbour_counts(leaf_matches[graph_idx],
+                                                                      per_tree_counts);
         for (const auto& entry : per_tree_counts)
         {
             combined_counts[entry.first] += entry.second;
             ++tree_support[entry.first];
         }
     }
+    return {combined_counts, tree_support};
+}
 
+std::optional<std::tuple<uint32_t, uint32_t, bool>>
+MultiGraphPatternFinder::choose_next_vertex(const CountsMap& combined_counts,
+                                            const CountsMap& tree_support,
+                                            const uint32_t min_alive_count, const bool is_random)
+{
+    const std::vector<Entry> candidates =
+        build_candidates(combined_counts, tree_support, min_alive_count);
+
+    if (candidates.empty())
+    {
+        SGF_DEBUG_LOG(m_logger, thread_log_prefix() + "choose_next_vertex: no candidates");
+        return std::nullopt;
+    }
+
+    std::string candidates_log = "choose_next_vertex: " + std::to_string(candidates.size()) +
+                                 " candidates is_random=" + (is_random ? "true" : "false");
+    for (const Entry& candidate : candidates)
+    {
+        candidates_log += " (color=" + std::to_string(std::get<0>(candidate.first)) +
+                          " depth=" + std::to_string(std::get<1>(candidate.first)) +
+                          " reversed=" + (std::get<2>(candidate.first) ? "true" : "false") +
+                          " count=" + std::to_string(candidate.second) + ")";
+    }
+    SGF_DEBUG_LOG(m_logger, thread_log_prefix() + candidates_log);
+
+    if (!is_random)
+    {
+        const std::vector<Entry>::const_iterator best_it =
+            std::max_element(candidates.cbegin(), candidates.cend(),
+                             [](const Entry& left, const Entry& right)
+                             {
+                                 return left.second < right.second;
+                             });
+        return best_it->first;
+    }
+
+    return sample_candidate_random(candidates);
+}
+
+bool MultiGraphPatternFinder::attempt_add_vertex(const double alive_threshold, const bool is_random,
+                                                 std::vector<std::vector<NodePtr>>& leaf_matches)
+{
+    log_with_thread(LogLevel::TRACE, "Attempting to add vertex.");
+    const uint32_t min_alive_count = std::max(
+        1U, static_cast<uint32_t>(static_cast<double>(m_graph_list.size()) * alive_threshold));
+
+    const std::pair<CountsMap, CountsMap> counts = accumulate_vertex_counts(leaf_matches);
     const std::optional<std::tuple<uint32_t, uint32_t, bool>> chosen =
-        choose_next_vertex(combined_counts, tree_support, min_alive_count, is_random);
+        choose_next_vertex(counts.first, counts.second, min_alive_count, is_random);
     if (!chosen)
     {
         return false;
@@ -228,10 +239,9 @@ bool MultiGraphPatternFinder::attempt_add_vertex(const double alive_threshold,
     const uint32_t new_vertex_id =
         static_cast<uint32_t>(boost::add_vertex(VertexProperties{new_vertex_color}, m_pattern));
 
-    m_logger.log(LogLevel::TRACE,
-                 "Adding vertex color=" + std::to_string(m_color_map[new_vertex_color]) +
-                     " connected_to=" + std::to_string(connection_vertex_id) +
-                     " reversed=" + (is_edge_reversed ? "true" : "false"));
+    log_with_thread(LogLevel::TRACE, "Adding vertex color=" + std::to_string(new_vertex_color) +
+                                         " connected_to=" + std::to_string(connection_vertex_id) +
+                                         " reversed=" + (is_edge_reversed ? "true" : "false"));
 
     PatternUtils::add_edge(m_is_directed, m_pattern,
                            is_edge_reversed ? new_vertex_id : connection_vertex_id,
@@ -248,8 +258,19 @@ void MultiGraphPatternFinder::log_alive_graph_indexes() const
     {
         alive_indices_log += std::to_string(alive_idx) + " ";
     }
-    m_logger.log(LogLevel::TRACE, "Alive indices: " + alive_indices_log);
+    log_with_thread(LogLevel::TRACE, "Alive indices: " + alive_indices_log);
 }
+
+std::string MultiGraphPatternFinder::thread_log_prefix() const
+{
+    return "[thread " + std::to_string(m_thread_index) + "] ";
+}
+
+void MultiGraphPatternFinder::log_with_thread(const LogLevel level, const std::string& message) const
+{
+    m_logger.log(level, thread_log_prefix() + message);
+}
+
 
 void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
                                                   const bool is_random,
@@ -275,7 +296,7 @@ void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
     }
     else
     {
-        m_logger.log(LogLevel::TRACE, "Attempting to add edge.");
+        log_with_thread(LogLevel::TRACE, "Attempting to add edge.");
         failed_add_edge = !add_edge(leaf_matches, 0.0, alive_threshold);
     }
 }
@@ -283,17 +304,14 @@ void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
 std::pair<BoostGraph, std::unordered_set<uint32_t>> MultiGraphPatternFinder::finalize_and_return(
     [[maybe_unused]] const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time)
 {
-    PatternUtils::recolor_pattern(m_pattern, m_color_map);
-
     [[maybe_unused]] const std::chrono::time_point<std::chrono::high_resolution_clock> end_time =
         std::chrono::high_resolution_clock::now();
     SGF_DEBUG_LOG(m_logger,
-                  "find_pattern completed in " +
+                  thread_log_prefix() + "find_pattern completed in " +
                       std::to_string(std::chrono::duration<double>(end_time - start_time).count()) +
                       "s");
 
     m_match_trees.clear();
-    m_color_map.clear();
 
     return {std::move(m_pattern), std::move(m_alive_graph_indexes)};
 }
@@ -373,7 +391,8 @@ void MultiGraphPatternFinder::extend_pattern_at_node_find_matches_in_s(
             collect_extension_candidates(graph_idx, leaf_matches, new_vertex_color,
                                          connection_vertex_id, is_edge_reversed);
 
-        update_tree_after_extension(graph_idx, extension_candidates, leaf_matches, connection_vertex_id);
+        update_tree_after_extension(graph_idx, extension_candidates, leaf_matches,
+                                    connection_vertex_id);
     }
 }
 
@@ -475,6 +494,12 @@ void MultiGraphPatternFinder::apply_edge_and_prune(const uint32_t pattern_src,
     }
 }
 
+uint64_t MultiGraphPatternFinder::encode_edge_key(const uint32_t source_vertex,
+                                                  const uint32_t target_vertex)
+{
+    return (static_cast<uint64_t>(source_vertex) << UPPER_32_BITS_SHIFT) | target_vertex;
+}
+
 bool MultiGraphPatternFinder::is_candidate_edge(const uint32_t source_vertex,
                                                 const uint32_t target_vertex) const
 {
@@ -483,6 +508,11 @@ bool MultiGraphPatternFinder::is_candidate_edge(const uint32_t source_vertex,
         return false;
     }
     if (!m_is_directed && source_vertex >= target_vertex)
+    {
+        return false;
+    }
+    if (m_dead_edge_pairs.find(encode_edge_key(source_vertex, target_vertex)) !=
+        m_dead_edge_pairs.cend())
     {
         return false;
     }
@@ -507,6 +537,11 @@ bool MultiGraphPatternFinder::find_best_candidate_edge(
 
             const uint32_t edge_score =
                 score_edge_support(source_vertex, target_vertex, leaf_matches);
+
+            if (edge_score == 0U)
+            {
+                m_dead_edge_pairs.insert(encode_edge_key(source_vertex, target_vertex));
+            }
 
             if (edge_score > best_score_out)
             {
@@ -542,9 +577,9 @@ bool MultiGraphPatternFinder::add_edge(std::vector<std::vector<NodePtr>>& leaf_m
         (best_score >= support_threshold * static_cast<double>(m_alive_graph_indexes.size())))
     {
         apply_edge_and_prune(best_src, best_tgt, leaf_matches);
-        m_logger.log(LogLevel::TRACE, "Adding edge (" + std::to_string(best_src) + ", " +
-                                         std::to_string(best_tgt) +
-                                         ") score=" + std::to_string(best_score));
+        log_with_thread(LogLevel::TRACE, "Adding edge (" + std::to_string(best_src) + ", " +
+                                             std::to_string(best_tgt) +
+                                             ") score=" + std::to_string(best_score));
         return true;
     }
 
@@ -556,7 +591,7 @@ bool MultiGraphPatternFinder::add_edge(std::vector<std::vector<NodePtr>>& leaf_m
 std::pair<BoostGraph, std::unordered_set<uint32_t>>
 MultiGraphPatternFinder::find_pattern(const double alive_threshold, const bool is_random)
 {
-    m_logger.log(LogLevel::INFO, "Start looking for pattern.");
+    log_with_thread(LogLevel::INFO, "Start looking for pattern.");
     if (m_graph_list.empty())
     {
         throw std::runtime_error("No input graphs provided to MultiGraphPatternFinder");
@@ -564,12 +599,12 @@ MultiGraphPatternFinder::find_pattern(const double alive_threshold, const bool i
 
     m_match_trees.clear();
     m_alive_graph_indexes.clear();
+    m_dead_edge_pairs.clear();
     m_pattern.clear();
 
     const std::chrono::time_point<std::chrono::high_resolution_clock> start_time =
         std::chrono::high_resolution_clock::now();
 
-    build_color_map();
     const std::vector<double> color_distribution = build_color_distribution();
 
     if (color_distribution.empty())
@@ -580,8 +615,7 @@ MultiGraphPatternFinder::find_pattern(const double alive_threshold, const bool i
     std::vector<std::vector<NodePtr>> leaf_matches = initialize_match_trees();
 
     const uint32_t first_color = select_first_color(color_distribution);
-    m_logger.log(LogLevel::TRACE,
-                 "Choosing first color: " + std::to_string(m_color_map[first_color]));
+    log_with_thread(LogLevel::TRACE, "Choosing first color: " + std::to_string(first_color));
 
     seed_initial_matches(first_color, leaf_matches);
     setup_random_engine();
@@ -597,7 +631,7 @@ MultiGraphPatternFinder::find_pattern(const double alive_threshold, const bool i
 
         if (failed_add_edge && done_adding_vertices)
         {
-            m_logger.log(LogLevel::INFO, "Done growing pattern.");
+            log_with_thread(LogLevel::INFO, "Done growing pattern.");
             break;
         }
 

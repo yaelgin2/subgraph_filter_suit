@@ -18,12 +18,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Cache apt packages (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-boost-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: apt-boost-${{ runner.os }}-
+
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake clang-tidy-17 clang-format-17 \
+          sudo apt-get install -y build-essential cmake ccache clang-tidy-17 clang-format-17 \
             libboost-graph-dev libboost-log-dev libboost-json-dev libboost-program-options-dev
+
+      - name: Cache ccache objects (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-
 
       - name: Add MinGW-w64 to PATH (Windows)
         if: runner.os == 'Windows'
@@ -62,7 +78,7 @@ jobs:
 
       - name: Configure (Linux)
         if: runner.os == 'Linux'
-        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Configure (Windows)
         if: runner.os == 'Windows'
@@ -77,12 +93,12 @@ jobs:
         shell: pwsh
 
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build --config Release --parallel
 
       - name: Run tests
         run: |
           cd build
-          ctest --output-on-failure -C Release
+          ctest --output-on-failure -C Release --parallel
 
       - name: Check formatting (Linux)
         if: runner.os == 'Linux'
@@ -92,7 +108,8 @@ jobs:
       - name: Run clang-tidy (Linux)
         if: runner.os == 'Linux'
         run: |
-          find src -name '*.cpp' | xargs clang-tidy-17 -p build/ --quiet
+          find src -name '*.cpp' -print0 \
+            | xargs -0 -n 1 -P $(nproc) clang-tidy-17 -p build/ --quiet
 
   build-and-test-msvc:
     runs-on: windows-latest
@@ -101,27 +118,80 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up MSVC environment
-        uses: microsoft/setup-msbuild@v2
+      - name: Enable vcpkg binary caching (MSVC)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - name: Install Boost via vcpkg (MSVC x64)
+        env:
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
         run: |
           vcpkg install boost-graph:x64-windows boost-log:x64-windows boost-json:x64-windows boost-program-options:x64-windows
           echo "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
         shell: pwsh
 
+      - name: Set up MSVC developer environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure (MSVC)
-        run: >
-          cmake -S . -B build
-          -G "Visual Studio 17 2022"
-          -A x64
-          -DCMAKE_TOOLCHAIN_FILE=${{ env.CMAKE_TOOLCHAIN_FILE }}
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        run: |
+          cmake -S . -B build `
+            -G Ninja `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE="${{ env.CMAKE_TOOLCHAIN_FILE }}" `
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        shell: pwsh
 
       - name: Build (MSVC)
-        run: cmake --build build --config Release
+        run: cmake --build build
 
       - name: Run tests (MSVC)
         run: |
           cd build
-          ctest --output-on-failure -C Release
+          ctest --output-on-failure -C Release --parallel
+
+  # Compile-only CUDA build — verifies that the GPU source layer compiles
+  # with nvcc. No GPU runner required: the nvidia/cuda Docker image supplies nvcc.
+  build-cuda:
+    runs-on: ubuntu-latest
+    container:
+      image: nvidia/cuda:12.6.0-devel-ubuntu24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y git cmake build-essential \
+            libboost-graph-dev libboost-log-dev libboost-json-dev \
+            libboost-program-options-dev
+
+      - name: Fetch cuco and CCCL headers
+        run: |
+          git clone --depth=1 --filter=blob:none --sparse \
+            https://github.com/NVIDIA/cuCollections.git
+          cd cuCollections && git sparse-checkout set include && cd ..
+          mkdir -p cuCollections/build/_deps
+          git clone --depth=1 --filter=blob:none --sparse \
+            https://github.com/NVIDIA/cccl.git cuCollections/build/_deps/cccl-src
+          cd cuCollections/build/_deps/cccl-src && \
+            git sparse-checkout set libcudacxx/include thrust cub
+
+      - name: Configure (CUDA enabled)
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DSGF_ENABLE_CUDA=ON \
+            -DCMAKE_CUDA_ARCHITECTURES="70;80;89"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel

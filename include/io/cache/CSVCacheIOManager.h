@@ -4,6 +4,7 @@
 #include "Int128.h"
 #include "LoggerHandler.h"
 
+#include <cstdint>
 #include <fstream>
 #include <string>
 #include <unordered_map>
@@ -18,6 +19,15 @@ namespace sgf
  *
  * File format: header row followed by one data row per (graph, motif) pair.
  * Columns: graph_index, motif_number (decimal UInt128), appearances.
+ *
+ * A graph whose enumeration result is empty (e.g. a star graph has no
+ * 5-vertex simple paths at all) still gets exactly one row, with motif_number
+ * 0 and appearances 0 (see write_rows). Without this sentinel row, the CSV
+ * format has no way to represent "this graph exists but matched nothing" —
+ * the graph's name would never appear in the file, and callers reading the
+ * cache back (e.g. GroupEnumerationGraphFilter) would have no record that the
+ * graph was part of the library at all, silently dropping it from filter
+ * results instead of correctly reporting it as unpruned.
  */
 class CSVCacheIOManager : public ICacheIOManager
 {
@@ -73,12 +83,19 @@ private:
     /**
      * @brief Writes one CSV row per (graph, motif) pair to @p file.
      *
+     * A graph with no entries in its EnumerationResult still gets one
+     * sentinel row (motif_number 0, appearances EMPTY_RESULT_APPEARANCES) so
+     * its name is preserved when the file is read back.
+     *
      * @param data        Enumeration data indexed by position.
      * @param graph_names Names aligned with @p data.
      * @param file        Opened output stream.
      */
     static void write_rows(const EnumerationResultVector& data,
                            const std::vector<std::string>& graph_names, std::ofstream& file);
+
+    /// Appearances value written for the sentinel row of a graph with no matches.
+    static constexpr uint32_t EMPTY_RESULT_APPEARANCES = 0U;
 
     /**
      * @brief Converts a UInt128 to its decimal string representation.

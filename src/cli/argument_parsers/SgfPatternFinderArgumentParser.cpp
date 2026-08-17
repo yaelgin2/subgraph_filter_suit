@@ -25,8 +25,10 @@ namespace sgf
 {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-std::optional<PatternFinderCliArgs> SgfPatternFinderArgumentParser::parse(const int argc,
-                                                                          char* argv[]) // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays,-warnings-as-errors)
+std::optional<PatternFinderCliArgs> SgfPatternFinderArgumentParser::parse(
+    const int argc,
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+    char* argv[])
 {
     const po::options_description desc = build_options();
     const po::variables_map variables_map = parse_raw(argc, argv, desc);
@@ -52,6 +54,8 @@ po::options_description SgfPatternFinderArgumentParser::build_options()
     common_desc.add_options()(KEY_IS_DIRECTED, po::bool_switch(), "Treat graphs as directed")(
         KEY_READER_TYPE, po::value<std::string>(),
         "Graph file format: graphml, json, vertex-edge (required)")(
+        KEY_THREAD_NUMBER, po::value<std::string>()->default_value("10"),
+        "Maximum number of threads to use during preprocessing (default: 10)")(
         KEY_LOG_FILE_PATH, po::value<std::string>(), "(optional) Log file path");
 
     po::options_description all_desc("sgf-pattern-finder options");
@@ -72,10 +76,6 @@ po::options_description SgfPatternFinderArgumentParser::build_preprocess_options
         "Directory where extracted patterns are written")(
         KEY_PATTERN_OUTPUT_TYPE, po::value<std::string>(),
         "Pattern file format: graphml, json, vertex-edge")(
-        KEY_PREPROCESS_MULTIGRAPH, po::value<std::string>()->default_value("0"),
-        "Number of multigraph patterns to extract (default: 0)")(
-        KEY_MULTIGRAPH_ALIVE_PERCENT, po::value<std::string>()->default_value("0"),
-        "Minimum alive percentage for multigraph patterns (default: 0)")(
         KEY_PREPROCESS_SINGLE_GRAPH_FROM_RESULTS, po::bool_switch(),
         "Derive single-graph index from a results file instead of --preprocess-single-graph")(
         KEY_RESULTS_FILE_PATH, po::value<std::string>(),
@@ -83,11 +83,17 @@ po::options_description SgfPatternFinderArgumentParser::build_preprocess_options
         KEY_RESULTS_FILE_TYPE, po::value<std::string>()->default_value("json"),
         "Results file format: json, csv (default: json)")(
         KEY_PREPROCESS_SINGLE_GRAPH, po::value<std::string>()->default_value("-1"),
-        "Index of single graph to process (required when using single-graph mode; -1 = disabled)")(
+        "Index of single graph to process; -1 = disabled (default: -1)")(
         KEY_BACKGROUND_GRAPH_PATH, po::value<std::string>()->default_value(""),
         "(optional) Path to background graph file for pattern scoring")(
         KEY_SCORE_THRESHOLD, po::value<std::string>()->default_value("0.0"),
-        "Pattern score cutoff; beam search stops below this value (default: 0.0)");
+        "Pattern score cutoff; beam search stops below this value (default: 0.0)")(
+        KEY_PREPROCESS_MULTIGRAPH, po::value<std::string>()->default_value("0"),
+        "Number of multigraph patterns to extract; 0 disables multigraph mode (default: 0)")(
+        KEY_MULTIGRAPH_ALIVE_PERCENT, po::value<std::string>()->default_value("0.5"),
+        "Fraction of library graphs a pattern must appear in, in (0, 1] (default: 0.5)")(
+        KEY_GRAPHML_COLOR_MAP_PATH, po::value<std::string>(),
+        "(optional) Path to a GraphML color map CSV to load as initial mapping");
     return desc;
 }
 
@@ -99,7 +105,7 @@ po::options_description SgfPatternFinderArgumentParser::build_filter_options()
         KEY_PATTERN_TYPE, po::value<std::string>(),
         "Pattern cache file format: graphml, json, vertex-edge")(
         KEY_BACKGROUND_GRAPH_FOLDER, po::value<std::string>(),
-        "Path to the background graph used during filtering")(
+        "Path to a background graph file or directory of background graphs used during filtering")(
         KEY_OUTPUT_PATH, po::value<std::string>(), "Directory where filter results are written")(
         KEY_OUTPUT_TYPE, po::value<std::string>(), "Filter results format: json, csv")(
         KEY_PRIOR_POLICY, po::value<std::string>(),
@@ -148,6 +154,12 @@ SgfPatternFinderArgumentParser::build_cli_args(const po::variables_map& variable
     result.m_is_directed = variables_map.at(KEY_IS_DIRECTED).as<bool>();
     result.m_reader_type = parse_reader_type(get_required_string(variables_map, KEY_READER_TYPE));
     result.m_log_file_path = get_optional_string(variables_map, KEY_LOG_FILE_PATH);
+    result.m_thread_number = parse_uint32_value(
+        variables_map.at(KEY_THREAD_NUMBER).as<std::string>(), KEY_THREAD_NUMBER);
+    if (result.m_thread_number == 0U)
+    {
+        throw SgfInvalidArgumentException("--thread-number must be at least 1");
+    }
     if (result.m_run_preprocess)
     {
         result.m_preprocess = parse_preprocess_args(variables_map);
@@ -167,11 +179,6 @@ SgfPatternFinderArgumentParser::parse_preprocess_args(const po::variables_map& v
     result.m_output_folder = get_required_string(variables_map, KEY_OUTPUT_FOLDER);
     result.m_pattern_output_type =
         parse_pattern_writer_type(get_required_string(variables_map, KEY_PATTERN_OUTPUT_TYPE));
-    result.m_preprocess_multigraph = parse_uint32_value(
-        variables_map.at(KEY_PREPROCESS_MULTIGRAPH).as<std::string>(), KEY_PREPROCESS_MULTIGRAPH);
-    result.m_multigraph_alive_percent =
-        parse_double_value(variables_map.at(KEY_MULTIGRAPH_ALIVE_PERCENT).as<std::string>(),
-                           KEY_MULTIGRAPH_ALIVE_PERCENT);
     result.m_preprocess_single_graph_from_results =
         variables_map.at(KEY_PREPROCESS_SINGLE_GRAPH_FROM_RESULTS).as<bool>();
     result.m_results_file_path = get_optional_string(variables_map, KEY_RESULTS_FILE_PATH);
@@ -189,6 +196,13 @@ SgfPatternFinderArgumentParser::parse_preprocess_args(const po::variables_map& v
         parse_double_value(variables_map.at(KEY_ALPHA_0).as<std::string>(), KEY_ALPHA_0);
     result.m_config.m_alpha_decay =
         parse_double_value(variables_map.at(KEY_ALPHA_DECAY).as<std::string>(), KEY_ALPHA_DECAY);
+    result.m_preprocess_multigraph = parse_uint32_value(
+        variables_map.at(KEY_PREPROCESS_MULTIGRAPH).as<std::string>(), KEY_PREPROCESS_MULTIGRAPH);
+    result.m_multigraph_alive_percent =
+        parse_double_value(variables_map.at(KEY_MULTIGRAPH_ALIVE_PERCENT).as<std::string>(),
+                           KEY_MULTIGRAPH_ALIVE_PERCENT);
+    result.m_graphml_color_map_path =
+        get_optional_string(variables_map, KEY_GRAPHML_COLOR_MAP_PATH);
     return result;
 }
 
@@ -232,6 +246,18 @@ void SgfPatternFinderArgumentParser::validate_preprocess_args(const PatternPrepr
     {
         throw SgfInvalidArgumentException(
             "--results-file-path is required when --preprocess-single-graph-from-results is set.");
+    }
+    if (args.m_preprocess_single_graph != SINGLE_GRAPH_DISABLED &&
+        args.m_background_graph_path.empty())
+    {
+        throw SgfInvalidArgumentException(
+            "--background-graph-path is required when --preprocess-single-graph is set.");
+    }
+    if (args.m_preprocess_multigraph > 0U &&
+        (args.m_multigraph_alive_percent <= 0.0 || args.m_multigraph_alive_percent > 1.0))
+    {
+        throw SgfInvalidArgumentException(
+            "--multigraph-alive-percent must be in (0, 1] when --preprocess-multigraph is set.");
     }
 }
 

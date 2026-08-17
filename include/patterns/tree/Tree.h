@@ -34,7 +34,7 @@ public:
      * @param graph The source graph; directionality is inferred from it.
      * @param logger Logger instance.
      */
-    Tree(uint32_t root_vertex_index, const ColoredGraph& graph, const LoggerHandler& logger);
+    Tree(uint32_t root_vertex_index, const ColoredGraph& graph, LoggerHandler logger);
 
     Tree() = delete;
     Tree(const Tree&) = delete;
@@ -43,9 +43,10 @@ public:
     Tree& operator=(Tree&&) = delete;
 
     /**
-     * @brief Destructor — default; shared_ptr cleanup handles the tree nodes.
+     * @brief Destructor — detaches any remaining nodes so their sibling-ring
+     *        references cannot keep each other alive after the tree is gone.
      */
-    ~Tree() = default;
+    ~Tree();
 
     /**
      * @brief Return the root node.
@@ -110,10 +111,10 @@ public:
                                              CountsMap& counts) const;
 
 private:
-    NodePtr m_root;               ///< Root node of the tree.
-    LoggerHandler m_logger;       ///< Logger.
-    const ColoredGraph& m_graph;  ///< Source graph for neighbour lookups.
-    bool m_is_directed;          ///< Whether the source graph is directed (inferred from m_graph).
+    NodePtr m_root;                      ///< Root node of the tree.
+    LoggerHandler m_logger;              ///< Logger.
+    const ColoredGraph& m_graph;         ///< Source graph for neighbour lookups.
+    bool m_is_directed;          ///< Whether the source graph is directed (inferred from m_graph).s
 
     /**
      * @brief Insert a new child node under @p parent.
@@ -128,6 +129,18 @@ private:
      * @param node The node to remove from the ring.
      */
     static void splice_out_of_sibling_ring(const NodePtr& node);
+
+    /**
+     * @brief Recursively clear a subtree's internal sibling-ring links.
+     *
+     * The sibling ring is a circular doubly-linked structure of shared_ptr, so
+     * dropping the single external reference to it (the parent's m_son) is not
+     * enough to release it — the ring keeps its own members alive. This walks
+     * every descendant and clears m_left/m_right/m_son so ordinary reference
+     * counting can reclaim the nodes once local references go out of scope.
+     * @param node Subtree root whose descendants' ring links should be cleared.
+     */
+    static void detach_subtree(const NodePtr& node);
 
     /**
      * @brief Remove a leaf node from the sibling ring and update the parent.
@@ -152,17 +165,17 @@ private:
     attach_all_new_nodes(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs);
 
     /**
-     * @brief Accumulate neighbour counts in one edge direction for every vertex in @p path.
+     * @brief Accumulate neighbour counts in one edge direction for a single frontier vertex.
      *
-     * For each vertex in @p path, every graph neighbour reachable via @p is_reversed edges
-     * that is NOT already in @p path_set is counted under {colour, pattern_index, is_reversed}.
+     * Every graph neighbour of @p vertex_node reachable via @p is_reversed edges that is NOT
+     * already in @p path_set is counted under {colour, depth-1, is_reversed}.
      *
-     * @param path        Vertex indices indexed by pattern depth.
-     * @param path_set    Set of vertex indices currently in @p path.
+     * @param vertex_node Frontier node whose neighbours are counted.
+     * @param path_set    Set of vertex indices to exclude.
      * @param is_reversed False for out-edges, true for in-edges.
      * @param counts      Accumulator updated in-place.
      */
-    void accumulate_direction_neighbour_counts(const std::vector<uint32_t>& path,
+    void accumulate_direction_neighbour_counts(const NodePtr& vertex_node,
                                                const std::unordered_set<uint32_t>& path_set,
                                                bool is_reversed, CountsMap& counts) const;
 
@@ -172,13 +185,62 @@ private:
      * Calls accumulate_direction_neighbour_counts for out-edges and, when the
      * source graph is directed, again for in-edges.
      *
-     * @param path     Vertex indices indexed by pattern depth.
-     * @param path_set Set of vertex indices currently in @p path.
-     * @param counts   Accumulator updated in-place.
+     * @param vertex_node Frontier node whose neighbours are counted.
+     * @param path_set    Set of vertex indices to exclude.
+     * @param counts      Accumulator updated in-place.
      */
-    void accumulate_path_neighbour_counts(const std::vector<uint32_t>& path,
-                                          const std::unordered_set<uint32_t>& path_set,
-                                          CountsMap& counts) const;
+    void accumulate_vertex_neighbour_counts(const NodePtr& vertex_node,
+                                            const std::unordered_set<uint32_t>& path_set,
+                                            CountsMap& counts) const;
+
+    /**
+     * @brief Build the initial per-leaf frontier: one entry per leaf, each with its own
+     *        full ancestor path (root excluded).
+     * @param leaves         Current match-tree leaves, siblings consecutive.
+     * @param frontier_nodes Filled with a copy of @p leaves.
+     * @param frontier_paths Filled with each leaf's own ancestor-path set.
+     */
+    void build_leaf_frontier_paths(const std::vector<NodePtr>& leaves,
+                                   std::vector<NodePtr>& frontier_nodes,
+                                   std::vector<std::unordered_set<uint32_t>>& frontier_paths) const;
+
+    /**
+     * @brief Count every frontier vertex's unreached neighbours into @p counts.
+     * @param frontier_nodes Current frontier vertices.
+     * @param frontier_paths Matching per-vertex exclusion sets.
+     * @param counts         Accumulator updated in-place.
+     */
+    void accumulate_frontier_neighbour_counts(
+        const std::vector<NodePtr>& frontier_nodes,
+        const std::vector<std::unordered_set<uint32_t>>& frontier_paths, CountsMap& counts) const;
+
+    /**
+     * @brief Climb the frontier one level, merging siblings that share a parent.
+     *
+     * Consecutive frontier entries with the same parent collapse into one entry
+     * whose path set is the intersection of the merged entries' path sets.
+     *
+     * @param frontier_nodes Updated in-place to the parent frontier.
+     * @param frontier_paths Updated in-place to match.
+     */
+    void advance_frontier_to_parents(std::vector<NodePtr>& frontier_nodes,
+                                     std::vector<std::unordered_set<uint32_t>>& frontier_paths) const;
+
+    /**
+     * @brief Seed path_set from a leaf's ancestor chain (root excluded).
+     * @param leaf      Leaf node to walk up from.
+     * @param path_set  Filled with the leaf's ancestor-chain vertex indices.
+     */
+    static void seed_path_from_leaf(const NodePtr& leaf, std::unordered_set<uint32_t>& path_set);
+
+    /**
+     * @brief Advance path_set from @p prev_leaf to @p curr_leaf via their common ancestor.
+     * @param prev_leaf  Leaf from the previous iteration.
+     * @param curr_leaf  Leaf for the current iteration.
+     * @param path_set   Updated in-place.
+     */
+    static void update_path_to_next_leaf(const NodePtr& prev_leaf, const NodePtr& curr_leaf,
+                                         std::unordered_set<uint32_t>& path_set);
 };
 
 }  // namespace sgf

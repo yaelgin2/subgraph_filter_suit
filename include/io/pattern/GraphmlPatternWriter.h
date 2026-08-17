@@ -28,7 +28,8 @@ private:
      * @param graph Input graph.
      * @param path Output file path.
      */
-    void do_write(const BoostGraph& graph, const std::string& path) const override;
+    void do_write(const BoostGraph& graph, const std::string& path,
+                  bool is_directed) const override;
     /**
      * @brief Copies all vertices and their color properties from @p graph into @p out.
      * @param graph Source BoostGraph.
@@ -39,10 +40,13 @@ private:
 
     /**
      * @brief Copies all edges and their color properties from @p graph into @p out.
-     * @param graph Source BoostGraph.
-     * @param out Destination GraphML-compatible Boost graph; vertices must already be populated.
+     * @param graph       Source BoostGraph.
+     * @param out         Destination GraphML-compatible Boost graph; vertices must already be
+     * populated.
+     * @param is_directed When false, skips the higher-index endpoint of each symmetric edge pair.
      */
-    static void build_edges(const BoostGraph& graph, IOConstants::GraphmlDirectedBoostGraph& out);
+    static void build_edges(const BoostGraph& graph, IOConstants::GraphmlDirectedBoostGraph& out,
+                            bool is_directed);
 };
 
 }  // namespace sgf

@@ -601,25 +601,27 @@ TEST_F(GraphmlGraphReaderTest, no_color_keys_defaults_to_zero)
 // ── Self-loop ─────────────────────────────────────────────────────────────────
 
 /**
- * @brief A self-loop edge in an undirected graphml must throw InvalidArgumentException
+ * @brief A self-loop edge in an undirected graphml is silently discarded, not an error
  * (propagated from the ColoredGraph constructor).
  */
-TEST_F(GraphmlGraphReaderTest, self_loop_undirected_throws_invalid_argument)
+TEST_F(GraphmlGraphReaderTest, self_loop_undirected_is_discarded)
 {
-    EXPECT_THROW(m_reader.read(data("self_loop_undirected.graphml"), false,
-                               LoggerHandler(std::weak_ptr<ILogger>{})),
-                 InvalidArgumentException);
+    const ColoredGraph graph = m_reader.read(data("self_loop_undirected.graphml"), false,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 2U);
+    EXPECT_EQ(graph.edge_count(), 0U);
 }
 
 /**
- * @brief A self-loop edge in a directed graphml must throw InvalidArgumentException
+ * @brief A self-loop edge in a directed graphml is silently discarded, not an error
  * (propagated from the ColoredGraph constructor).
  */
-TEST_F(GraphmlGraphReaderTest, self_loop_directed_throws_invalid_argument)
+TEST_F(GraphmlGraphReaderTest, self_loop_directed_is_discarded)
 {
-    EXPECT_THROW(m_reader.read(data("self_loop_directed.graphml"), true,
-                               LoggerHandler(std::weak_ptr<ILogger>{})),
-                 InvalidArgumentException);
+    const ColoredGraph graph = m_reader.read(data("self_loop_directed.graphml"), true,
+                                             LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 2U);
+    EXPECT_EQ(graph.edge_count(), 0U);
 }
 
 // ── Duplicate vertex ID ───────────────────────────────────────────────────────

@@ -22,10 +22,36 @@ namespace sgf
  * The string→uint color registry (@c m_color_map) is shared across all calls
  * to @c read on the same instance, so the same color string always maps to the
  * same integer ID regardless of which file introduced it first.
+ *
+ * An initial map can be supplied at construction to reuse the registry from a
+ * prior library load (loaded via @c GraphmlColorMapIOManager::load).  After
+ * reading the library, call @c get_color_map() and persist the result with
+ * @c GraphmlColorMapIOManager::save.
  */
 class GraphmlGraphReader : public IColoredGraphReader
 {
 public:
+    /**
+     * @brief Constructs a reader with an optional pre-populated color registry.
+     *
+     * If @p initial_color_map is non-empty, all colour strings it contains are
+     * pre-assigned their recorded IDs before the first @c read call.  New strings
+     * encountered during reading are appended with the next available ID.
+     *
+     * @param initial_color_map  Existing string→uint registry, or empty to start fresh.
+     */
+    explicit GraphmlGraphReader(std::map<std::string, uint32_t> initial_color_map = {});
+
+    /**
+     * @brief Returns the accumulated string→uint color registry.
+     *
+     * May be called after reading a library to obtain the full map for
+     * persistence via @c GraphmlColorMapIOManager::save.
+     *
+     * @return Const reference to the accumulated color map.
+     */
+    [[nodiscard]] const std::map<std::string, uint32_t>& get_color_map() const;
+
     /**
      * @brief Reads a ColoredGraph from a GraphML file.
      *
@@ -88,11 +114,13 @@ private:
      * @param file_is_directed Whether the file declares directed edges.
      * @param is_directed Whether to build a directed ColoredGraph.
      * @param color_map Receives the string→uint color registry built during parsing.
+     * @param logger Logger forwarded to the ColoredGraph constructor.
      * @return The parsed ColoredGraph.
      */
     static ColoredGraph read_graphml_from_file(const std::string& path, bool file_is_directed,
                                                bool is_directed,
-                                               std::map<std::string, uint32_t>& color_map);
+                                               std::map<std::string, uint32_t>& color_map,
+                                               const LoggerHandler& logger);
 
     /**
      * @brief Logs direction mismatch warning and the color map.

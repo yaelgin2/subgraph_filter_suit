@@ -57,7 +57,30 @@ add_sgf_test(single_graph_pattern_finder_tests          patterns/pattern_finders
 add_sgf_test(multi_graph_pattern_finder_tests           patterns/pattern_finders/MultiGraphPatternFinderTest.cpp)
 
 add_sgf_test(motif_preprocessor_tests                   preprocessing/MotifPreprocessorTest.cpp)
+if(MSVC)
+    target_link_options(motif_preprocessor_tests PRIVATE /STACK:8388608)
+elseif(MINGW)
+    target_link_options(motif_preprocessor_tests PRIVATE -Wl,--stack,8388608)
+endif()
+if(SGF_ENABLE_CUDA)
+    add_sgf_test(gpu_motif_preprocessor_tests           preprocessing/GpuMotifPreprocessorTest.cu)
+    set_target_properties(gpu_motif_preprocessor_tests PROPERTIES
+        CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}"
+        CUDA_SEPARABLE_COMPILATION ON)
+    target_link_libraries(gpu_motif_preprocessor_tests PRIVATE cuco CUDA::cudart)
+    target_compile_options(gpu_motif_preprocessor_tests PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)
+endif()
 add_sgf_test(path_processor_tests                       preprocessing/PathProcessorTest.cpp)
+if(SGF_ENABLE_CUDA)
+    add_sgf_test(gpu_path_processor_tests               preprocessing/GpuPathProcessorTest.cu)
+    set_target_properties(gpu_path_processor_tests PROPERTIES
+        CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}"
+        CUDA_SEPARABLE_COMPILATION ON)
+    target_link_libraries(gpu_path_processor_tests PRIVATE cuco CUDA::cudart)
+    target_compile_options(gpu_path_processor_tests PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)
+endif()
 add_sgf_test(single_graph_pattern_preprocessor_tests    preprocessing/SingleGraphPatternPreprocessorTest.cpp)
 
 add_sgf_test(enumeration_preprocess_manager_tests       managers/EnumerationPreprocessManagerTest.cpp)

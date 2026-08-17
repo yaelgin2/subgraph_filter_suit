@@ -10,8 +10,11 @@
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/value_semantic.hpp>
 #include <boost/program_options/variables_map.hpp>
+#include <cstdint>
 #include <iostream>
+#include <limits>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
 namespace po = boost::program_options;
@@ -50,8 +53,13 @@ po::options_description SgfGraphEnumeratorArgumentParser::build_options()
     common_desc.add_options()(KEY_IS_DIRECTED, po::bool_switch(), "Treat graphs as directed")(
         KEY_NON_INDUCED, po::bool_switch(),
         "Expand induced motif counts via inclusion DAG before filtering")(
+        KEY_GPU, po::bool_switch(), "Offload motif enumeration to GPU kernels (requires CUDA)")(
+        KEY_THREAD_NUMBER, po::value<std::string>()->default_value("10"),
+        "Maximum number of threads to use during preprocessing (default: 10)")(
         KEY_CACHE_TYPE, po::value<std::string>(), "Cache format: binary, csv")(
-        KEY_LOG_FILE_PATH, po::value<std::string>(), "(optional) Log file path");
+        KEY_LOG_FILE_PATH, po::value<std::string>(), "(optional) Log file path")(
+        KEY_GRAPHML_COLOR_MAP_PATH, po::value<std::string>(),
+        "(optional) Path to a GraphML color map CSV to load as initial mapping");
 
     po::options_description all_desc("sgf-graph-enumerator options");
     all_desc.add(mode_desc)
@@ -126,6 +134,13 @@ CliArgs SgfGraphEnumeratorArgumentParser::build_cli_args(const po::variables_map
     result.m_use_paths = variables_map.at(KEY_PATHS).as<bool>();
     result.m_is_directed = variables_map.at(KEY_IS_DIRECTED).as<bool>();
     result.m_non_induced = variables_map.at(KEY_NON_INDUCED).as<bool>();
+    result.m_use_gpu = variables_map.at(KEY_GPU).as<bool>();
+    result.m_thread_number = parse_uint32_value(
+        variables_map.at(KEY_THREAD_NUMBER).as<std::string>(), KEY_THREAD_NUMBER);
+    if (result.m_thread_number == 0U)
+    {
+        throw SgfInvalidArgumentException("--thread-number must be at least 1");
+    }
     if (result.m_run_preprocess)
     {
         result.m_preprocess = parse_preprocess_args(variables_map);
@@ -146,6 +161,8 @@ SgfGraphEnumeratorArgumentParser::parse_preprocess_args(const po::variables_map&
     result.m_reader_type = parse_reader_type(get_required_string(variables_map, KEY_READER_TYPE));
     result.m_cache_type = parse_cache_type(get_required_string(variables_map, KEY_CACHE_TYPE));
     result.m_log_file_path = get_optional_string(variables_map, KEY_LOG_FILE_PATH);
+    result.m_graphml_color_map_path =
+        get_optional_string(variables_map, KEY_GRAPHML_COLOR_MAP_PATH);
     return result;
 }
 
@@ -168,6 +185,8 @@ SgfGraphEnumeratorArgumentParser::parse_filter_args(const po::variables_map& var
         get_optional_string(variables_map, KEY_LOAD_MOTIF_GRAPH_CACHE);
     result.m_load_path_graph_cache_path =
         get_optional_string(variables_map, KEY_LOAD_PATH_GRAPH_CACHE);
+    result.m_graphml_color_map_path =
+        get_optional_string(variables_map, KEY_GRAPHML_COLOR_MAP_PATH);
     return result;
 }
 
@@ -266,6 +285,35 @@ SgfGraphEnumeratorArgumentParser::get_optional_string(const po::variables_map& v
         return {};
     }
     return variables_map.at(key).as<std::string>();
+}
+
+uint32_t SgfGraphEnumeratorArgumentParser::parse_uint32_value(const std::string& val,
+                                                              const char* flag_name)
+{
+    try
+    {
+        const unsigned long result = std::stoul(val);
+        if (result > std::numeric_limits<uint32_t>::max())
+        {
+            throw SgfInvalidArgumentException("Value out of range for --" + std::string(flag_name) +
+                                              ": '" + val + "'");
+        }
+        return static_cast<uint32_t>(result);
+    }
+    catch (const SgfInvalidArgumentException&)
+    {
+        throw;
+    }
+    catch (const std::out_of_range&)
+    {
+        throw SgfInvalidArgumentException("Value out of range for --" + std::string(flag_name) +
+                                          ": '" + val + "'");
+    }
+    catch (const std::invalid_argument&)
+    {
+        throw SgfInvalidArgumentException("Invalid integer value for --" + std::string(flag_name) +
+                                          ": '" + val + "'");
+    }
 }
 
 GraphReaderType SgfGraphEnumeratorArgumentParser::parse_reader_type(const std::string& type_str)

@@ -931,13 +931,15 @@ TEST_F(VertexEdgeGraphReaderTest, non_numeric_token_edge_file_throws_graph_const
 // ── Self-loop ─────────────────────────────────────────────────────────────────
 
 /**
- * @brief A self-loop edge in the .edges file must throw InvalidArgumentException
+ * @brief A self-loop edge in the .edges file is silently discarded, not an error
  * (propagated from the ColoredGraph constructor).
  */
-TEST_F(VertexEdgeGraphReaderTest, self_loop_throws_invalid_argument)
+TEST_F(VertexEdgeGraphReaderTest, self_loop_is_discarded)
 {
-    EXPECT_THROW(m_reader.read(data("self_loop"), false, LoggerHandler(std::weak_ptr<ILogger>{})),
-                 InvalidArgumentException);
+    const ColoredGraph graph =
+        m_reader.read(data("self_loop"), false, LoggerHandler(std::weak_ptr<ILogger>{}));
+    EXPECT_EQ(graph.vertex_count(), 1U);
+    EXPECT_EQ(graph.edge_count(), 0U);
 }
 
 // ── Non-consecutive IDs: color preservation ───────────────────────────────────

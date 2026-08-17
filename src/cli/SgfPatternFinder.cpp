@@ -20,11 +20,12 @@ void run_preprocess(const PatternFinderCliArgs& args)
     FlowManager::pattern_preprocess_run(
         args.m_preprocess.m_library_input_folder, args.m_is_directed, args.m_reader_type,
         output_folder, args.m_preprocess.m_pattern_output_type, args.m_log_file_path,
-        args.m_preprocess.m_preprocess_multigraph, args.m_preprocess.m_multigraph_alive_percent,
         args.m_preprocess.m_preprocess_single_graph_from_results,
         args.m_preprocess.m_results_file_path, args.m_preprocess.m_preprocess_single_graph,
         args.m_preprocess.m_results_file_type, args.m_preprocess.m_background_graph_path,
-        args.m_preprocess.m_score_threshold, args.m_preprocess.m_config);
+        args.m_preprocess.m_score_threshold, args.m_preprocess.m_config,
+        args.m_preprocess.m_preprocess_multigraph, args.m_preprocess.m_multigraph_alive_percent,
+        args.m_thread_number, args.m_preprocess.m_graphml_color_map_path);
 }
 
 /**
