@@ -77,7 +77,7 @@ namespace sgf
 {
 
 Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, LoggerHandler logger)
-    : m_root()
+    : m_root(std::make_shared<Node>(root_vertex_index, 0U))
     , m_logger(std::move(logger))
     , m_graph(graph)
     , m_is_directed(graph.is_directed())
