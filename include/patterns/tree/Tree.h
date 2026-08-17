@@ -4,6 +4,7 @@
 #include "CountsMap.h"
 #include "LoggerHandler.h"
 #include "Node.h"
+#include "TreeStats.h"
 
 #include <cstdint>
 #include <memory>
@@ -43,9 +44,10 @@ public:
     Tree& operator=(Tree&&) = delete;
 
     /**
-     * @brief Destructor — default; shared_ptr cleanup handles the tree nodes.
+     * @brief Destructor — detaches any remaining nodes so their sibling-ring
+     *        references cannot keep each other alive after the tree is gone.
      */
-    ~Tree() = default;
+    ~Tree();
 
     /**
      * @brief Return the root node.
@@ -58,6 +60,24 @@ public:
      * @return True if the root has been cleared.
      */
     bool is_empty() const;
+
+    /**
+     * @brief Return the number of currently live nodes.
+     * @return Live node count.
+     */
+    uint64_t get_node_count() const;
+
+    /**
+     * @brief Return the number of currently live leaf nodes.
+     * @return Live leaf count.
+     */
+    uint64_t get_leaf_count() const;
+
+    /**
+     * @brief Return the total bytes occupied by currently live nodes.
+     * @return Live byte total.
+     */
+    uint64_t get_total_bytes() const;
 
     /**
      * @brief Add a new level of children to the tree.
@@ -110,10 +130,17 @@ public:
                                              CountsMap& counts) const;
 
 private:
-    NodePtr m_root;               ///< Root node of the tree.
-    LoggerHandler m_logger;       ///< Logger.
-    const ColoredGraph& m_graph;  ///< Source graph for neighbour lookups.
-    bool m_is_directed;           ///< Whether the source graph is directed (inferred from m_graph).
+    std::shared_ptr<TreeStats> m_stats;  ///< Live node-count/byte counters, shared with Node.
+    NodePtr m_root;                      ///< Root node of the tree.
+    LoggerHandler m_logger;              ///< Logger.
+    const ColoredGraph& m_graph;         ///< Source graph for neighbour lookups.
+    bool m_is_directed;          ///< Whether the source graph is directed (inferred from m_graph).
+    uint64_t m_leaf_count = 0U;  ///< Number of currently live leaf nodes.
+
+    /**
+     * @brief Log the current tree size, leaf count, and byte total at DEBUG level.
+     */
+    void log_growth() const;
 
     /**
      * @brief Insert a new child node under @p parent.
@@ -128,6 +155,18 @@ private:
      * @param node The node to remove from the ring.
      */
     static void splice_out_of_sibling_ring(const NodePtr& node);
+
+    /**
+     * @brief Recursively clear a subtree's internal sibling-ring links.
+     *
+     * The sibling ring is a circular doubly-linked structure of shared_ptr, so
+     * dropping the single external reference to it (the parent's m_son) is not
+     * enough to release it — the ring keeps its own members alive. This walks
+     * every descendant and clears m_left/m_right/m_son so ordinary reference
+     * counting can reclaim the nodes once local references go out of scope.
+     * @param node Subtree root whose descendants' ring links should be cleared.
+     */
+    static void detach_subtree(const NodePtr& node);
 
     /**
      * @brief Remove a leaf node from the sibling ring and update the parent.
