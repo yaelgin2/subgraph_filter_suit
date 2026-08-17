@@ -1,0 +1,3 @@
+[submodule "cuCollections"]
+	path = cuCollections
+	url = https://github.com/NVIDIA/cuCollections.git

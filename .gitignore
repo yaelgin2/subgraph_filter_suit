@@ -46,3 +46,4 @@ local_tests/*
 
 # scratch output from running examples/README.md commands
 examples/output/
+cuCollections/*
