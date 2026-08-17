@@ -101,7 +101,6 @@ void MultiGraphPatternFinder::seed_initial_matches(const uint32_t first_color,
             initial_match_pairs.emplace_back(matched_vertex, m_match_trees[graph_idx]->get_root());
         }
         leaf_matches[graph_idx] = m_match_trees[graph_idx]->add_tree_level(initial_match_pairs);
-        log_tree_growth(graph_idx, static_cast<uint32_t>(leaf_matches[graph_idx].size()));
 
         if (initial_matches.empty())
         {
@@ -273,14 +272,6 @@ void MultiGraphPatternFinder::log_with_thread(const LogLevel level, const std::s
     m_logger.log(level, thread_log_prefix() + message);
 }
 
-void MultiGraphPatternFinder::log_tree_growth(const uint32_t graph_idx,
-                                              const uint32_t leaf_count) const
-{
-    log_with_thread(LogLevel::TRACE, "Tree grown: graph=" + std::to_string(graph_idx) +
-                                         " tree_size=" +
-                                         std::to_string(m_match_trees[graph_idx]->size()) +
-                                         " matches=" + std::to_string(leaf_count));
-}
 
 void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
                                                   const bool is_random,
@@ -378,7 +369,6 @@ void MultiGraphPatternFinder::update_tree_after_extension(
     }
 
     leaf_matches[graph_idx] = std::move(new_leaf_nodes);
-    log_tree_growth(graph_idx, static_cast<uint32_t>(leaf_matches[graph_idx].size()));
 
     if (m_match_trees[graph_idx]->is_empty())
     {

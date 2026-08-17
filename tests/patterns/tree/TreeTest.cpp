@@ -324,35 +324,6 @@ TEST_F(TreeTest, counts_include_child_neighbours)
 
 // ── Node/byte accounting & memory safety ────────────────────────────────────────
 
-/**
- * @brief Growing and shrinking the tree keeps node/leaf/byte counters accurate.
- *
- * The byte/node counters only decrement once a removed node is actually freed
- * (all external NodePtr references dropped), not merely once it is unlinked from
- * the tree — hence the explicit child.reset() before the final assertions.
- */
-TEST_F(TreeTest, growth_updates_node_leaf_and_byte_counts)
-{
-    const ColoredGraph graph = make_star_5();
-    Tree tree(0U, graph, null_logger());
-    EXPECT_EQ(tree.get_node_count(), 1U);
-    EXPECT_EQ(tree.get_leaf_count(), 1U);
-    EXPECT_EQ(tree.get_total_bytes(), sizeof(Node));
-
-    const NodePtr root = tree.get_root();
-    std::vector<NodePtr> children = tree.add_tree_level({{1U, root}, {2U, root}});
-    EXPECT_EQ(tree.get_node_count(), 3U);
-    EXPECT_EQ(tree.get_leaf_count(), 2U);
-    EXPECT_EQ(tree.get_total_bytes(), 3U * sizeof(Node));
-
-    NodePtr removed_child = children[0];
-    children[0].reset();
-    tree.remove_node(removed_child);
-    removed_child.reset();
-    EXPECT_EQ(tree.get_node_count(), 2U);
-    EXPECT_EQ(tree.get_leaf_count(), 1U);
-    EXPECT_EQ(tree.get_total_bytes(), 2U * sizeof(Node));
-}
 
 /**
  * @brief Destroying a Tree that still holds sibling nodes releases all of them.

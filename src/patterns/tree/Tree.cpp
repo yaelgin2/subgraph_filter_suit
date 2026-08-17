@@ -8,7 +8,6 @@
 #include "LogLevel.h"
 #include "LoggerHandler.h"
 #include "Node.h"
-#include "TreeStats.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -73,15 +72,12 @@ namespace sgf
 {
 
 Tree::Tree(const uint32_t root_vertex_index, const ColoredGraph& graph, LoggerHandler logger)
-    : m_stats(std::make_shared<TreeStats>())
-    , m_root(std::make_shared<Node>(root_vertex_index, 0U, m_stats))
+    : m_root()
     , m_logger(std::move(logger))
     , m_graph(graph)
     , m_is_directed(graph.is_directed())
 {
-    ++m_leaf_count;
     SGF_DEBUG_LOG(m_logger, "Tree: root=" + std::to_string(root_vertex_index));
-    log_growth();
 }
 
 Tree::~Tree()
@@ -90,13 +86,6 @@ Tree::~Tree()
     {
         detach_subtree(m_root);
     }
-}
-
-void Tree::log_growth() const
-{
-    SGF_DEBUG_LOG(m_logger, "Tree grew: nodes=" + std::to_string(m_stats->m_node_count) +
-                                " leaves=" + std::to_string(m_leaf_count) +
-                                " bytes=" + std::to_string(m_stats->m_total_bytes));
 }
 
 void Tree::detach_subtree(const NodePtr& node)
@@ -126,13 +115,12 @@ NodePtr Tree::add_node(const NodePtr& parent, const uint32_t vertex_index)
         throw AddNodeException("Parent is null");
     }
 
-    NodePtr new_node = std::make_shared<Node>(vertex_index, parent->m_depth + 1U, m_stats);
+    NodePtr new_node = std::make_shared<Node>(vertex_index, parent->m_depth + 1U);
     new_node->m_parent = parent;
 
     if (!parent->m_son)
     {
         parent->m_son = new_node;
-        --m_leaf_count;  // parent gained its first child: no longer a leaf
     }
     else if (!parent->m_son->m_left)
     {
@@ -149,7 +137,6 @@ NodePtr Tree::add_node(const NodePtr& parent, const uint32_t vertex_index)
         new_node->m_left = parent->m_son;
     }
 
-    ++m_leaf_count;  // new_node itself is a leaf until it gets a child
     return new_node;
 }
 
@@ -259,20 +246,6 @@ bool Tree::is_empty() const
     return m_root == nullptr;
 }
 
-uint64_t Tree::get_node_count() const
-{
-    return m_stats->m_node_count;
-}
-
-uint64_t Tree::get_leaf_count() const
-{
-    return m_leaf_count;
-}
-
-uint64_t Tree::get_total_bytes() const
-{
-    return m_stats->m_total_bytes;
-}
 
 std::vector<NodePtr>
 Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs)
@@ -284,7 +257,6 @@ Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_par
 
     validate_parent_ordering(vertex_parent_pairs);
     std::vector<NodePtr> added_nodes = attach_all_new_nodes(vertex_parent_pairs);
-    log_growth();
     return added_nodes;
 }
 
@@ -300,14 +272,6 @@ void Tree::remove_node(const NodePtr& node)
                          "remove_node: vertex=" + std::to_string(node_to_remove->m_index) +
                              " has children");
             throw DeleteNodeException("Unable to delete a node with children.");
-        }
-
-        if (node_to_remove == node)
-        {
-            // Only the originally requested node was ever tracked as a live leaf:
-            // ancestors swept up by the backtrack below were internal nodes right up
-            // until this cascade removed their only child, so they were never counted.
-            --m_leaf_count;
         }
 
         if (node_to_remove->m_depth == 0U)

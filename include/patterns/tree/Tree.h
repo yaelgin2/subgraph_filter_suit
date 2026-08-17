@@ -4,7 +4,6 @@
 #include "CountsMap.h"
 #include "LoggerHandler.h"
 #include "Node.h"
-#include "TreeStats.h"
 
 #include <cstdint>
 #include <memory>
@@ -62,24 +61,6 @@ public:
     bool is_empty() const;
 
     /**
-     * @brief Return the number of currently live nodes.
-     * @return Live node count.
-     */
-    uint64_t get_node_count() const;
-
-    /**
-     * @brief Return the number of currently live leaf nodes.
-     * @return Live leaf count.
-     */
-    uint64_t get_leaf_count() const;
-
-    /**
-     * @brief Return the total bytes occupied by currently live nodes.
-     * @return Live byte total.
-     */
-    uint64_t get_total_bytes() const;
-
-    /**
      * @brief Add a new level of children to the tree.
      * @param vertex_parent_pairs Pairs of (vertex index, parent node) for each new child.
      * @return Vector of newly created nodes.
@@ -130,17 +111,10 @@ public:
                                              CountsMap& counts) const;
 
 private:
-    std::shared_ptr<TreeStats> m_stats;  ///< Live node-count/byte counters, shared with Node.
     NodePtr m_root;                      ///< Root node of the tree.
     LoggerHandler m_logger;              ///< Logger.
     const ColoredGraph& m_graph;         ///< Source graph for neighbour lookups.
-    bool m_is_directed;          ///< Whether the source graph is directed (inferred from m_graph).
-    uint64_t m_leaf_count = 0U;  ///< Number of currently live leaf nodes.
-
-    /**
-     * @brief Log the current tree size, leaf count, and byte total at DEBUG level.
-     */
-    void log_growth() const;
+    bool m_is_directed;          ///< Whether the source graph is directed (inferred from m_graph).s
 
     /**
      * @brief Insert a new child node under @p parent.
