@@ -322,6 +322,64 @@ TEST_F(TreeTest, counts_include_child_neighbours)
     EXPECT_EQ(counts.size(), 2U);
 }
 
+// ── Node/byte accounting & memory safety ────────────────────────────────────────
+
+/**
+ * @brief Growing and shrinking the tree keeps node/leaf/byte counters accurate.
+ *
+ * The byte/node counters only decrement once a removed node is actually freed
+ * (all external NodePtr references dropped), not merely once it is unlinked from
+ * the tree — hence the explicit child.reset() before the final assertions.
+ */
+TEST_F(TreeTest, growth_updates_node_leaf_and_byte_counts)
+{
+    const ColoredGraph graph = make_star_5();
+    Tree tree(0U, graph, null_logger());
+    EXPECT_EQ(tree.get_node_count(), 1U);
+    EXPECT_EQ(tree.get_leaf_count(), 1U);
+    EXPECT_EQ(tree.get_total_bytes(), sizeof(Node));
+
+    const NodePtr root = tree.get_root();
+    std::vector<NodePtr> children = tree.add_tree_level({{1U, root}, {2U, root}});
+    EXPECT_EQ(tree.get_node_count(), 3U);
+    EXPECT_EQ(tree.get_leaf_count(), 2U);
+    EXPECT_EQ(tree.get_total_bytes(), 3U * sizeof(Node));
+
+    NodePtr removed_child = children[0];
+    children[0].reset();
+    tree.remove_node(removed_child);
+    removed_child.reset();
+    EXPECT_EQ(tree.get_node_count(), 2U);
+    EXPECT_EQ(tree.get_leaf_count(), 1U);
+    EXPECT_EQ(tree.get_total_bytes(), 2U * sizeof(Node));
+}
+
+/**
+ * @brief Destroying a Tree that still holds sibling nodes releases all of them.
+ *
+ * The sibling ring is a circular doubly-linked shared_ptr structure, so simply
+ * dropping the tree's root reference is not enough to free it — the ring's own
+ * members keep each other alive unless explicitly broken. This is a regression
+ * test for that leak (confirmed independently with valgrind).
+ */
+TEST_F(TreeTest, destroying_tree_with_siblings_releases_all_nodes)
+{
+    const ColoredGraph graph = make_star_5();
+    std::weak_ptr<Node> child_1_observer;
+    std::weak_ptr<Node> child_2_observer;
+
+    {
+        Tree tree(0U, graph, null_logger());
+        const NodePtr root = tree.get_root();
+        const std::vector<NodePtr> children = tree.add_tree_level({{1U, root}, {2U, root}});
+        child_1_observer = children[0];
+        child_2_observer = children[1];
+    }
+
+    EXPECT_TRUE(child_1_observer.expired());
+    EXPECT_TRUE(child_2_observer.expired());
+}
+
 /**
  * @brief With a colored path the neighbour colors are reflected in the count keys.
  *
