@@ -111,10 +111,10 @@ public:
                                              CountsMap& counts) const;
 
 private:
-    NodePtr m_root;                      ///< Root node of the tree.
-    LoggerHandler m_logger;              ///< Logger.
-    const ColoredGraph& m_graph;         ///< Source graph for neighbour lookups.
-    bool m_is_directed;          ///< Whether the source graph is directed (inferred from m_graph).s
+    NodePtr m_root;               ///< Root node of the tree.
+    LoggerHandler m_logger;       ///< Logger.
+    const ColoredGraph& m_graph;  ///< Source graph for neighbour lookups.
+    bool m_is_directed;  ///< Whether the source graph is directed (inferred from m_graph).s
 
     /**
      * @brief Insert a new child node under @p parent.
@@ -131,7 +131,7 @@ private:
     static void splice_out_of_sibling_ring(const NodePtr& node);
 
     /**
-     * @brief Recursively clear a subtree's internal sibling-ring links.
+     * @brief Iteratively clear a subtree's internal sibling-ring links.
      *
      * The sibling ring is a circular doubly-linked structure of shared_ptr, so
      * dropping the single external reference to it (the parent's m_son) is not
@@ -200,9 +200,10 @@ private:
      * @param frontier_nodes Filled with a copy of @p leaves.
      * @param frontier_paths Filled with each leaf's own ancestor-path set.
      */
-    void build_leaf_frontier_paths(const std::vector<NodePtr>& leaves,
-                                   std::vector<NodePtr>& frontier_nodes,
-                                   std::vector<std::unordered_set<uint32_t>>& frontier_paths) const;
+    static void
+    build_leaf_frontier_paths(const std::vector<NodePtr>& leaves,
+                              std::vector<NodePtr>& frontier_nodes,
+                              std::vector<std::unordered_set<uint32_t>>& frontier_paths);
 
     /**
      * @brief Count every frontier vertex's unreached neighbours into @p counts.
@@ -223,8 +224,9 @@ private:
      * @param frontier_nodes Updated in-place to the parent frontier.
      * @param frontier_paths Updated in-place to match.
      */
-    void advance_frontier_to_parents(std::vector<NodePtr>& frontier_nodes,
-                                     std::vector<std::unordered_set<uint32_t>>& frontier_paths) const;
+    static void
+    advance_frontier_to_parents(std::vector<NodePtr>& frontier_nodes,
+                                std::vector<std::unordered_set<uint32_t>>& frontier_paths);
 
     /**
      * @brief Seed path_set from a leaf's ancestor chain (root excluded).

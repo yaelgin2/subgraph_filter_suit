@@ -90,20 +90,26 @@ Tree::~Tree()
 
 void Tree::detach_subtree(const NodePtr& node)
 {
-    const NodePtr first_child = node->m_son;
-    if (first_child)
+    std::vector<NodePtr> pending_nodes;
+    pending_nodes.push_back(node);
+
+    while (!pending_nodes.empty())
     {
+        const NodePtr current_node = pending_nodes.back();
+        pending_nodes.pop_back();
+
+        const NodePtr first_child = current_node->m_son;
         NodePtr current_child = first_child;
-        do
+        while (current_child)
         {
             const NodePtr next_child = current_child->m_right;
-            detach_subtree(current_child);
+            pending_nodes.push_back(current_child);
             current_child->m_left.reset();
             current_child->m_right.reset();
-            current_child = next_child;
-        } while (current_child && current_child != first_child);
+            current_child = (next_child == first_child) ? nullptr : next_child;
+        }
+        current_node->m_son.reset();
     }
-    node->m_son.reset();
 }
 
 NodePtr Tree::add_node(const NodePtr& parent, const uint32_t vertex_index)
@@ -246,7 +252,6 @@ bool Tree::is_empty() const
     return m_root == nullptr;
 }
 
-
 std::vector<NodePtr>
 Tree::add_tree_level(const std::vector<std::pair<uint32_t, NodePtr>>& vertex_parent_pairs)
 {
@@ -368,9 +373,9 @@ void Tree::update_path_to_next_leaf(const NodePtr& prev_leaf, const NodePtr& cur
     }
 }
 
-void Tree::build_leaf_frontier_paths(
-    const std::vector<NodePtr>& leaves, std::vector<NodePtr>& frontier_nodes,
-    std::vector<std::unordered_set<uint32_t>>& frontier_paths) const
+void Tree::build_leaf_frontier_paths(const std::vector<NodePtr>& leaves,
+                                     std::vector<NodePtr>& frontier_nodes,
+                                     std::vector<std::unordered_set<uint32_t>>& frontier_paths)
 {
     frontier_nodes = leaves;
     frontier_paths.reserve(leaves.size());
@@ -398,8 +403,8 @@ void Tree::accumulate_frontier_neighbour_counts(
     }
 }
 
-void Tree::advance_frontier_to_parents(
-    std::vector<NodePtr>& frontier_nodes, std::vector<std::unordered_set<uint32_t>>& frontier_paths) const
+void Tree::advance_frontier_to_parents(std::vector<NodePtr>& frontier_nodes,
+                                       std::vector<std::unordered_set<uint32_t>>& frontier_paths)
 {
     std::vector<NodePtr> parent_nodes;
     std::vector<std::unordered_set<uint32_t>> parent_paths;

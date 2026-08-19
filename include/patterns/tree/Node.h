@@ -16,8 +16,8 @@ namespace sgf
  */
 struct Node
 {
-    uint32_t m_index;                       ///< Source-graph vertex index.
-    uint32_t m_depth;                       ///< Depth within the tree (root = 0).
+    uint32_t m_index;  ///< Source-graph vertex index.
+    uint32_t m_depth;  ///< Depth within the tree (root = 0).
 
     std::shared_ptr<Node> m_left;   ///< Left sibling in the child ring.
     std::shared_ptr<Node> m_right;  ///< Right sibling in the child ring.
@@ -40,6 +40,7 @@ struct Node
     Node& operator=(const Node&) = delete;
     Node(Node&&) = delete;
     Node& operator=(Node&&) = delete;
+    ~Node() = default;
 };
 
 using NodePtr = std::shared_ptr<Node>;

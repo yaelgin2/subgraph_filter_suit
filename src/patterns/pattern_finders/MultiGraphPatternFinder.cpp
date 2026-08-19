@@ -267,11 +267,11 @@ std::string MultiGraphPatternFinder::thread_log_prefix() const
     return "[thread " + std::to_string(m_thread_index) + "] ";
 }
 
-void MultiGraphPatternFinder::log_with_thread(const LogLevel level, const std::string& message) const
+void MultiGraphPatternFinder::log_with_thread(const LogLevel level,
+                                              const std::string& message) const
 {
     m_logger.log(level, thread_log_prefix() + message);
 }
-
 
 void MultiGraphPatternFinder::run_one_growth_step(const double alive_threshold,
                                                   const bool is_random,

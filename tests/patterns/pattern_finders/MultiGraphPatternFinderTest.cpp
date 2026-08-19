@@ -437,8 +437,8 @@ TEST_F(MultiGraphPatternFinderTest, find_pattern_single_empty_graph_throws)
     graphs.push_back(make_empty_graph());
 
     const std::vector<int32_t> color_map = ColorRemapper::map_colors(graphs);
-    MultiGraphPatternFinder finder(graphs, false, static_cast<uint32_t>(color_map.size()),
-                                   0U, null_logger());
+    MultiGraphPatternFinder finder(graphs, false, static_cast<uint32_t>(color_map.size()), 0U,
+                                   null_logger());
 
     EXPECT_THROW(finder.find_pattern(0.5), std::runtime_error);
 }
