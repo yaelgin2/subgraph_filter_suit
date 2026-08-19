@@ -66,7 +66,8 @@ if(SGF_ENABLE_CUDA)
     add_sgf_test(gpu_motif_preprocessor_tests           preprocessing/GpuMotifPreprocessorTest.cu)
     set_target_properties(gpu_motif_preprocessor_tests PROPERTIES
         CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}"
-        CUDA_SEPARABLE_COMPILATION ON)
+        CUDA_SEPARABLE_COMPILATION ON
+        LINKER_LANGUAGE CXX)
     target_link_libraries(gpu_motif_preprocessor_tests PRIVATE cuco CUDA::cudart)
     target_compile_options(gpu_motif_preprocessor_tests PRIVATE
         $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)
@@ -76,7 +77,8 @@ if(SGF_ENABLE_CUDA)
     add_sgf_test(gpu_path_processor_tests               preprocessing/GpuPathProcessorTest.cu)
     set_target_properties(gpu_path_processor_tests PROPERTIES
         CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}"
-        CUDA_SEPARABLE_COMPILATION ON)
+        CUDA_SEPARABLE_COMPILATION ON
+        LINKER_LANGUAGE CXX)
     target_link_libraries(gpu_path_processor_tests PRIVATE cuco CUDA::cudart)
     target_compile_options(gpu_path_processor_tests PRIVATE
         $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)

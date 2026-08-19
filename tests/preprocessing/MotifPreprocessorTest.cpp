@@ -115,6 +115,30 @@ TEST_F(MotifPreprocessorTest, three_vertices_triangle_returns_empty_map)
     EXPECT_TRUE(result.empty());
 }
 
+TEST_F(MotifPreprocessorTest, five_vertices_no_edges_returns_empty_map)
+{
+    std::vector<std::pair<uint32_t, uint32_t>> edges;
+    const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U, 0U};
+    const ColoredGraph graph(5U, edges, colors, false);
+    MotifPreprocessor preprocessor(graph, null_logger());
+
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = preprocessor.calculate();
+
+    EXPECT_TRUE(result.empty());
+}
+
+TEST_F(MotifPreprocessorTest, six_vertices_one_edge_returns_empty_map)
+{
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0U, 1U}};
+    const std::vector<uint32_t> colors = {0U, 0U, 0U, 0U, 0U, 0U};
+    const ColoredGraph graph(6U, edges, colors, false);
+    MotifPreprocessor preprocessor(graph, null_logger());
+
+    const std::unordered_map<UInt128, uint32_t, UInt128Hash> result = preprocessor.calculate();
+
+    EXPECT_TRUE(result.empty());
+}
+
 // ── Group 2: All 6 motif types, 4-vertex graphs, all-zero colors ──────────────
 
 TEST_F(MotifPreprocessorTest, four_vertex_star_k13_all_zero_colors)
