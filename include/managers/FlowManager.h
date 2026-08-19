@@ -8,6 +8,7 @@
 #include "PriorPolicy.h"
 #include "SingleGraphPatternPreprocessor.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -191,28 +192,66 @@ private:
                            LoggerHandler logger);
 
     /**
-     * @brief Computes or loads the query graph enumeration for the filter stage.
+     * @brief Computes or loads each library graph's enumeration, one graph at a time.
      *
-     * If @p load_from_cache is true, delegates to load_graph_enumeration.
-     * Otherwise computes via @p preprocess_manager; when @p write_to_cache is
-     * true the result is also written through @p cache_manager.
+     * For every graph, if @p cache_manager already has a cache file for it, the cached
+     * result is loaded and an "enumeration-found-skipped" message is logged instead of
+     * recomputing. Otherwise the graph is enumerated via @p preprocess_manager and,
+     * when @p write_to_cache is true, immediately written to its own per-graph cache
+     * file before moving on to the next graph.
      *
      * @param write_to_cache     Persist computed enumeration to cache.
      * @param cache_base_name    Stem used for the cache file.
-     * @param cache_manager      Cache manager (required when loading or writing).
+     * @param cache_manager      Cache manager (required to skip or persist).
      * @param preprocess_manager Used for fresh computation.
      * @param library            Provides graph names and library graphs.
      * @param factory            Creates the feature-specific preprocessor.
-     * @param timestamp          Appended to cache_base_name when writing.
      * @param logger             Logger for diagnostics.
-     * @return Pair of (graph names, enumerations).
+     * @return One frequency-signature map per library graph.
      */
+    // NOLINTNEXTLINE(readability-function-size)
     static EnumerationResultVector
     get_graph_enumeration(bool write_to_cache, const std::string& cache_base_name,
                           const std::shared_ptr<ICacheIOManager>& cache_manager,
                           EnumerationPreprocessManager& preprocess_manager,
                           const LibraryData& library, const PreprocessorFactory& factory,
-                          const std::string& timestamp, bool use_gpu = false);
+                          const LoggerHandler& logger, bool use_gpu = false);
+
+    /**
+     * @brief Computes or loads a single library graph's enumeration.
+     *
+     * @param write_to_cache     Persist a newly computed result to cache.
+     * @param cache_base_name    Stem used for the cache file.
+     * @param cache_manager      Cache manager (required to skip or persist).
+     * @param preprocess_manager Used for fresh computation.
+     * @param graph_name         Name of the graph at @p graph_index.
+     * @param graph_index        Index of the graph within the library.
+     * @param factory            Creates the feature-specific preprocessor.
+     * @param logger             Logger for diagnostics.
+     * @param use_gpu            Offload enumeration to GPU kernels.
+     * @return The graph's frequency-signature map.
+     */
+    // NOLINTNEXTLINE(readability-function-size)
+    static EnumerationResult
+    get_single_graph_enumeration(bool write_to_cache, const std::string& cache_base_name,
+                                 const std::shared_ptr<ICacheIOManager>& cache_manager,
+                                 EnumerationPreprocessManager& preprocess_manager,
+                                 const std::string& graph_name, size_t graph_index,
+                                 const PreprocessorFactory& factory, const LoggerHandler& logger,
+                                 bool use_gpu);
+
+    /**
+     * @brief Builds the deterministic per-graph cache filename for one graph.
+     *
+     * The filename is stable across runs (no timestamp) so a later run can check
+     * whether this graph's enumeration was already cached.
+     *
+     * @param cache_base_name Cache category stem (e.g. "motif_cache").
+     * @param graph_name      Graph file name/path to derive the stem from.
+     * @return Combined cache-file base name, without extension.
+     */
+    static std::string build_per_graph_cache_name(const std::string& cache_base_name,
+                                                  const std::string& graph_name);
 
     static std::unordered_map<std::string, FilterResult> run_enumeration_filter_stage(
         const std::string& result_file_base_name, const EnumerationResultVector& graphs_enumeration,

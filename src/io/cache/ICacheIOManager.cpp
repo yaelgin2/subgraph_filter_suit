@@ -45,4 +45,9 @@ ICacheIOManager::read(const std::string& base_filename) const
     return read_from_file(full_path);
 }
 
+bool ICacheIOManager::exists(const std::string& base_filename) const
+{
+    return std::filesystem::exists(build_full_path(base_filename));
+}
+
 }  // namespace sgf

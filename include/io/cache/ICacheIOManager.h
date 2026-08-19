@@ -62,6 +62,14 @@ public:
      */
     std::unordered_map<std::string, EnumerationResult> read(const std::string& base_filename) const;
 
+    /**
+     * @brief Checks whether a cache file for @p base_filename already exists on disk.
+     *
+     * @param base_filename File name without extension (e.g. "motif_cache_graph_0").
+     * @return True if the cache file exists.
+     */
+    [[nodiscard]] bool exists(const std::string& base_filename) const;
+
 protected:
     /**
      * @brief Serializes @p data (paired with @p graph_names) to @p full_path.

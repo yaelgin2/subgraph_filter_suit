@@ -5,6 +5,7 @@
 #include "Int128.h"
 #include "LoggerHandler.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -74,6 +75,17 @@ public:
      * @return One frequency-signature map per library graph.
      */
     EnumerationResultVector preprocess(const PreprocessorFactory& factory,
+                                       bool use_gpu = false) const;
+
+    /**
+     * @brief Preprocess a single library graph and return its frequency signature.
+     *
+     * @param graph_index Index of the graph within the library.
+     * @param factory     Callable that constructs an IGraphPreprocessor for the graph.
+     * @param use_gpu     If true, offload enumeration to GPU kernels.
+     * @return Frequency-signature map for the graph at @p graph_index.
+     */
+    EnumerationResult preprocess_graph(size_t graph_index, const PreprocessorFactory& factory,
                                        bool use_gpu = false) const;
 
 private:
