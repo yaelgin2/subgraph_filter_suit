@@ -322,6 +322,35 @@ TEST_F(TreeTest, counts_include_child_neighbours)
     EXPECT_EQ(counts.size(), 2U);
 }
 
+// ── Node/byte accounting & memory safety ────────────────────────────────────────
+
+
+/**
+ * @brief Destroying a Tree that still holds sibling nodes releases all of them.
+ *
+ * The sibling ring is a circular doubly-linked shared_ptr structure, so simply
+ * dropping the tree's root reference is not enough to free it — the ring's own
+ * members keep each other alive unless explicitly broken. This is a regression
+ * test for that leak (confirmed independently with valgrind).
+ */
+TEST_F(TreeTest, destroying_tree_with_siblings_releases_all_nodes)
+{
+    const ColoredGraph graph = make_star_5();
+    std::weak_ptr<Node> child_1_observer;
+    std::weak_ptr<Node> child_2_observer;
+
+    {
+        Tree tree(0U, graph, null_logger());
+        const NodePtr root = tree.get_root();
+        const std::vector<NodePtr> children = tree.add_tree_level({{1U, root}, {2U, root}});
+        child_1_observer = children[0];
+        child_2_observer = children[1];
+    }
+
+    EXPECT_TRUE(child_1_observer.expired());
+    EXPECT_TRUE(child_2_observer.expired());
+}
+
 /**
  * @brief With a colored path the neighbour colors are reflected in the count keys.
  *
