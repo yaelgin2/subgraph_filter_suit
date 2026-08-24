@@ -69,8 +69,8 @@ structurally (missing colors, triangle-freeness, degree bounds), not just assert
   --cache-dir ./examples/output/motif_enum \
   --cache-type csv
 ```
-Writes `./examples/output/motif_enum/motif_cache_<timestamp>.csv`, one row per (candidate graph,
-4-vertex motif type, occurrence count).
+Writes one file per candidate graph — `./examples/output/motif_enum/motif_cache_<graph>.csv` — each
+holding one row per (4-vertex motif type, occurrence count) for that graph.
 
 ## 2. Path enumeration (`sgf-graph-enumerator --preprocess --paths`)
 
@@ -95,12 +95,11 @@ that's why `--graph-dir` here is `large_graph_ve`, not the other way around.
   --filter --motifs \
   --graph-dir ./examples/large_graph_ve \
   --graph-input-type vertex-edge \
-  --motif-cache-file ./examples/output/motif_enum/motif_cache_<timestamp> \
+  --motif-cache-dir ./examples/output/motif_enum \
   --cache-type csv \
   --result-folder ./examples/output/motif_filter \
   --result-type json
 ```
-(Fill in `<timestamp>` from example 1's output filename — `ls ./examples/output/motif_enum/`.)
 
 **Verified result** — exactly matches the design:
 ```json
@@ -122,7 +121,7 @@ survive; all 8 non-matching candidates are correctly pruned.
   --filter --paths \
   --graph-dir ./examples/large_graph_ve \
   --graph-input-type vertex-edge \
-  --path-cache-file ./examples/output/path_enum/path_cache_<timestamp> \
+  --path-cache-dir ./examples/output/path_enum \
   --cache-type csv \
   --result-folder ./examples/output/path_filter \
   --result-type json

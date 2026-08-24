@@ -4,30 +4,22 @@
 #include "Int128.h"
 #include "LoggerHandler.h"
 
-#include <cstdint>
 #include <fstream>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
 namespace sgf
 {
 
 /**
  * @class CSVCacheIOManager
- * @brief Reads and writes enumeration frequency data in CSV format.
+ * @brief Reads and writes one graph's enumeration frequency data in CSV format.
  *
- * File format: header row followed by one data row per (graph, motif) pair.
- * Columns: graph_index, motif_number (decimal UInt128), appearances.
- *
- * A graph whose enumeration result is empty (e.g. a star graph has no
- * 5-vertex simple paths at all) still gets exactly one row, with motif_number
- * 0 and appearances 0 (see write_rows). Without this sentinel row, the CSV
- * format has no way to represent "this graph exists but matched nothing" —
- * the graph's name would never appear in the file, and callers reading the
- * cache back (e.g. GroupEnumerationGraphFilter) would have no record that the
- * graph was part of the library at all, silently dropping it from filter
- * results instead of correctly reporting it as unpruned.
+ * File format: header row followed by one data row per motif entry.
+ * Columns: motif_number (decimal UInt128), appearances. A graph whose enumeration
+ * result is empty (e.g. a star graph has no 5-vertex simple paths at all) writes a
+ * header-only file with zero data rows — since the graph's identity lives in the
+ * filename rather than in the file's content, an empty file still correctly
+ * represents "this graph exists and matched nothing".
  */
 class CSVCacheIOManager : public ICacheIOManager
 {
@@ -42,26 +34,23 @@ public:
 
 protected:
     /**
-     * @brief Writes enumeration data to a CSV file at @p full_path.
+     * @brief Writes one graph's enumeration data to a CSV file at @p full_path.
      *
      * @param data      Enumeration data to serialize.
      * @param full_path Destination file path including the .csv extension.
      * @throws SgfPathExistsException if the file cannot be opened.
      */
-    void write_to_file(const EnumerationResultVector& data,
-                       const std::vector<std::string>& graph_names,
-                       const std::string& full_path) const override;
+    void write_to_file(const EnumerationResult& data, const std::string& full_path) const override;
 
     /**
-     * @brief Reads enumeration data from a CSV file at @p full_path.
+     * @brief Reads one graph's enumeration data from a CSV file at @p full_path.
      *
      * @param full_path Source file path including the .csv extension.
      * @return Parsed enumeration data.
      * @throws SgfPathExistsException if the file cannot be opened.
      * @throws GraphConstructionException if any row contains malformed values.
      */
-    std::unordered_map<std::string, EnumerationResult>
-    read_from_file(const std::string& full_path) const override;
+    EnumerationResult read_from_file(const std::string& full_path) const override;
 
     /**
      * @brief Returns the CSV file extension.
@@ -70,7 +59,6 @@ protected:
     [[nodiscard]] std::string get_extension() const override;
 
 private:
-    static constexpr const char* CSV_COLUMN_GRAPH_NAME = "graph_name";
     static constexpr const char* CSV_COLUMN_MOTIF_NUMBER = "motif_number";
     static constexpr const char* CSV_COLUMN_APPEARANCES = "appearances";
 
@@ -81,21 +69,11 @@ private:
     static void write_header(std::ofstream& file);
 
     /**
-     * @brief Writes one CSV row per (graph, motif) pair to @p file.
-     *
-     * A graph with no entries in its EnumerationResult still gets one
-     * sentinel row (motif_number 0, appearances EMPTY_RESULT_APPEARANCES) so
-     * its name is preserved when the file is read back.
-     *
-     * @param data        Enumeration data indexed by position.
-     * @param graph_names Names aligned with @p data.
-     * @param file        Opened output stream.
+     * @brief Writes one CSV row per motif entry to @p file.
+     * @param data Enumeration data to write.
+     * @param file Opened output stream.
      */
-    static void write_rows(const EnumerationResultVector& data,
-                           const std::vector<std::string>& graph_names, std::ofstream& file);
-
-    /// Appearances value written for the sentinel row of a graph with no matches.
-    static constexpr uint32_t EMPTY_RESULT_APPEARANCES = 0U;
+    static void write_rows(const EnumerationResult& data, std::ofstream& file);
 
     /**
      * @brief Converts a UInt128 to its decimal string representation.
@@ -105,23 +83,19 @@ private:
     static std::string uint128_to_decimal(UInt128 value);
 
     /**
-     * @brief Parses all data rows from @p file into an EnumerationResultVector collection.
+     * @brief Parses all data rows from @p file into an EnumerationResult.
      * @param file Opened input stream positioned after the header row.
      * @return Parsed enumeration data.
      */
-    static std::unordered_map<std::string, EnumerationResult> parse_file(std::ifstream& file);
+    static EnumerationResult parse_file(std::ifstream& file);
 
     /**
      * @brief Parses one CSV @p line and inserts the entry into @p data.
      *
-     * Resizes @p data if the parsed graph_index exceeds the current size.
-     *
-     * @param line Comma-separated row: graph_index,motif_number,appearances.
+     * @param line Comma-separated row: motif_number,appearances.
      * @param data Collection to insert the parsed entry into.
-     * @throws GraphConstructionException if graph_index exceeds MAX_GRAPH_INDEX.
      */
-    static void insert_row(const std::string& line,
-                           std::unordered_map<std::string, EnumerationResult>& data);
+    static void insert_row(const std::string& line, EnumerationResult& data);
 
     /**
      * @brief Converts a decimal string to a UInt128 value.

@@ -257,14 +257,14 @@ run_test "enumerator preprocess: negative vertex ID in vertex-edge" 3 \
 echo ""
 echo "=== sgf-graph-enumerator --filter ==="
 
-# wrong flags (no cache file needed — argument validation runs before any file I/O)
+# wrong flags (no cache dir needed — argument validation runs before any file I/O)
 EXPECT_OUTPUT="--graph-dir"
 run_test "enumerator filter: missing --graph-dir" 2 \
     "$BUILD/sgf-graph-enumerator" \
     --filter --motifs \
     --graph-input-type graphml \
     --result-folder "$TMP/results" --result-type json \
-    --cache-type csv --motif-cache-file "/nonexistent/motif.cache"
+    --cache-type csv --motif-cache-dir "/nonexistent/motif_cache_dir"
 
 EXPECT_OUTPUT="--result-folder"
 run_test "enumerator filter: missing --result-folder" 2 \
@@ -272,7 +272,7 @@ run_test "enumerator filter: missing --result-folder" 2 \
     --filter --motifs \
     --graph-dir "$TMP/lib_empty" --graph-input-type graphml \
     --result-type json \
-    --cache-type csv --motif-cache-file "/nonexistent/motif.cache"
+    --cache-type csv --motif-cache-dir "/nonexistent/motif_cache_dir"
 
 EXPECT_OUTPUT="--graph-input-type"
 run_test "enumerator filter: missing --graph-input-type" 2 \
@@ -280,10 +280,10 @@ run_test "enumerator filter: missing --graph-input-type" 2 \
     --filter --motifs \
     --graph-dir "$TMP/lib_empty" \
     --result-folder "$TMP/results" --result-type json \
-    --cache-type csv --motif-cache-file "/nonexistent/motif.cache"
+    --cache-type csv --motif-cache-dir "/nonexistent/motif_cache_dir"
 
-EXPECT_OUTPUT="--motif-cache-file"
-run_test "enumerator filter: missing --motif-cache-file when --motifs" 2 \
+EXPECT_OUTPUT="--motif-cache-dir"
+run_test "enumerator filter: missing --motif-cache-dir when --motifs" 2 \
     "$BUILD/sgf-graph-enumerator" \
     --filter --motifs \
     --graph-dir "$TMP/lib_empty" --graph-input-type graphml \
@@ -296,7 +296,7 @@ run_test "enumerator filter: invalid result type" 2 \
     --filter --motifs \
     --graph-dir "$TMP/lib_empty" --graph-input-type graphml \
     --result-folder "$TMP/results" --result-type bad-type \
-    --cache-type csv --motif-cache-file "/nonexistent/motif.cache"
+    --cache-type csv --motif-cache-dir "/nonexistent/motif_cache_dir"
 
 EXPECT_OUTPUT="--graph-cache-dir"
 run_test "enumerator filter: --cache-enumeration without --graph-cache-dir" 2 \
@@ -304,7 +304,7 @@ run_test "enumerator filter: --cache-enumeration without --graph-cache-dir" 2 \
     --filter --motifs --cache-enumeration \
     --graph-dir "$TMP/lib_empty" --graph-input-type graphml \
     --result-folder "$TMP/results" --result-type json \
-    --cache-type csv --motif-cache-file "/nonexistent/motif.cache"
+    --cache-type csv --motif-cache-dir "/nonexistent/motif_cache_dir"
 
 EXPECT_OUTPUT="--cache-type"
 run_test "enumerator filter: missing --cache-type" 2 \
@@ -312,22 +312,22 @@ run_test "enumerator filter: missing --cache-type" 2 \
     --filter --motifs \
     --graph-dir "$TMP/lib_empty" --graph-input-type graphml \
     --result-folder "$TMP/results" --result-type json \
-    --motif-cache-file "/nonexistent/motif.cache"
+    --motif-cache-dir "/nonexistent/motif_cache_dir"
 
 # directories / files that don't exist (file I/O runs, no valid cache needed for exit 4)
-run_test "enumerator filter: nonexistent --motif-cache-file" 4 \
+run_test "enumerator filter: nonexistent --motif-cache-dir" 4 \
     "$BUILD/sgf-graph-enumerator" \
     --filter --motifs \
     --graph-dir "$TMP/lib_empty" --graph-input-type graphml \
     --result-folder "$TMP/results" --result-type json \
-    --cache-type csv --motif-cache-file "/nonexistent/motif.cache"
+    --cache-type csv --motif-cache-dir "/nonexistent/motif_cache_dir"
 
 run_test "enumerator filter: nonexistent --graph-dir" 4 \
     "$BUILD/sgf-graph-enumerator" \
     --filter --motifs \
     --graph-dir "/nonexistent/query" --graph-input-type graphml \
     --result-folder "$TMP/results" --result-type json \
-    --cache-type csv --motif-cache-file "/nonexistent/motif.cache"
+    --cache-type csv --motif-cache-dir "/nonexistent/motif_cache_dir"
 
 # ── sgf-pattern-finder --preprocess ──────────────────────────────────────────
 
@@ -685,14 +685,13 @@ run_test "pipeline: enumerator preprocess motifs" 0 \
     --library-dir "$TMP/pipe_lib" \
     --cache-dir "$TMP/pipe_lib_cache" --cache-type binary
 
-PIPE_MOTIF_CACHE=$(find "$TMP/pipe_lib_cache" -name "motif_cache_*" 2>/dev/null | head -1)
-
-# enumerator: filter query graphs against motif cache
+# enumerator: filter query graphs against motif cache (the whole cache directory,
+# which now holds one file per library graph)
 run_test "pipeline: enumerator filter motifs (query dir)" 0 \
     "$BUILD/sgf-graph-enumerator" \
     --filter --motifs --graph-input-type graphml \
     --graph-dir "$TMP/pipe_query" \
-    --motif-cache-file "$PIPE_MOTIF_CACHE" \
+    --motif-cache-dir "$TMP/pipe_lib_cache" \
     --cache-type binary \
     --result-folder "$TMP/pipe_enum_result" --result-type json
 

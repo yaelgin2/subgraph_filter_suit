@@ -56,8 +56,8 @@ std::vector<EnumerationResultVector> enumerate_library(const EnumerateLibraryPar
 /**
  * @brief Parameters for filter_with_enumeration().
  *
- * @c m_motif_cache_file is required when @c m_filter_motifs is true.
- * @c m_path_cache_file  is required when @c m_filter_paths  is true.
+ * @c m_motif_cache_dir is required when @c m_filter_motifs is true.
+ * @c m_path_cache_dir  is required when @c m_filter_paths  is true.
  */
 struct FilterWithEnumerationParams
 {
@@ -68,9 +68,9 @@ struct FilterWithEnumerationParams
     CacheManagerType m_cache_type;   ///< [required] Cache file format.
     bool m_filter_motifs{false};     ///< Filter by motif signatures.
     bool m_filter_paths{false};      ///< Filter by path signatures.
-    std::optional<std::string> m_motif_cache_file;  ///< Required when m_filter_motifs is true.
-    std::optional<std::string> m_path_cache_file;   ///< Required when m_filter_paths is true.
-    bool m_is_directed{false};                      ///< Treat graphs as directed.
+    std::optional<std::string> m_motif_cache_dir;  ///< Required when m_filter_motifs is true.
+    std::optional<std::string> m_path_cache_dir;   ///< Required when m_filter_paths is true.
+    bool m_is_directed{false};                     ///< Treat graphs as directed.
     bool m_non_induced{false};  ///< Expand motif counts via inclusion DAG (non-induced).
     uint32_t m_thread_number{
         SgfConstants::DEFAULT_THREAD_NUMBER};      ///< Maximum threads for preprocessing.
@@ -83,12 +83,12 @@ struct FilterWithEnumerationParams
  * @brief Filter query graphs against library enumeration caches.
  *
  * At least one of @c m_filter_motifs or @c m_filter_paths must be true.
- * The corresponding cache file must be provided for each enabled feature.
+ * The corresponding cache directory must be provided for each enabled feature.
  *
  * @param params Filter options.
  * @return Per-feature filter results: map from library graph name to filter flags.
  * @throws InvalidArgumentException if required fields are empty, no feature is enabled,
- *         or a required cache file is absent.
+ *         or a required cache directory is absent.
  */
 std::vector<std::unordered_map<std::string, FilterResult>>
 filter_with_enumeration(const FilterWithEnumerationParams& params);

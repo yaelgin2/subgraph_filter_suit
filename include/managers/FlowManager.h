@@ -76,9 +76,9 @@ struct GraphEnumerationCacheConfig
     std::string
         m_graph_cache_dir;  ///< Directory for cache (required when m_cache_enumeration is true).
     std::string
-        m_graphs_motif_cache_path;  ///< Full path to existing motif cache; empty = compute fresh.
+        m_graphs_motif_cache_dir;  ///< Directory of an existing motif cache; empty = compute fresh.
     std::string
-        m_graphs_path_cache_path;  ///< Full path to existing path cache; empty = compute fresh.
+        m_graphs_path_cache_dir;  ///< Directory of an existing path cache; empty = compute fresh.
 };
 
 /**
@@ -116,8 +116,8 @@ public:
      * @param graph_input_path         Directory containing query graphs.
      * @param is_directed              Treat graphs as directed.
      * @param reader_type              Format of the graph files.
-     * @param motif_cache_file         Full path to the motif cache file to read.
-     * @param path_cache_file          Full path to the path cache file to read.
+     * @param motif_cache_dir          Directory containing the motif cache (one file per graph).
+     * @param path_cache_dir           Directory containing the path cache (one file per graph).
      * @param cache_reader_type        Format of the cache files.
      * @param output_folder            Directory for filter result output.
      * @param output_type              Format of the filter results.
@@ -131,8 +131,8 @@ public:
      */
     static std::vector<std::unordered_map<std::string, FilterResult>>
     enumerator_filter_run(const std::string& graph_input_path, bool is_directed,
-                          GraphReaderType reader_type, const std::string& motif_cache_file,
-                          const std::string& path_cache_file, CacheManagerType cache_reader_type,
+                          GraphReaderType reader_type, const std::string& motif_cache_dir,
+                          const std::string& path_cache_dir, CacheManagerType cache_reader_type,
                           std::string& output_folder, ResultOutputType output_type,
                           const std::string& log_file_path, bool filter_paths, bool filter_motifs,
                           const GraphEnumerationCacheConfig& graph_cache_config, bool non_induced,
@@ -180,16 +180,18 @@ private:
     using EnumerationTransformer = std::function<void(EnumerationResultVector&)>;
 
     /**
-     * @brief Loads query graph enumeration from a cache file in the order
-     *        returned by the cache, paired with the graph names.
+     * @brief Loads query graph enumeration from a cache directory, merging every per-graph
+     *        cache file it holds, paired with the graph names.
      *
-     * @param cache_manager  Cache manager pointing at the cache directory.
-     * @param cache_path     Base filename (stem) of the cache file to read.
-     * @return Pair of (graph names, enumerations) in cache-file order.
+     * @param manager_type    Cache file format.
+     * @param cache_dir       Directory holding the per-graph cache files.
+     * @param cache_base_name Cache category stem (e.g. "motif_cache") to match files against.
+     * @param logger          Logger for diagnostics.
+     * @return Pair of (graph names, enumerations) in cache-read order.
      */
     static std::pair<std::vector<std::string>, EnumerationResultVector>
-    load_graph_enumeration(CacheManagerType manager_type, const std::string& cache_path,
-                           LoggerHandler logger);
+    load_graph_enumeration(CacheManagerType manager_type, const std::string& cache_dir,
+                           const std::string& cache_base_name, LoggerHandler logger);
 
     /**
      * @brief Computes or loads each library graph's enumeration, one graph at a time.
@@ -255,9 +257,8 @@ private:
 
     static std::unordered_map<std::string, FilterResult> run_enumeration_filter_stage(
         const std::string& result_file_base_name, const EnumerationResultVector& graphs_enumeration,
-        const ICacheIOManager& lib_cache_manager, const std::string& lib_cache_path,
-        IFilterIOManager& filter_results_writer, const LibraryData& library,
-        const std::string& timestamp, const LoggerHandler& logger);
+        const ICacheIOManager& lib_cache_manager, IFilterIOManager& filter_results_writer,
+        const LibraryData& library, const std::string& timestamp, const LoggerHandler& logger);
 
     /**
      * @brief Returns the current local time as a filename-safe string.
@@ -384,10 +385,11 @@ private:
     /**
      * @brief Loads or computes graph enumeration for one stage, then runs the filter.
      *
-     * @param library_cache_file   Full path to the library enumeration cache.
+     * @param library_cache_dir    Directory containing the library enumeration cache (one file
+     * per graph).
      * @param load_graph_cache     When true, loads query graph enumeration from cache.
-     * @param graphs_cache_path    Path to the query graph cache (used when load_graph_cache is
-     * true).
+     * @param graphs_cache_dir     Directory of the query graph cache (used when load_graph_cache
+     * is true).
      * @param cache_base_name      Cache stem used when computing (e.g. "path_cache").
      * @param factory              Creates the stage-specific preprocessor.
      * @param cache_reader_type    Cache file format.
@@ -400,8 +402,8 @@ private:
      * @param post_process         Applied to the enumeration vector before filtering.
      */
     static std::unordered_map<std::string, FilterResult> enumerate_and_filter(
-        const std::string& library_cache_file, bool load_graph_cache,
-        const std::string& graphs_cache_path, const std::string& run_type_file_base_name,
+        const std::string& library_cache_dir, bool load_graph_cache,
+        const std::string& graphs_cache_dir, const std::string& run_type_file_base_name,
         const PreprocessorFactory& factory, CacheManagerType cache_reader_type,
         const std::shared_ptr<ICacheIOManager>& graphs_cache_manager,
         LibraryData& graphs_to_find_in,
