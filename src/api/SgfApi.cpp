@@ -104,16 +104,16 @@ filter_with_enumeration(const FilterWithEnumerationParams& params)
         throw InvalidArgumentException(
             "at least one of m_filter_motifs or m_filter_paths must be true");
     }
-    require_cache_file(params.m_filter_motifs, params.m_motif_cache_file,
-                       "m_motif_cache_file is required when m_filter_motifs is true",
-                       "m_motif_cache_file must not be empty");
-    require_cache_file(params.m_filter_paths, params.m_path_cache_file,
-                       "m_path_cache_file is required when m_filter_paths is true",
-                       "m_path_cache_file must not be empty");
+    require_cache_file(params.m_filter_motifs, params.m_motif_cache_dir,
+                       "m_motif_cache_dir is required when m_filter_motifs is true",
+                       "m_motif_cache_dir must not be empty");
+    require_cache_file(params.m_filter_paths, params.m_path_cache_dir,
+                       "m_path_cache_dir is required when m_filter_paths is true",
+                       "m_path_cache_dir must not be empty");
     std::string output_folder = params.m_output_folder;
     return FlowManager::enumerator_filter_run(
         params.m_query_graph_path, params.m_is_directed, params.m_reader_type,
-        optional_or_empty(params.m_motif_cache_file), optional_or_empty(params.m_path_cache_file),
+        optional_or_empty(params.m_motif_cache_dir), optional_or_empty(params.m_path_cache_dir),
         params.m_cache_type, output_folder, params.m_result_type,
         optional_or_empty(params.m_log_file), params.m_filter_paths, params.m_filter_motifs,
         params.m_cache_config, params.m_non_induced, params.m_thread_number,

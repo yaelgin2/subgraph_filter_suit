@@ -32,23 +32,34 @@ __host__ __device__ inline uint32_t ceil_div(const uint32_t numerator,
 /**
  * @brief Seeded 64-bit hash of a UInt128 key using MurmurHash3_x64_128.
  *
- * Hashes each 64-bit half independently with cuco::detail::MurmurHash3_x64_128
- * seeded by @p seed, takes the first 64-bit output half of each, and XORs them.
- * The seed separates the primary key (seed=0) from the double-hash probe step
- * (seed=1), keeping probe sequences deterministic and independent per UInt128.
+ * Hashes each 64-bit half independently with cuco::detail::MurmurHash3_x64_128,
+ * seeded by @p seed for the high half and by @p seed XORed with a fixed odd
+ * constant for the low half, then XORs the two first 64-bit output halves.
+ * Using the same seed for both halves would make any UInt128 with
+ * m_high == m_low always hash to exactly 0 (the two MurmurHash3 computations
+ * would be identical and cancel out) - a guaranteed, not just probabilistic,
+ * collision. Mixing the low half's seed keeps the two computations distinct
+ * even when the two halves are equal. The seed itself still separates the
+ * primary key (seed=0) from the double-hash probe step (seed=1), keeping
+ * probe sequences deterministic and independent per UInt128.
  */
 struct UInt128MurmurHash
 {
+    /// Arbitrary fixed odd constant XORed into the seed used for the low half only,
+    /// so the two halves' hashes never coincide merely because m_high == m_low.
+    static constexpr uint64_t LOW_SEED_MIX = 0x9E3779B97F4A7C15ULL;
+
     /**
-     * @brief Hash @p key with @p seed: MurmurHash3(high, seed)[0] ^ MurmurHash3(low, seed)[0].
+     * @brief Hash @p key with @p seed: MurmurHash3(high, seed)[0] ^ MurmurHash3(low, seed')[0].
      * @param key  128-bit value to hash.
      * @param seed 0 for the primary slot key; 1 for the double-hash probe step.
      * @return 64-bit hash value.
      */
     __host__ __device__ static uint64_t hash(const UInt128& key, const uint64_t seed) noexcept
     {
-        const cuco::detail::MurmurHash3_x64_128<uint64_t> hasher{seed};
-        return hasher(key.m_high)[0] ^ hasher(key.m_low)[0];
+        const cuco::detail::MurmurHash3_x64_128<uint64_t> hasher_high{seed};
+        const cuco::detail::MurmurHash3_x64_128<uint64_t> hasher_low{seed ^ LOW_SEED_MIX};
+        return hasher_high(key.m_high)[0] ^ hasher_low(key.m_low)[0];
     }
 
     __host__ __device__ uint64_t operator()(const UInt128& key) const noexcept

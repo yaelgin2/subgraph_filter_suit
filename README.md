@@ -163,7 +163,7 @@ gamma,2
   --filter --motifs \
   --graph-dir ./graphs/queries \
   --graph-input-type graphml \
-  --motif-cache-file ./cache/motif_cache_2026-06-15_12-00-00 \
+  --motif-cache-dir ./cache \
   --cache-type binary \
   --result-folder ./results \
   --result-type json \
@@ -230,12 +230,12 @@ Preprocesses a graph library into motif/path enumeration caches, then filters qu
 | `--graph-input-type` | `graphml` \| `json` \| `vertex-edge` | Query graph file format. |
 | `--result-folder` | string | Directory for filter result output. |
 | `--result-type` | `json` \| `csv` | Result file format. |
-| `--motif-cache-file` | string | Full path to motif cache (required with `--motifs`). |
-| `--path-cache-file` | string | Full path to path cache (required with `--paths`). |
-| `--cache-enumeration` | bool switch | Cache query graph enumeration after computing. Mutually exclusive with `--load-motif-graph-cache` and `--load-path-graph-cache`. |
+| `--motif-cache-dir` | string | Directory containing the motif cache — one file per library graph, as written by `--preprocess` (required with `--motifs`). |
+| `--path-cache-dir` | string | Directory containing the path cache — one file per library graph, as written by `--preprocess` (required with `--paths`). |
+| `--cache-enumeration` | bool switch | Cache query graph enumeration after computing. Mutually exclusive with `--load-motif-graph-cache-dir` and `--load-path-graph-cache-dir`. |
 | `--graph-cache-dir` | string | Directory for query enumeration cache (required with `--cache-enumeration`). |
-| `--load-motif-graph-cache` | string | Existing motif enumeration cache to load instead of computing. Mutually exclusive with `--cache-enumeration`. |
-| `--load-path-graph-cache` | string | Existing path enumeration cache to load instead of computing. Mutually exclusive with `--cache-enumeration`. |
+| `--load-motif-graph-cache-dir` | string | Directory of an existing motif enumeration cache to load instead of computing. Mutually exclusive with `--cache-enumeration`. |
+| `--load-path-graph-cache-dir` | string | Directory of an existing path enumeration cache to load instead of computing. Mutually exclusive with `--cache-enumeration`. |
 
 **Example — preprocess a library:**
 
@@ -255,8 +255,8 @@ Preprocesses a graph library into motif/path enumeration caches, then filters qu
   --filter --motifs --paths \
   --graph-dir ./graphs/queries \
   --graph-input-type json \
-  --motif-cache-file ./cache/motif_cache_2024-01-01_12-00-00 \
-  --path-cache-file ./cache/path_cache_2024-01-01_12-00-00 \
+  --motif-cache-dir ./cache \
+  --path-cache-dir ./cache \
   --cache-type binary \
   --result-folder ./results \
   --result-type json
@@ -435,8 +435,8 @@ fp.m_result_type      = sgf::ResultOutputType::JSON;
 fp.m_cache_type       = sgf::CacheManagerType::BINARY;
 fp.m_filter_motifs    = true;
 fp.m_filter_paths     = true;
-fp.m_motif_cache_file = "./cache/motif_cache_2024-01-01_12-00-00";
-fp.m_path_cache_file  = "./cache/path_cache_2024-01-01_12-00-00";
+fp.m_motif_cache_dir = "./cache";
+fp.m_path_cache_dir  = "./cache";
 auto results = sgf::filter_with_enumeration(fp);
 
 // 3. Exact subgraph search
@@ -480,8 +480,8 @@ Returns `vector<EnumerationResultVector>`, one element per enabled feature.
 | `m_cache_type` | `CacheManagerType` | yes | Cache file format. |
 | `m_filter_motifs` | `bool` | at least one | Filter by motif signatures. |
 | `m_filter_paths` | `bool` | at least one | Filter by path signatures. |
-| `m_motif_cache_file` | `optional<string>` | if motifs | Full path to the motif cache file. |
-| `m_path_cache_file` | `optional<string>` | if paths | Full path to the path cache file. |
+| `m_motif_cache_dir` | `optional<string>` | if motifs | Directory containing the motif cache (one file per library graph). |
+| `m_path_cache_dir` | `optional<string>` | if paths | Directory containing the path cache (one file per library graph). |
 | `m_is_directed` | `bool` | — | Treat graphs as directed (default `false`). |
 | `m_non_induced` | `bool` | — | Expand motif counts via inclusion DAG (default `false`). |
 | `m_thread_number` | `uint32_t` | — | Maximum threads for preprocessing (default `10`). |

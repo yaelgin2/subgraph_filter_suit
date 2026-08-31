@@ -88,22 +88,22 @@ po::options_description SgfGraphEnumeratorArgumentParser::build_filter_options()
         KEY_GRAPH_INPUT_TYPE, po::value<std::string>(),
         "Graph file format: graphml, vertex-edge, json")(
         KEY_RESULT_FOLDER, po::value<std::string>(), "Directory for filter result output")(
-        KEY_RESULT_TYPE, po::value<std::string>(),
-        "Result format: json, csv")(KEY_MOTIF_CACHE_FILE, po::value<std::string>(),
-                                    "Full path to the motif cache file (required with --motifs)")(
-        KEY_PATH_CACHE_FILE, po::value<std::string>(),
-        "Full path to the path cache file (required with --paths)")(
+        KEY_RESULT_TYPE, po::value<std::string>(), "Result format: json, csv")(
+        KEY_MOTIF_CACHE_DIR, po::value<std::string>(),
+        "Directory containing the motif cache (required with --motifs)")(
+        KEY_PATH_CACHE_DIR, po::value<std::string>(),
+        "Directory containing the path cache (required with --paths)")(
         KEY_CACHE_ENUMERATION, po::bool_switch(),
         "Cache the query graph enumeration after computing. "
-        "Cannot be combined with --load-motif-graph-cache or --load-path-graph-cache.")(
+        "Cannot be combined with --load-motif-graph-cache-dir or --load-path-graph-cache-dir.")(
         KEY_GRAPH_CACHE_DIR, po::value<std::string>(),
         "Directory where the query graph enumeration cache is written "
         "(required with --cache-enumeration).")(
-        KEY_LOAD_MOTIF_GRAPH_CACHE, po::value<std::string>(),
-        "Full path to an existing motif graph enumeration cache to load instead of computing. "
+        KEY_LOAD_MOTIF_GRAPH_CACHE_DIR, po::value<std::string>(),
+        "Directory of an existing motif graph enumeration cache to load instead of computing. "
         "Cannot be combined with --cache-enumeration.")(
-        KEY_LOAD_PATH_GRAPH_CACHE, po::value<std::string>(),
-        "Full path to an existing path graph enumeration cache to load instead of computing. "
+        KEY_LOAD_PATH_GRAPH_CACHE_DIR, po::value<std::string>(),
+        "Directory of an existing path graph enumeration cache to load instead of computing. "
         "Cannot be combined with --cache-enumeration.");
     return desc;
 }
@@ -170,8 +170,8 @@ FilterArgs
 SgfGraphEnumeratorArgumentParser::parse_filter_args(const po::variables_map& variables_map)
 {
     FilterArgs result;
-    result.m_motif_cache_file = get_optional_string(variables_map, KEY_MOTIF_CACHE_FILE);
-    result.m_path_cache_file = get_optional_string(variables_map, KEY_PATH_CACHE_FILE);
+    result.m_motif_cache_dir = get_optional_string(variables_map, KEY_MOTIF_CACHE_DIR);
+    result.m_path_cache_dir = get_optional_string(variables_map, KEY_PATH_CACHE_DIR);
     result.m_cache_type = parse_cache_type(get_required_string(variables_map, KEY_CACHE_TYPE));
     result.m_graph_dir = get_required_string(variables_map, KEY_GRAPH_DIR);
     result.m_graph_input_type =
@@ -181,10 +181,10 @@ SgfGraphEnumeratorArgumentParser::parse_filter_args(const po::variables_map& var
     result.m_log_file_path = get_optional_string(variables_map, KEY_LOG_FILE_PATH);
     result.m_cache_graph_enumeration = variables_map.at(KEY_CACHE_ENUMERATION).as<bool>();
     result.m_graph_cache_dir = get_optional_string(variables_map, KEY_GRAPH_CACHE_DIR);
-    result.m_load_motif_graph_cache_path =
-        get_optional_string(variables_map, KEY_LOAD_MOTIF_GRAPH_CACHE);
-    result.m_load_path_graph_cache_path =
-        get_optional_string(variables_map, KEY_LOAD_PATH_GRAPH_CACHE);
+    result.m_load_motif_graph_cache_dir =
+        get_optional_string(variables_map, KEY_LOAD_MOTIF_GRAPH_CACHE_DIR);
+    result.m_load_path_graph_cache_dir =
+        get_optional_string(variables_map, KEY_LOAD_PATH_GRAPH_CACHE_DIR);
     result.m_graphml_color_map_path =
         get_optional_string(variables_map, KEY_GRAPHML_COLOR_MAP_PATH);
     return result;
@@ -225,8 +225,8 @@ void SgfGraphEnumeratorArgumentParser::validate_filter_args(const FilterArgs& fi
                                                             const bool use_motifs,
                                                             const bool use_paths)
 {
-    require_cache_file(use_motifs, filter.m_motif_cache_file, KEY_MOTIF_CACHE_FILE);
-    require_cache_file(use_paths, filter.m_path_cache_file, KEY_PATH_CACHE_FILE);
+    require_cache_file(use_motifs, filter.m_motif_cache_dir, KEY_MOTIF_CACHE_DIR);
+    require_cache_file(use_paths, filter.m_path_cache_dir, KEY_PATH_CACHE_DIR);
     validate_cache_enumeration_flags(filter);
 }
 
@@ -241,15 +241,15 @@ void SgfGraphEnumeratorArgumentParser::validate_cache_enumeration_flags(const Fi
         throw SgfInvalidArgumentException(
             "--graph-cache-dir is required when --cache-enumeration is set.");
     }
-    if (!filter.m_load_motif_graph_cache_path.empty())
+    if (!filter.m_load_motif_graph_cache_dir.empty())
     {
         throw SgfInvalidArgumentException(
-            "--cache-enumeration and --load-motif-graph-cache are mutually exclusive.");
+            "--cache-enumeration and --load-motif-graph-cache-dir are mutually exclusive.");
     }
-    if (!filter.m_load_path_graph_cache_path.empty())
+    if (!filter.m_load_path_graph_cache_dir.empty())
     {
         throw SgfInvalidArgumentException(
-            "--cache-enumeration and --load-path-graph-cache are mutually exclusive.");
+            "--cache-enumeration and --load-path-graph-cache-dir are mutually exclusive.");
     }
 }
 

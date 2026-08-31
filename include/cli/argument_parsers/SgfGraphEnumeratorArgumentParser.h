@@ -30,18 +30,18 @@ struct PreprocessArgs
  */
 struct FilterArgs
 {
-    std::string m_motif_cache_file;                                ///< Motif cache file path.
-    std::string m_path_cache_file;                                 ///< Path cache file path.
+    std::string m_motif_cache_dir;                                 ///< Motif cache directory.
+    std::string m_path_cache_dir;                                  ///< Path cache directory.
     CacheManagerType m_cache_type{CacheManagerType::BINARY};       ///< Cache format.
     std::string m_graph_dir;                                       ///< Query graphs directory.
     GraphReaderType m_graph_input_type{GraphReaderType::GRAPHML};  ///< Graph file format.
     std::string m_result_folder;                                   ///< Results output directory.
     ResultOutputType m_result_type{ResultOutputType::JSON};        ///< Results format.
     std::string m_log_file_path;                                   ///< Optional log file path.
-    bool m_cache_graph_enumeration{false};      ///< Cache query graph enumeration after computing.
-    std::string m_graph_cache_dir;              ///< Directory for enumeration cache.
-    std::string m_load_motif_graph_cache_path;  ///< Existing motif cache path; empty = compute.
-    std::string m_load_path_graph_cache_path;   ///< Existing path cache path; empty = compute.
+    bool m_cache_graph_enumeration{false};     ///< Cache query graph enumeration after computing.
+    std::string m_graph_cache_dir;             ///< Directory for enumeration cache.
+    std::string m_load_motif_graph_cache_dir;  ///< Existing motif cache directory; empty = compute.
+    std::string m_load_path_graph_cache_dir;   ///< Existing path cache directory; empty = compute.
     std::string m_graphml_color_map_path;  ///< Path to initial GraphML color map CSV; empty = none.
 };
 
@@ -99,8 +99,8 @@ private:
     static constexpr const char* KEY_LIBRARY_DIR = "library-dir";
     static constexpr const char* KEY_READER_TYPE = "reader-type";
     static constexpr const char* KEY_CACHE_DIR = "cache-dir";
-    static constexpr const char* KEY_MOTIF_CACHE_FILE = "motif-cache-file";
-    static constexpr const char* KEY_PATH_CACHE_FILE = "path-cache-file";
+    static constexpr const char* KEY_MOTIF_CACHE_DIR = "motif-cache-dir";
+    static constexpr const char* KEY_PATH_CACHE_DIR = "path-cache-dir";
     static constexpr const char* KEY_CACHE_TYPE = "cache-type";
     static constexpr const char* KEY_LOG_FILE_PATH = "log-file-path";
     static constexpr const char* KEY_GRAPH_DIR = "graph-dir";
@@ -109,8 +109,8 @@ private:
     static constexpr const char* KEY_RESULT_TYPE = "result-type";
     static constexpr const char* KEY_CACHE_ENUMERATION = "cache-enumeration";
     static constexpr const char* KEY_GRAPH_CACHE_DIR = "graph-cache-dir";
-    static constexpr const char* KEY_LOAD_MOTIF_GRAPH_CACHE = "load-motif-graph-cache";
-    static constexpr const char* KEY_LOAD_PATH_GRAPH_CACHE = "load-path-graph-cache";
+    static constexpr const char* KEY_LOAD_MOTIF_GRAPH_CACHE_DIR = "load-motif-graph-cache-dir";
+    static constexpr const char* KEY_LOAD_PATH_GRAPH_CACHE_DIR = "load-path-graph-cache-dir";
     static constexpr const char* KEY_GRAPHML_COLOR_MAP_PATH = "graphml-color-map-path";
     static constexpr const char* KEY_GPU = "gpu";
 

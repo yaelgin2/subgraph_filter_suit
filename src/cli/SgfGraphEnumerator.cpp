@@ -33,14 +33,13 @@ void run_filter(const CliArgs& args)
     std::string result_folder = args.m_filter.m_result_folder;
     const GraphEnumerationCacheConfig cache_config{
         args.m_filter.m_cache_graph_enumeration, args.m_filter.m_graph_cache_dir,
-        args.m_filter.m_load_motif_graph_cache_path, args.m_filter.m_load_path_graph_cache_path};
+        args.m_filter.m_load_motif_graph_cache_dir, args.m_filter.m_load_path_graph_cache_dir};
     FlowManager::enumerator_filter_run(
         args.m_filter.m_graph_dir, args.m_is_directed, args.m_filter.m_graph_input_type,
-        args.m_filter.m_motif_cache_file, args.m_filter.m_path_cache_file,
-        args.m_filter.m_cache_type, result_folder, args.m_filter.m_result_type,
-        args.m_filter.m_log_file_path, args.m_use_paths, args.m_use_motifs, cache_config,
-        args.m_non_induced, args.m_thread_number, args.m_filter.m_graphml_color_map_path,
-        args.m_use_gpu);
+        args.m_filter.m_motif_cache_dir, args.m_filter.m_path_cache_dir, args.m_filter.m_cache_type,
+        result_folder, args.m_filter.m_result_type, args.m_filter.m_log_file_path, args.m_use_paths,
+        args.m_use_motifs, cache_config, args.m_non_induced, args.m_thread_number,
+        args.m_filter.m_graphml_color_map_path, args.m_use_gpu);
 }
 
 /**
