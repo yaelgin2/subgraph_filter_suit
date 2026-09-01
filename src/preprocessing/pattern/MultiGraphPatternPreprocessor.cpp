@@ -56,7 +56,7 @@ std::vector<PatternPreprocessorResult> MultiGraphPatternPreprocessor::calculate(
                 try
                 {
                     MultiGraphPatternFinder local_finder(m_graph_library, M_IS_DIRECTED,
-                                                         color_count, m_logger);
+                                                         color_count, thread_idx, m_logger);
                     uint32_t claimed = patterns_generated.fetch_add(1U, std::memory_order_relaxed);
                     while (claimed < M_PATTERN_NUMBER)
                     {

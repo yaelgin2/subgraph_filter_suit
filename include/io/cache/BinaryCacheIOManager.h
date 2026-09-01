@@ -8,20 +8,18 @@
 #include <cstdint>
 #include <fstream>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
 namespace sgf
 {
 
 /**
  * @class BinaryCacheIOManager
- * @brief Reads and writes enumeration frequency data to/from a MessagePack binary cache file.
+ * @brief Reads and writes one graph's enumeration frequency data to/from a MessagePack binary
+ *        cache file.
  *
- * Serializes the data as a MessagePack map. Each outer key is the graph name
- * (msgpack str); each value is a map of motif frequency entries whose keys are
- * UInt128 values encoded as a 2-element fixarray [high:uint64, low:uint64] and
- * whose values are uint32.
+ * Serializes the EnumerationResult as a single MessagePack map whose keys are UInt128 values
+ * encoded as a 2-element fixarray [high:uint64, low:uint64] and whose values are uint32. The
+ * graph's identity lives in the filename, not in the file's content.
  */
 class BinaryCacheIOManager : public ICacheIOManager
 {
@@ -36,26 +34,23 @@ public:
 
 protected:
     /**
-     * @brief Writes enumeration data to a MessagePack file at @p full_path.
+     * @brief Writes one graph's enumeration data to a MessagePack file at @p full_path.
      *
      * @param data      The enumeration data to serialize.
      * @param full_path Destination file path including the .bin extension.
      * @throws SgfPathExistsException if the file cannot be opened or written.
      */
-    void write_to_file(const EnumerationResultVector& data,
-                       const std::vector<std::string>& graph_names,
-                       const std::string& full_path) const override;
+    void write_to_file(const EnumerationResult& data, const std::string& full_path) const override;
 
     /**
-     * @brief Reads enumeration data from a MessagePack file at @p full_path.
+     * @brief Reads one graph's enumeration data from a MessagePack file at @p full_path.
      *
      * @param full_path Source file path including the .bin extension.
-     * @return Map from graph name to its deserialized enumeration result.
+     * @return Deserialized enumeration result.
      * @throws SgfPathDoesntExistException if the file cannot be opened for reading.
      * @throws GraphConstructionException if the file contains corrupt or malformed data.
      */
-    std::unordered_map<std::string, EnumerationResult>
-    read_from_file(const std::string& full_path) const override;
+    EnumerationResult read_from_file(const std::string& full_path) const override;
 
     /**
      * @brief Returns the binary file extension.
@@ -66,8 +61,6 @@ protected:
 private:
     static constexpr uint8_t MSGPACK_FIXARRAY_BASE = 0x90U;
     static constexpr uint8_t MSGPACK_FIXMAP_BASE = 0x80U;
-    static constexpr uint8_t MSGPACK_ARRAY16_FORMAT = 0xDCU;
-    static constexpr uint8_t MSGPACK_ARRAY32_FORMAT = 0xDDU;
     static constexpr uint8_t MSGPACK_MAP16_FORMAT = 0xDEU;
     static constexpr uint8_t MSGPACK_MAP32_FORMAT = 0xDFU;
     static constexpr uint8_t MSGPACK_UINT32_FORMAT = 0xCEU;
@@ -110,16 +103,6 @@ private:
     static constexpr size_t UINT64_BYTE_IDX_7 = 7U;
     static constexpr size_t UINT64_BYTE_IDX_8 = 8U;
 
-    static constexpr size_t MAX_GRAPH_COUNT = 10'000'000U;
-
-    static constexpr uint8_t MSGPACK_FIXSTR_BASE = 0xA0U;
-    static constexpr uint8_t MSGPACK_FIXSTR_PREFIX_MASK = 0xE0U;
-    static constexpr uint8_t MSGPACK_FIXSTR_LEN_MASK = 0x1FU;
-    static constexpr size_t MSGPACK_FIXSTR_MAX_LEN = 31U;
-    static constexpr uint8_t MSGPACK_STR8_FORMAT = 0xD9U;
-    static constexpr uint8_t MSGPACK_STR16_FORMAT = 0xDAU;
-    static constexpr uint8_t MSGPACK_STR32_FORMAT = 0xDBU;
-
     // ── Write helpers ────────────────────────────────────────────────────────
 
     /**
@@ -133,13 +116,6 @@ private:
      */
     static void write_collection_header(std::ofstream& output_stream, size_t size, uint8_t fix_base,
                                         uint8_t format16, uint8_t format32);
-
-    /**
-     * @brief Writes a MessagePack array header for @p size elements.
-     * @param output_stream Output stream.
-     * @param size          Number of array elements.
-     */
-    static void write_array_header(std::ofstream& output_stream, size_t size);
 
     /**
      * @brief Writes a MessagePack map header for @p size key-value pairs.
@@ -168,20 +144,6 @@ private:
      * @param value         Value to encode.
      */
     static void write_uint128_key(std::ofstream& output_stream, const UInt128& value);
-
-    /**
-     * @brief Writes one graph's EnumerationResult as a MessagePack map.
-     * @param output_stream Output stream.
-     * @param result        The per-graph frequency map to serialize.
-     */
-    static void write_graph_result(std::ofstream& output_stream, const EnumerationResult& result);
-
-    /**
-     * @brief Writes a string in MessagePack str format (fixstr / str8 / str16 / str32).
-     * @param output_stream Output stream.
-     * @param value         String to encode.
-     */
-    static void write_string(std::ofstream& output_stream, const std::string& value);
 
     // ── Read helpers ─────────────────────────────────────────────────────────
 
@@ -217,7 +179,7 @@ private:
     static size_t read_be_uint16_size(std::ifstream& input_stream);
 
     /**
-     * @brief Reads an array or map header and returns the element count.
+     * @brief Reads a map header and returns the element count.
      *
      * @param input_stream Input stream.
      * @param format16     Format byte for 16-bit length encoding.
@@ -227,14 +189,6 @@ private:
      */
     static size_t read_collection_header(std::ifstream& input_stream, uint8_t format16,
                                          uint8_t format32);
-
-    /**
-     * @brief Reads a MessagePack array header and returns the element count.
-     * @param input_stream Input stream.
-     * @return Number of array elements.
-     * @throws GraphConstructionException on EOF, I/O error, or corrupt data.
-     */
-    static size_t read_array_header(std::ifstream& input_stream);
 
     /**
      * @brief Reads a MessagePack map header and returns the entry count.
@@ -267,31 +221,6 @@ private:
      * @throws GraphConstructionException on EOF, I/O error, or unexpected header byte.
      */
     static UInt128 read_uint128_key(std::ifstream& input_stream);
-
-    /**
-     * @brief Reads a MessagePack string (fixstr / str8 / str16 / str32).
-     * @param input_stream Input stream.
-     * @return Decoded string.
-     * @throws GraphConstructionException on EOF, I/O error, or unexpected format byte.
-     */
-    static std::string read_string(std::ifstream& input_stream);
-
-    /**
-     * @brief Reads one graph's EnumerationResult from a MessagePack map.
-     * @param input_stream Input stream.
-     * @return Deserialized per-graph frequency map.
-     * @throws GraphConstructionException on EOF, I/O error, or corrupt data.
-     */
-    static EnumerationResult read_graph_result(std::ifstream& input_stream);
-
-    /**
-     * @brief Parses all graphs from an open binary stream.
-     * @param input_stream Input stream positioned at the outer map header.
-     * @return Map from graph name to deserialized enumeration result.
-     * @throws GraphConstructionException on corrupt data or allocation failure.
-     */
-    static std::unordered_map<std::string, EnumerationResult>
-    parse_binary(std::ifstream& input_stream);
 };
 
 }  // namespace sgf

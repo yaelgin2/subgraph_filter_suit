@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <random>
+#include <string>
 #include <tuple>
 #include <unordered_set>
 #include <utility>
@@ -41,10 +42,12 @@ public:
      * @param graph_list   Input graphs (colours already remapped to compact IDs by caller).
      * @param is_directed  Whether the graphs are directed.
      * @param color_count  Number of distinct compact colour IDs in the remapped graphs.
+     * @param thread_index Index of the worker thread running this finder, tagged onto every
+     *                     log message so interleaved multi-threaded logs stay attributable.
      * @param logger       Logger for diagnostics.
      */
     MultiGraphPatternFinder(const std::vector<ColoredGraph>& graph_list, bool is_directed,
-                            uint32_t color_count, LoggerHandler logger);
+                            uint32_t color_count, uint32_t thread_index, LoggerHandler logger);
 
     /**
      * @brief Run the pattern-finding algorithm.
@@ -65,9 +68,12 @@ private:
     const std::vector<ColoredGraph>& m_graph_list;
     bool m_is_directed;
     std::unordered_set<uint32_t> m_alive_graph_indexes;
+    mutable std::unordered_set<uint64_t>
+        m_dead_edge_pairs;  ///< Encoded (src, tgt) pairs scored 0 support; a scoring cache.
     std::vector<std::shared_ptr<Tree>> m_match_trees;
     BoostGraph m_pattern;
     uint32_t m_color_count;
+    uint32_t m_thread_index;
     LoggerHandler m_logger;
     std::mt19937_64 m_random_engine;
     std::uniform_real_distribution<double> m_uniform_dist{0.0, 1.0};
@@ -184,6 +190,26 @@ private:
     void log_alive_graph_indexes() const;
 
     /**
+     * @brief Build a "[thread N] " prefix identifying this finder's worker thread.
+     * @return Prefix string to prepend to log messages.
+     */
+    std::string thread_log_prefix() const;
+
+    /**
+     * @brief Log a message tagged with this finder's thread index.
+     * @param level   Log severity level.
+     * @param message Message text; the thread-index prefix is prepended automatically.
+     */
+    void log_with_thread(LogLevel level, const std::string& message) const;
+
+    /**
+     * @brief Log the match tree's current size and leaf/match count after it has grown.
+     * @param graph_idx    Index of the graph whose match tree grew.
+     * @param leaf_count   Number of leaves (matches) in the tree after growth.
+     */
+    void log_tree_growth(uint32_t graph_idx, uint32_t leaf_count) const;
+
+    /**
      * @brief Recolor the pattern and move results into the return value.
      * @param start_time Time point recorded at the start of find_pattern.
      * @return {result pattern, alive graph indexes}.
@@ -243,10 +269,24 @@ private:
 
     /**
      * @brief Return true if (source, target) is a valid candidate edge to score.
+     *
+     * Excludes self-loops, the redundant direction for undirected patterns, edges
+     * already present in the pattern, and pairs already known to have 0 support
+     * (see m_dead_edge_pairs) — support can only shrink as the tree grows, so a
+     * pair once scored 0 never needs to be rescored.
+     *
      * @param source_vertex Source vertex index in the pattern.
      * @param target_vertex Target vertex index in the pattern.
      */
     bool is_candidate_edge(uint32_t source_vertex, uint32_t target_vertex) const;
+
+    /**
+     * @brief Pack a (source, target) pattern-vertex pair into a single lookup key.
+     * @param source_vertex Source vertex index in the pattern.
+     * @param target_vertex Target vertex index in the pattern.
+     * @return Combined 64-bit key for use in m_dead_edge_pairs.
+     */
+    static uint64_t encode_edge_key(uint32_t source_vertex, uint32_t target_vertex);
 
     /**
      * @brief Find the (src, tgt) pair with the highest edge-support score.

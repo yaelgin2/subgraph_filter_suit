@@ -1,14 +1,20 @@
 #include "graph/ColoredGraph.h"
 
+#include "ColoredGraphTestHelpers.h"
+#include "ILogger.h"
+#include "LoggerHandler.h"
 #include "exceptions/InvalidArgumentException.h"
 
 #include <cstdint>
 #include <gtest/gtest.h>
+#include <memory>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
 using namespace sgf;
+using test_helpers::CapturingLogger;
 
 // ── Shared assertion helpers ──────────────────────────────────────────────────
 
@@ -575,23 +581,77 @@ TEST_F(ColoredGraphTest, directed_in_star_graph)
 // ── Self-loop tests ───────────────────────────────────────────────────────────
 
 /**
- * @brief A self-loop on an undirected graph must throw InvalidArgumentException.
+ * @brief A self-loop on an undirected graph is silently discarded, not an error.
  */
-TEST_F(ColoredGraphTest, self_loop_on_undirected_graph_throws)
+TEST_F(ColoredGraphTest, self_loop_on_undirected_graph_is_discarded)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 0}};
     const std::vector<uint32_t> colors = uniform_colors(1);
-    EXPECT_THROW(ColoredGraph(1, edges, colors, false), InvalidArgumentException);
+    const ColoredGraph graph(1, edges, colors, false);
+
+    EXPECT_EQ(graph.vertex_count(), 1U);
+    EXPECT_EQ(graph.edge_count(), 0U);
+    assert_neighbours(graph, 0, {});
 }
 
 /**
- * @brief A self-loop on a directed graph must throw InvalidArgumentException.
+ * @brief A self-loop on a directed graph is silently discarded, not an error.
  */
-TEST_F(ColoredGraphTest, self_loop_on_directed_graph_throws)
+TEST_F(ColoredGraphTest, self_loop_on_directed_graph_is_discarded)
 {
     std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 0}};
     const std::vector<uint32_t> colors = uniform_colors(1);
-    EXPECT_THROW(ColoredGraph(1, edges, colors, true), InvalidArgumentException);
+    const ColoredGraph graph(1, edges, colors, true);
+
+    EXPECT_EQ(graph.vertex_count(), 1U);
+    EXPECT_EQ(graph.edge_count(), 0U);
+    assert_neighbours(graph, 0, {}, false);
+    assert_neighbours(graph, 0, {}, true);
+}
+
+/**
+ * @brief A real edge alongside a self-loop keeps the real edge and discards only the loop.
+ */
+TEST_F(ColoredGraphTest, self_loop_mixed_with_real_edge_keeps_real_edge)
+{
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 0}, {0, 1}};
+    const ColoredGraph graph(2, edges, indexed_colors(2), false);
+
+    EXPECT_EQ(graph.vertex_count(), 2U);
+    EXPECT_EQ(graph.edge_count(), 1U);
+    assert_neighbours(graph, 0, {1});
+    assert_neighbours(graph, 1, {0});
+}
+
+/**
+ * @brief Discarding a self-loop logs exactly one WARNING via the supplied logger.
+ */
+TEST_F(ColoredGraphTest, self_loop_discard_logs_warning)
+{
+    const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 0}};
+    const std::vector<uint32_t> colors = uniform_colors(1);
+    const ColoredGraph graph(1, edges, colors, false,
+                             LoggerHandler(std::weak_ptr<ILogger>(logger)));
+
+    EXPECT_EQ(graph.edge_count(), 0U);
+    const std::vector<std::pair<LogLevel, std::string>> messages = logger->messages();
+    ASSERT_EQ(messages.size(), 1U);
+    EXPECT_EQ(messages.front().first, LogLevel::WARNING);
+}
+
+/**
+ * @brief A graph with no self-loops logs nothing about self-loops.
+ */
+TEST_F(ColoredGraphTest, no_self_loop_logs_nothing)
+{
+    const std::shared_ptr<CapturingLogger> logger = std::make_shared<CapturingLogger>();
+    std::vector<std::pair<uint32_t, uint32_t>> edges = {{0, 1}};
+    const ColoredGraph graph(2, edges, indexed_colors(2), false,
+                             LoggerHandler(std::weak_ptr<ILogger>(logger)));
+
+    EXPECT_EQ(graph.edge_count(), 1U);
+    EXPECT_TRUE(logger->messages().empty());
 }
 
 // ── get_neighbours with reversed=true on undirected graphs ────────────────────
